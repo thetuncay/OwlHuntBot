@@ -55,8 +55,10 @@ async function loadCommands(): Promise<void> {
 
   for (const fileName of commandFiles) {
     const moduleUrl = pathToFileURL(join(commandsDir, fileName)).href;
-    const mod = (await import(moduleUrl)) as { default: CommandDefinition };
-    commandMap.set(mod.default.data.name, mod.default);
+    const mod = (await import(moduleUrl)) as { default?: CommandDefinition };
+    if (mod.default?.data?.name) {
+      commandMap.set(mod.default.data.name, mod.default);
+    }
   }
 }
 
