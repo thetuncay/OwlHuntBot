@@ -18,6 +18,14 @@ import { formatDuration } from '../utils/format';
 import { successEmbed, warningEmbed, failEmbed } from '../utils/embed';
 import type { CommandDefinition } from '../types';
 
+// Prisma Owl modelinin lokal tip tanımı (generate edilmemiş @prisma/client için)
+type OwlRecord = {
+  id: string; ownerId: string; species: string; tier: number; bond: number;
+  statGaga: number; statGoz: number; statKulak: number; statKanat: number; statPence: number;
+  quality: string; hp: number; hpMax: number; staminaCur: number; isMain: boolean;
+  effectiveness: number; createdAt: Date; passiveMode: string; traits: unknown;
+};
+
 // ─── Slash: /owl setmain ──────────────────────────────────────────────────────
 
 export async function runSetMain(
@@ -37,7 +45,7 @@ export async function runSetMain(
   }
 
   await withLock(userId, 'setmain', async () => {
-    await ctx.prisma.$transaction(async (tx) => {
+    await ctx.prisma.$transaction(async (tx: any) => {
       const activePvp = await tx.pvpSession.findFirst({
         where: { OR: [{ challengerId: userId }, { defenderId: userId }], status: { in: ['pending', 'active'] } },
       });
@@ -54,7 +62,7 @@ export async function runSetMain(
       if (target.hp / target.hpMax < SWITCH_HP_THRESHOLD) throw new Error('HP %30 altinda oldugu icin yasak.');
 
       const allOwls  = await tx.owl.findMany({ where: { ownerId: userId }, select: { tier: true } });
-      const totalTier = allOwls.reduce((sum, owl) => sum + owl.tier, 0);
+      const totalTier = allOwls.reduce((sum: number, owl: { tier: number }) => sum + owl.tier, 0);
       const cost      = switchCost(totalTier);
       if (player.coins < cost) throw new Error(`Yetersiz coin. Gerekli: ${cost} 💰`);
 
@@ -119,7 +127,7 @@ export async function runSetMainMessage(
   }
 
   await withLock(userId, 'setmain', async () => {
-    await ctx.prisma.$transaction(async (tx) => {
+    await ctx.prisma.$transaction(async (tx: any) => {
       const activePvp = await tx.pvpSession.findFirst({
         where: { OR: [{ challengerId: userId }, { defenderId: userId }], status: { in: ['pending', 'active'] } },
       });
@@ -136,7 +144,7 @@ export async function runSetMainMessage(
       if (target.hp / target.hpMax < SWITCH_HP_THRESHOLD) throw new Error('HP %30 altinda oldugu icin yasak.');
 
       const allOwls   = await tx.owl.findMany({ where: { ownerId: userId }, select: { tier: true } });
-      const totalTier = allOwls.reduce((sum, owl) => sum + owl.tier, 0);
+      const totalTier = allOwls.reduce((sum: number, owl: { tier: number }) => sum + owl.tier, 0);
       const cost      = switchCost(totalTier);
       if (player.coins < cost) throw new Error(`Yetersiz coin. Gerekli: ${cost} 💰`);
 
@@ -250,14 +258,14 @@ export async function runOwls(
           return;
         }
         await withLock(userId, 'setmain', async () => {
-          await ctx.prisma.$transaction(async (tx) => {
+          await ctx.prisma.$transaction(async (tx: any) => {
             const player = await tx.player.findUnique({ where: { id: userId } });
             if (!player) throw new Error('Oyuncu bulunamadi.');
             const target = await tx.owl.findUnique({ where: { id: targetOwlId } });
             if (!target || target.ownerId !== userId) throw new Error('Gecersiz baykus.');
             if (target.hp / target.hpMax < SWITCH_HP_THRESHOLD) throw new Error('HP %30 altinda.');
             const allOwls   = await tx.owl.findMany({ where: { ownerId: userId }, select: { tier: true } });
-            const totalTier = allOwls.reduce((s, o) => s + o.tier, 0);
+            const totalTier = allOwls.reduce((s: number, o: { tier: number }) => s + o.tier, 0);
             const cost      = switchCost(totalTier);
             if (player.coins < cost) throw new Error(`Yetersiz coin. Gerekli: ${cost} 💰`);
             await tx.owl.updateMany({ where: { ownerId: userId }, data: { isMain: false } });
@@ -288,10 +296,10 @@ export async function runOwlsMessage(
   ctx: Parameters<CommandDefinition['execute']>[1],
 ): Promise<void> {
   const userId = message.author.id;
-  const owls   = await ctx.prisma.owl.findMany({
+  const owls: OwlRecord[] = await ctx.prisma.owl.findMany({
     where:   { ownerId: userId },
     orderBy: [{ isMain: 'desc' }, { tier: 'asc' }, { quality: 'asc' }],
-  });
+  }) as OwlRecord[];
 
   const name = message.member?.displayName ?? message.author.username;
 
