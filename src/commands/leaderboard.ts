@@ -13,7 +13,7 @@ import {
 } from 'discord.js';
 import type { CommandDefinition, CommandContext } from '../types';
 import { failEmbed } from '../utils/embed';
-import { getLeaderboard, type LeaderboardCategory } from '../systems/leaderboard.ts.bak';
+import { getLeaderboard, type LeaderboardCategory } from '../systems/leaderboard';
 import { buildLeaderboardEmbed, buildCategoryRow } from '../utils/leaderboard-ux';
 import { ensureRegisteredForInteraction, ensureRegisteredForMessage } from '../systems/onboarding';
 

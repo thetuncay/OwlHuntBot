@@ -27,7 +27,7 @@ import { catchChance, clamp, huntRolls, spawnScore } from '../utils/math';
 import { rollPercent, weightedRandom } from '../utils/rng';
 import { withLock } from '../utils/lock';
 import { addXP } from './xp';
-import { recordHuntStats, refreshPowerScore } from './leaderboard.ts.bak';
+import { recordHuntStats, refreshPowerScore } from './leaderboard';
 import { createEncounter } from './tame';
 import { getBuffEffects, drainBuffCharge } from './items';
 import { rollHuntLootboxDrop } from './drops';

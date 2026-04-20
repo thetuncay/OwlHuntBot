@@ -8,7 +8,7 @@ import { type Client, type Guild, EmbedBuilder } from 'discord.js';
 import type { PrismaClient } from '@prisma/client';
 import type Redis from 'ioredis';
 import { COLOR_SUCCESS } from '../config';
-import { getLeaderboard, type LeaderboardCategory } from './leaderboard.ts.bak';
+import { getLeaderboard, type LeaderboardCategory } from './leaderboard';
 
 // ── Rol Tanimlari ─────────────────────────────────────────────────────────────
 

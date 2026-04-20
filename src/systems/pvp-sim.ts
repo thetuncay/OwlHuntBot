@@ -29,7 +29,7 @@ import {
 } from '../config';
 import { damageMultiplier, statEffect } from '../utils/math';
 import { addXP } from './xp';
-import { recordCoinsEarned, recordPvpWin, refreshPowerScore } from './leaderboard.ts.bak';
+import { recordCoinsEarned, recordPvpWin, refreshPowerScore } from './leaderboard';
 import {
   applyStreakXpBonus,
   getStreakCoinBonus,

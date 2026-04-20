@@ -15,7 +15,7 @@ import type { GambleResult } from '../types';
 import { finalWinChance } from '../utils/math';
 import { withLock } from '../utils/lock';
 import { weightedRandom } from '../utils/rng';
-import { recordCoinsEarned } from './leaderboard.ts.bak';
+import { recordCoinsEarned } from './leaderboard';
 
 function streakModifier(streakWins: number, streakLosses: number): number {
   if (streakLosses >= 5) return GAMBLE_STREAK_LOSS_5;

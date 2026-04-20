@@ -22,7 +22,7 @@ import type { PvpBattleData, PvpTurnEvent } from '../utils/pvp-ux';
 import { damageMultiplier, statEffect } from '../utils/math';
 import { acquireLock, releaseLock } from '../utils/lock';
 import { addXP } from './xp';
-import { recordPvpWin, refreshPowerScore, recordCoinsEarned } from './leaderboard.ts.bak';
+import { recordPvpWin, refreshPowerScore, recordCoinsEarned } from './leaderboard';
 import { updatePvpStreak, applyStreakXpBonus } from './pvp-streak';
 import { getBuffEffects, drainBuffCharge } from './items';
 import { rollPvpLootboxDrop } from './drops';

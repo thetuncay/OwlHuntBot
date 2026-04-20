@@ -6,7 +6,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } from 'discord.js';
 import { COLOR_INFO } from '../config';
 import { ROLE_DEFINITIONS } from '../systems/roles';
-import type { LeaderboardCategory, LeaderboardEntry, LeaderboardResult } from '../systems/leaderboard.ts.bak';
+import type { LeaderboardCategory, LeaderboardEntry, LeaderboardResult } from '../systems/leaderboard';
 
 // --- KATEGORI META ---
 

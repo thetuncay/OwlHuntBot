@@ -11,7 +11,7 @@
 import type { PrismaClient } from '@prisma/client';
 import type Redis from 'ioredis';
 import { SEASON_TYPE } from '../config';
-import type { LeaderboardCategory } from './leaderboard.ts.bak';
+import type { LeaderboardCategory } from './leaderboard';
 
 // ─── Sezon ID ─────────────────────────────────────────────────────────────────
 

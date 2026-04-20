@@ -9,7 +9,7 @@
  */
 
 import type { PrismaClient } from '@prisma/client';
-import type { LeaderboardCategory, LeaderboardEntry } from './leaderboard.ts.bak';
+import type { LeaderboardCategory, LeaderboardEntry } from './leaderboard';
 
 // ─── Kategori → DB alan adı ───────────────────────────────────────────────────
 
