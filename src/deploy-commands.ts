@@ -19,11 +19,12 @@ async function loadCommands(): Promise<CommandDefinition[]> {
   const loaded = await Promise.all(
     commandFiles.map(async (fileName) => {
       const moduleUrl = pathToFileURL(join(commandsDir, fileName)).href;
-      const mod = (await import(moduleUrl)) as { default: CommandDefinition };
+      const mod = (await import(moduleUrl)) as { default?: CommandDefinition };
       return mod.default;
     }),
   );
-  return loaded;
+  // default export'u olmayan yardımcı dosyaları filtrele
+  return loaded.filter((cmd): cmd is CommandDefinition => cmd !== undefined && typeof cmd.data?.toJSON === 'function');
 }
 
 /**
