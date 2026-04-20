@@ -1,0 +1,957 @@
+================================================================================
+BAYKUSBOT -- TAM TEKNIK TASARIM VE UYGULAMA BELGESI
+Yapay zeka ile uygulama icin hazirlanmis -- Tum formuller, kurallar, tablolar
+================================================================================
+
+Bu belge, bir Discord botu olarak gelistirilecek olan BaykusBot'un tum oyun
+mekaniklerini, formullerini, komutlarini, item tablolarini ve denge kurallarini
+eksiksiz olarak icerir. Burada yazan her sey uygulamada tek kaynak olarak
+kullanilmalidir. Baska bir dosyadaki eski taslak, ornek sayi veya alternatif
+formul varsa GECERSIZDIR; yalnizca bu belge kullanilir.
+
+
+================================================================================
+BOLUM 1 -- GENEL OYUN MANTIGI
+================================================================================
+
+1.1  Oyun dongusu
+
+Oyuncu bir baykusa sahip olur. Bu baykusu gelistirir, avlanir, XP kazanir ve
+diger oyuncularla dövüsür. Amac baykusu mümkün oldugu kadar güclü hale getirmek,
+koleksiyon yapmak ve siralamada üst siralara cikabilmektir.
+
+1.2  Main baykus kavrami
+
+Oyuncunun birden fazla baykusu olabilir. Ancak ayni anda yalnizca 1 tanesi
+"main" (aktif) durumundadir. Avlanma, PvP ve XP kazanimi her zaman main
+baykus üzerinden isler.
+
+1.3  Baykus tür siralamalari
+
+Tier numarasi ne kadar küçükse baykus o kadar güclüdür.
+
+  Tier  Tür Adi
+  ----  -----------------------
+  1     Blakiston balik baykusu   (en güclü)
+  2     Puhu baykusu
+  3     Kar baykusu
+  4     Boynuzlu baykus
+  5     Büyük boz baykus
+  6     Ural baykusu
+  7     Peceli baykus
+  8     Kukumav baykusu           (en gücsüz)
+
+1.4  Oyuncu baslangic durumu
+
+  Varsayilan main baykus: Kukumav (tier 8).
+  Üst tier baykuslar düsük levelde neredeyse hic karsima cikmaz.
+  Seviye arttikca daha güclü baykuslarin spawn sansi artar.
+
+1.5  Baykus statlari (5 adet, gelistirilebilir)
+
+  Stat Adi  Avlanma Rolu              PvP Rolu
+  --------  ------------------------  --------------------------
+  Gaga      Bitirme / yakalama gücü   Execute / finishing hasari
+  Göz       Nadir hayvan bulma        Crit + isabet sansi
+  Kulak     Loot kalitesi             Counter + dodge destegi
+  Kanat     Yakalama / hiz            Dodge + ilk vurus
+  Pence     Öldürme gücü              Ana ham hasar
+
+  Her stat: 1 ile 100 arasinda deger alir.
+
+
+================================================================================
+BOLUM 2 -- KOMUT LISTESI
+================================================================================
+
+2.1  Birincil komutlar
+
+  Komut                    Aciklama
+  -----------------------  --------------------------------------------------
+  owl hunt                 Baykusu geceye avlanmaya gönderir
+  owl avlan                "owl hunt" ile ayni; Türkce alias
+  owl vs @kullanici        Hedef kisi kabul ederse PvP baslar
+  owl setmain <baykus>     Main baykusu degistirir
+  owl inventory            Envanteri gösterir
+  owl stats                Detayli stat görünümü (UI katman 2)
+  owl stats --deep         Tüm formül kirilimiyla tam görünüm (UI katman 3)
+
+2.2  Upgrade komutlari
+
+  owl upgrade gaga
+  owl upgrade göz
+  owl upgrade kulak
+  owl upgrade kanat
+  owl upgrade pence
+
+
+================================================================================
+BOLUM 3 -- UI (ARAYUZ) SISTEMI
+================================================================================
+
+3.1  Uc katmanli UI yapisi
+
+Katman 1 -- Quick View (varsayilan; her komut ciktisinda gösterilir):
+  Tür adi, level, HP (mevcut/maks), Stamina, Power, Quality
+  Yalnizca oynanabilir özet bilgi. Ham hesap gösterilmez.
+
+Katman 2 -- Detail View (komut: owl stats):
+  5 statin hepsi ayri ayri
+  Item bonuslari
+  Bond degeri
+  Stamina ozet
+  Quality skoru
+
+Katman 3 -- Deep Debug (komut: owl stats --deep):
+  Formül kirilimi adim adim
+  RNG modifier degerleri
+  Gizli buff'lar
+  Combat modifier'lar
+
+3.2  Altin kural
+
+  Oyuncu "ne oldu?" görür, "nasil hesaplandi?" degil.
+  Savas sonrasi, upgrade sonrasi, av sonrasi ciktilar sonuc odakli yazilir.
+
+3.3  Stat gruplama (Smart Grouping)
+
+  Grup Adi     Icerdigi Statlar
+  -----------  ----------------
+  Combat       Pence + Gaga
+  Awareness    Göz + Kulak
+  Mobility     Kanat
+  Survival     HP + Stamina
+
+3.4  Bilgi acilim sirasi (Progressive Disclosure)
+
+  Savas sonrasi    --> minimal özet
+  owl stats        --> detay
+  owl stats --deep --> formül seviyesi (sadece isteyen)
+
+
+================================================================================
+BOLUM 4 -- MAIN BAYKUS DEGISTIRME SISTEMI (OWL SWITCH)
+================================================================================
+
+4.1  Komut
+
+  owl setmain <baykus adi veya ID>
+
+4.2  Switch yasak kosullari (herhangi biri gecerliyse komut calismaz)
+
+  Koul                    Aciklama
+  ----------------------  -----------------------------------------
+  Cooldown                Son degistirmeden bu yana 1 saat geçmemis
+  PvP sirasinda           Aktif bir dövüs sürüyorsa yasak
+  Av sirasinda            Aktif bir av sürüyorsa yasak
+  Düsük HP                Main baykusun HP'si toplam HP'nin %30 altindaysa yasak
+
+4.3  Switch coin maliyeti formülü
+
+  Switch Cost = 500 + (Toplam Owl Tier x 200)
+
+  "Toplam Owl Tier" tanimi:
+    Oyuncunun sahip oldugu TÜM baykuslarin tier numaralarinin toplami.
+    Ayni tier'dan birden fazla baykus varsa hepsi ayri ayri toplanir.
+
+  Örnekler:
+    Yalnizca Kukumav (tier 8):          500 + (8 x 200)  = 2100 coin
+    Kukumav + Peceli (tier 8 + tier 7): 500 + (15 x 200) = 3500 coin
+
+4.4  Switch sonrasi ceza (uyum süresi)
+
+  Süre: 10 dakika
+  Damage: -%10
+  Dodge:  -%10
+
+4.5  Bonding (baglanti) sistemi
+
+  Her baykusun kendine özgü bir Bond Level degeri vardir.
+  Aralik: 0 ile 100 arasinda.
+
+  Bond bonusu hesabi:
+    Bonus (yüzde puan) = Bond x 0.2
+
+  Örnek degerler:
+    Bond = 10  -->  %2 bonus
+    Bond = 50  -->  %10 bonus
+    Bond = 100 -->  %20 bonus
+
+  Main degistirince önceki baykusla biriktirilen bond o baykusta kalir.
+
+4.6  Pasif baykus modlari (main degilken)
+
+  Mod        Etki
+  ---------  -------------------------------------------
+  idle       Hicbir etki yok
+  training   Yavash XP kazanir
+  scouting   Rare karsima sansi +%1 (yaklasik)
+
+4.7  Örnek Discord ciktisi
+
+  Main baykus degistirildi.
+  Eski: Kukumav
+  Yeni: Puhu
+  Uyum süreci (10 dk): -%10 damage, -%10 dodge
+  Ödenen: [hesaplanan coin miktari] coin
+
+
+================================================================================
+BOLUM 5 -- AVLANMA SISTEMI
+================================================================================
+
+5.1  Genel isleyis
+
+  "owl hunt" komutuyla baykus geceye gönderilir. Main baykusun statlarina
+  ve seviyesine göre belirli hayvanlar avlanir. Her avlanmada birden fazla
+  "roll" (deneme) yapilir.
+
+5.2  Hunt roll sayisi formülü
+
+  Hunt Rolls = 3 + floor(Level / 5)
+
+  "floor" = asagi yuvarlama (tam sayiya indir)
+
+  Örnekler:
+    Level 1   -->  3 + 0 = 3 roll
+    Level 5   -->  3 + 1 = 4 roll
+    Level 10  -->  3 + 2 = 5 roll
+    Level 20  -->  3 + 4 = 7 roll
+
+5.3  Spawn sistemi formülü (hangi hayvan karsima cikar?)
+
+  Her hayvan icin ayri bir Spawn Score hesaplanir:
+
+    Spawn Score (bir hayvan icin) =
+      (1 / Zorluk)
+      x (1 + Göz x 0.03)
+      x (1 + Kulak x 0.02)
+
+  Normalizasyon:
+    Spawn Chance (bir hayvan icin) =
+      Bu hayvanin Spawn Score'u / (Tüm uygun hayvanlarin Spawn Score toplami)
+
+  Sonuc: Tüm hayvanlarin toplam karsima olasiligi daima %100 olur.
+
+5.4  Ek denge kurali (spawn)
+
+  Tek bir av turunda en fazla 1 tane "yüksek zorluklu" (nadir) hayvan cikar.
+
+5.5  Final yakalama sansi (catch chance) formülü
+
+  Final Catch Chance =
+      (Base Catch Chance x Owl Power Multiplier)
+    + (Pence x 0.25)
+    + (Göz x 0.15)
+    + (Kanat x 0.20)
+
+  Sinirlandirma:
+    Final Catch Chance = clamp(0.05, 0.95, sonuc)
+
+5.6  Tier farki cezasi
+
+  Eger baykus tier'i ile av hayvaninin zorluk skoru arasinda fark >= 2 ise:
+    Final Catch Chance x= 0.6
+
+5.7  Av sonuc türleri
+
+  Sonuc                   Ciktisi
+  ----------------------  ------------------------------------
+  Basarili                XP + loot kazanilir
+  Kacti                   Hicbir sey yok
+  Kacerken yaralandi      Baz XP'nin %30'u verilir
+  Kritik av               Normal loot + ekstra loot bonusu
+
+5.8  Örnek Discord ciktisi (av özeti)
+
+  Bu gece avlandim:
+  Fare x2 / Serce x1 / Kurbaga x1
+  Bir kertenkele kacti.
+  Kritik av -- ekstra loot.
+  Kazanilan XP: +28
+
+5.9  Avlanabilir hayvanlar -- tam tablo
+
+  Hayvan      Zorluk  Base Catch Chance  XP
+  ----------  ------  -----------------  ---
+  fare        1       %90                5
+  serce       2       %85                6
+  kurbaga     2       %80                6
+  kertenkele  3       %75                7
+  hamster     3       %75                7
+  köstebek    4       %70                8
+  yarasa      4       %65                9
+  bildircin   5       %60                10
+  güvercin    5       %60                10
+  yilan       6       %50                12
+  sincap      6       %50                12
+  tavsan      7       %40                15
+  gelincik    8       %30                18
+  kirpi       9       %25                20
+
+5.10  Baykus guc carpanlari (Owl Power Multiplier)
+
+  Tier  Tür Adi     Power Multiplier
+  ----  ----------  ----------------
+  8     Kukumav     0.70
+  7     Peceli      0.80
+  6     Ural        0.90
+  5     Büyük boz   1.00
+  4     Boynuzlu    1.10
+  3     Kar         1.20
+  2     Puhu        1.35
+  1     Blakiston   1.50
+
+5.11  Hangi baykus hangi hayvanlari avlayabilir?
+
+  Kural: Düsük tier baykuslar yalnizca düsük zorluklu hayvanlar avlar.
+  Tier yükseldikce (numara küçüldükce) erisilen hayvan havuzu genisler.
+
+  Kukumav (tier 8) avlayabilecegi hayvanlar:
+    fare, serce, kertenkele, kurbaga, hamster, köstebek
+
+  Kukumav örnek spawn dagilimi (normalize, toplam %100):
+    fare %30 / serce %25 / kurbaga %15 / kertenkele %12 / hamster %10 / köstebek %8
+
+
+================================================================================
+BOLUM 6 -- XP VE LEVEL SISTEMI
+================================================================================
+
+6.1  Seviye atlama XP formülü (KANON)
+
+  XP(L -> L+1) = round(100 x (L ^ 1.65) + (L x 20))
+
+  L    = mevcut level (atlama öncesi)
+  ^    = üs alma
+  round = tam sayiya yuvarlama
+  Sonuc asla 0 veya negatif olamaz.
+
+6.2  Örnek XP tablosu
+
+  Level Gecisi  Gereken XP
+  ------------  ----------
+  1 -> 2        120
+  2 -> 3        354
+  5 -> 6        1.523
+  10 -> 11      4.667
+  20 -> 21      14.418
+  30 -> 31      27.968
+  40 -> 41      44.795
+
+6.3  XP bonus katmanlari (birbirine eklenir)
+
+  Bonus Türü       Aralik
+  ---------------  -------
+  Risk bonusu      %0 -- %25
+  Combo bonusu     %0 -- %15
+  Rare hunt bonusu %0 -- %20
+
+6.4  XP kazanim ölceklemesi
+
+  Final XP = Base XP x (1 + Level x 0.03)
+
+  Level  Artis carpani (örnek)
+  -----  ----------------------
+  1      x1.03  (+%3)
+  10     x1.30  (+%30)
+  20     x1.60  (+%60)
+  40     x2.20  (+%120)
+
+6.5  XP kaynaklari
+
+  Aktivite              XP
+  --------------------  -------------------------
+  Av (türe göre)        5 ila 20
+  PvP galibiyeti        50
+  PvP yenilgisi         15
+  Evcillestirme         100
+  Nadir av bonus        +50 ek
+
+6.6  Av XP tam tablosu (referans)
+
+  fare 5 / serce 6 / kurbaga 6 / kertenkele 7 / hamster 7 / köstebek 8 /
+  yarasa 9 / bildircin 10 / güvercin 10 / yilan 12 / sincap 12 / tavsan 15 /
+  gelincik 18 / kirpi 20
+
+6.7  Combo hunt mekanigi
+
+  3 üst üste basarili av  -->  +10 XP ekstra
+  5 üst üste basarili av  -->  +25 XP ekstra
+
+6.8  Risk bonusu
+
+  Yüksek zorluklu hayvan avlanirsa: Base XP'ye +%50 uygulanir.
+
+6.9  Fail XP
+
+  Av basarisiz olsa bile base XP'nin %30'u oyuncuya verilir.
+
+
+================================================================================
+BOLUM 7 -- STAT YÜKSELTME SISTEMI
+================================================================================
+
+7.1  Upgrade basari formülü
+
+  RawSuccess =
+    Base Chance
+    + (Player Level x 0.6)
+    + Item Bonus
+    - (Stat Level ^ 1.15 x 0.8)
+
+  Success % = clamp(5, 95, RawSuccess)
+
+7.2  Upgrade zorluk sirasi
+
+  Goz > Pence > Kanat > Kulak > Gaga
+  (En zordan en kolaya sira)
+
+7.3  Her stat icin upgrade kaynaklari
+
+  Stat   Ana Kaynak             Yardimci Kaynak    Risk Düzeyi
+  -----  ---------------------  -----------------  -----------
+  Gaga   Av XP                  Et                 Orta
+  Goz    Gece XP                Nadir drop         Yüksek
+  Kulak  Kacirilan av XP        Coin               Orta
+  Kanat  PvP galibiyeti         Stamina kaynagi    Yüksek
+  Pence  Kill XP                Büyük av           Cok yüksek
+
+7.4  Basarisizlik davranisi
+
+  Stat degeri DÜSMEZ (endgame (40+) haric, endgame'de düsme riski vardir).
+  Harcanan kaynak gider.
+
+7.5  Level basvuru upgrade gereksinimleri
+
+  Level 1-10 (baslangic):
+    Coin / düsük tier av XP / temel itemler (Kemik Tozu, Cig Et)
+
+  Level 10-25 (orta):
+    Daha fazla coin / orta av hayvanlari / Parlak Tüy + Orman Yankisi /
+    PvP galibiyeti XP
+
+  Level 25-40 (yüksek):
+    Nadir drop item / zor av (yilan, gelincik) /
+    Av Gözü Kristali / PvP zorunlu basarilar
+
+  Level 40+ (endgame):
+    Boss avlari / nadir mutasyon item / legendary baykus etkilesimi /
+    yüksek riskli upgrade (basarisizlikta stat düsebilir)
+
+7.6  Meta denge -- soft diminishing returns
+
+  Final Stat Etkisi = (Stat x 70) / (Stat + 30)
+
+  Üst sinir: %70 (asimptot; asla asilmaz)
+  Asla negatif üretmez.
+  Upgrade stat araligi 1-100 ile tamamen uyumludur.
+
+  Örnek degerler:
+    Stat 10  --> %17.5 / Stat 30 --> %35 / Stat 70 --> %49 / Stat 100 --> %53.8
+
+
+================================================================================
+BOLUM 8 -- ITEM SISTEMI
+================================================================================
+
+8.1  Upgrade item tablosu (tam)
+
+  Item                    Nerede düser     Kullanim       Etki                   Güc Sinifi
+  ----------------------  ---------------  -------------  ---------------------  -----------
+  Kemik Tozu              Düsük seviye av  Gaga upgrade   +%3 basari sansi       Düsük
+  Parlak Tüy              Kus avlari       Kanat upgrade  +%4 dodge bonusu       Düsük
+  Av Gözü Kristali        Nadir av         Göz upgrade    +%5 crit sansi         Orta
+  Sessizlik Teli          Gece avi         Kanat upgrade  +%3 initiative         Düsük
+  Yirtici Pence Parcasi   Büyük av         Pence upgrade  +%6 hasar artisi       Orta
+  Orman Yankisi           Rastgele event   Kulak upgrade  +%5 loot kalitesi      Orta
+  Kirik Av Zinciri        Kacirilan av     Kulak upgrade  +%4 encounter bonusu   Düsük
+  Gölge Tüyü              Nadir drop       Tüm stat up    +%2 tüm statlara       Riskli
+
+8.2  Evcillestirme item tablosu (tam)
+
+  Item              Nerede Düser      Etki                      Güc Sinifi
+  ----------------  ----------------  ------------------------  ----------
+  Cig Et            Tüm avlar         +%5 tame basari sansi     Düsük
+  Yirtici Yem       Büyük av          +%8 tame basari sansi     Orta
+  Kan Kokusu        PvP / boss drop   +%10 tame basari sansi    Orta
+  Sessiz Yem        Gece event        +%6 stealth (kacma azalt) Düsük
+  Alfa Feromon      Cok nadir drop    +%12 tame basari sansi    Riskli
+  Eski Tüy Parcasi  Boss drop         +%5 bond (baglanti)       Orta
+
+8.3  Genel ekonomi item tablosu (tam)
+
+  Item         Kullanim         Etki                       Güc Sinifi
+  -----------  ---------------  -------------------------  ----------
+  Altin Tüy   Para boost       +%10 coin kazanimi          Orta
+  Kayip Kovan  Event bonusu     +1 ekstra drop              Orta
+  Av Günlügü   XP boost         +%8 XP                     Düsük
+  Eski Harita  Nadir avlar      Rare spawn +%2              Orta
+  Kara Küre   Kumar / gamble   Yüksek risk + yüksek ödül   Riskli
+
+8.4  Item stack limitleri (loot kalitesine göre)
+
+  Kalite     Max Stack
+  ---------  ---------
+  Common     999
+  Uncommon   200
+  Rare       50
+  Epic       10
+  Legendary  1
+
+8.5  Item kullanim kurallari
+
+  Tek denemede max 2 FARKLI item kullanilabilir.
+  Ayni item iki kez kullanilamaz (ör. 2x Cig Et geçersizdir).
+  Ayni item genel olarak max 3 stack tasinabilir.
+
+8.6  Upgrade + item sonuc formülü
+
+  Final Success = Base Chance + Item Bonus - Tier Risk
+  Ardindan: clamp(5, 95, sonuc)
+
+8.7  OP önleme kurallari
+
+  Tek item tek basina +%20 veya daha fazla bonus veremez.
+  Nadir itemler risk-getiri icerebilir (pozitif bonus + ek RNG riski).
+
+8.8  Auto-Sink sistemi
+
+  Stack doluyken düsen ayni esya otomatik olarak coin veya XP'ye döner.
+
+  Toggle edilebilir otomatik islemler:
+    auto-sell         -- Belirlenen esyalar otomatik satilir
+    auto-disassemble  -- Belirlenen esyalar otomatik parcalanir
+    auto-convert      -- Belirlenen esyalar otomatik baska forma döner
+
+8.9  Envanter slot sayisi
+
+  Slots = 30 + (Level x 2)
+
+  Level 1: 32 slot / Level 10: 50 slot / Level 25: 80 slot
+
+
+================================================================================
+BOLUM 9 -- PVP SISTEMI
+================================================================================
+
+9.1  PvP baslangici
+
+  Komut: owl vs @kullanici
+  Hedef oyuncu kabul etmelidir. Kabul edince savas baslar.
+  Her iki tarafin main baykuslari savas eder.
+
+9.2  Stamina formülü
+
+  Stamina = 100 + (Kanat x 0.5)
+
+  Örnekler:
+    Kanat = 0   -->  100 stamina
+    Kanat = 40  -->  120 stamina
+    Kanat = 80  -->  140 stamina
+
+9.3  Tur hasari -- Momentum sistemi
+
+  Damage Multiplier = 1 + (tur_numarasi x 0.05)
+
+  Örnekler:
+    Tur 1: x1.05 / Tur 5: x1.25 / Tur 10: x1.50
+
+9.4  RNG ve stat agirligi
+
+  Stat etkisi: %70
+  RNG etkisi:  %30
+
+9.5  Stamina durum cezalari
+
+  Stamina Araligi  Uygulanan Ceza
+  ---------------  -----------------------------------------
+  100 -- 60        Ceza yok (tam güc)
+  60 -- 30         Dodge: -%10
+  30 -- 10         Damage: -%15
+  10 altinda       Fatigue modu: Tüm statlar -%25
+
+9.6  Execute mekanigi
+
+  Execute kosullari (IKISI BIRDEN saglanmalidir):
+    Hedef HP < toplam HP'nin %20'si
+    Hedef Stamina < 30
+
+9.7  Statlarin PvP rolleri
+
+  Gaga  -- Execute / finishing hasari; düsük HP'de garantili öldürme
+  Goz   -- Kritik vurus sansi; ilk vurus avantaji (initiative)
+  Kulak -- Counter sansi; dodge destegi
+  Kanat -- Dodge sansi; tur önceligi (initiative)
+  Pence -- Ana ham hasar; burst kill sansi
+
+9.8  Ekonomi sink entegrasyonu
+
+  Her 2-3 PvP savasm sonrasi stat effectiveness -%2 düser.
+  Onarim (repair) icin coin harcanir.
+
+
+================================================================================
+BOLUM 10 -- EVCILLESTIRME SISTEMI
+================================================================================
+
+10.1  Tam akis
+
+  owl hunt --> encounter tetiklenir --> oyuncu karar verir --> tame denemesi --> sonuc
+
+10.2  Encounter sansi formülü
+
+  Raw Encounter (%) =
+    0.5
+    + (Player Level x 0.05)
+    + (Göz x 0.03)
+    + (Kulak x 0.02)
+
+  Encounter Chance = clamp(0.5, 15, Raw Encounter)
+
+  Stat etkileri:
+    Göz   --> Nadir baykus spawn artisi
+    Kulak --> Genel encounter sikligi artisi
+    Kanat --> Yabani baykusun kacma ihtimalini düsürür (gizli; UI'da gösterilmez)
+
+10.3  Yabani baykus spawn tieri ve kalitesi
+
+  Spawn Tier = Oyuncu Tier'i +/- agirlikli rastgele sapma
+  Stat roll: Her birey tier araliginda rastgele dogan stat dagilimina sahiptir.
+  Quality Score = Baykusun toplam statlari / Mümkün maksimum toplam stat
+
+10.4  Quality (kalite) sistemi
+
+  Quality  Tame Sansi Etkisi (QualityAdjustment)
+  -------  ----------------------------------------
+  Trash    +%10  (kolay yakalanir)
+  Common   0
+  Good     -%5
+  Rare     -%15
+  Elite    -%25
+  God Roll -%40
+
+10.5  Tame temel sans tablosu
+
+  Tier  Tür                     Base Tame Chance
+  ----  ----------------------  ----------------
+  8     Kukumav                 %70
+  7     Peceli baykus           %55
+  6     Ural baykusu            %40
+  5     Büyük boz baykus        %30
+  4     Boynuzlu baykus         %20
+  3     Kar baykusu             %12
+  2     Puhu baykusu            %6
+  1     Blakiston balik baykusu %2
+
+10.6  Tame basari formülü
+
+  RawTame =
+    Base Tame Chance (10.5 tablosundan)
+    + (Göz x 0.25)
+    + (Kulak x 0.20)
+    + Item Bonusu
+    + QualityAdjustment (10.4 tablosundan)
+
+  Tame Chance = clamp(2, 92, RawTame)
+
+10.7  Örnek hesap: Puhu (tier 2, Rare kalite)
+
+  Base:           %6
+  Göz (48):       +%12  (48 x 0.25)
+  Kulak (45):     +%9   (45 x 0.20)
+  Item (Cig Et):  +%5
+  Rare kalite:    -%15
+
+  RawTame = 6 + 12 + 9 + 5 - 15 = 17
+  Tame Chance = %17
+
+10.8  Sonuc dagılımı (iki asamali)
+
+  Asama A:
+    P_ok = Tame Chance / 100
+    Tek RNG cekisi. Basariliysa baykus yakalanir.
+
+  Asama B (basarisizlik dalinda; bu üc oran toplami daima %100):
+    Kacti:                  %60
+    Saldirdi (mini PvP):    %25
+    Yaralandi (debuff):     %15
+
+10.9  Mini PvP (saldiri dalinda)
+
+  Oyuncu kazanirsa:   Sonraki tame denemesinde +%10 bonus
+  Oyuncu kaybederse:  XP kaybi + baykus kacis
+
+10.10  Fail streak ve tekrar cezasi
+
+  Fail streak bonusu:
+    Ayni encounter'da art arda her basarisiz deneme sonrasinda
+    bir sonraki deneme icin RawTame +%5 eklenir (clamp ile sinirlanir).
+
+  Tekrar cezasi (spam önlemi):
+    Ayni encounter'da 2. ve sonraki her denemede RawTame -%10 uygulanir.
+
+  Deneme siniri:
+    Ayni encounter'da maksimum 3 deneme. Ardindan olay kapanir.
+    Encounter bittikten sonra tüm sayaclar sifirlanir.
+
+10.11  Oyuncu karar secenekleri
+
+  Secenek         Etki
+  --------------  -------------------------------------------
+  Evcillestir     Normal tame denemesi
+  Birak           Güvenli cikis, kayip yok
+  Riskli Yakala   Mini PvP; kazanirsan yüksek basari bonusu
+
+10.12  Level gating (tür unlock seviyeleri)
+
+  Tier  Minimum Oyuncu Level
+  ----  --------------------
+  8     1     (Kukumav daima erisebilir)
+  7     5
+  6     10
+  5     15
+  4     20
+  3     25
+  2     30
+  1     40
+
+10.13  Örnek Discord ciktisi (encounter ekrani)
+
+  NADIR KARSIMA!
+  Tür: Puhu   Quality: Rare
+  Statlar: Gaga 42 / Göz 55 / Kulak 38 / Kanat 44 / Pence 60
+  Tame Sansi: Base %6 + Göz +%12 + Kulak +%9 + Item +%5 + Rare -%15 = %17
+  Secimler: [Evcillestir] [Birak] [Riskli Yakala]
+
+
+================================================================================
+BOLUM 11 -- KUMAR SISTEMI
+================================================================================
+
+11.1  Oyunlar
+
+  Blackjack (bj) / Slot / Coin Flip
+
+11.2  Temel ev mantigi
+
+  Oyuncu kisa vadede kazanabilir. Uzun vadede sistem (ev) kazanir.
+  Tasarim "kontrollü RNG": Tamamen rastgele degil; tamamen belirlenimci de degil.
+
+11.3  Coin Flip
+
+  Win: %49 / Lose: %51
+  Kazanç: bahis x 1.95
+
+11.4  Slot tablosu
+
+  Kombinasyon             Sans    Ödül Carpani
+  ----------------------  ------  ------------
+  Jackpot (3x baykus)     %0.3    x4
+  Kus üclüsü              %5      x2
+  Yilan üclüsü            %10     x1.5
+  Fare üclüsü             %15     x1.2
+  Elmas üclüsü            %0.1    x8
+  Diger (kayip)           %69.6   --
+
+  Gizli jackpot katmani: Ek %0.2 gizli jackpot olasiligi (ayri RNG katmani).
+
+11.5  Blackjack
+
+  Blackjack (21) ödemesi:  bahis x 1.5
+  Normal galibiyet:         bahis x 1.9
+  Dealer soft 17:           Dealer kart ceker.
+  Kart dagilimi: Hafif ev lehine; tamamen rastgele degil (detay implementasyonda).
+
+11.6  Streak sistemi (win chance gizli modifikasyonu)
+
+  Kayip serisi:
+    3 üst üste kayip  -->  win chance +%3
+    5 üst üste kayip  -->  win chance +%5
+
+  Galibiyet serisi:
+    3 üst üste galibiyet  -->  win chance -%2
+    5 üst üste galibiyet  -->  win chance -%5
+
+  Güvenlik siniri:
+    Win Chance = clamp(1, 99, Win Chance)
+
+11.7  Zenginlik cezasi
+
+  Win Chance -= min(15, log10(1 + max(coins, 0)))
+
+  Notlar:
+    log10 = 10 tabanlı logaritma
+    coins negatifse max(coins, 0) ile korunur
+    Ceza üst siniri: 15 puan
+
+11.8  Büyük bahis cezasi
+
+  total_coins > 0 kosulunda:
+    Win Chance -= (bet / total_coins) x 5
+
+  total_coins <= 0 ise bu terim uygulanmaz.
+  Güvenli varsayilan: total_coins = max(1, coins)
+
+11.9  House edge özet tablosu
+
+  Oyun         House Edge Bandi  Risk
+  -----------  ----------------  ------
+  Coin flip    %2 -- %4          Düsük
+  Blackjack    %3 -- %5          Orta
+  Slot         %5 -- %10         Yüksek
+
+11.10  Kumar ve ekonomi entegrasyonu (sink noktasi)
+
+  Kumarda kaybedilen coinler sisteme geri döner.
+  Kazanilan coinler su sink noktalariyla tüketilir:
+    Stat upgrade / Evcillestirme / Item crafting / Main switch
+
+
+================================================================================
+BOLUM 12 -- LIDER SIRALAMALARI
+================================================================================
+
+12.1  Liderlik kategorileri
+
+  En zengin oyuncular     --> Özel Discord rolü (örnek: "Kumar Lordu")
+  En cok av yapanlar
+  En cok oynayan (kumar)
+  En büyük tek kazanç (kumar)
+
+
+================================================================================
+BOLUM 13 -- TÜM FORMÜLLER VE DEGERLER OZET REFERANS TABLOSU
+================================================================================
+
+13.1  Clamp degerleri (sinir limitler)
+
+  Encounter Chance    : clamp(0.5,  15,   Raw Encounter)
+  Tame Chance         : clamp(2,    92,   RawTame)
+  Upgrade Success     : clamp(5,    95,   RawSuccess)
+  Catch Chance        : clamp(0.05, 0.95, sonuc)
+  Win Chance (kumar)  : clamp(1,    99,   Win Chance)
+
+13.2  Ana formuller (hepsi bir arada)
+
+  XP gerekliligi:
+    round(100 x (L ^ 1.65) + (L x 20))
+
+  XP ölcekleme:
+    Final XP = Base XP x (1 + Level x 0.03)
+
+  Stamina:
+    100 + (Kanat x 0.5)
+
+  PvP damage multiplier:
+    1 + (tur_numarasi x 0.05)
+
+  Stat etkisi (soft cap):
+    (Stat x 70) / (Stat + 30)
+
+  Main switch maliyeti:
+    500 + (Toplam Owl Tier x 200)
+
+  Hunt roll sayisi:
+    3 + floor(Level / 5)
+
+  Bond bonusu (yüzde puan):
+    Bond x 0.2
+
+  Envanter slot sayisi:
+    30 + (Level x 2)
+
+  Catch chance (av yakalama):
+    (Base Catch Chance x Owl Power Multiplier)
+    + (Pence x 0.25) + (Göz x 0.15) + (Kanat x 0.20)
+
+  Tame chance (evcillestirme):
+    Base + (Göz x 0.25) + (Kulak x 0.20) + Item Bonusu + QualityAdjustment
+
+  Spawn score (av spawn):
+    (1 / Zorluk) x (1 + Göz x 0.03) x (1 + Kulak x 0.02)
+
+  Upgrade basari:
+    Base Chance + (Level x 0.6) + Item Bonus - (Stat Level ^ 1.15 x 0.8)
+
+  Encounter sansi:
+    0.5 + (Player Level x 0.05) + (Göz x 0.03) + (Kulak x 0.02)
+
+  Zenginlik cezasi (kumar):
+    Win Chance -= min(15, log10(1 + max(coins, 0)))
+
+  Büyük bahis cezasi (kumar):
+    Win Chance -= (bet / total_coins) x 5   [total_coins = max(1, coins)]
+
+13.3  Sabit deger referanslari
+
+  Execute kosullari       : Hedef HP < %20 VE Hedef Stamina < 30
+  Tier farki cezasi (av)  : Fark >= 2 ise catch chance x 0.6
+  PvP stat/RNG agirligi   : Stat %70 / RNG %30
+  Switch cooldown         : 1 saat
+  Switch HP siniri        : Main HP < %30 ise yasak
+  Switch uyum cezasi      : 10 dk, -%10 damage, -%10 dodge
+  Bond aralik             : 0 -- 100
+  Stat aralik             : 1 -- 100
+  Encounter maks sansi    : %15
+  Encounter min sansi     : %0.5
+  Tame maks sansi         : %92
+  Tame min sansi          : %2
+  Catch maks sansi        : %95
+  Catch min sansi         : %5
+  Upgrade maks sansi      : %95
+  Upgrade min sansi       : %5
+  Kumar win maks          : %99
+  Kumar win min           : %1
+  Stat etkisi asimptot    : %70
+  Ayni encounter maks deneme : 3
+  Fail streak bonusu      : Her basarisiz denemede +%5 (clamped)
+  Tekrar cezasi           : 2. denemeden itibaren her denemede -%10
+  Mini PvP kazanma bonusu : +%10 sonraki tame denemesine
+  Slot gizli jackpot      : %0.2 (ayri katman)
+
+13.4  Baykus tier -- tame base sans tablosu (referans)
+
+  Tier 8 Kukumav: %70 / Tier 7 Peceli: %55 / Tier 6 Ural: %40 /
+  Tier 5 Büyük boz: %30 / Tier 4 Boynuzlu: %20 / Tier 3 Kar: %12 /
+  Tier 2 Puhu: %6 / Tier 1 Blakiston: %2
+
+13.5  Level gating -- tier unlock seviyeleri (referans)
+
+  Tier 8: 1 / Tier 7: 5 / Tier 6: 10 / Tier 5: 15 /
+  Tier 4: 20 / Tier 3: 25 / Tier 2: 30 / Tier 1: 40
+
+13.6  Baykus power multiplier tablosu (referans)
+
+  Tier 8 Kukumav: 0.70 / Tier 7 Peceli: 0.80 / Tier 6 Ural: 0.90 /
+  Tier 5 Büyük boz: 1.00 / Tier 4 Boynuzlu: 1.10 / Tier 3 Kar: 1.20 /
+  Tier 2 Puhu: 1.35 / Tier 1 Blakiston: 1.50
+
+13.7  Stamina aralik cezalari (referans)
+
+  100-60: ceza yok / 60-30: dodge -%10 / 30-10: damage -%15 /
+  10 altinda: tüm statlar -%25
+
+13.8  Quality adjustment tablosu (referans)
+
+  Trash: +%10 / Common: 0 / Good: -%5 / Rare: -%15 / Elite: -%25 / God Roll: -%40
+
+13.9  Kumar house edge ve streak referanslari
+
+  Coin flip: Win %49, ödeme x1.95
+  Slot: %69.6 kayip, %0.1 elmas x8, %0.3 jackpot x4, %5 kus x2, %10 yilan x1.5, %15 fare x1.2
+  Blackjack: Blackjack x1.5, Normal win x1.9, Dealer soft 17 hit
+
+
+================================================================================
+BELGE NOTU
+================================================================================
+
+Bu belgede yer alan tüm formuller, tablolar ve kurallar tek gecerli kaynaktir.
+Baska dosya, taslak veya yorumla celisiyorsa bu belge önceliklidir.
+Implementasyon bu belgeden türetilmis bir balance config (JSON vb.) ile yapilabilir;
+o durumda da buradaki degerler baz alinir.
+
+================================================================================
+SON
+================================================================================

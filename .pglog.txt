@@ -1,0 +1,15 @@
+2026-04-13 13:33:30.544 +03 [15872] LOG:  starting PostgreSQL 17.9 on x86_64-windows, compiled by msvc-19.44.35223, 64-bit
+2026-04-13 13:33:30.547 +03 [15872] LOG:  listening on IPv6 address "::1", port 5432
+2026-04-13 13:33:30.548 +03 [15872] LOG:  listening on IPv4 address "127.0.0.1", port 5432
+2026-04-13 13:33:30.574 +03 [19712] LOG:  database system was shut down at 2026-04-13 13:33:21 +03
+2026-04-13 13:33:30.588 +03 [15872] LOG:  database system is ready to accept connections
+2026-04-13 13:33:53.711 +03 [9880] ERROR:  relation "_prisma_migrations" does not exist at character 126
+2026-04-13 13:33:53.711 +03 [9880] STATEMENT:  SELECT "id", "checksum", "finished_at", "migration_name", "logs", "rolled_back_at", "started_at", "applied_steps_count" FROM "_prisma_migrations" ORDER BY "started_at" ASC
+2026-04-13 13:33:53.961 +03 [17532] LOG:  checkpoint starting: immediate force wait
+2026-04-13 13:33:54.331 +03 [17532] LOG:  checkpoint complete: wrote 967 buffers (5.9%); 1 WAL file(s) added, 0 removed, 0 recycled; write=0.020 s, sync=0.310 s, total=0.370 s; sync files=301, longest=0.002 s, average=0.002 s; distance=9084 kB, estimate=9084 kB; lsn=0/1E51350, redo lsn=0/1E512F8
+2026-04-13 13:33:54.592 +03 [17532] LOG:  checkpoint starting: immediate force wait
+2026-04-13 13:33:54.607 +03 [17532] LOG:  checkpoint complete: wrote 4 buffers (0.0%); 0 WAL file(s) added, 0 removed, 1 recycled; write=0.001 s, sync=0.005 s, total=0.015 s; sync files=4, longest=0.002 s, average=0.002 s; distance=4543 kB, estimate=8629 kB; lsn=0/22C1048, redo lsn=0/22C0FF0
+2026-04-13 13:34:13.065 +03 [16172] FATAL:  role "User" does not exist
+2026-04-13 13:34:30.795 +03 [27208] LOG:  could not receive data from client: unrecognized winsock error 10054
+2026-04-13 13:34:46.018 +03 [17180] LOG:  could not receive data from client: unrecognized winsock error 10054
+2026-04-13 13:35:04.958 +03 [10360] LOG:  could not receive data from client: unrecognized winsock error 10054
