@@ -26,6 +26,7 @@ export const TIER_UNLOCK_LEVEL: Record<number, number> = {
   2: 30,
   1: 40,
 };
+//porno
 
 // --- EVCILLESTIRME TEMEL SANS ---
 export const TAME_BASE_CHANCE: Record<number, number> = {
