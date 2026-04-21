@@ -6,7 +6,6 @@ import { ButtonBuilder, ComponentType } from 'discord.js';
 import { INVENTORY_BASE_SLOTS, INVENTORY_PER_LEVEL } from '../config';
 import { listActiveBuffs } from '../systems/items';
 import {
-  buildInventoryEmbed,
   buildInventoryOverviewEmbed,
   buildInventoryGridEmbed,
   buildInventoryOverviewRow,
@@ -117,47 +116,79 @@ export async function runInventoryMessage(
   message: Message,
   ctx: Parameters<CommandDefinition['execute']>[1],
 ): Promise<void> {
-  const player = await ctx.prisma.player.findUnique({ where: { id: message.author.id } });
+  const playerId = message.author.id;
+  const player   = await ctx.prisma.player.findUnique({ where: { id: playerId } });
   if (!player) throw new Error('Oyuncu bulunamadi.');
 
   const capacity = INVENTORY_BASE_SLOTS + player.level * INVENTORY_PER_LEVEL;
-  const items    = await ctx.prisma.inventoryItem.findMany({ where: { ownerId: message.author.id } });
 
-  const ITEMS_PER_PAGE = 30;
-  const totalPages     = Math.max(1, Math.ceil(items.length / ITEMS_PER_PAGE));
-  let page             = 0;
-  const name           = message.member?.displayName ?? message.author.username;
+  const [items, rawBuffs] = await Promise.all([
+    ctx.prisma.inventoryItem.findMany({ where: { ownerId: playerId } }),
+    listActiveBuffs(ctx.prisma as any, playerId),
+  ]);
 
-  const render = () => buildInventoryEmbed(
-    name,
-    items.slice(page * ITEMS_PER_PAGE, (page + 1) * ITEMS_PER_PAGE) as InvItem[],
-    items.length,
+  const name = message.member?.displayName ?? message.author.username;
+
+  const activeBuffs = rawBuffs
+    .filter((b) => b.chargeCur > 0)
+    .map((b) => ({
+      buffItemId: b.buffItemId,
+      buffName:   b.buffItemId,
+      category:   b.category,
+      chargeCur:  b.chargeCur,
+      chargeMax:  b.chargeMax,
+    }));
+
+  type Mode = 'overview' | 'grid';
+  let mode: Mode = 'overview';
+  let gridPage   = 0;
+
+  const GRID_PER_PAGE  = 20;
+  const gridTotalPages = Math.max(1, Math.ceil(items.length / GRID_PER_PAGE));
+
+  const renderData = (): InventoryRenderData => ({
+    username:   name,
+    items:      items as InvItem[],
+    activeBuffs,
+    usedSlots:  items.length,
     capacity,
-    page,
-    totalPages,
-  );
+    page:       gridPage,
+    totalPages: gridTotalPages,
+    mode,
+  });
 
-  const { ActionRowBuilder, ButtonBuilder: BB, ButtonStyle } = await import('discord.js');
-  const row = new ActionRowBuilder<InstanceType<typeof BB>>().addComponents(
-    new BB().setCustomId('inv_prev').setLabel('◀').setStyle(ButtonStyle.Secondary),
-    new BB().setCustomId('inv_next').setLabel('▶').setStyle(ButtonStyle.Primary),
-  );
+  const renderEmbed = () =>
+    mode === 'grid'
+      ? buildInventoryGridEmbed(renderData())
+      : buildInventoryOverviewEmbed(renderData());
 
-  const sent = await message.reply({ embeds: [render()], components: totalPages > 1 ? [row] : [] });
-  if (totalPages <= 1) return;
+  const renderRow = () =>
+    mode === 'grid'
+      ? buildInventoryGridRow(gridPage, gridTotalPages)
+      : buildInventoryOverviewRow(0, 1);
+
+  const sent = await message.reply({ embeds: [renderEmbed()], components: [renderRow()] });
 
   const collector = sent.createMessageComponentCollector({
     componentType: ComponentType.Button,
-    time: 60_000,
+    time: 90_000,
   });
+
   collector.on('collect', async (i) => {
-    if (i.user.id !== message.author.id) {
+    if (i.user.id !== playerId) {
       await i.reply({ content: '❌ Bu buton sana ait değil.', flags: 64 });
       return;
     }
-    page = i.customId === 'inv_prev'
-      ? (page - 1 + totalPages) % totalPages
-      : (page + 1) % totalPages;
-    await i.update({ embeds: [render()], components: [row] });
+    switch (i.customId) {
+      case 'inv_grid':     mode = 'grid'; gridPage = 0; break;
+      case 'inv_overview': mode = 'overview'; break;
+      case 'inv_prev':
+        if (mode === 'grid') gridPage = (gridPage - 1 + gridTotalPages) % gridTotalPages;
+        break;
+      case 'inv_next':
+        if (mode === 'grid') gridPage = (gridPage + 1) % gridTotalPages;
+        break;
+    }
+    await i.update({ embeds: [renderEmbed()], components: [renderRow()] });
   });
 }

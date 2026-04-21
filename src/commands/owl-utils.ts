@@ -19,6 +19,7 @@ export const TEXT_SUBCOMMANDS = [
   'upgrade', 'up', 'vs', 'sell', 'zoo', 'prefix', 'cash',
   'tame', 'owls', 'ver', 'give',
   'cf', 'slot', 'bj',
+  'aç', 'ac', 'buff',
 ] as const;
 
 export const ALIASES: Record<string, string> = {
@@ -33,6 +34,7 @@ export const ALIASES: Record<string, string> = {
   t:    'tame',
   g:    'ver',
   give: 'ver',
+  ac:   'aç',
 };
 
 export const UPGRADE_STATS: OwlStatKey[] = ['gaga', 'goz', 'kulak', 'kanat', 'pence'];

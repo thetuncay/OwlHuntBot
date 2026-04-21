@@ -44,7 +44,7 @@ import {
   PVP_BJ_PUSH_PAYOUT,
   PVP_GAMBLE_INVITE_TTL_MS,
 } from '../config';
-import { getCooldownRemainingMs, setCooldown } from '../middleware/cooldown';
+import { setCooldown } from '../middleware/cooldown';
 
 // ─── Tip Tanımlamaları ────────────────────────────────────────────────────────
 
@@ -260,14 +260,7 @@ export async function validateInvite(
     };
   }
 
-  // 2. Challenger cooldown
-  const challengerCd = await getCooldownRemainingMs(
-    redis,
-    cooldownKey(challengerId),
-    PVP_GAMBLE_COOLDOWN_MS,
-  );
-  // getCooldownRemainingMs hem kontrol eder hem set eder — sadece kontrol için
-  // checkCooldownRemainingMs kullanıyoruz (set etmeden)
+  // 2. Challenger cooldown — sadece kontrol et, set etme
   const challengerCdCheck = await redis.pttl(cooldownKey(challengerId));
   if (challengerCdCheck > 0) {
     return {
@@ -277,7 +270,7 @@ export async function validateInvite(
     };
   }
 
-  // 3. Defender cooldown
+  // 3. Defender cooldown — sadece kontrol et
   const defenderCdCheck = await redis.pttl(cooldownKey(defenderId));
   if (defenderCdCheck > 0) {
     return {

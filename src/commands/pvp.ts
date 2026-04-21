@@ -20,6 +20,7 @@ import {
   EmbedBuilder,
   type TextChannel,
   type Message,
+  type ButtonInteraction,
 } from 'discord.js';
 import { randomUUID } from 'crypto';
 import {
@@ -205,14 +206,12 @@ function buildSlotResultEmbed(
   result: PvpGamblingResult,
   challengerName: string,
   defenderName: string,
+  challengerId: string,
 ): EmbedBuilder {
-  const winnerName = result.winnerId === result.slot?.challengerSymbols ? challengerName : defenderName;
-  const isChallWin = result.coinflip?.winner === 'challenger' ||
-    (result.slot && result.winnerId !== null);
-
-  // Kazanan/kaybeden isimlerini belirle
-  const winName = result.winnerId ? (result.winnerId.endsWith('c') ? challengerName : defenderName) : challengerName;
-  const loseName = result.loserId ? (result.loserId.endsWith('c') ? challengerName : defenderName) : defenderName;
+  const winnerDisplayName = result.winnerId
+    ? (result.winnerId === challengerId ? challengerName : defenderName)
+    : challengerName;
+  const loserDisplayName = winnerDisplayName === challengerName ? defenderName : challengerName;
 
   const embed = new EmbedBuilder()
     .setColor(0x8b5cf6)
@@ -435,7 +434,7 @@ async function runInviteFlow(
   await saveSession(ctx.redis, session);
 
   // Davet mesajı gönder
-  const inviteMsg = await message.channel.send({
+  const inviteMsg = await (message.channel as TextChannel).send({
     content: `<@${defenderId}>`,
     embeds: [buildInviteEmbed(mode, challengerName, defenderName, bet, houseCutRate)],
     components: [buildInviteRow(sessionId)],
@@ -451,7 +450,7 @@ async function runInviteFlow(
       i.customId.startsWith('pvp_cancel:'),
   });
 
-  collector.on('collect', async (i) => {
+  collector.on('collect', async (i: Parameters<Parameters<ReturnType<typeof inviteMsg.createMessageComponentCollector>['on']>[1]>[0]) => {
     const [action] = i.customId.split(':');
 
     // Sadece ilgili oyuncular etkileşim kurabilir
@@ -501,14 +500,14 @@ async function runInviteFlow(
         }
       } catch (err) {
         await deleteSession(ctx.redis, sessionId);
-        await message.channel.send({
+        await (message.channel as TextChannel).send({
           embeds: [failEmbed('❌ Oyun Hatası', err instanceof Error ? err.message : 'Beklenmeyen hata.')],
         });
       }
     }
   });
 
-  collector.on('end', async (_, reason) => {
+  collector.on('end', async (_: unknown, reason: string) => {
     if (reason === 'time') {
       await deleteSession(ctx.redis, sessionId);
       await inviteMsg.edit({
@@ -533,7 +532,7 @@ async function runCoinFlipGame(
   if (!session) throw new Error('Oturum bulunamadı.');
 
   // Animasyonlu embed — "yazı mı tura mı" gerilimi
-  const animMsg = await message.channel.send({
+  const animMsg = await (message.channel as TextChannel).send({
     embeds: [
       new EmbedBuilder()
         .setColor(0xf59e0b)
@@ -560,7 +559,7 @@ async function runCoinFlipGame(
   // Seri Katil duyurusu
   if (result.serialKiller) {
     const killerName = result.coinflip?.winner === 'challenger' ? challengerName : defenderName;
-    await message.channel.send({
+    await (message.channel as TextChannel).send({
       embeds: [
         new EmbedBuilder()
           .setColor(0xdc2626)
@@ -586,7 +585,7 @@ async function runSlotRaceGame(
   if (!session) throw new Error('Oturum bulunamadı.');
 
   // Animasyon: spin adımları
-  const spinMsg = await message.channel.send({
+  const spinMsg = await (message.channel as TextChannel).send({
     embeds: [buildSlotSpinEmbed(challengerName, defenderName, [], [], true)],
   });
 
@@ -610,7 +609,7 @@ async function runSlotRaceGame(
 
   // Final sonuç
   await spinMsg.edit({
-    embeds: [buildSlotResultEmbed(result, challengerName, defenderName)],
+    embeds: [buildSlotResultEmbed(result, challengerName, defenderName, session.challengerId)],
   });
 }
 
@@ -631,7 +630,7 @@ async function runBlackjackGame(
 
   // Yüksek riskli masa uyarısı
   if (session.bet >= PVP_BJ_HIGH_STAKES_THRESHOLD) {
-    await message.channel.send({
+    await (message.channel as TextChannel).send({
       embeds: [
         new EmbedBuilder()
           .setColor(0xef4444)
@@ -659,7 +658,7 @@ async function runBlackjackGame(
   if (!updatedSession) throw new Error('Oturum güncellenemedi.');
 
   // Oyun embed'ini gönder
-  const gameMsg = await message.channel.send({
+  const gameMsg = await (message.channel as TextChannel).send({
     embeds: [buildBJGameEmbed(updatedSession, challengerName, defenderName)],
     components: [buildBJActionRow(sessionId)],
   });
@@ -673,7 +672,7 @@ async function runBlackjackGame(
       (i.user.id === session.challengerId || i.user.id === session.defenderId),
   });
 
-  collector.on('collect', async (i) => {
+  collector.on('collect', async (i: ButtonInteraction) => {
     const current = await getSession(ctx.redis, sessionId);
     if (!current?.bj) {
       await i.reply({ content: '❌ Oturum bulunamadı.', flags: 64 });
@@ -750,7 +749,7 @@ async function runBlackjackGame(
     }
   });
 
-  collector.on('end', async (_, reason) => {
+  collector.on('end', async (_: unknown, reason: string) => {
     if (reason === 'time') {
       // Zaman aşımı: mevcut durumla sonuçlandır
       const current = await getSession(ctx.redis, sessionId);
@@ -770,120 +769,169 @@ async function runBlackjackGame(
   });
 }
 
+/**
+ * Mention veya ID'den hedef kullanıcıyı çözer.
+ * Discord mention: <@123456789> veya <@!123456789>
+ * Düz ID: 123456789
+ */
+function resolveTarget(message: Message, args: string[]): { id: string; name: string } | null {
+  // Önce Discord'un parse ettiği mention'lara bak
+  const mentioned = message.mentions.users.first();
+  if (mentioned) return { id: mentioned.id, name: mentioned.displayName ?? mentioned.username };
+
+  // Mention parse edilmediyse args'tan manuel çıkar
+  for (const arg of args) {
+    // <@123456789> veya <@!123456789> formatı
+    const match = arg.match(/^<@!?(\d+)>$/);
+    if (match?.[1]) return { id: match[1], name: arg };
+    // Düz ID (18+ haneli sayı)
+    if (/^\d{17,20}$/.test(arg)) return { id: arg, name: arg };
+  }
+  return null;
+}
+
 // ─── Prefix Komut Giriş Noktaları ────────────────────────────────────────────
 
 /**
- * Coin Flip Düellosu — `owl cf @oyuncu <miktar>`
+ * Coin Flip — mention varsa PvP, yoksa solo (gambling.ts)
  */
 export async function runPvpCoinFlip(
   message: Message,
   args: string[],
   ctx: CommandContext,
 ): Promise<void> {
-  const target = message.mentions.users.first();
+  const target = resolveTarget(message, args);
   const betRaw = args.find((a) => /^\d+$/.test(a));
 
-  if (!target || !betRaw) {
-    await message.reply({
-      embeds: [
-        infoEmbed(
-          '🪙 Coin Flip Düellosu',
-          '**Kullanım:** `owl cf @oyuncu <miktar>`\n\n' +
-          '> Rakibinle yazı-tura oyna. %50/%50 şans, hızlı sonuç.',
-        ),
-      ],
-    });
+  // Solo mod — mention yok
+  if (!target) {
+    if (!betRaw) {
+      await message.reply('❌ Kullanım: `owl cf <miktar>` veya `owl cf @oyuncu <miktar>`');
+      return;
+    }
+    const bet = parseInt(betRaw, 10);
+    const { coinFlip } = await import('../systems/gambling');
+    try {
+      const result = await coinFlip(ctx.prisma, message.author.id, bet);
+      const frames = ['🪙', '🔄', '🪙', '🔄', '🪙'];
+      const sent = await message.reply(`🪙 **${bet}** 💰 yatırdı...\nPara dönüyor...`);
+      for (const frame of frames) {
+        await new Promise((r) => setTimeout(r, 200));
+        await sent.edit(`🪙 **${bet}** 💰 yatırdı... ${frame}`).catch(() => null);
+      }
+      await sent.edit(
+        result.win
+          ? `✅ **KAZANDIN!** +${result.deltaCoins} 💰 · Bakiye: **${result.finalCoins}** 💰`
+          : `❌ **KAYBETTİN.** -${Math.abs(result.deltaCoins)} 💰 · Bakiye: **${result.finalCoins}** 💰`,
+      ).catch(() => null);
+    } catch (err) {
+      await message.reply(`❌ ${err instanceof Error ? err.message : 'Hata'}`);
+    }
     return;
   }
 
-  if (target.bot || target.id === message.author.id) {
-    await message.reply({ embeds: [failEmbed('❌ Geçersiz Hedef', 'Bota veya kendine meydan okuyamazsın.')] });
+  // PvP mod
+  if (!betRaw) {
+    await message.reply('❌ Kullanım: `owl cf @oyuncu <miktar>`');
     return;
   }
-
+  if (target.id === message.author.id) {
+    await message.reply({ embeds: [failEmbed('❌ Geçersiz Hedef', 'Kendine meydan okuyamazsın.')] });
+    return;
+  }
   const bet = parseInt(betRaw, 10);
-  await runInviteFlow(
-    message, ctx,
-    message.author.id, message.author.displayName ?? message.author.username,
-    target.id, target.displayName ?? target.username,
-    bet, 'coinflip',
-  );
+  const authorName = message.member?.displayName ?? message.author.username;
+  await runInviteFlow(message, ctx, message.author.id, authorName, target.id, target.name, bet, 'coinflip');
 }
 
 /**
- * Slot Yarışması — `owl slot @oyuncu <miktar>`
+ * Slot — mention varsa PvP, yoksa solo (gambling.ts)
  */
 export async function runPvpSlot(
   message: Message,
   args: string[],
   ctx: CommandContext,
 ): Promise<void> {
-  const target = message.mentions.users.first();
+  const target = resolveTarget(message, args);
   const betRaw = args.find((a) => /^\d+$/.test(a));
 
-  if (!target || !betRaw) {
-    await message.reply({
-      embeds: [
-        infoEmbed(
-          '🎰 Slot Yarışması',
-          '**Kullanım:** `owl slot @oyuncu <miktar>`\n\n' +
-          '> İki makine aynı anda döner. En iyi kombinasyon kazanır.\n' +
-          '> Her iki oyuncu da aynı sembolü yakalarsa **Combo XP Bonusu** kazanırsınız!',
-        ),
-      ],
-    });
+  // Solo mod
+  if (!target) {
+    if (!betRaw) {
+      await message.reply('❌ Kullanım: `owl slot <miktar>` veya `owl slot @oyuncu <miktar>`');
+      return;
+    }
+    const bet = parseInt(betRaw, 10);
+    const { slot } = await import('../systems/gambling');
+    const SYMBOLS = ['🍒', '🍋', '🍊', '🍇', '🍉', '💎', '⭐', '🔔'];
+    const rand = () => SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)]!;
+    try {
+      const result = await slot(ctx.prisma, message.author.id, bet);
+      const sent = await message.reply(`**═══ SLOTS ═══**\n| ❓ | ❓ | ❓ |`);
+      for (let i = 0; i < 5; i++) {
+        await new Promise((r) => setTimeout(r, 250));
+        await sent.edit(`**═══ SLOTS ═══**\n| ${rand()} | ${rand()} | ${rand()} |`).catch(() => null);
+      }
+      await sent.edit(
+        `**═══ SLOTS ═══**\n| ${rand()} | ${rand()} | ${rand()} |\n\n` +
+        (result.win
+          ? `✅ **+${result.deltaCoins} 💰 kazandın!**`
+          : `❌ **-${Math.abs(result.deltaCoins)} 💰 kaybettin.**`) +
+        `\nBakiye: **${result.finalCoins}** 💰`,
+      ).catch(() => null);
+    } catch (err) {
+      await message.reply(`❌ ${err instanceof Error ? err.message : 'Hata'}`);
+    }
     return;
   }
 
-  if (target.bot || target.id === message.author.id) {
-    await message.reply({ embeds: [failEmbed('❌ Geçersiz Hedef', 'Bota veya kendine meydan okuyamazsın.')] });
+  // PvP mod
+  if (!betRaw) {
+    await message.reply('❌ Kullanım: `owl slot @oyuncu <miktar>`');
     return;
   }
-
+  if (target.id === message.author.id) {
+    await message.reply({ embeds: [failEmbed('❌ Geçersiz Hedef', 'Kendine meydan okuyamazsın.')] });
+    return;
+  }
   const bet = parseInt(betRaw, 10);
-  await runInviteFlow(
-    message, ctx,
-    message.author.id, message.author.displayName ?? message.author.username,
-    target.id, target.displayName ?? target.username,
-    bet, 'slot',
-  );
+  const authorName = message.member?.displayName ?? message.author.username;
+  await runInviteFlow(message, ctx, message.author.id, authorName, target.id, target.name, bet, 'slot');
 }
 
 /**
- * Blackjack Pro — `owl bj @oyuncu <miktar>`
+ * Blackjack — mention varsa PvP, yoksa solo (bj.ts)
  */
 export async function runPvpBlackjack(
   message: Message,
   args: string[],
   ctx: CommandContext,
 ): Promise<void> {
-  const target = message.mentions.users.first();
+  const target = resolveTarget(message, args);
   const betRaw = args.find((a) => /^\d+$/.test(a));
 
-  if (!target || !betRaw) {
-    await message.reply({
-      embeds: [
-        infoEmbed(
-          '🃏 Blackjack Pro',
-          '**Kullanım:** `owl bj @oyuncu <miktar>`\n\n' +
-          '> 21\'e en yakın olan kazanır. Sıralı hamle, Hit veya Stand.\n' +
-          `> **${formatNumber(PVP_BJ_HIGH_STAKES_THRESHOLD)} coin** üzeri bahislerde **Yüksek Riskli Masa** uyarısı aktif olur.`,
-        ),
-      ],
-    });
+  // Solo mod — bj.ts'deki handler'a yönlendir
+  if (!target) {
+    if (!betRaw) {
+      await message.reply('❌ Kullanım: `owl bj <miktar>` veya `owl bj @oyuncu <miktar>`');
+      return;
+    }
+    const bet = parseInt(betRaw, 10);
+    const { handleBjTextCommand } = await import('./bj');
+    await handleBjTextCommand(message, bet, ctx);
     return;
   }
 
-  if (target.bot || target.id === message.author.id) {
-    await message.reply({ embeds: [failEmbed('❌ Geçersiz Hedef', 'Bota veya kendine meydan okuyamazsın.')] });
+  // PvP mod
+  if (!betRaw) {
+    await message.reply('❌ Kullanım: `owl bj @oyuncu <miktar>`');
     return;
   }
-
+  if (target.id === message.author.id) {
+    await message.reply({ embeds: [failEmbed('❌ Geçersiz Hedef', 'Kendine meydan okuyamazsın.')] });
+    return;
+  }
   const bet = parseInt(betRaw, 10);
-  await runInviteFlow(
-    message, ctx,
-    message.author.id, message.author.displayName ?? message.author.username,
-    target.id, target.displayName ?? target.username,
-    bet, 'blackjack',
-  );
+  const authorName = message.member?.displayName ?? message.author.username;
+  await runInviteFlow(message, ctx, message.author.id, authorName, target.id, target.name, bet, 'blackjack');
 }

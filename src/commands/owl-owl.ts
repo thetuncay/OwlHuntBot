@@ -313,23 +313,96 @@ export async function runOwlsMessage(
     'Rare': '🟦', 'Elite': '🟪', 'God Roll': '🌟',
   };
 
-  const lines = owls.map((owl) => {
-    const mainTag = owl.isMain ? ' ⭐ **MAIN**' : '';
-    const qEmoji  = QUALITY_EMOJI[owl.quality] ?? '⬜';
-    const statSum = owl.statGaga + owl.statGoz + owl.statKulak + owl.statKanat + owl.statPence;
-    const hpWarn  = owl.hp / owl.hpMax < 0.3 ? ' ⚠️' : '';
-    return (
-      `${qEmoji} **${owl.species}**${mainTag}\n` +
-      `> Tier ${owl.tier} · ${owl.quality} · HP ${owl.hp}/${owl.hpMax}${hpWarn} · Güç ${statSum}\n` +
-      `> \`ID: ${owl.id}\``
+  const OWLS_PER_PAGE = 4;
+  let page            = 0;
+  const totalPages    = Math.max(1, Math.ceil(owls.length / OWLS_PER_PAGE));
+  let currentOwls     = [...owls];
+
+  const renderEmbed = () => {
+    const pageOwls = currentOwls.slice(page * OWLS_PER_PAGE, (page + 1) * OWLS_PER_PAGE);
+    const lines = pageOwls.map((owl) => {
+      const mainTag = owl.isMain ? ' ⭐ **MAIN**' : '';
+      const qEmoji  = QUALITY_EMOJI[owl.quality] ?? '⬜';
+      const statSum = owl.statGaga + owl.statGoz + owl.statKulak + owl.statKanat + owl.statPence;
+      const hpWarn  = owl.hp / owl.hpMax < 0.3 ? ' ⚠️' : '';
+      return (
+        `${qEmoji} **${owl.species}**${mainTag}\n` +
+        `> Tier ${owl.tier} · ${owl.quality} · HP ${owl.hp}/${owl.hpMax}${hpWarn} · Güç ${statSum}\n` +
+        `> Gaga:${owl.statGaga} Göz:${owl.statGoz} Kulak:${owl.statKulak} Kanat:${owl.statKanat} Pençe:${owl.statPence}`
+      );
+    });
+    return new EmbedBuilder()
+      .setColor(0x5865f2)
+      .setTitle(`🦉 ${name}'in Baykuşları`)
+      .setDescription(lines.join('\n\n') || '*Bu sayfada baykuş yok.*')
+      .setFooter({ text: totalPages > 1 ? `${currentOwls.length} baykuş · Sayfa ${page + 1}/${totalPages}` : `${currentOwls.length} baykuş` });
+  };
+
+  const renderComponents = () => {
+    const pageOwls = currentOwls.slice(page * OWLS_PER_PAGE, (page + 1) * OWLS_PER_PAGE);
+    const rows: ActionRowBuilder<ButtonBuilder>[] = pageOwls.map((owl) =>
+      new ActionRowBuilder<ButtonBuilder>().addComponents(
+        owl.isMain
+          ? new ButtonBuilder().setCustomId('setmain_noop').setLabel('✅ Main').setStyle(ButtonStyle.Success).setDisabled(true)
+          : new ButtonBuilder().setCustomId(`setmain:${owl.id}`).setLabel('⭐ Main Yap').setStyle(ButtonStyle.Primary),
+      ),
     );
+    if (totalPages > 1) {
+      rows.push(new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder().setCustomId('owls_prev').setLabel('◀').setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder().setCustomId('owls_next').setLabel('▶').setStyle(ButtonStyle.Primary),
+      ));
+    }
+    return rows;
+  };
+
+  const sent = await message.reply({ embeds: [renderEmbed()], components: renderComponents() });
+
+  const collector = sent.createMessageComponentCollector({ componentType: ComponentType.Button, time: 90_000 });
+
+  collector.on('collect', async (i) => {
+    if (i.user.id !== userId) {
+      await i.reply({ content: '❌ Bu buton sana ait değil.', flags: 64 });
+      return;
+    }
+
+    if (i.customId === 'owls_prev') { page = (page - 1 + totalPages) % totalPages; }
+    else if (i.customId === 'owls_next') { page = (page + 1) % totalPages; }
+    else if (i.customId.startsWith('setmain:')) {
+      const targetOwlId = i.customId.split(':')[1]!;
+      try {
+        const cooldown = await getCooldownRemainingMs(ctx.redis, `cooldown:switch:${userId}`, SWITCH_COOLDOWN_MS);
+        if (cooldown > 0) {
+          await i.reply({ content: `⏰ Switch cooldown: ${formatDuration(cooldown)}`, flags: 64 });
+          return;
+        }
+        await withLock(userId, 'setmain', async () => {
+          await ctx.prisma.$transaction(async (tx: any) => {
+            const player = await tx.player.findUnique({ where: { id: userId } });
+            if (!player) throw new Error('Oyuncu bulunamadi.');
+            const target = await tx.owl.findUnique({ where: { id: targetOwlId } });
+            if (!target || target.ownerId !== userId) throw new Error('Gecersiz baykus.');
+            if (target.hp / target.hpMax < SWITCH_HP_THRESHOLD) throw new Error('HP %30 altinda.');
+            const allOwls   = await tx.owl.findMany({ where: { ownerId: userId }, select: { tier: true } });
+            const totalTier = allOwls.reduce((s: number, o: { tier: number }) => s + o.tier, 0);
+            const cost      = switchCost(totalTier);
+            if (player.coins < cost) throw new Error(`Yetersiz coin. Gerekli: ${cost} 💰`);
+            await tx.owl.updateMany({ where: { ownerId: userId }, data: { isMain: false } });
+            await tx.owl.update({ where: { id: targetOwlId }, data: { isMain: true } });
+            await tx.player.update({
+              where: { id: userId },
+              data: { coins: { decrement: cost }, lastSwitch: new Date(), switchPenaltyUntil: new Date(Date.now() + SWITCH_PENALTY_DURATION) },
+            });
+          });
+        });
+        currentOwls = currentOwls.map((o) => ({ ...o, isMain: o.id === targetOwlId }));
+      } catch (err) {
+        const errMsg = err instanceof Error ? err.message : 'Bir hata oluştu.';
+        await i.reply({ embeds: [failEmbed('Hata', errMsg)], flags: 64 });
+        return;
+      }
+    }
+
+    await i.update({ embeds: [renderEmbed()], components: renderComponents() });
   });
-
-  const embed = new EmbedBuilder()
-    .setColor(0x5865f2)
-    .setTitle(`🦉 ${name}'in Baykuşları`)
-    .setDescription(lines.join('\n\n'))
-    .setFooter({ text: `${owls.length} baykuş · setmain <id> ile main değiştir` });
-
-  await message.reply({ embeds: [embed] });
 }

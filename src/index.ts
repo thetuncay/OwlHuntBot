@@ -7,15 +7,10 @@ import { pathToFileURL } from 'node:url';
 import { z } from 'zod';
 import type { CommandDefinition } from './types';
 import { redis, assertRedisConnection } from './utils/redis';
-import { getCooldownRemainingMs } from './middleware/cooldown';
-import { GAMBLE_COINFLIP_COOLDOWN_MS, GAMBLE_SLOT_COOLDOWN_MS, GAMBLE_BJ_COOLDOWN_MS } from './config';
 import { enforceAntiSpam } from './middleware/antiSpam';
 import { getGuildPrefix } from './utils/prefix';
 import { handleOwlTextCommand } from './commands/owl';
 import { handleRegistrationButton, isRegistrationButton } from './systems/onboarding';
-import { coinFlip } from './systems/gambling';
-import { slot } from './systems/gambling';
-import { handleBjTextCommand } from './commands/bj';
 import { getLeaderboard, archiveAndResetSeason, currentSeasonId, seasonEndDate } from './systems/leaderboard';
 import { syncAllRoles } from './systems/roles';
 import { handleTopTextCommand } from './commands/leaderboard';
@@ -173,124 +168,10 @@ async function bootstrap(): Promise<void> {
     const parts = commandText.split(/\s+/).filter(Boolean);
     const firstWord = (parts[0] ?? '').toLowerCase();
 
-    // Kumar kısaltmaları: owl cf, owl bj, owl slot
-    if (firstWord === 'cf' || firstWord === 'coinflip') {
-      const bet = parseInt(parts[1] ?? '');
-      if (isNaN(bet) || bet <= 0) {
-        await message.reply(`❌ Kullanim: owl cf <miktar> [h|t]`);
-        return;
-      }
-
-      // Cooldown kontrolü
-      const cfCooldownKey = `cooldown:coinflip:${message.author.id}`;
-      const cfRemaining   = await getCooldownRemainingMs(redis, cfCooldownKey, GAMBLE_COINFLIP_COOLDOWN_MS);
-      if (cfRemaining > 0) {
-        await message.reply(`⏰ Tekrar coinflip için **${Math.ceil(cfRemaining / 1000)}s** beklemelisin.`);
-        return;
-      }
-
-      // Seçim: h/heads = yazı, t/tails = tura, yoksa rastgele
-      const rawChoice = (parts[2] ?? '').toLowerCase();
-      let choice: 'heads' | 'tails';
-      if (rawChoice === 'h' || rawChoice === 'heads') {
-        choice = 'heads';
-      } else if (rawChoice === 't' || rawChoice === 'tails') {
-        choice = 'tails';
-      } else if (rawChoice === '') {
-        choice = Math.random() < 0.5 ? 'heads' : 'tails';
-      } else {
-        await message.reply(`❌ Geçersiz seçim. Kullanim: owl cf <miktar> [h|t]`);
-        return;
-      }
-
-      const choiceLabel = choice === 'heads' ? '🦅 Yazı' : '🌕 Tura';
-      try {
-        await enforceAntiSpam(redis, message.author.id);
-        const result = await coinFlip(prisma, message.author.id, bet);
-        const frames = ['🪙', '🔄', '🪙', '🔄', '🪙'];
-        const sent = await message.reply(`${message.author.username} **${bet}** 💰 yatırdı — ${choiceLabel} seçti\nPara dönüyor...`);
-        for (const frame of frames) {
-          await new Promise((r) => setTimeout(r, 200));
-          await sent.edit(`${message.author.username} **${bet}** 💰 yatırdı — ${choiceLabel} seçti\nPara dönüyor... ${frame}`).catch(() => null);
-        }
-        await new Promise((r) => setTimeout(r, 300));
-        const finalLabel = result.win ? choiceLabel : (choice === 'heads' ? '🌕 Tura' : '🦅 Yazı');
-        await sent.edit(
-          `${message.author.username} **${bet}** 💰 yatırdı — ${choiceLabel} seçti\n` +
-          `🪙 Sonuç: **${finalLabel}** — ${result.win ? `✅ **+${result.deltaCoins} 💰** kazandın!` : `❌ **-${Math.abs(result.deltaCoins)} 💰** kaybettin.`}\n` +
-          `Bakiye: **${result.finalCoins}** 💰`,
-        ).catch(() => null);
-      } catch (error) {
-        const msg = error instanceof Error ? error.message : 'Bir hata olustu.';
-        await message.reply(`❌ ${msg}`);
-      }
-      return;
-    }
-
-    if (firstWord === 'bj' || firstWord === 'blackjack' || firstWord === '21') {
-      const bet = parseInt(parts[1] ?? '');
-      if (isNaN(bet) || bet <= 0) {
-        await message.reply(`❌ Kullanim: owl bj <miktar>`);
-        return;
-      }
-      // Cooldown kontrolü (handleBjTextCommand içinde de var, ama burada erken çıkış için)
-      const bjCooldownKey = `cooldown:bj:${message.author.id}`;
-      const bjRemaining   = await getCooldownRemainingMs(redis, bjCooldownKey, GAMBLE_BJ_COOLDOWN_MS);
-      if (bjRemaining > 0) {
-        await message.reply(`⏰ Tekrar blackjack için **${Math.ceil(bjRemaining / 1000)}s** beklemelisin.`);
-        return;
-      }
-      try {
-        await enforceAntiSpam(redis, message.author.id);
-        await handleBjTextCommand(message, bet, { prisma, redis });
-      } catch (error) {
-        const msg = error instanceof Error ? error.message : 'Bir hata olustu.';
-        await message.reply(`❌ ${msg}`);
-      }
-      return;
-    }
-
-    if (firstWord === 'slot') {
-      const bet = parseInt(parts[1] ?? '');
-      if (isNaN(bet) || bet <= 0) {
-        await message.reply(`❌ Kullanim: owl slot <miktar>`);
-        return;
-      }
-      // Cooldown kontrolü
-      const slotCooldownKey = `cooldown:slot:${message.author.id}`;
-      const slotRemaining   = await getCooldownRemainingMs(redis, slotCooldownKey, GAMBLE_SLOT_COOLDOWN_MS);
-      if (slotRemaining > 0) {
-        await message.reply(`⏰ Tekrar slot için **${Math.ceil(slotRemaining / 1000)}s** beklemelisin.`);
-        return;
-      }
-      try {
-        await enforceAntiSpam(redis, message.author.id);
-        const SYMBOLS = ['🍒', '🍋', '🍊', '🍇', '🍉', '💎', '⭐', '🔔'];
-        const rand = () => SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)]!;
-        const result = await slot(prisma, message.author.id, bet);
-        const sent = await message.reply(`**═══ SLOTS ═══**\n| ❓ | ❓ | ❓ |`);
-        for (let i = 0; i < 5; i++) {
-          await new Promise((r) => setTimeout(r, 250));
-          await sent.edit(`**═══ SLOTS ═══**\n| ${rand()} | ${rand()} | ${rand()} |`).catch(() => null);
-        }
-        await new Promise((r) => setTimeout(r, 300));
-        await sent.edit(
-          `**═══ SLOTS ═══**\n| ${rand()} | ${rand()} | ${rand()} |\n\n` +
-          `${result.win ? `✅ **+${result.deltaCoins} 💰 kazandın!**` : `❌ **-${Math.abs(result.deltaCoins)} 💰 kaybettin.**`}\n` +
-          `Bakiye: **${result.finalCoins}** 💰`,
-        ).catch(() => null);
-      } catch (error) {
-        const msg = error instanceof Error ? error.message : 'Bir hata olustu.';
-        await message.reply(`❌ ${msg}`);
-      }
-      return;
-    }
-
     // Liderboard: owl top [kategori] veya owl lb [kategori]
     if (firstWord === 'top' || firstWord === 'lb' || firstWord === 'liderboard' || firstWord === 'leaderboard') {
       try {
         await enforceAntiSpam(redis, message.author.id);
-        // Kategori argumani: "owl top av", "owl top pvp" vb. (parts[1] = kategori)
         await handleTopTextCommand(message, parts.slice(1), { prisma, redis });
       } catch (error) {
         const msg = error instanceof Error ? error.message : 'Bir hata olustu.';
