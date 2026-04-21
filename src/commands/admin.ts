@@ -318,7 +318,7 @@ async function execute(
     let t = `🌐 **Sunucu İstatistikleri**\n\n`;
     t += `👥 Oyuncu: **${playerCount}** | 🦉 Baykuş: **${owlCount}** | 📦 Item: **${itemCount}** | ⚔️ PvP: **${pvpCount}**\n\n`;
     t += `🏆 **Top 5 Oyuncu**\n`;
-    topPlayers.forEach((p, i) => {
+    topPlayers.forEach((p: { id: string; level: number; coins: number }, i: number) => {
       t += `${i + 1}. <@${p.id}> — Lv.**${p.level}** | **${p.coins}** 💰\n`;
     });
     await interaction.reply({ content: t, flags: 64 });
@@ -367,14 +367,14 @@ async function execute(
       embed.setFooter({ text: footer });
     }
 
+    const players = await ctx.prisma.player.findMany({ select: { id: true } });
+
     // Önizleme — sadece admin görür
     await interaction.reply({
       content: `📋 **Önizleme** — ${players.length} oyuncuya gönderilecek:`,
       embeds: [embed],
       flags: 64,
     });
-
-    const players = await ctx.prisma.player.findMany({ select: { id: true } });
     await interaction.followUp({ content: `⏳ **${players.length}** oyuncuya gönderiliyor...`, flags: 64 });
 
     let sent = 0;

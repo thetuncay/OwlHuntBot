@@ -513,15 +513,15 @@ export async function settleSlotRace(
     weightedRandom(slotOptions),
   ];
 
-  // Kazanan belirleme: 3 eşleşme > 2 eşleşme > yüksek sembol değeri
+  // Kazanan belirleme: 3 eşleşme > 2 eşleşme > yüksek sembol değeri, eşitse berabere
   const challengerScore = calcSlotScore(challengerSymbols);
-  const defenderScore = calcSlotScore(defenderSymbols);
+  const defenderScore   = calcSlotScore(defenderSymbols);
+  const isPush          = challengerScore === defenderScore;
 
-  const challengerWins = challengerScore > defenderScore;
-  const winnerId = challengerWins ? challengerId : defenderId;
-  const loserId = challengerWins ? defenderId : challengerId;
-  const winnerGain = netPot - bet;
-  const loserLoss = bet;
+  const winnerId   = isPush ? null : challengerScore > defenderScore ? challengerId : defenderId;
+  const loserId    = isPush ? null : challengerScore > defenderScore ? defenderId   : challengerId;
+  const winnerGain = winnerId ? netPot - bet : 0;
+  const loserLoss  = loserId  ? bet          : 0;
 
   // Combo bonusu kontrolü (her ikisi de aynı sembolü yakaladı mı)
   const comboBonus =
@@ -535,23 +535,23 @@ export async function settleSlotRace(
   await withLock(challengerId, 'pvp_gamble', async () => {
     await withLock(defenderId, 'pvp_gamble', async () => {
       await prisma.$transaction(async (tx) => {
-        await tx.player.update({
-          where: { id: winnerId },
-          data: {
-            coins: { increment: bet - houseCut },
-            totalPvpWins: { increment: 1 },
-          },
-        });
-        await tx.player.update({
-          where: { id: loserId },
-          data: { coins: { decrement: bet } },
-        });
+        if (!isPush) {
+          await tx.player.update({
+            where: { id: winnerId! },
+            data: { coins: { increment: bet - houseCut }, totalPvpWins: { increment: 1 } },
+          });
+          await tx.player.update({
+            where: { id: loserId! },
+            data: { coins: { decrement: bet } },
+          });
+        }
+        // Push: bahisler zaten cepte, işlem yok
         await tx.pvpSession.create({
           data: {
             challengerId,
             defenderId,
             status: 'finished',
-            winnerId,
+            winnerId: winnerId ?? undefined,
             totalTurns: 1,
             finishedAt: new Date(),
           },
@@ -568,15 +568,18 @@ export async function settleSlotRace(
     ]);
   }
 
-  // Streak & rebate
-  const rebate = await updateLossStreak(redis, winnerId, loserId, loserLoss);
-  if (rebate) await applyRebate(prisma, rebate);
+  // Streak & rebate (sadece kazanan/kaybeden varsa)
+  let rebate = null;
+  if (winnerId && loserId) {
+    rebate = await updateLossStreak(redis, winnerId, loserId, loserLoss);
+    if (rebate) await applyRebate(prisma, rebate);
+  }
 
   // Pair count + cooldown
   await Promise.all([
     incrementPairCount(redis, challengerId, defenderId),
     applyPostGameCooldown(redis, challengerId, defenderId),
-    recordCoinsEarned(prisma, winnerId, winnerGain).catch(() => null),
+    ...(winnerId ? [recordCoinsEarned(prisma, winnerId, winnerGain).catch(() => null)] : []),
   ]);
 
   await deleteSession(redis, sessionId);
@@ -719,16 +722,13 @@ export async function settleBlackjackPro(
     outcome = 'defender_wins';
   } else if (defenderHand.isBust) {
     outcome = 'challenger_wins';
-  } else if (challengerHand.isBlackjack && !defenderHand.isBlackjack) {
-    outcome = 'challenger_wins';
-  } else if (defenderHand.isBlackjack && !challengerHand.isBlackjack) {
-    outcome = 'defender_wins';
+  } else if (challengerHand.total === defenderHand.total) {
+    // Eşit toplam → her zaman berabere (blackjack avantajı yok)
+    outcome = 'push';
   } else if (challengerHand.total > defenderHand.total) {
     outcome = 'challenger_wins';
-  } else if (defenderHand.total > challengerHand.total) {
-    outcome = 'defender_wins';
   } else {
-    outcome = 'push';
+    outcome = 'defender_wins';
   }
 
   const houseCutRate = await calcHouseCutRate(redis, challengerId, defenderId);

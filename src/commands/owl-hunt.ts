@@ -30,6 +30,8 @@ import {
   calcFinalTameChance,
 } from '../utils/tame-ux';
 import { animateHuntInteraction, animateHuntMessage, compressHuntResult } from '../utils/hunt-ux';
+import { listActiveBuffs } from '../systems/items';
+import { BUFF_ITEM_MAP } from '../config';
 import {
   buildEncounterEmbed,
   buildEncounterActionRow,
@@ -129,6 +131,16 @@ export async function runHuntMessage(
   const result = await rollHunt(ctx.prisma, userId, main.id);
   const compressed = compressHuntResult(result);
   const name = message.member?.displayName ?? message.author.username;
+
+  // Aktif hunt buff'larını çek — hunt satırında göster
+  const rawBuffs = await listActiveBuffs(ctx.prisma as any, userId);
+  compressed.activeBuffs = rawBuffs
+    .filter((b) => b.chargeCur > 0 && b.category === 'hunt')
+    .map((b) => ({
+      emoji: BUFF_ITEM_MAP[b.buffItemId]?.emoji ?? '✨',
+      chargeCur: b.chargeCur,
+      chargeMax: b.chargeMax,
+    }));
 
   await animateHuntMessage(message, name, compressed);
 

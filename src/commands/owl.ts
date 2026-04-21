@@ -28,7 +28,7 @@ import { runStats, runStatsMessage } from './owl-stats';
 import { runUpgrade, runUpgradeMessage } from './owl-upgrade';
 import { runTame, runTameMessage } from './owl-tame';
 import { runTransfer, runTransferMessage } from './owl-transfer';
-import { runSellMessage, runZooMessage, runCashMessage, runPrefixMessage, runPrefix, runAcMessage, runBuffMessage } from './owl-misc';
+import { runSellMessage, runZooMessage, runCashMessage, runPrefixMessage, runPrefix, runAcMessage, runBuffMessage, runBuffsMessage } from './owl-misc';
 import { ALIASES, TEXT_SUBCOMMANDS, findClosest, buildUnknownCommandEmbed } from './owl-utils';
 import { runPvpCoinFlip, runPvpSlot, runPvpBlackjack } from './pvp';
 
@@ -165,7 +165,8 @@ export async function handleOwlTextCommand(
     case 'slot':      await runPvpSlot(message, args, ctx);                 break;
     case 'bj':        await runPvpBlackjack(message, args, ctx);            break;
     case 'aç':        await runAcMessage(message, args, ctx, helpPrefix);    break;
-    case 'buff':      await runBuffMessage(message, args, ctx, helpPrefix);  break;
+    case 'buff':      await runBuffMessage(message, args, ctx, helpPrefix);   break;
+    case 'buffs':     await runBuffsMessage(message, args, helpPrefix);        break;
     default: {
       const suggestion = findClosest(sub, TEXT_SUBCOMMANDS);
       await message.reply({ embeds: [buildUnknownCommandEmbed(helpPrefix, rawSub, suggestion)] });

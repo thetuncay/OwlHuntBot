@@ -2,7 +2,7 @@
  * owl-inventory.ts — /owl inventory komutu
  */
 
-import { ButtonBuilder, ComponentType } from 'discord.js';
+import { ButtonBuilder, ButtonStyle, ActionRowBuilder, ComponentType } from 'discord.js';
 import { INVENTORY_BASE_SLOTS, INVENTORY_PER_LEVEL } from '../config';
 import { listActiveBuffs } from '../systems/items';
 import {
@@ -10,8 +10,8 @@ import {
   buildInventoryGridEmbed,
   buildInventoryOverviewRow,
   buildInventoryGridRow,
+  buildInventoryText,
 } from '../utils/inventory-ux';
-import type { InventoryItem as InvItem, InventoryRenderData } from '../utils/inventory-ux';
 import type { CommandDefinition } from '../types';
 import type { Message } from 'discord.js';
 
@@ -139,35 +139,40 @@ export async function runInventoryMessage(
       chargeMax:  b.chargeMax,
     }));
 
-  type Mode = 'overview' | 'grid';
-  let mode: Mode = 'overview';
-  let gridPage   = 0;
+  const PAGE_SIZE  = 40;
+  let page         = 0;
+  const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
 
-  const GRID_PER_PAGE  = 20;
-  const gridTotalPages = Math.max(1, Math.ceil(items.length / GRID_PER_PAGE));
-
-  const renderData = (): InventoryRenderData => ({
+  const renderData = (): import('../utils/inventory-ux').InventoryRenderData => ({
     username:   name,
-    items:      items as InvItem[],
+    items:      items as import('../utils/inventory-ux').InventoryItem[],
     activeBuffs,
     usedSlots:  items.length,
     capacity,
-    page:       gridPage,
-    totalPages: gridTotalPages,
-    mode,
+    page,
+    totalPages,
+    mode:       'overview',
   });
 
-  const renderEmbed = () =>
-    mode === 'grid'
-      ? buildInventoryGridEmbed(renderData())
-      : buildInventoryOverviewEmbed(renderData());
+  const renderText = () => buildInventoryText(renderData());
 
-  const renderRow = () =>
-    mode === 'grid'
-      ? buildInventoryGridRow(gridPage, gridTotalPages)
-      : buildInventoryOverviewRow(0, 1);
+  const renderRow = () => new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder()
+      .setCustomId('inv_prev')
+      .setLabel('◀')
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(totalPages <= 1 || page === 0),
+    new ButtonBuilder()
+      .setCustomId('inv_next')
+      .setLabel('▶')
+      .setStyle(ButtonStyle.Primary)
+      .setDisabled(totalPages <= 1 || page === totalPages - 1),
+  );
 
-  const sent = await message.reply({ embeds: [renderEmbed()], components: [renderRow()] });
+  const components = totalPages > 1 ? [renderRow()] : [];
+  const sent = await message.reply({ content: renderText(), components });
+
+  if (totalPages <= 1) return;
 
   const collector = sent.createMessageComponentCollector({
     componentType: ComponentType.Button,
@@ -179,16 +184,14 @@ export async function runInventoryMessage(
       await i.reply({ content: '❌ Bu buton sana ait değil.', flags: 64 });
       return;
     }
-    switch (i.customId) {
-      case 'inv_grid':     mode = 'grid'; gridPage = 0; break;
-      case 'inv_overview': mode = 'overview'; break;
-      case 'inv_prev':
-        if (mode === 'grid') gridPage = (gridPage - 1 + gridTotalPages) % gridTotalPages;
-        break;
-      case 'inv_next':
-        if (mode === 'grid') gridPage = (gridPage + 1) % gridTotalPages;
-        break;
-    }
-    await i.update({ embeds: [renderEmbed()], components: [renderRow()] });
+    if (i.customId === 'inv_prev') page = Math.max(0, page - 1);
+    if (i.customId === 'inv_next') page = Math.min(totalPages - 1, page + 1);
+    await i.update({ content: renderText(), components: [renderRow()] });
+  });
+
+  collector.on('end', async () => {
+    try {
+      await sent.edit({ components: [] });
+    } catch { /* mesaj silinmiş */ }
   });
 }

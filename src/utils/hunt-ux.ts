@@ -52,8 +52,9 @@ export interface CompressedHunt {
   hasCritical: boolean;
   levelUp: { oldLevel: number; newLevel: number } | null;
   isEmpty: boolean;
-  /** Av sonrası oluşan encounter ID (varsa) */
   encounterId?: string;
+  /** Aktif buff'lar — hunt satırında gösterilir */
+  activeBuffs?: { emoji: string; chargeCur: number; chargeMax: number }[];
 }
 
 export function compressHuntResult(result: HuntRunResult): CompressedHunt {
@@ -140,7 +141,13 @@ function buildFinalMessage(name: string, compressed: CompressedHunt): string {
     : pickRandom(LINE1_NORMAL);
 
   const statusSuffix = compressed.hasCritical ? ' ⚡' : '';
-  lines.push(`🌙 | **${name}** ${action}!${statusSuffix}`);
+
+  // Aktif buff göstergesi — OwO tarzı: emoji[cur/max]
+  const buffStr = compressed.activeBuffs && compressed.activeBuffs.length > 0
+    ? ` | hunt is empowered by ${compressed.activeBuffs.map((b) => `${b.emoji}\`[${b.chargeCur}/${b.chargeMax}]\``).join(' ')} !`
+    : '';
+
+  lines.push(`🌙 | **${name}** ${action}!${statusSuffix}${buffStr}`);
 
   // ── LINE 2: Loot display ──────────────────────────────────────────────────
   if (compressed.isEmpty) {

@@ -317,23 +317,36 @@ export async function runBuffMessage(
     }
 
     const lines = buffItems.map(({ def, quantity }) =>
-      `${def.emoji} **${def.name}** ×${quantity} — *${def.category} · ${def.chargeMax} charge*`,
+      `${def.emoji} **${def.name}** ×${quantity} — *${def.category} · ${def.chargeMax} charge*\n` +
+      `> \`${helpPrefix} b ${def.id}\` ile aktifleştir`,
     );
 
     await message.reply(
       `✨ **Buff Item Envanteri**\n\n${lines.join('\n')}\n\n` +
-      `> \`${helpPrefix} buff <item adı>\` ile aktifleştir\n` +
-      `> Örnek: \`${helpPrefix} buff Keskin Nişan\``,
+      `> \`${helpPrefix} buffs\` ile tüm buff rehberini gör`,
     );
     return;
   }
 
   const itemName = args.join(' ').trim();
-  const def = BUFF_ITEMS.find((b) => b.name.toLowerCase() === itemName.toLowerCase());
+  // ID veya tam isim ile eşleştir (OwO tarzı: "owl b keskin_nisan" veya "owl b Keskin Nişan")
+  const def = BUFF_ITEMS.find(
+    (b) =>
+      b.id.toLowerCase() === itemName.toLowerCase() ||
+      b.name.toLowerCase() === itemName.toLowerCase(),
+  );
 
   if (!def) {
-    const names = BUFF_ITEMS.slice(0, 5).map((b) => `\`${b.name}\``).join(', ');
-    await message.reply(`❌ **Geçersiz item adı.** Örnekler: ${names}...\n> \`${helpPrefix} buff\` ile tüm listeni gör.`);
+    // Kısmi eşleşme öner
+    const suggestions = BUFF_ITEMS.filter(
+      (b) =>
+        b.name.toLowerCase().includes(itemName.toLowerCase()) ||
+        b.id.toLowerCase().includes(itemName.toLowerCase()),
+    ).slice(0, 3);
+    const hint = suggestions.length > 0
+      ? `\nBunlardan birini mi kastettin?\n${suggestions.map((b) => `• ${b.emoji} **${b.name}** (\`${helpPrefix} b ${b.id}\`)`).join('\n')}`
+      : `\n> \`${helpPrefix} buffs\` ile tüm listeyi gör.`;
+    await message.reply(`❌ **Geçersiz item.** \`${itemName}\` bulunamadı.${hint}`);
     return;
   }
 
@@ -360,3 +373,122 @@ export async function runBuffMessage(
     await message.reply(`❌ **Hata** | ${errMsg}`);
   }
 }
+
+// ─── buffs (buff rehberi) ─────────────────────────────────────────────────────
+
+export async function runBuffsMessage(
+  message: Message,
+  args: string[],
+  helpPrefix: string,
+): Promise<void> {
+  const sub = (args[0] ?? '').toLowerCase();
+
+  // Kategori filtresi: owl buffs hunt / upgrade / pvp
+  const validCats = ['hunt', 'upgrade', 'pvp'] as const;
+  type Cat = typeof validCats[number];
+  const catFilter = validCats.includes(sub as Cat) ? (sub as Cat) : null;
+
+  const RARITY_ORDER: Record<string, number> = { Common: 1, Rare: 2, Epic: 3, Legendary: 4 };
+  const RARITY_BADGE: Record<string, string> = {
+    Common: '⬜', Rare: '🔵', Epic: '🟣', Legendary: '🟡',
+  };
+  const CAT_EMOJI: Record<string, string> = { hunt: '🏹', upgrade: '⚒️', pvp: '⚔️' };
+  const CAT_LABEL: Record<string, string> = { hunt: 'Av', upgrade: 'Upgrade', pvp: 'PvP' };
+
+  const items = catFilter
+    ? BUFF_ITEMS.filter((b) => b.category === catFilter)
+    : BUFF_ITEMS;
+
+  const sorted = [...items].sort((a, b) =>
+    a.category.localeCompare(b.category) || (RARITY_ORDER[a.rarity] ?? 0) - (RARITY_ORDER[b.rarity] ?? 0),
+  );
+
+  // Kategorilere grupla
+  const groups = new Map<string, typeof BUFF_ITEMS>();
+  for (const item of sorted) {
+    if (!groups.has(item.category)) groups.set(item.category, []);
+    groups.get(item.category)!.push(item);
+  }
+
+  const embed = new EmbedBuilder()
+    .setColor(0x9b59b6)
+    .setTitle('✨ Buff Item Rehberi')
+    .setDescription(
+      '> Buff item\'ları aktifleştirerek av, upgrade ve PvP performansını artırabilirsin.\n' +
+      `> Aktifleştirmek için: \`${helpPrefix} buff <item adı>\`\n` +
+      `> Lootbox açarak buff kazanmak için: \`${helpPrefix} aç\``,
+    );
+
+  for (const [cat, catItems] of groups) {
+    const catEmoji = CAT_EMOJI[cat] ?? '✨';
+    const catLabel = CAT_LABEL[cat] ?? cat;
+
+    const lines = catItems.map((item) => {
+      const badge = RARITY_BADGE[item.rarity] ?? '⬜';
+      const chargeInfo = item.chargeMax;
+      const costInfo =
+        item.category === 'hunt'    ? `${item.chargeMax} av` :
+        item.category === 'pvp'     ? `${item.chargeMax} dövüş` :
+        `${item.chargeMax} deneme`;
+
+      // Etki açıklaması
+      let effectDesc = '';
+      switch (item.effectType) {
+        case 'catch_bonus':      effectDesc = `+%${Math.round(item.effectValue * 100)} yakalama şansı`; break;
+        case 'loot_mult':        effectDesc = `+%${Math.round((item.effectValue - 1) * 100)} drop çarpanı`; break;
+        case 'rare_drop_bonus':  effectDesc = `+%${Math.round(item.effectValue * 100)} nadir drop`; break;
+        case 'upgrade_bonus':    effectDesc = `+${item.effectValue} upgrade başarı puanı`; break;
+        case 'downgrade_shield': effectDesc = `-%${Math.round((1 - item.effectValue) * 100)} downgrade riski`; break;
+        case 'pvp_damage_mult':  effectDesc = `+%${Math.round((item.effectValue - 1) * 100)} PvP hasarı`; break;
+        case 'pvp_dodge_bonus':  effectDesc = `+%${Math.round(item.effectValue * 100)} dodge şansı`; break;
+        default:                 effectDesc = item.description;
+      }
+
+      // Arena Ustası özel: hem hasar hem dodge
+      if (item.id === 'b012') effectDesc = '+%12 hasar & +%6 dodge';
+      if (item.id === 'b004') effectDesc = '+%5 yakalama & +%20 drop';
+
+      return `${badge} ${item.emoji} **${item.name}** *(${item.rarity})*\n` +
+             `> ${effectDesc} · ${costInfo} charge`;
+    });
+
+    embed.addFields({
+      name: `${catEmoji} ${catLabel} Buff'ları`,
+      value: lines.join('\n'),
+      inline: false,
+    });
+  }
+
+  // Nasıl bulunur
+  embed.addFields({
+    name: '📦 Nasıl Bulunur?',
+    value: [
+      '• **Lootbox açarak** — Hunt, PvP veya encounter\'dan düşen kutular',
+      '• **Hunt drop** — Her avda küçük şansla düşer',
+      '• **PvP kazanma** — Galip gelince şansla düşer',
+      '• **Encounter tame** — Yabani baykuş evcilleştirince en yüksek şans',
+    ].join('\n'),
+    inline: false,
+  });
+
+  // Diminishing returns notu
+  embed.addFields({
+    name: '⚠️ Diminishing Returns',
+    value: [
+      'Aynı türden birden fazla buff aktifleştirirsen etki azalır:',
+      '• 1. buff → **%100** etki',
+      '• 2. buff → **%60** etki',
+      '• 3. buff → **%30** etki',
+    ].join('\n'),
+    inline: false,
+  });
+
+  embed.setFooter({
+    text: catFilter
+      ? `${catFilter} kategorisi gösteriliyor · Tüm kategoriler: ${helpPrefix} buffs`
+      : `Kategori filtresi: ${helpPrefix} buffs hunt / upgrade / pvp`,
+  });
+
+  await message.reply({ embeds: [embed] });
+}
+

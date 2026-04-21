@@ -166,7 +166,7 @@ export async function getBuffEffects(
         case 'catch_bonus':
           effects.catchBonus += scaledValue;
           // orman_ruhu özel: hem catch hem loot bonus
-          if (buff.buffItemId === 'orman_ruhu') {
+          if (buff.buffItemId === 'b004') {
             effects.lootMult = effects.lootMult * (1 + 0.20 * rate);
           }
           break;
@@ -184,7 +184,7 @@ export async function getBuffEffects(
           break;
         case 'pvp_damage_mult':
           // arena_ustasi özel: hem damage hem dodge
-          if (buff.buffItemId === 'arena_ustasi') {
+          if (buff.buffItemId === 'b012') {
             effects.pvpDodgeBonus += 0.06 * rate;
           }
           effects.pvpDamageMult = effects.pvpDamageMult * (1 + (scaledValue - 1));
@@ -323,3 +323,4 @@ export async function getBuffSummary(
 
   return parts.join(' · ');
 }
+

@@ -20,6 +20,7 @@ import {
   ButtonStyle,
   EmbedBuilder,
 } from 'discord.js';
+import { BUFF_ITEM_MAP } from '../config';
 
 // ─── Tipler ───────────────────────────────────────────────────────────────────
 
@@ -546,4 +547,138 @@ export function buildInventoryEmbed(
     totalPages,
     mode: 'overview',
   });
+}
+
+// ─── OwO TARZI DÜZ TEXT RENDERER ─────────────────────────────────────────────
+
+/**
+ * Sayıyı superscript karakterlere çevirir (OwO'nun ⁰⁶ tarzı)
+ */
+function toSuperscript(n: number): string {
+  const SUP = ['⁰','¹','²','³','⁴','⁵','⁶','⁷','⁸','⁹'];
+  return String(n).padStart(2, '0').split('').map((c) => SUP[parseInt(c)] ?? c).join('');
+}
+
+/**
+ * OwO tarzı envanter — embed yok, düz text, grid layout.
+ *
+ * Format:
+ *   ══════ username's Inventory ══════
+ *
+ *   ⚡ AKTİF BUFF'LAR
+ *   🎯 Keskin Nişan  ████░░░░  64/100
+ *
+ *   📦 LOOTBOX'LAR
+ *   [001] 📦²  [002] 🎁¹
+ *
+ *   🧱 MATERYALLER
+ *   [003] 🦴⁰⁶  [004] 🪶⁰³  ...
+ *
+ *   🍖 AV HAYVANLARI
+ *   [005] 🐭¹⁰  [006] 🐦⁰⁴  ...
+ *
+ *   Slot: ████████░░ 12/50
+ */
+export function buildInventoryText(data: InventoryRenderData): string {
+  const { username, items, activeBuffs, usedSlots, capacity, page } = data;
+
+  const COLS        = 4;   // Satır başına item sayısı
+  const PAGE_SIZE   = 40;  // Sayfa başına max item
+
+  const lines: string[] = [];
+
+  // ── Başlık ──
+  const title = `${username}'s Inventory`;
+  const pad   = Math.max(0, Math.floor((36 - title.length) / 2));
+  lines.push(`${'═'.repeat(pad)} ${title} ${'═'.repeat(pad)}`);
+  lines.push('');
+
+  // ── Aktif Buff'lar ──
+  const activeOnly = activeBuffs.filter((b) => b.chargeCur > 0);
+  if (activeOnly.length > 0) {
+    lines.push('⚡ **AKTİF BUFF\'LAR**');
+    for (const b of activeOnly) {
+      const def    = BUFF_ITEM_MAP[b.buffItemId];
+      const emoji  = def?.emoji ?? '✨';
+      const name   = def?.name  ?? b.buffItemId;
+      const pct    = b.chargeMax > 0 ? b.chargeCur / b.chargeMax : 0;
+      const filled = Math.round(pct * 10);
+      const bar    = '▰'.repeat(filled) + '▱'.repeat(10 - filled);
+      const status = pct > 0.5 ? '🟢' : pct > 0.2 ? '🟡' : '🔴';
+      lines.push(`${emoji} **${name}**`);
+      lines.push(`┗ ${status} \`${bar}\` **${b.chargeCur}**/${b.chargeMax}`);
+    }
+    lines.push('');
+  }
+
+  // ── Item'ları kategorilere ayır ──
+  const CATEGORY_ORDER: Record<string, number> = {
+    'Kutu': 1, 'Buff': 2, 'Materyal': 3,
+  };
+  const CATEGORY_HEADER: Record<string, string> = {
+    'Kutu':     '📦 LOOTBOX\'LAR',
+    'Buff':     '✨ BUFF ITEM\'LARI',
+    'Materyal': '🧱 MATERYALLER',
+  };
+
+  const byCategory = new Map<string, InventoryItem[]>();
+  for (const item of items) {
+    const key = item.itemType in CATEGORY_ORDER ? item.itemType : null;
+    if (!key) continue; // Av ve bilinmeyen tipler gösterilmez
+    if (!byCategory.has(key)) byCategory.set(key, []);
+    byCategory.get(key)!.push(item);
+  }
+
+  const sortedCats = [...byCategory.keys()].sort(
+    (a, b) => (CATEGORY_ORDER[a] ?? 99) - (CATEGORY_ORDER[b] ?? 99),
+  );
+
+  // Global index (OwO tarzı sıralı ID)
+  let globalIdx = page * PAGE_SIZE + 1;
+
+  for (const cat of sortedCats) {
+    const catItems = sortByRarityThenQty(byCategory.get(cat)!);
+    const header   = CATEGORY_HEADER[cat] ?? `📦 ${cat.toUpperCase()}`;
+
+    lines.push(header);
+
+    if (cat === 'Materyal') {
+      // Materyaller: her satırda bir item, isim görünür
+      for (const item of catItems) {
+        const emoji = itemEmoji(item.itemName);
+        const id    = String(globalIdx++).padStart(3, '0');
+        const sup   = toSuperscript(Math.min(item.quantity, 99));
+        lines.push(`  \`${id}\` ${emoji} **${item.itemName}** ×${item.quantity}`);
+      }
+    } else {
+      // Diğer kategoriler: 4'lü grid
+      for (let row = 0; row < catItems.length; row += COLS) {
+        const rowItems = catItems.slice(row, row + COLS);
+        const cells    = rowItems.map((item) => {
+          const emoji = itemEmoji(item.itemName);
+          const sup   = toSuperscript(Math.min(item.quantity, 99));
+          const id    = String(globalIdx++).padStart(3, '0');
+          return `\`${id}\` ${emoji}${sup}`;
+        });
+        lines.push('  ' + cells.join('   '));
+      }
+    }
+    lines.push('');
+  }
+
+  if (items.length === 0 && activeOnly.length === 0) {
+    lines.push('  Envanter boş. `hunt` yaparak eşya topla!');
+    lines.push('');
+  }
+
+  const nonHuntItems = items.filter((i) => i.itemType !== 'Av');
+  const usedDisplay  = nonHuntItems.length;
+  // ── Slot bar ──
+  const pct    = Math.min(usedDisplay / capacity, 1);
+  const filled = Math.round(pct * 10);
+  const bar    = '█'.repeat(filled) + '░'.repeat(10 - filled);
+  const warn   = pct >= 0.9 ? ' !!!' : '';
+  lines.push(`Slot: [${bar}] ${usedDisplay}/${capacity}${warn}`);
+
+  return lines.join('\n');
 }

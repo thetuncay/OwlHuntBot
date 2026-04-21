@@ -261,7 +261,7 @@ export interface OwlTrait {
 export const OWL_TRAITS: OwlTrait[] = [
   // ── AV ODAKLI TRAIT'LER ──────────────────────────────────────────────────
   {
-    id:           'keskin_goz',
+    id:           't001',
     name:         '🎯 Keskin Göz',
     description:  'Av ödülleri artar ama evcilleştirme zorlaşır.',
     bonusType:    'hunt_reward',
@@ -271,7 +271,7 @@ export const OWL_TRAITS: OwlTrait[] = [
     weight:       18,
   },
   {
-    id:           'sessiz_kanat',
+    id:           't002',
     name:         '🌙 Sessiz Kanat',
     description:  'Yakalama şansı yükselir ama PvP hasarı düşer.',
     bonusType:    'hunt_catch',
@@ -281,7 +281,7 @@ export const OWL_TRAITS: OwlTrait[] = [
     weight:       16,
   },
   {
-    id:           'gece_avcisi',
+    id:           't003',
     name:         '🦇 Gece Avcısı',
     description:  'XP kazanımı artar ama cooldown uzar.',
     bonusType:    'xp_gain',
@@ -291,7 +291,7 @@ export const OWL_TRAITS: OwlTrait[] = [
     weight:       14,
   },
   {
-    id:           'hizli_pence',
+    id:           't004',
     name:         '⚡ Hızlı Pençe',
     description:  'Cooldown kısalır ama av ödülleri azalır.',
     bonusType:    'cooldown_red',
@@ -303,7 +303,7 @@ export const OWL_TRAITS: OwlTrait[] = [
 
   // ── PVP ODAKLI TRAIT'LER ─────────────────────────────────────────────────
   {
-    id:           'saldirgan_ruh',
+    id:           't005',
     name:         '🔥 Saldırgan Ruh',
     description:  'PvP hasarı artar ama HP düşer.',
     bonusType:    'pvp_damage',
@@ -313,7 +313,7 @@ export const OWL_TRAITS: OwlTrait[] = [
     weight:       13,
   },
   {
-    id:           'demir_deri',
+    id:           't006',
     name:         '🛡️ Demir Deri',
     description:  'Max HP artar ama PvP dodge şansı düşer.',
     bonusType:    'hp_max',
@@ -323,7 +323,7 @@ export const OWL_TRAITS: OwlTrait[] = [
     weight:       12,
   },
   {
-    id:           'kacamak_ustasi',
+    id:           't007',
     name:         '💨 Kaçamak Ustası',
     description:  'PvP dodge şansı yükselir ama hasar azalır.',
     bonusType:    'pvp_dodge',
@@ -335,7 +335,7 @@ export const OWL_TRAITS: OwlTrait[] = [
 
   // ── KARMA / UTILITY TRAIT'LER ────────────────────────────────────────────
   {
-    id:           'merakli_bakis',
+    id:           't008',
     name:         '🔍 Meraklı Bakış',
     description:  'Encounter şansı artar ama stamina yavaş yenilenir.',
     bonusType:    'encounter_rate',
@@ -345,7 +345,7 @@ export const OWL_TRAITS: OwlTrait[] = [
     weight:       14,
   },
   {
-    id:           'dingin_ruh',
+    id:           't009',
     name:         '🌿 Dingin Ruh',
     description:  'Stamina hızlı yenilenir ama encounter şansı düşer.',
     bonusType:    'stamina_regen',
@@ -355,7 +355,7 @@ export const OWL_TRAITS: OwlTrait[] = [
     weight:       13,
   },
   {
-    id:           'evcil_ruh',
+    id:           't010',
     name:         '🤝 Evcil Ruh',
     description:  'Evcilleştirme şansı artar ama av ödülleri azalır.',
     bonusType:    'tame_chance',
@@ -365,7 +365,7 @@ export const OWL_TRAITS: OwlTrait[] = [
     weight:       12,
   },
   {
-    id:           'deneyimli',
+    id:           't011',
     name:         '📚 Deneyimli',
     description:  'XP kazanımı artar ama PvP hasarı düşer.',
     bonusType:    'xp_gain',
@@ -375,7 +375,7 @@ export const OWL_TRAITS: OwlTrait[] = [
     weight:       15,
   },
   {
-    id:           'agir_kanat',
+    id:           't012',
     name:         '🪨 Ağır Kanat',
     description:  'Max HP artar ama cooldown uzar.',
     bonusType:    'hp_max',
@@ -385,7 +385,7 @@ export const OWL_TRAITS: OwlTrait[] = [
     weight:       11,
   },
   {
-    id:           'keskin_kulak',
+    id:           't013',
     name:         '👂 Keskin Kulak',
     description:  'Encounter şansı artar ama XP kazanımı azalır.',
     bonusType:    'encounter_rate',
@@ -395,7 +395,7 @@ export const OWL_TRAITS: OwlTrait[] = [
     weight:       13,
   },
   {
-    id:           'yorulmaz',
+    id:           't014',
     name:         '💪 Yorulmaz',
     description:  'Stamina hızlı yenilenir ama evcilleştirme zorlaşır.',
     bonusType:    'stamina_regen',
@@ -405,7 +405,7 @@ export const OWL_TRAITS: OwlTrait[] = [
     weight:       12,
   },
   {
-    id:           'usta_avcı',
+    id:           't015',
     name:         '🏹 Usta Avcı',
     description:  'Yakalama şansı ve av ödülleri artar ama HP düşer.',
     bonusType:    'hunt_catch',
@@ -546,12 +546,12 @@ export const GAMBLE_SLOT_COOLDOWN_MS     = 5 * 1000;   // 5 saniye
 export const GAMBLE_BJ_COOLDOWN_MS       = 5 * 1000;  // 30 saniye (interaktif oyun)
 
 export const SLOT_TABLE = [
-  { name: 'Jackpot (3x baykus)', chance: 0.3, payout: 4 },
-  { name: 'Kus uclusu', chance: 5, payout: 2 },
-  { name: 'Yilan uclusu', chance: 10, payout: 1.5 },
-  { name: 'Fare uclusu', chance: 15, payout: 1.2 },
-  { name: 'Elmas uclusu', chance: 0.1, payout: 8 },
-  { name: 'Kayip', chance: 69.6, payout: 0 },
+  { name: '🦉🦉🦉 Jackpot', chance: 0.3, payout: 4 },
+  { name: '🦉 Kuş Üçlüsü', chance: 5, payout: 2 },
+  { name: '🐍 Yılan Üçlüsü', chance: 10, payout: 1.5 },
+  { name: '🐭 Fare Üçlüsü', chance: 15, payout: 1.2 },
+  { name: '💎 Elmas Üçlüsü', chance: 0.1, payout: 8 },
+  { name: '💨 Kayıp', chance: 69.6, payout: 0 },
 ] as const;
 
 // --- ENVANTER ---
@@ -811,191 +811,187 @@ export interface BuffItemDef {
 
 export const BUFF_ITEMS: BuffItemDef[] = [
   // ── HUNT BUFF'LARI ────────────────────────────────────────────────────────
-  // Hunt cost: 1 av = 1 charge tüketir
-  // PvP/upgrade cost: bu item'lar hunt odaklı, diğer aktivitelerde tüketilmez (0)
   {
-    id:           'keskin_nisan',
+    id:           'b001',
     name:         'Keskin Nişan',
     emoji:        '🎯',
     description:  'Aktif olduğu sürece yakalama şansı artar.',
     category:     'hunt',
     rarity:       'Common',
-    chargeMax:    100,   // ~100 av
+    chargeMax:    100,
     huntCost:     1,
     pvpCost:      0,
     upgradeCost:  0,
-    effectValue:  0.08,  // +8% catch chance
+    effectValue:  0.08,
     effectType:   'catch_bonus',
     tradeoff:     'Charge bitince pasifleşir, item kaybolmaz.',
   },
   {
-    id:           'av_kokusu',
+    id:           'b002',
     name:         'Av Kokusu',
     emoji:        '🌿',
     description:  'Aktif olduğu sürece item drop şansı artar.',
     category:     'hunt',
     rarity:       'Common',
-    chargeMax:    80,    // ~80 av
+    chargeMax:    80,
     huntCost:     1,
     pvpCost:      0,
     upgradeCost:  0,
-    effectValue:  1.35,  // +35% drop çarpanı
+    effectValue:  1.35,
     effectType:   'loot_mult',
     tradeoff:     'Charge bitince pasifleşir.',
   },
   {
-    id:           'nadir_iz',
+    id:           'b003',
     name:         'Nadir İz',
     emoji:        '🔮',
     description:  'Aktif olduğu sürece nadir av drop şansı artar.',
     category:     'hunt',
     rarity:       'Rare',
-    chargeMax:    60,    // ~60 av — Rare olduğu için daha az
+    chargeMax:    60,
     huntCost:     1,
     pvpCost:      0,
     upgradeCost:  0,
-    effectValue:  0.12,  // +12% nadir drop
+    effectValue:  0.12,
     effectType:   'rare_drop_bonus',
     tradeoff:     'Güçlü ama Rare, charge daha az.',
   },
   {
-    id:           'orman_ruhu',
+    id:           'b004',
     name:         'Orman Ruhu',
     emoji:        '🌲',
     description:  'Aktif olduğu sürece yakalama ve drop şansı hafifçe artar.',
     category:     'hunt',
     rarity:       'Rare',
-    chargeMax:    120,   // ~120 av — zayıf etki, uzun ömür
+    chargeMax:    120,
     huntCost:     1,
     pvpCost:      0,
     upgradeCost:  0,
-    effectValue:  0.05,  // +5% catch + loot bonus (items.ts'de özel)
+    effectValue:  0.05,
     effectType:   'catch_bonus',
     tradeoff:     'Etki zayıf ama uzun sürer.',
   },
   {
-    id:           'yildiz_tuy',
+    id:           'b005',
     name:         'Yıldız Tüy',
     emoji:        '⭐',
     description:  'Aktif olduğu sürece tüm drop şansları büyük ölçüde artar.',
     category:     'hunt',
     rarity:       'Epic',
-    chargeMax:    40,    // ~40 av — güçlü, kısa ömür
+    chargeMax:    40,
     huntCost:     1,
     pvpCost:      0,
     upgradeCost:  0,
-    effectValue:  1.60,  // +60% drop çarpanı
+    effectValue:  1.60,
     effectType:   'loot_mult',
     tradeoff:     'Çok güçlü ama Epic, charge az.',
   },
   {
-    id:           'efsane_av_ruhu',
+    id:           'b006',
     name:         'Efsane Av Ruhu',
     emoji:        '🦅',
     description:  'Aktif olduğu sürece yakalama ve nadir drop şansı maksimum artar.',
     category:     'hunt',
     rarity:       'Legendary',
-    chargeMax:    25,    // ~25 av — Legendary, çok kısa ömür
+    chargeMax:    25,
     huntCost:     1,
     pvpCost:      0,
     upgradeCost:  0,
-    effectValue:  0.18,  // +18% catch bonus
+    effectValue:  0.18,
     effectType:   'catch_bonus',
     tradeoff:     'En güçlü hunt buff, ama çok az charge.',
   },
 
   // ── UPGRADE BUFF'LARI ─────────────────────────────────────────────────────
-  // Upgrade cost: 1 deneme = belirtilen charge tüketir
   {
-    id:           'berrak_zihin',
+    id:           'b007',
     name:         'Berrak Zihin',
     emoji:        '💡',
     description:  'Aktif olduğu sürece upgrade başarı şansı artar.',
     category:     'upgrade',
     rarity:       'Common',
-    chargeMax:    100,   // ~100 upgrade denemesi
+    chargeMax:    100,
     huntCost:     0,
     pvpCost:      0,
     upgradeCost:  1,
-    effectValue:  8,     // +8 upgrade şansı
+    effectValue:  8,
     effectType:   'upgrade_bonus',
     tradeoff:     'Charge bitince pasifleşir.',
   },
   {
-    id:           'koruyucu_talisman',
+    id:           'b008',
     name:         'Koruyucu Talisman',
     emoji:        '🛡️',
     description:  'Aktif olduğu sürece başarısız upgrade\'de stat düşme şansı azalır.',
     category:     'upgrade',
     rarity:       'Rare',
-    chargeMax:    50,    // ~50 upgrade denemesi
+    chargeMax:    50,
     huntCost:     0,
     pvpCost:      0,
     upgradeCost:  1,
-    effectValue:  0.5,   // downgrade şansı %50 azalır
+    effectValue:  0.5,
     effectType:   'downgrade_shield',
     tradeoff:     'Sadece downgrade koruması, başarı şansını artırmaz.',
   },
   {
-    id:           'usta_eli',
+    id:           'b009',
     name:         'Usta Eli',
     emoji:        '🔨',
     description:  'Aktif olduğu sürece upgrade başarı şansı önemli ölçüde artar.',
     category:     'upgrade',
     rarity:       'Epic',
-    chargeMax:    30,    // ~30 upgrade denemesi — güçlü, az charge
+    chargeMax:    30,
     huntCost:     0,
     pvpCost:      0,
     upgradeCost:  1,
-    effectValue:  15,    // +15 upgrade şansı
+    effectValue:  15,
     effectType:   'upgrade_bonus',
     tradeoff:     'Güçlü ama Epic, charge az.',
   },
 
   // ── PVP BUFF'LARI ─────────────────────────────────────────────────────────
-  // PvP cost: 1 dövüş = belirtilen charge tüketir (PvP daha değerli → daha fazla tüketir)
   {
-    id:           'savas_ruhu',
+    id:           'b010',
     name:         'Savaş Ruhu',
     emoji:        '⚔️',
     description:  'Aktif olduğu sürece PvP hasarı artar.',
     category:     'pvp',
     rarity:       'Common',
-    chargeMax:    80,    // ~80 PvP dövüşü
+    chargeMax:    80,
     huntCost:     0,
     pvpCost:      1,
     upgradeCost:  0,
-    effectValue:  1.08,  // +8% hasar
+    effectValue:  1.08,
     effectType:   'pvp_damage_mult',
     tradeoff:     'Küçük etki, uzun ömür.',
   },
   {
-    id:           'savunma_durusu',
+    id:           'b011',
     name:         'Savunma Duruşu',
     emoji:        '🛡️',
     description:  'Aktif olduğu sürece PvP dodge şansı artar.',
     category:     'pvp',
     rarity:       'Rare',
-    chargeMax:    50,    // ~50 PvP dövüşü
+    chargeMax:    50,
     huntCost:     0,
     pvpCost:      1,
     upgradeCost:  0,
-    effectValue:  0.08,  // +8% dodge
+    effectValue:  0.08,
     effectType:   'pvp_dodge_bonus',
     tradeoff:     'Sadece dodge, hasar artmaz.',
   },
   {
-    id:           'arena_ustasi',
+    id:           'b012',
     name:         'Arena Ustası',
     emoji:        '🏆',
     description:  'Aktif olduğu sürece hem PvP hasarı hem dodge artar.',
     category:     'pvp',
     rarity:       'Epic',
-    chargeMax:    25,    // ~25 PvP dövüşü — güçlü, az charge
+    chargeMax:    25,
     huntCost:     0,
     pvpCost:      1,
     upgradeCost:  0,
-    effectValue:  1.12,  // +12% hasar (dodge ayrıca +0.06 — bkz. items.ts)
+    effectValue:  1.12,
     effectType:   'pvp_damage_mult',
     tradeoff:     'En güçlü PvP buff, ama az charge.',
   },
@@ -1030,7 +1026,7 @@ export interface LootboxDef {
 
 export const LOOTBOX_DEFS: LootboxDef[] = [
   {
-    id:            'ortak_kutu',
+    id:            'l001',
     name:          'Ortak Kutu',
     emoji:         '📦',
     tier:          'Ortak',
@@ -1044,7 +1040,7 @@ export const LOOTBOX_DEFS: LootboxDef[] = [
     pityThreshold: 8,   // 8 kutu açmadan Rare+ gelmezse garanti
   },
   {
-    id:            'nadir_kutu',
+    id:            'l002',
     name:          'Nadir Kutu',
     emoji:         '🎁',
     tier:          'Nadir',
@@ -1058,7 +1054,7 @@ export const LOOTBOX_DEFS: LootboxDef[] = [
     pityThreshold: 5,   // 5 kutu açmadan Epic+ gelmezse garanti
   },
   {
-    id:            'efsane_kutu',
+    id:            'l003',
     name:          'Efsane Kutu',
     emoji:         '💎',
     tier:          'Efsane',
@@ -1237,3 +1233,4 @@ export const PVP_GAMBLE_SESSION_TTL_MS = 10 * 60 * 1_000; // 10 dakika
 
 /** Pair count TTL (ms) — Progressive cut sayacı ne kadar tutulur */
 export const PVP_GAMBLE_PAIR_COUNT_TTL_MS = 24 * 60 * 60 * 1_000; // 24 saat
+

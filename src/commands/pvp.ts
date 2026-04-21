@@ -40,7 +40,6 @@ import {
   type PvpGamblingSession,
   type PvpGamblingResult,
 } from '../systems/PvPGamblingSystem';
-import { failEmbed, warningEmbed, successEmbed, infoEmbed } from '../utils/embed';
 import { formatNumber, formatDuration } from '../utils/format';
 import type { CommandContext } from '../types';
 import {
@@ -56,7 +55,9 @@ import {
   COLOR_WARNING,
 } from '../config';
 
-// ─── Embed Yardımcıları ───────────────────────────────────────────────────────
+// ─── Text Renderer'lar ────────────────────────────────────────────────────────
+
+const SEP_PVP = '─────────────────────';
 
 /** Davet embed'i */
 function buildInviteEmbed(
@@ -66,27 +67,102 @@ function buildInviteEmbed(
   bet: number,
   houseCutRate: number,
 ): EmbedBuilder {
-  const modeLabel = { coinflip: '🪙 Coin Flip Düellosu', slot: '🎰 Slot Yarışması', blackjack: '🃏 Blackjack Pro' }[mode];
-  const modeDesc = {
-    coinflip: 'Yazı mı tura mı? Hızlı ve acımasız.',
-    slot: 'Makineler aynı anda dönsün, en iyi kombinasyon kazansın.',
+  const modeLabel = { coinflip: '🪙 Coin Flip', slot: '🎰 Slot Yarışması', blackjack: '🃏 Blackjack' }[mode];
+  const modeDesc  = {
+    coinflip:  'Yazı mı tura mı? Hızlı ve acımasız.',
+    slot:      'Makineler aynı anda dönsün, en iyi kombinasyon kazansın.',
     blackjack: '21\'e en yakın olan kazanır. Sıralı hamle, yüksek gerilim.',
   }[mode];
+  const winnable = formatNumber(Math.floor(bet * 2 * (1 - houseCutRate)));
 
   return new EmbedBuilder()
     .setColor(0xf59e0b)
     .setTitle(`⚔️ PvP Daveti — ${modeLabel}`)
-    .setDescription(
-      `**${challengerName}** seni **${modeLabel}** için meydan okumaya davet ediyor!\n\n` +
-      `> ${modeDesc}`,
-    )
+    .setDescription(`**${challengerName}** seni meydan okumaya davet ediyor!\n> ${modeDesc}`)
     .addFields(
-      { name: '💰 Bahis', value: `**${formatNumber(bet)} coin**`, inline: true },
-      { name: '🏦 Kasa Payı', value: `%${(houseCutRate * 100).toFixed(0)}`, inline: true },
-      { name: '🏆 Kazanılabilir', value: `**${formatNumber(Math.floor(bet * 2 * (1 - houseCutRate)))} coin**`, inline: true },
+      { name: '💰 Bahis',        value: `**${formatNumber(bet)} coin**`, inline: true },
+      { name: '🏦 Kasa Payı',    value: `%${(houseCutRate * 100).toFixed(0)}`,         inline: true },
+      { name: '🏆 Kazanılabilir', value: `**${winnable} coin**`,                        inline: true },
     )
     .setFooter({ text: `${defenderName} — 30 saniye içinde yanıtla` })
     .setTimestamp();
+}
+
+/** Coin Flip sonuç — düz text */
+function buildCoinFlipResultText(
+  result: PvpGamblingResult,
+  challengerName: string,
+  defenderName: string,
+): string {
+  const winnerName = result.coinflip?.winner === 'challenger' ? challengerName : defenderName;
+  const loserName  = result.coinflip?.winner === 'challenger' ? defenderName   : challengerName;
+
+  let s = `### 🪙 Coin Flip — Sonuç\n`;
+  s += `${SEP_PVP}\n`;
+  s += `🏆 **${winnerName}** kazandı!  **+${formatNumber(result.winnerGain)} coin**\n`;
+  s += `💸 **${loserName}** kaybetti.  **-${formatNumber(result.loserLoss)} coin**\n`;
+  s += `${SEP_PVP}\n`;
+  s += `💰 Bahis: ${formatNumber(result.bet)}  ·  🏦 Kasa: ${formatNumber(result.houseCut)} coin`;
+
+  if (result.rebate) {
+    s += `\n\n🦉 **Baykuş Tesellisi** — ${loserName} üst üste ${result.rebate.lossStreak} kez kaybetti → **+${formatNumber(result.rebate.amount)} coin** iade`;
+  }
+  return s;
+}
+
+/** Slot spin animasyon — düz text */
+function buildSlotSpinText(
+  challengerName: string,
+  defenderName: string,
+  challengerSymbols: string[],
+  defenderSymbols: string[],
+  spinning: boolean,
+): string {
+  const spin = '🔄 🔄 🔄';
+  const cDisplay = spinning ? spin : challengerSymbols.join(' ');
+  const dDisplay = spinning ? spin : defenderSymbols.join(' ');
+
+  let s = `### 🎰 Slot Yarışması\n`;
+  s += `${SEP_PVP}\n`;
+  s += `🎮 **${challengerName}**\n\`${cDisplay}\`\n\n`;
+  s += `🎮 **${defenderName}**\n\`${dDisplay}\`\n`;
+  s += `${SEP_PVP}\n`;
+  s += spinning ? `> 🔄 *Makineler dönüyor...*` : `> ✅ *Sonuçlar belli oldu!*`;
+  return s;
+}
+
+/** Slot sonuç — düz text */
+function buildSlotResultText(
+  result: PvpGamblingResult,
+  challengerName: string,
+  defenderName: string,
+  challengerId: string,
+): string {
+  const isPush = result.winnerId === null;
+  const winnerName = isPush ? null : result.winnerId === challengerId ? challengerName : defenderName;
+  const loserName  = isPush ? null : winnerName === challengerName ? defenderName : challengerName;
+
+  const outcome = isPush
+    ? `🤝 **Beraberlik!** Bahisler iade edildi.`
+    : `🏆 **${winnerName}** kazandı!  **+${formatNumber(result.winnerGain)} coin**\n💸 **${loserName}** kaybetti.  **-${formatNumber(result.loserLoss)} coin**`;
+
+  let s = `### 🎰 Slot Yarışması — Sonuç\n`;
+  s += `${SEP_PVP}\n`;
+  s += `${outcome}\n`;
+  s += `${SEP_PVP}\n`;
+  s += `🎮 **${challengerName}**\n\`${result.slot!.challengerSymbols.join(' ')}\`\n\n`;
+  s += `🎮 **${defenderName}**\n\`${result.slot!.defenderSymbols.join(' ')}\`\n`;
+  s += `${SEP_PVP}\n`;
+  s += `💰 Bahis: ${formatNumber(result.bet)}`;
+  if (!isPush) s += `  ·  🏦 Kasa: ${formatNumber(result.houseCut)} coin`;
+
+  if (result.slot?.comboBonus) {
+    s += `\n\n✨ **Combo Bonusu!** Her ikisi de aynı sembolü yakaladı → **+${result.slot.comboXP} XP**`;
+  }
+  if (result.rebate) {
+    s += `\n\n🦉 **Baykuş Tesellisi** — Üst üste ${result.rebate.lossStreak} kayıp → **+${formatNumber(result.rebate.amount)} coin** iade`;
+  }
+  return s;
 }
 
 /** Davet buton satırı */
@@ -107,7 +183,7 @@ function buildInviteRow(sessionId: string): ActionRowBuilder<ButtonBuilder> {
   );
 }
 
-/** Devre dışı bırakılmış buton satırı (oyun bitti/zaman aşımı) */
+/** Devre dışı bırakılmış buton satırı */
 function buildDisabledRow(sessionId: string): ActionRowBuilder<ButtonBuilder> {
   return new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder()
@@ -128,185 +204,60 @@ function buildDisabledRow(sessionId: string): ActionRowBuilder<ButtonBuilder> {
   );
 }
 
-// ─── Sonuç Embed'leri ─────────────────────────────────────────────────────────
+// ─── Blackjack Text Renderer'ları ────────────────────────────────────────────
 
-/** Coin Flip sonuç embed'i */
-function buildCoinFlipResultEmbed(
-  result: PvpGamblingResult,
-  challengerName: string,
-  defenderName: string,
-): EmbedBuilder {
-  const winnerName = result.winnerId === result.coinflip?.winner ? challengerName : defenderName;
-  // Gerçek kazanan adını belirle
-  const actualWinnerName = result.winnerId
-    ? (result.winnerId === result.coinflip?.winner
-        ? challengerName  // Bu mantık aşağıda düzeltildi
-        : defenderName)
-    : challengerName;
+const SEP = '─────────────────────';
 
-  // Kazanan ID'ye göre isim
-  const winnerDisplayName = result.winnerId
-    ? (result.coinflip?.winner === 'challenger' ? challengerName : defenderName)
-    : '?';
-  const loserDisplayName = result.coinflip?.winner === 'challenger' ? defenderName : challengerName;
-
-  const embed = new EmbedBuilder()
-    .setColor(result.winnerId ? 0x22c55e : 0xef4444)
-    .setTitle('🪙 Coin Flip Sonucu')
-    .setDescription(
-      `**${winnerDisplayName}** yazıyı/turayı doğru tahmin etti!\n\n` +
-      `🏆 **Kazanan:** ${winnerDisplayName} **+${formatNumber(result.winnerGain)} coin**\n` +
-      `💸 **Kaybeden:** ${loserDisplayName} **-${formatNumber(result.loserLoss)} coin**`,
-    )
-    .addFields(
-      { name: '💰 Bahis', value: formatNumber(result.bet), inline: true },
-      { name: '🏦 Kasa Payı', value: `${formatNumber(result.houseCut)} coin (%${(result.houseCutRate * 100).toFixed(0)})`, inline: true },
-    )
-    .setTimestamp();
-
-  if (result.rebate) {
-    embed.addFields({
-      name: '🦉 Baykuş Tesellisi',
-      value: `**${loserDisplayName}** üst üste ${result.rebate.lossStreak} kez kaybetti. **+${formatNumber(result.rebate.amount)} coin** iade edildi!\n*Moralini bozma, tekrar dene!*`,
-    });
+/** Blackjack el gösterimi — solo BJ tarzı inline backtick kartlar */
+function formatHand(cards: { rank: string; suit: string }[], hideFirst = false): string {
+  if (hideFirst && cards.length >= 2) {
+    return [`\`🂠\``, ...cards.slice(1).map((c) => `\`${c.rank}${c.suit}\``)].join(' ');
   }
-
-  return embed;
+  return cards.map((c) => `\`${c.rank}${c.suit}\``).join(' ');
 }
 
-/** Slot Race animasyon embed'i (spin sırasında) */
-function buildSlotSpinEmbed(
-  challengerName: string,
-  defenderName: string,
-  challengerSymbols: string[],
-  defenderSymbols: string[],
-  spinning: boolean,
-): EmbedBuilder {
-  const spinChar = '🔄';
-  const cDisplay = spinning
-    ? `${spinChar} ${spinChar} ${spinChar}`
-    : challengerSymbols.join(' ');
-  const dDisplay = spinning
-    ? `${spinChar} ${spinChar} ${spinChar}`
-    : defenderSymbols.join(' ');
-
-  return new EmbedBuilder()
-    .setColor(0x8b5cf6)
-    .setTitle('🎰 Slot Yarışması')
-    .addFields(
-      { name: `🎮 ${challengerName}`, value: `\`${cDisplay}\``, inline: true },
-      { name: '\u200b', value: '**VS**', inline: true },
-      { name: `🎮 ${defenderName}`, value: `\`${dDisplay}\``, inline: true },
-    )
-    .setFooter({ text: spinning ? 'Makineler dönüyor...' : 'Sonuçlar belli oldu!' });
-}
-
-/** Slot Race sonuç embed'i */
-function buildSlotResultEmbed(
-  result: PvpGamblingResult,
-  challengerName: string,
-  defenderName: string,
-  challengerId: string,
-): EmbedBuilder {
-  const winnerDisplayName = result.winnerId
-    ? (result.winnerId === challengerId ? challengerName : defenderName)
-    : challengerName;
-  const loserDisplayName = winnerDisplayName === challengerName ? defenderName : challengerName;
-
-  const embed = new EmbedBuilder()
-    .setColor(0x8b5cf6)
-    .setTitle('🎰 Slot Yarışması Sonucu')
-    .addFields(
-      {
-        name: `🎮 ${challengerName}`,
-        value: `\`${result.slot!.challengerSymbols.join(' ')}\``,
-        inline: true,
-      },
-      { name: '\u200b', value: '**VS**', inline: true },
-      {
-        name: `🎮 ${defenderName}`,
-        value: `\`${result.slot!.defenderSymbols.join(' ')}\``,
-        inline: true,
-      },
-    )
-    .addFields(
-      { name: '💰 Bahis', value: formatNumber(result.bet), inline: true },
-      { name: '🏦 Kasa Payı', value: `${formatNumber(result.houseCut)} coin`, inline: true },
-    )
-    .setTimestamp();
-
-  if (result.slot?.comboBonus) {
-    embed.addFields({
-      name: '✨ Combo Bonusu!',
-      value: `Her iki oyuncu da aynı sembolü yakaladı! Her ikisine **+${result.slot.comboXP} Baykuş Tecrübe Puanı** verildi.`,
-    });
-  }
-
-  if (result.rebate) {
-    embed.addFields({
-      name: '🦉 Baykuş Tesellisi',
-      value: `Üst üste ${result.rebate.lossStreak} kayıp. **+${formatNumber(result.rebate.amount)} coin** iade edildi!`,
-    });
-  }
-
-  return embed;
-}
-
-// ─── Blackjack Embed'leri ─────────────────────────────────────────────────────
-
-/** Blackjack el gösterimi */
-function formatHand(cards: { rank: string; suit: string }[], hideSecond = false): string {
-  if (hideSecond && cards.length >= 2) {
-    return `${cards[0]!.rank}${cards[0]!.suit} 🂠`;
-  }
-  return cards.map((c) => `${c.rank}${c.suit}`).join(' ');
-}
-
-/** Blackjack oyun durumu embed'i */
-function buildBJGameEmbed(
+/** Oyun sırasında gösterilen düz text ekranı */
+function buildBJScreen(
   session: PvpGamblingSession,
   challengerName: string,
   defenderName: string,
-  revealAll = false,
-): EmbedBuilder {
+): string {
   const bj = session.bj!;
   const cHand = calcHandValue(bj.challengerHand);
   const dHand = calcHandValue(bj.defenderHand);
-
   const isHighStakes = session.bet >= PVP_BJ_HIGH_STAKES_THRESHOLD;
-  const title = isHighStakes
-    ? '🃏 Blackjack Pro — ⚠️ YÜKSEK RİSKLİ MASA'
-    : '🃏 Blackjack Pro';
+  const currentTurnName = bj.currentTurn === 'challenger' ? challengerName : defenderName;
 
-  const currentTurnName =
-    bj.currentTurn === 'challenger' ? challengerName : defenderName;
+  const hideCFromDefender = bj.currentTurn === 'defender' && !bj.challengerStood;
+  const hideDFromChallenger = bj.currentTurn === 'challenger' && !bj.defenderStood;
 
-  const embed = new EmbedBuilder()
-    .setColor(isHighStakes ? 0xef4444 : 0x1d4ed8)
-    .setTitle(title)
-    .addFields(
-      {
-        name: `🎮 ${challengerName}`,
-        value: `Kart: \`${formatHand(bj.challengerHand, !revealAll && bj.currentTurn === 'defender')}\`\nToplam: **${revealAll || bj.currentTurn === 'challenger' ? cHand.total : '?'}**${cHand.isBust ? ' 💥 BUST' : ''}${cHand.isBlackjack ? ' 🎉 BLACKJACK' : ''}`,
-        inline: true,
-      },
-      { name: '\u200b', value: '**VS**', inline: true },
-      {
-        name: `🎮 ${defenderName}`,
-        value: `Kart: \`${formatHand(bj.defenderHand, !revealAll && bj.currentTurn === 'challenger')}\`\nToplam: **${revealAll || bj.currentTurn === 'defender' ? dHand.total : '?'}**${dHand.isBust ? ' 💥 BUST' : ''}${dHand.isBlackjack ? ' 🎉 BLACKJACK' : ''}`,
-        inline: true,
-      },
-    )
-    .addFields(
-      { name: '💰 Bahis', value: formatNumber(session.bet), inline: true },
-      { name: '🎯 Sıra', value: revealAll ? '—' : `**${currentTurnName}**`, inline: true },
-    );
+  const showCTotal = bj.currentTurn === 'challenger' || bj.challengerStood;
+  const showDTotal = bj.currentTurn === 'defender'   || bj.defenderStood;
 
-  if (isHighStakes) {
-    embed.setDescription('> ⚠️ Bu masa **yüksek riskli** olarak işaretlendi. Diğer oyuncular izleyebilir.');
-  }
+  const cTotalStr = showCTotal
+    ? (cHand.isBust ? 'BUST 💀' : cHand.isBlackjack ? '21 🎉' : String(cHand.total))
+    : '?';
+  const dTotalStr = showDTotal
+    ? (dHand.isBust ? 'BUST 💀' : dHand.isBlackjack ? '21 🎉' : String(dHand.total))
+    : '?';
 
-  return embed;
+  const cTag = bj.currentTurn === 'challenger' ? '  🟢 sıra sende' : bj.challengerStood ? '  🛑 stand' : '';
+  const dTag = bj.currentTurn === 'defender'   ? '  🟢 sıra sende' : bj.defenderStood   ? '  🛑 stand' : '';
+
+  const phaseTag = isHighStakes ? '⚠️ Yüksek Riskli' : `🟢 Senin turun`;
+
+  let s = `### 🃏 Blackjack\n`;
+  s += `${SEP}\n`;
+  s += `**Bahis:** ${formatNumber(session.bet)} 💰  ·  ${phaseTag}\n`;
+  s += `${SEP}\n\n`;
+  s += `👤 **${challengerName}**  —  **${cTotalStr}**${cTag}\n`;
+  s += `${formatHand(bj.challengerHand, hideCFromDefender)}\n\n`;
+  s += `👤 **${defenderName}**  —  **${dTotalStr}**${dTag}\n`;
+  s += `${formatHand(bj.defenderHand, hideDFromChallenger)}\n`;
+  s += `\n${SEP}\n`;
+  s += `> 🃏 *Hit mi Stand mı? (${Math.floor(PVP_BJ_TURN_TTL_MS / 1000)}s)*`;
+
+  return s;
 }
 
 /** Blackjack Hit/Stand buton satırı */
@@ -314,12 +265,14 @@ function buildBJActionRow(sessionId: string): ActionRowBuilder<ButtonBuilder> {
   return new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder()
       .setCustomId(`bj_hit:${sessionId}`)
-      .setLabel('🃏 Hit')
-      .setStyle(ButtonStyle.Primary),
+      .setEmoji('🃏')
+      .setLabel('Hit')
+      .setStyle(ButtonStyle.Success),
     new ButtonBuilder()
       .setCustomId(`bj_stand:${sessionId}`)
-      .setLabel('✋ Stand')
-      .setStyle(ButtonStyle.Secondary),
+      .setEmoji('🛑')
+      .setLabel('Stand')
+      .setStyle(ButtonStyle.Danger),
   );
 }
 
@@ -328,68 +281,56 @@ function buildBJDisabledRow(sessionId: string): ActionRowBuilder<ButtonBuilder> 
   return new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder()
       .setCustomId(`bj_hit:${sessionId}`)
-      .setLabel('🃏 Hit')
-      .setStyle(ButtonStyle.Primary)
+      .setEmoji('🃏')
+      .setLabel('Hit')
+      .setStyle(ButtonStyle.Success)
       .setDisabled(true),
     new ButtonBuilder()
       .setCustomId(`bj_stand:${sessionId}`)
-      .setLabel('✋ Stand')
-      .setStyle(ButtonStyle.Secondary)
+      .setEmoji('🛑')
+      .setLabel('Stand')
+      .setStyle(ButtonStyle.Danger)
       .setDisabled(true),
   );
 }
 
-/** Blackjack sonuç embed'i */
-function buildBJResultEmbed(
+/** Sonuç ekranı — düz text */
+function buildBJResultScreen(
   result: PvpGamblingResult,
   challengerName: string,
   defenderName: string,
-): EmbedBuilder {
+): string {
   const bj = result.blackjack!;
+
   const outcomeText = {
     challenger_wins: `🏆 **${challengerName}** kazandı!`,
-    defender_wins: `🏆 **${defenderName}** kazandı!`,
-    push: '🤝 **Beraberlik!** Bahisler iade edildi.',
+    defender_wins:   `🏆 **${defenderName}** kazandı!`,
+    push:            `🤝 Beraberlik — bahisler iade edildi`,
   }[bj.outcome];
 
-  const embed = new EmbedBuilder()
-    .setColor(bj.outcome === 'push' ? 0xf59e0b : 0x22c55e)
-    .setTitle('🃏 Blackjack Pro — Sonuç')
-    .setDescription(outcomeText)
-    .addFields(
-      {
-        name: `🎮 ${challengerName}`,
-        value: `\`${formatHand(bj.challengerHand.cards)}\`\nToplam: **${bj.challengerHand.total}**${bj.challengerHand.isBust ? ' 💥' : ''}${bj.challengerHand.isBlackjack ? ' 🎉' : ''}`,
-        inline: true,
-      },
-      { name: '\u200b', value: '**VS**', inline: true },
-      {
-        name: `🎮 ${defenderName}`,
-        value: `\`${formatHand(bj.defenderHand.cards)}\`\nToplam: **${bj.defenderHand.total}**${bj.defenderHand.isBust ? ' 💥' : ''}${bj.defenderHand.isBlackjack ? ' 🎉' : ''}`,
-        inline: true,
-      },
-    )
-    .addFields(
-      { name: '💰 Bahis', value: formatNumber(result.bet), inline: true },
-      { name: '🏦 Kasa Payı', value: `${formatNumber(result.houseCut)} coin`, inline: true },
-      {
-        name: bj.outcome === 'push' ? '↩️ İade' : '💸 Net Kazanç',
-        value: bj.outcome === 'push'
-          ? `Her iki oyuncuya **${formatNumber(result.bet)} coin** iade`
-          : `**+${formatNumber(result.winnerGain)} coin**`,
-        inline: true,
-      },
-    )
-    .setTimestamp();
+  const cTotal = bj.challengerHand.isBust ? 'BUST 💀' : bj.challengerHand.isBlackjack ? '21 🎉' : String(bj.challengerHand.total);
+  const dTotal = bj.defenderHand.isBust   ? 'BUST 💀' : bj.defenderHand.isBlackjack   ? '21 🎉' : String(bj.defenderHand.total);
+
+  const netLine = bj.outcome === 'push'
+    ? `🔘 İade: **${formatNumber(result.bet)} coin**`
+    : `💰 **+${formatNumber(result.winnerGain)} coin**  ·  🏦 Kasa: ${formatNumber(result.houseCut)} coin`;
+
+  let s = `### 🃏 Blackjack — Sonuç\n`;
+  s += `${SEP}\n`;
+  s += `${outcomeText}\n`;
+  s += `${SEP}\n\n`;
+  s += `👤 **${challengerName}**  —  **${cTotal}**\n`;
+  s += `${formatHand(bj.challengerHand.cards)}\n\n`;
+  s += `👤 **${defenderName}**  —  **${dTotal}**\n`;
+  s += `${formatHand(bj.defenderHand.cards)}\n`;
+  s += `\n${SEP}\n`;
+  s += netLine;
 
   if (result.rebate) {
-    embed.addFields({
-      name: '🦉 Baykuş Tesellisi',
-      value: `Üst üste ${result.rebate.lossStreak} kayıp. **+${formatNumber(result.rebate.amount)} coin** iade edildi!\n*Moralini bozma, tekrar dene!*`,
-    });
+    s += `\n\n🦉 **Baykuş Tesellisi** — Üst üste ${result.rebate.lossStreak} kayıp → **+${formatNumber(result.rebate.amount)} coin** iade`;
   }
 
-  return embed;
+  return s;
 }
 
 // ─── Davet Akışı (Ortak) ─────────────────────────────────────────────────────
@@ -413,7 +354,7 @@ async function runInviteFlow(
   const validation = await validateInvite(ctx.prisma, ctx.redis, challengerId, defenderId, bet);
   if (!validation.valid) {
     await message.reply({
-      embeds: [failEmbed('❌ Oyun Başlatılamadı', validation.error ?? 'Bilinmeyen hata.')],
+      content: `❌ **Oyun Başlatılamadı** — ${validation.error ?? 'Bilinmeyen hata.'}`,
     });
     return;
   }
@@ -468,7 +409,8 @@ async function runInviteFlow(
     if (action === 'pvp_reject') {
       await deleteSession(ctx.redis, sessionId);
       await i.update({
-        embeds: [warningEmbed('🚫 Davet Reddedildi', `**${defenderName}** daveti reddetti.`)],
+        content: `🚫 **Davet Reddedildi** — **${defenderName}** daveti reddetti.`,
+        embeds: [],
         components: [buildDisabledRow(sessionId)],
       });
       return;
@@ -477,7 +419,8 @@ async function runInviteFlow(
     if (action === 'pvp_cancel') {
       await deleteSession(ctx.redis, sessionId);
       await i.update({
-        embeds: [warningEmbed('🚫 Davet İptal Edildi', `**${challengerName}** daveti iptal etti.`)],
+        content: `🚫 **Davet İptal Edildi** — **${challengerName}** daveti iptal etti.`,
+        embeds: [],
         components: [buildDisabledRow(sessionId)],
       });
       return;
@@ -485,7 +428,8 @@ async function runInviteFlow(
 
     if (action === 'pvp_accept') {
       await i.update({
-        embeds: [infoEmbed('⚔️ Oyun Başlıyor!', `**${challengerName}** vs **${defenderName}** — Hazır olun!`)],
+        content: `⚔️ **Oyun Başlıyor!** — **${challengerName}** vs **${defenderName}** — Hazır olun!`,
+        embeds: [],
         components: [buildDisabledRow(sessionId)],
       });
 
@@ -501,7 +445,7 @@ async function runInviteFlow(
       } catch (err) {
         await deleteSession(ctx.redis, sessionId);
         await (message.channel as TextChannel).send({
-          embeds: [failEmbed('❌ Oyun Hatası', err instanceof Error ? err.message : 'Beklenmeyen hata.')],
+          content: `❌ **Oyun Hatası** — ${err instanceof Error ? err.message : 'Beklenmeyen hata.'}`,
         });
       }
     }
@@ -511,7 +455,8 @@ async function runInviteFlow(
     if (reason === 'time') {
       await deleteSession(ctx.redis, sessionId);
       await inviteMsg.edit({
-        embeds: [warningEmbed('⏰ Zaman Aşımı', `**${defenderName}** 30 saniye içinde yanıt vermedi. Davet iptal edildi.`)],
+        content: `⏰ **Zaman Aşımı** — **${defenderName}** 30 saniye içinde yanıt vermedi. Davet iptal edildi.`,
+        embeds: [],
         components: [buildDisabledRow(sessionId)],
       });
     }
@@ -531,44 +476,21 @@ async function runCoinFlipGame(
   const session = await getSession(ctx.redis, sessionId);
   if (!session) throw new Error('Oturum bulunamadı.');
 
-  // Animasyonlu embed — "yazı mı tura mı" gerilimi
   const animMsg = await (message.channel as TextChannel).send({
-    embeds: [
-      new EmbedBuilder()
-        .setColor(0xf59e0b)
-        .setTitle('🪙 Coin Flip Düellosu')
-        .setDescription(
-          `**${challengerName}** 🆚 **${defenderName}**\n\n` +
-          `> 🔄 Coin havaya fırlatıldı...\n\n` +
-          `💰 Bahis: **${formatNumber(session.bet)} coin**`,
-        ),
-    ],
+    content: `### 🪙 Coin Flip\n${SEP_PVP}\n**${challengerName}** 🆚 **${defenderName}**\n> 🔄 *Coin havaya fırlatıldı...*\n${SEP_PVP}\n💰 Bahis: **${formatNumber(session.bet)} coin**`,
   });
 
-  // Kısa bekleme (gerilim efekti)
   await new Promise((r) => setTimeout(r, 1500));
-
-  // Sonucu hesapla
   const result = await settleCoinFlip(ctx.prisma, ctx.redis, session);
 
-  // Sonuç embed'ini güncelle
   await animMsg.edit({
-    embeds: [buildCoinFlipResultEmbed(result, challengerName, defenderName)],
+    content: buildCoinFlipResultText(result, challengerName, defenderName),
   });
 
-  // Seri Katil duyurusu
   if (result.serialKiller) {
     const killerName = result.coinflip?.winner === 'challenger' ? challengerName : defenderName;
     await (message.channel as TextChannel).send({
-      embeds: [
-        new EmbedBuilder()
-          .setColor(0xdc2626)
-          .setTitle('💀 SERİ KATİL!')
-          .setDescription(
-            `**${killerName}** üst üste **${result.cfStreak}** Coin Flip kazandı!\n\n` +
-            `> 🔥 Bu oyuncu durdurulamıyor! Kim karşısına çıkacak?`,
-          ),
-      ],
+      content: `### 💀 SERİ KATİL!\n${SEP_PVP}\n**${killerName}** üst üste **${result.cfStreak}** Coin Flip kazandı!\n> 🔥 Bu oyuncu durdurulamıyor!`,
     });
   }
 }
@@ -584,15 +506,12 @@ async function runSlotRaceGame(
   const session = await getSession(ctx.redis, sessionId);
   if (!session) throw new Error('Oturum bulunamadı.');
 
-  // Animasyon: spin adımları
   const spinMsg = await (message.channel as TextChannel).send({
-    embeds: [buildSlotSpinEmbed(challengerName, defenderName, [], [], true)],
+    content: buildSlotSpinText(challengerName, defenderName, [], [], true),
   });
 
-  // Spin animasyonu (PVP_SLOT_SPIN_STEPS adım)
   for (let step = 0; step < PVP_SLOT_SPIN_STEPS; step++) {
     await new Promise((r) => setTimeout(r, PVP_SLOT_ANIMATION_DELAY_MS));
-    // Her adımda rastgele semboller göster (sahte animasyon)
     const fakeC = [SLOT_TABLE[Math.floor(Math.random() * SLOT_TABLE.length)]!.name,
                    SLOT_TABLE[Math.floor(Math.random() * SLOT_TABLE.length)]!.name,
                    SLOT_TABLE[Math.floor(Math.random() * SLOT_TABLE.length)]!.name];
@@ -600,16 +519,14 @@ async function runSlotRaceGame(
                    SLOT_TABLE[Math.floor(Math.random() * SLOT_TABLE.length)]!.name,
                    SLOT_TABLE[Math.floor(Math.random() * SLOT_TABLE.length)]!.name];
     await spinMsg.edit({
-      embeds: [buildSlotSpinEmbed(challengerName, defenderName, fakeC, fakeD, step < PVP_SLOT_SPIN_STEPS - 1)],
+      content: buildSlotSpinText(challengerName, defenderName, fakeC, fakeD, step < PVP_SLOT_SPIN_STEPS - 1),
     });
   }
 
-  // Gerçek sonucu hesapla
   const result = await settleSlotRace(ctx.prisma, ctx.redis, session);
 
-  // Final sonuç
   await spinMsg.edit({
-    embeds: [buildSlotResultEmbed(result, challengerName, defenderName, session.challengerId)],
+    content: buildSlotResultText(result, challengerName, defenderName, session.challengerId),
   });
 }
 
@@ -628,18 +545,9 @@ async function runBlackjackGame(
   const deck = buildDeck();
   const { challengerCards, defenderCards, remainingDeck } = dealInitialHands(deck);
 
-  // Yüksek riskli masa uyarısı
   if (session.bet >= PVP_BJ_HIGH_STAKES_THRESHOLD) {
     await (message.channel as TextChannel).send({
-      embeds: [
-        new EmbedBuilder()
-          .setColor(0xef4444)
-          .setTitle('⚠️ YÜKSEK RİSKLİ MASA')
-          .setDescription(
-            `**${challengerName}** vs **${defenderName}** arasında **${formatNumber(session.bet)} coin** bahisli bir Blackjack Pro oyunu başladı!\n\n` +
-            `> 👁️ Bu masayı izleyebilirsiniz. Etkileşim yapamazsınız.`,
-          ),
-      ],
+      content: `### ⚠️ Yüksek Riskli Masa\n${SEP_PVP}\n**${challengerName}** vs **${defenderName}** — **${formatNumber(session.bet)} coin** bahisli Blackjack başladı!\n> 👁️ Bu masayı izleyebilirsiniz.`,
     });
   }
 
@@ -657,16 +565,16 @@ async function runBlackjackGame(
   });
   if (!updatedSession) throw new Error('Oturum güncellenemedi.');
 
-  // Oyun embed'ini gönder
+  // Oyun mesajını gönder — embed değil düz text
   const gameMsg = await (message.channel as TextChannel).send({
-    embeds: [buildBJGameEmbed(updatedSession, challengerName, defenderName)],
+    content: buildBJScreen(updatedSession, challengerName, defenderName),
     components: [buildBJActionRow(sessionId)],
   });
 
-  // Sıralı hamle collector'ı
+  // Sıralı hamle collector'ı — her hamle için PVP_BJ_TURN_TTL_MS
   const collector = gameMsg.createMessageComponentCollector({
     componentType: ComponentType.Button,
-    time: PVP_BJ_TURN_TTL_MS * 2, // Her iki oyuncu için toplam süre
+    time: PVP_BJ_TURN_TTL_MS,
     filter: (i) =>
       (i.customId.startsWith('bj_hit:') || i.customId.startsWith('bj_stand:')) &&
       (i.user.id === session.challengerId || i.user.id === session.defenderId),
@@ -685,11 +593,13 @@ async function runBlackjackGame(
       (isChallenger && current.bj.currentTurn === 'challenger') ||
       (isDefender && current.bj.currentTurn === 'defender');
 
-    // Sıra kontrolü
     if (!isCurrentTurn) {
       await i.reply({ content: '⏳ Şu an sıra sende değil.', flags: 64 });
       return;
     }
+
+    // Hamle yapıldı — timer'ı sıfırla
+    collector.resetTimer({ time: PVP_BJ_TURN_TTL_MS });
 
     const [action] = i.customId.split(':');
     const bjData = { ...current.bj };
@@ -735,15 +645,16 @@ async function runBlackjackGame(
 
     if (bothDone) {
       collector.stop('game_over');
-      // Sonucu hesapla
       const result = await settleBlackjackPro(ctx.prisma, ctx.redis, newSession);
       await i.update({
-        embeds: [buildBJResultEmbed(result, challengerName, defenderName)],
+        content: buildBJResultScreen(result, challengerName, defenderName),
+        embeds: [],
         components: [buildBJDisabledRow(sessionId)],
       });
     } else {
       await i.update({
-        embeds: [buildBJGameEmbed(newSession, challengerName, defenderName)],
+        content: buildBJScreen(newSession, challengerName, defenderName),
+        embeds: [],
         components: [buildBJActionRow(sessionId)],
       });
     }
@@ -751,16 +662,30 @@ async function runBlackjackGame(
 
   collector.on('end', async (_: unknown, reason: string) => {
     if (reason === 'time') {
-      // Zaman aşımı: mevcut durumla sonuçlandır
       const current = await getSession(ctx.redis, sessionId);
       if (current?.bj) {
-        // Stand yapmayan oyuncuyu otomatik stand yap
-        const bjData = { ...current.bj, challengerStood: true, defenderStood: true };
+        // Sadece sırası gelen (hareketsiz kalan) oyuncuyu stand yap
+        // Diğer oyuncunun eli olduğu gibi kalır → 21'e en yakın kazanır
+        const bjData = { ...current.bj };
+        const timedOutName = bjData.currentTurn === 'challenger' ? challengerName : defenderName;
+
+        // Sadece sırası gelen oyuncuyu stand yap, diğeri olduğu gibi kalır
+        if (bjData.currentTurn === 'challenger') {
+          bjData.challengerStood = true;
+        } else {
+          bjData.defenderStood = true;
+        }
+        // Her ikisi de artık done — settle et
+        bjData.challengerStood = true;
+        bjData.defenderStood   = true;
+
         const finalSession = await updateSession(ctx.redis, sessionId, { bj: bjData });
         if (finalSession) {
           const result = await settleBlackjackPro(ctx.prisma, ctx.redis, finalSession);
+          const timeoutNote = `\n⏰ *${timedOutName} süre dolduğu için otomatik stand yaptı.*`;
           await gameMsg.edit({
-            embeds: [buildBJResultEmbed(result, challengerName, defenderName)],
+            content: buildBJResultScreen(result, challengerName, defenderName) + timeoutNote,
+            embeds: [],
             components: [buildBJDisabledRow(sessionId)],
           });
         }
@@ -810,7 +735,7 @@ export async function runPvpCoinFlip(
       return;
     }
     const bet = parseInt(betRaw, 10);
-    const { coinFlip } = await import('../systems/gambling');
+    const { coinFlip } = await import('../systems/gambling.js');
     try {
       const result = await coinFlip(ctx.prisma, message.author.id, bet);
       const frames = ['🪙', '🔄', '🪙', '🔄', '🪙'];
@@ -836,7 +761,7 @@ export async function runPvpCoinFlip(
     return;
   }
   if (target.id === message.author.id) {
-    await message.reply({ embeds: [failEmbed('❌ Geçersiz Hedef', 'Kendine meydan okuyamazsın.')] });
+    await message.reply({ content: '❌ **Geçersiz Hedef** — Kendine meydan okuyamazsın.' });
     return;
   }
   const bet = parseInt(betRaw, 10);
@@ -862,7 +787,7 @@ export async function runPvpSlot(
       return;
     }
     const bet = parseInt(betRaw, 10);
-    const { slot } = await import('../systems/gambling');
+    const { slot } = await import('../systems/gambling.js');
     const SYMBOLS = ['🍒', '🍋', '🍊', '🍇', '🍉', '💎', '⭐', '🔔'];
     const rand = () => SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)]!;
     try {
@@ -891,7 +816,7 @@ export async function runPvpSlot(
     return;
   }
   if (target.id === message.author.id) {
-    await message.reply({ embeds: [failEmbed('❌ Geçersiz Hedef', 'Kendine meydan okuyamazsın.')] });
+    await message.reply({ content: '❌ **Geçersiz Hedef** — Kendine meydan okuyamazsın.' });
     return;
   }
   const bet = parseInt(betRaw, 10);
@@ -917,7 +842,7 @@ export async function runPvpBlackjack(
       return;
     }
     const bet = parseInt(betRaw, 10);
-    const { handleBjTextCommand } = await import('./bj');
+    const { handleBjTextCommand } = await import('./bj.js');
     await handleBjTextCommand(message, bet, ctx);
     return;
   }
@@ -928,10 +853,11 @@ export async function runPvpBlackjack(
     return;
   }
   if (target.id === message.author.id) {
-    await message.reply({ embeds: [failEmbed('❌ Geçersiz Hedef', 'Kendine meydan okuyamazsın.')] });
+    await message.reply({ content: '❌ **Geçersiz Hedef** — Kendine meydan okuyamazsın.' });
     return;
   }
   const bet = parseInt(betRaw, 10);
   const authorName = message.member?.displayName ?? message.author.username;
   await runInviteFlow(message, ctx, message.author.id, authorName, target.id, target.name, bet, 'blackjack');
 }
+

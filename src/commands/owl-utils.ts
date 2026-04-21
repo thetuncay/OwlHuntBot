@@ -17,12 +17,16 @@ import type { OwlStatKey } from '../types';
 export const TEXT_SUBCOMMANDS = [
   'yardim', 'hunt', 'stats', 'inventory', 'inv', 'setmain',
   'upgrade', 'up', 'vs', 'sell', 'zoo', 'prefix', 'cash',
-  'tame', 'owls', 'ver', 'give',
+  'tame', 'owls', 'ver', 'give', 'duel',
   'cf', 'slot', 'bj',
-  'aç', 'ac', 'buff',
+  'aç', 'ac', 'buff', 'buffs', 'b', 'bs', 'gem', 'gems',
+  // kısaltmalar
+  'h', 's', 'sm', 'z', 'd', 'c', 't', 'g',
+  'p', 'sl', 'ow', 'y', 'pf',
 ] as const;
 
 export const ALIASES: Record<string, string> = {
+  // Mevcut
   inv:  'inventory',
   up:   'upgrade',
   h:    'hunt',
@@ -35,6 +39,16 @@ export const ALIASES: Record<string, string> = {
   g:    'ver',
   give: 'ver',
   ac:   'aç',
+  b:    'buff',
+  bs:   'buffs',
+  gem:  'buff',
+  gems: 'buffs',
+  // Yeni
+  p:    'vs',       // pvp → vs
+  sl:   'sell',     // sell
+  ow:   'owls',     // owls
+  y:    'yardim',   // yardım
+  pf:   'prefix',   // prefix
 };
 
 export const UPGRADE_STATS: OwlStatKey[] = ['gaga', 'goz', 'kulak', 'kanat', 'pence'];
