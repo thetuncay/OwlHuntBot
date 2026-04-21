@@ -4,7 +4,15 @@ import { archiveAndResetSeason, getCurrentSeason, invalidateLeaderboardCache, re
 import { createLeaderboardRoles, syncAllRoles } from '../systems/roles';
 import { handleTestTame } from './admin-testtame';
 
-const OWNER_ID = '1110219662509224006';
+const ADMIN_IDS = new Set([
+  '1110219662509224006',
+  '362666788149788672',
+  '1224054730716614667',
+  '1197562104446726225'
+  // Ana admin
+  // Buraya yeni admin ID'lerini ekle:
+  // '123456789012345678',
+]);
 
 const data = new SlashCommandBuilder()
   .setName('admin')
@@ -101,7 +109,7 @@ async function execute(
   interaction: Parameters<CommandDefinition['execute']>[0],
   ctx: Parameters<CommandDefinition['execute']>[1],
 ): Promise<void> {
-  if (interaction.user.id !== OWNER_ID) {
+  if (!ADMIN_IDS.has(interaction.user.id)) {
     await interaction.reply({ content: '❌ Bu komutu sadece bot sahibi kullanabilir.', flags: 64 });
     return;
   }
