@@ -142,9 +142,9 @@ function buildFinalMessage(name: string, compressed: CompressedHunt): string {
 
   const statusSuffix = compressed.hasCritical ? ' ⚡' : '';
 
-  // Aktif buff göstergesi — OwO tarzı: emoji[cur/max]
+  // Aktif buff göstergesi — minimal: emoji[cur/max]
   const buffStr = compressed.activeBuffs && compressed.activeBuffs.length > 0
-    ? ` | hunt is empowered by ${compressed.activeBuffs.map((b) => `${b.emoji}\`[${b.chargeCur}/${b.chargeMax}]\``).join(' ')} !`
+    ? ` · Buff: ${compressed.activeBuffs.map((b) => `${b.emoji}\`[${b.chargeCur}/${b.chargeMax}]\``).join(' ')}`
     : '';
 
   lines.push(`🌙 | **${name}** ${action}!${statusSuffix}${buffStr}`);
@@ -215,19 +215,12 @@ export async function animateHuntInteraction(
   name: string,
   compressed: CompressedHunt,
 ): Promise<void> {
-  const frames = buildAnimationFrames(compressed);
   const final = buildFinalMessage(name, compressed);
-
-  // deferReply yapıldıysa editReply, yapılmadıysa reply kullan
-  const firstEdit = interaction.reply
-    ? () => interaction.reply!({ content: frames[0] })
-    : () => interaction.editReply({ content: frames[0] });
-
-  await firstEdit();
-  await sleep(120);
-  await interaction.editReply({ content: frames[2] }).catch(() => null);
-  await sleep(150);
-  await interaction.editReply({ content: final }).catch(() => null);
+  if (interaction.reply) {
+    await interaction.reply({ content: final });
+  } else {
+    await interaction.editReply({ content: final });
+  }
 }
 
 // ─── Animasyon: prefix mesaj ──────────────────────────────────────────────────
@@ -236,14 +229,6 @@ export async function animateHuntMessage(
   name: string,
   compressed: CompressedHunt,
 ): Promise<void> {
-  const frames = buildAnimationFrames(compressed);
   const final = buildFinalMessage(name, compressed);
-
-  const sent = (await message.reply(frames[0])) as { edit: Function };
-
-  // Sadece 1 ara frame + final
-  await sleep(100);
-  await sent.edit(frames[2]).catch(() => null);
-  await sleep(130);
-  await sent.edit(final).catch(() => null);
+  await message.reply(final);
 }
