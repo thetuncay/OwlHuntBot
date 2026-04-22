@@ -822,7 +822,7 @@ export const BUFF_ITEMS: BuffItemDef[] = [
     huntCost:     1,
     pvpCost:      0,
     upgradeCost:  0,
-    effectValue:  0.18,  // +18% catch (eskiden +8%)
+    effectValue:  0.25,  // +25% catch
     effectType:   'catch_bonus',
     tradeoff:     'Charge bitince pasifleşir, item kaybolmaz.',
   },
@@ -837,7 +837,7 @@ export const BUFF_ITEMS: BuffItemDef[] = [
     huntCost:     1,
     pvpCost:      0,
     upgradeCost:  0,
-    effectValue:  1.60,  // +60% drop (eskiden +35%)
+    effectValue:  1.90,  // +90% drop
     effectType:   'loot_mult',
     tradeoff:     'Charge bitince pasifleşir.',
   },
@@ -852,7 +852,7 @@ export const BUFF_ITEMS: BuffItemDef[] = [
     huntCost:     1,
     pvpCost:      0,
     upgradeCost:  0,
-    effectValue:  0.25,  // +25% nadir drop (eskiden +12%)
+    effectValue:  0.35,  // +35% nadir drop
     effectType:   'rare_drop_bonus',
     tradeoff:     'Güçlü ama Rare, charge daha az.',
   },
@@ -867,7 +867,7 @@ export const BUFF_ITEMS: BuffItemDef[] = [
     huntCost:     1,
     pvpCost:      0,
     upgradeCost:  0,
-    effectValue:  0.12,  // +12% catch + %30 loot (eskiden +5%/+20%)
+    effectValue:  0.20,  // +20% catch + %40 loot
     effectType:   'catch_bonus',
     tradeoff:     'Çift etki, uzun ömür.',
   },
@@ -882,7 +882,7 @@ export const BUFF_ITEMS: BuffItemDef[] = [
     huntCost:     1,
     pvpCost:      0,
     upgradeCost:  0,
-    effectValue:  2.20,  // +120% drop (eskiden +60%)
+    effectValue:  2.80,  // +180% drop
     effectType:   'loot_mult',
     tradeoff:     'Çok güçlü ama Epic, charge az.',
   },
@@ -897,7 +897,7 @@ export const BUFF_ITEMS: BuffItemDef[] = [
     huntCost:     1,
     pvpCost:      0,
     upgradeCost:  0,
-    effectValue:  0.35,  // +35% catch (eskiden +18%)
+    effectValue:  0.45,  // +45% catch
     effectType:   'catch_bonus',
     tradeoff:     'En güçlü hunt buff, ama çok az charge.',
   },

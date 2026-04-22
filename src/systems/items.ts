@@ -167,7 +167,7 @@ export async function getBuffEffects(
           effects.catchBonus += scaledValue;
           // orman_ruhu özel: hem catch hem loot bonus
           if (buff.buffItemId === 'b004') {
-            effects.lootMult = effects.lootMult * (1 + 0.30 * rate); // +30% loot (eskiden +20%)
+            effects.lootMult = effects.lootMult * (1 + 0.40 * rate); // +40% loot
           }
           break;
         case 'loot_mult':
