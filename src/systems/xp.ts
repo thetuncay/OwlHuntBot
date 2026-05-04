@@ -4,15 +4,16 @@ import { finalXP, xpRequired } from '../utils/math';
 
 /**
  * Oyuncuya XP ekler, level-up durumunu hesaplar ve sonucu dondurur.
- * Atlas M0 uyumlu: $transaction kullanmaz, direkt sorgular.
+ * Opsiyonel olarak mevcut player verisi geçilebilir — DB sorgusu azaltır.
  */
 export async function addXP(
   prisma: PrismaClient,
   playerId: string,
   amount: number,
   source: string,
+  existingPlayer?: { level: number; xp: number },
 ): Promise<XpApplyResult> {
-  const player = await prisma.player.findUnique({
+  const player = existingPlayer ?? await prisma.player.findUnique({
     where: { id: playerId },
     select: { id: true, level: true, xp: true },
   });

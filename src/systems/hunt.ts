@@ -169,7 +169,10 @@ export async function rollHunt(prisma: PrismaClient, playerId: string, owlId: st
 
     const totalXP = successXP + failXP + comboBonus + multiBonus;
 
-    const xpResult = await addXP(prisma, playerId, totalXP, 'hunt');
+    const xpResult = await addXP(prisma, playerId, totalXP, 'hunt', {
+      level: player.level,
+      xp: player.xp,
+    });
 
     // ── DB Güncelleme ─────────────────────────────────────────────────────────
     // Player güncelleme + envanter upsert'leri paralel başlat
@@ -217,9 +220,7 @@ export async function rollHunt(prisma: PrismaClient, playerId: string, owlId: st
       prisma.player.update({
         where: { id: playerId },
         data: {
-          // Streak: sadece gerçek yakalamalar sayılır (guarantee hariç)
           huntComboStreak: realCatchCount > 0 ? { increment: 1 } : 0,
-          // Pity: nadir yakalandıysa sıfırla, yakalanmadıysa artır
           noRareStreak: gotRare ? 0 : { increment: 1 },
           lastHunt: new Date(),
         },
@@ -228,13 +229,8 @@ export async function rollHunt(prisma: PrismaClient, playerId: string, owlId: st
       ...(realCatchCount > 0 ? [
         prisma.owl.update({
           where: { id: owlId },
-          data: {
-            bond: {
-              increment: BOND_GAIN_PER_HUNT,
-            },
-          },
+          data: { bond: { increment: BOND_GAIN_PER_HUNT } },
         }).then(async (updated) => {
-          // Bond max'ı aşmasın
           if (updated.bond > BOND_MAX) {
             await prisma.owl.update({ where: { id: owlId }, data: { bond: BOND_MAX } });
           }
@@ -243,39 +239,31 @@ export async function rollHunt(prisma: PrismaClient, playerId: string, owlId: st
       ...inventoryOps,
     ]);
 
-    // ── Liderboard Istatistikleri ─────────────────────────────────────────────
+    // ── Arka Plan İşlemleri (fire-and-forget) ────────────────────────────────
+    // Bu işlemler kullanıcı cevabını BEKLETMEZ — arka planda çalışır.
+    // Liderboard, buff charge, lootbox, encounter — hepsi sonuç gösterildikten sonra işlenir.
     const rareSuccesses = catches.filter((c) => c.difficulty >= HUNT_HIGH_TIER_THRESHOLD).length;
-    await recordHuntStats(prisma, playerId, catches.length, rareSuccesses);
-    // Power score'u sadece level-up olduğunda güncelle (her hunt'ta değil)
+    const hasCritical = catches.some((c) => c.critical);
+
+    // Lootbox drop — arka planda hesapla
+    const lootboxDropsPromise = rollHuntLootboxDrop(prisma, playerId, player.level, hasCritical)
+      .catch(() => [] as LootboxDrop[]);
+
+    // Encounter — arka planda oluştur
+    const encounterPromise = createEncounter(prisma, playerId).catch(() => null);
+
+    // Liderboard, buff, power score — tamamen fire-and-forget
+    recordHuntStats(prisma, playerId, catches.length, rareSuccesses).catch(() => null);
+    drainBuffCharge(prisma, playerId, 'hunt').catch(() => null);
     if (xpResult.levelUp) {
       refreshPowerScore(prisma, playerId).catch(() => null);
     }
 
-    // ── Hunt Buff Charge Tüketimi ─────────────────────────────────────────────
-    // Her hunt'ta aktif hunt buff'larının charge'ını tüket
-    await drainBuffCharge(prisma, playerId, 'hunt');
-
-    // ── Lootbox Drop ─────────────────────────────────────────────────────────
-    // Her başarılı av için lootbox düşme şansı hesapla
-    const lootboxDrops: LootboxDrop[] = [];
-    const hasCritical = catches.some((c) => c.critical);
-    try {
-      const drops = await rollHuntLootboxDrop(prisma, playerId, player.level, hasCritical);
-      lootboxDrops.push(...drops);
-    } catch {
-      // Lootbox drop hatası hunt'ı engellemesin
-    }
-
-    // ── Encounter Tetikleyici ─────────────────────────────────────────────────
-    // Av sonrası yabani baykuş karşılaşması şansı — fire-and-forget değil,
-    // sonucu hunt result'a ekliyoruz ki UX gösterebilsin
-    let encounterId: string | undefined;
-    try {
-      const eid = await createEncounter(prisma, playerId);
-      if (eid) encounterId = eid;
-    } catch {
-      // Encounter oluşturma hatası hunt'ı engellemesin
-    }
+    // Lootbox ve encounter sonuçlarını bekle (UI için gerekli ama hızlı)
+    const [lootboxDrops, encounterId] = await Promise.all([
+      lootboxDropsPromise,
+      encounterPromise,
+    ]);
 
     return {
       catches,
@@ -283,7 +271,7 @@ export async function rollHunt(prisma: PrismaClient, playerId: string, owlId: st
       injured,
       totalXP,
       levelUp: xpResult.levelUp,
-      encounterId,
+      encounterId: encounterId ?? undefined,
       lootboxDrops: lootboxDrops.length > 0 ? lootboxDrops : undefined,
     };
   });

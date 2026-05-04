@@ -125,14 +125,16 @@ export async function runHuntMessage(
   const name = message.member?.displayName ?? message.author.username;
 
   // Aktif hunt buff'larını çek — hunt satırında göster
-  const rawBuffs = await listActiveBuffs(ctx.prisma as any, userId);
-  compressed.activeBuffs = rawBuffs
-    .filter((b) => b.chargeCur > 0 && b.category === 'hunt')
-    .map((b) => ({
-      emoji: BUFF_ITEM_MAP[b.buffItemId]?.emoji ?? '✨',
-      chargeCur: b.chargeCur,
-      chargeMax: b.chargeMax,
-    }));
+  // Fire-and-forget: buff listesi gösterim için, hunt sonucunu bekletmez
+  listActiveBuffs(ctx.prisma as any, userId).then((rawBuffs) => {
+    compressed.activeBuffs = rawBuffs
+      .filter((b) => b.chargeCur > 0 && b.category === 'hunt')
+      .map((b) => ({
+        emoji: BUFF_ITEM_MAP[b.buffItemId]?.emoji ?? '✨',
+        chargeCur: b.chargeCur,
+        chargeMax: b.chargeMax,
+      }));
+  }).catch(() => null);
 
   await animateHuntMessage(message, name, compressed);
 
