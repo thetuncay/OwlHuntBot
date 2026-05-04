@@ -51,9 +51,12 @@ async function loadCommands(): Promise<void> {
 
   for (const fileName of commandFiles) {
     const moduleUrl = pathToFileURL(join(commandsDir, fileName)).href;
-    const mod = (await import(moduleUrl)) as { default?: CommandDefinition };
-    if (mod.default?.data?.name) {
-      commandMap.set(mod.default.data.name, mod.default);
+    const mod = (await import(moduleUrl)) as { default?: CommandDefinition | { default?: CommandDefinition } };
+    // CJS interop: TypeScript CJS çıktısında asıl export mod.default.default'ta olabilir
+    const raw = mod.default as any;
+    const cmd: CommandDefinition | undefined = raw?.data ? raw : raw?.default?.data ? raw.default : undefined;
+    if (cmd?.data?.name) {
+      commandMap.set(cmd.data.name, cmd);
     }
   }
 }
@@ -267,9 +270,18 @@ async function cleanupOrphanBotPlayers(): Promise<void> {
     });
     if (orphans.length === 0) return;
     const ids = orphans.map((p) => p.id);
-    // Önce ilişkili owl'ları sil
+    // İlişkili kayıtları paralel sil (tüm foreign key relation'ları)
+    await Promise.all([
+      prisma.pvpSession.deleteMany({
+        where: { OR: [{ challengerId: { in: ids } }, { defenderId: { in: ids } }] },
+      }),
+      prisma.seasonArchive.deleteMany({ where: { playerId: { in: ids } } }),
+      prisma.playerBuff.deleteMany({ where: { playerId: { in: ids } } }),
+      prisma.encounter.deleteMany({ where: { playerId: { in: ids } } }),
+      prisma.inventoryItem.deleteMany({ where: { ownerId: { in: ids } } }),
+      prisma.playerRegistration.deleteMany({ where: { userId: { in: ids } } }),
+    ]);
     await prisma.owl.deleteMany({ where: { ownerId: { in: ids } } });
-    // Sonra bot oyuncuları sil
     await prisma.player.deleteMany({ where: { id: { in: ids } } });
     console.info(`[Cleanup] ${ids.length} orphan bot oyuncu temizlendi.`);
   } catch (err) {

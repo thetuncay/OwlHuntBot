@@ -131,9 +131,9 @@ export async function getSeasonArchive(
     select:  { rank: true, playerId: true, [scoreField]: true },
   });
   return rows.map((r) => ({
-    rank:     r.rank,
-    playerId: r.playerId,
-    score:    r[scoreField as keyof typeof r] as number,
+    rank:     r.rank ?? 0,
+    playerId: r.playerId ?? '',
+    score:    r[scoreField as keyof typeof r] as unknown as number,
   }));
 }
 

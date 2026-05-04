@@ -134,7 +134,7 @@ export async function handleOwlTextCommand(
   const helpPrefix = (await getGuildPrefix(ctx.redis, message.guildId ?? '')) || 'owl';
 
   // Kayıt gerektirmeyen komutlar
-  if (sub === 'yardim' || sub === 'yardim') {
+  if (sub === 'yardim' || sub === 'yardım') {
     await message.reply({ embeds: [buildHelpEmbed(helpPrefix)] });
     return;
   }

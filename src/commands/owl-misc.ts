@@ -211,7 +211,7 @@ export async function runPrefix(
     return;
   }
   const newPrefix = await setGuildPrefix(ctx.redis, interaction.guildId, value);
-  const { successEmbed: se } = await import('../utils/embed');
+  const { successEmbed: se } = await import('../utils/embed.js');
   await interaction.reply({
     embeds: [se('Prefix Guncellendi', `Yeni prefix: \`${newPrefix}\`\nOrnek: \`${newPrefix} hunt\``)],
     flags: 64,

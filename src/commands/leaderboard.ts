@@ -154,7 +154,7 @@ export async function handleTopTextCommand(
 function resolveCategoryAlias(input: string): LeaderboardCategory | null {
   const map: Record<string, LeaderboardCategory> = {
     // Güç
-    power: 'power', guc: 'power', güç: 'power', guc: 'power',
+    power: 'power', guc: 'power', güç: 'power',
     // Av
     hunt: 'hunt', av: 'hunt', avi: 'hunt',
     // Nadir

@@ -122,11 +122,13 @@ model Owl {
   isMain        Boolean  @default(false)
   effectiveness Int      @default(100)
   createdAt     DateTime @default(now())
-  // Trait sistemi: [{ id, bonus, penalty }] formatinda JSON dizi
-  // Eski kayitlarda null gelir — sistem null'u gracefully handle eder
   traits        Json?
 
   owner Player @relation(fields: [ownerId], references: [id])
+
+  @@index([ownerId])
+  @@index([ownerId, isMain])
+  @@index([ownerId, passiveMode])
 }
 
 model InventoryItem {
@@ -140,6 +142,8 @@ model InventoryItem {
   owner Player @relation(fields: [ownerId], references: [id])
 
   @@unique([ownerId, itemName])
+  @@index([ownerId])
+  @@index([ownerId, itemType])
 }
 
 model PvpSession {
@@ -154,6 +158,10 @@ model PvpSession {
 
   challenger Player @relation("Challenger", fields: [challengerId], references: [id])
   defender   Player @relation("Defender", fields: [defenderId], references: [id])
+
+  @@index([challengerId])
+  @@index([defenderId])
+  @@index([status])
 }
 
 model Encounter {
@@ -163,13 +171,16 @@ model Encounter {
   owlTier      Int
   owlQuality   String
   owlStats     Json
-  owlTraits    Json?    // Encounter sirasinda uretilen trait listesi
+  owlTraits    Json?
   tameAttempts Int      @default(0)
   failStreak   Int      @default(0)
   status       String   @default("open")
   createdAt    DateTime @default(now())
 
   player Player @relation(fields: [playerId], references: [id])
+
+  @@index([playerId])
+  @@index([playerId, status])
 }
 
 model PlayerRegistration {

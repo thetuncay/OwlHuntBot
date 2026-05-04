@@ -18,7 +18,8 @@
     "format:check": "prettier --check .",
     "prisma:generate": "prisma generate",
     "prisma:db:push": "prisma db push",
-    "deploy:commands": "tsx src/deploy-commands.ts"
+    "deploy:commands": "tsx src/deploy-commands.ts",
+    "deploy:commands:prod": "node dist/deploy-commands.js"
   },
   "dependencies": {
     "@prisma/client": "^6.6.0",

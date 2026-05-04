@@ -11,6 +11,8 @@ import {
   buildInventoryOverviewRow,
   buildInventoryGridRow,
   buildInventoryText,
+  type InventoryRenderData,
+  type InventoryItem as InvItem,
 } from '../utils/inventory-ux';
 import type { CommandDefinition } from '../types';
 import type { Message } from 'discord.js';
