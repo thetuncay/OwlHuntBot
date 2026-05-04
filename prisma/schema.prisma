@@ -138,6 +138,10 @@ model Owl {
   // Main owl lookup index'i — her hunt/pvp/tame'de kullanılır
   @@index([ownerId, isMain])
   @@index([ownerId, passiveMode])
+
+  @@index([ownerId])
+  @@index([ownerId, isMain])
+  @@index([ownerId, passiveMode])
 }
 
 model InventoryItem {
@@ -151,6 +155,8 @@ model InventoryItem {
   owner Player @relation(fields: [ownerId], references: [id])
 
   @@unique([ownerId, itemName])
+  @@index([ownerId])
+  @@index([ownerId, itemType])
 }
 
 model PvpSession {
@@ -165,6 +171,10 @@ model PvpSession {
 
   challenger Player @relation("Challenger", fields: [challengerId], references: [id])
   defender   Player @relation("Defender", fields: [defenderId], references: [id])
+
+  @@index([challengerId])
+  @@index([defenderId])
+  @@index([status])
 }
 
 model Encounter {
@@ -181,10 +191,6 @@ model Encounter {
   createdAt    DateTime @default(now())
 
   player Player @relation(fields: [playerId], references: [id])
-
-  // Limbo cleanup ve tame lookup için
-  @@index([playerId, status])
-  @@index([status, createdAt])
 }
 
 model PlayerRegistration {

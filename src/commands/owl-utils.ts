@@ -48,6 +48,7 @@ export const ALIASES: Record<string, string> = {
   sl:   'sell',     // sell
   ow:   'owls',     // owls
   y:    'yardim',   // yardım
+  yardım: 'yardim', // Türkçe ı harfi ile yazılanlar
   pf:   'prefix',   // prefix
 };
 

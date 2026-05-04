@@ -121,7 +121,7 @@ export async function refreshPowerScore(prisma: PrismaClient, playerId: string):
   });
   if (!player) return 0;
 
-  const { xpRequired } = await import('../utils/math');
+  const { xpRequired } = await import('../utils/math.js');
   let totalXP = player.xp;
   for (let l = 1; l < player.level; l++) {
     totalXP += xpRequired(l);
@@ -197,7 +197,7 @@ export async function invalidateLeaderboardCache(redis: Redis): Promise<void> {
 export async function backfillLeaderboardStats(
   prisma: PrismaClient,
 ): Promise<{ updated: number }> {
-  const { xpRequired } = await import('../utils/math');
+  const { xpRequired } = await import('../utils/math.js');
 
   const players = await prisma.player.findMany({
     select: {

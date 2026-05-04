@@ -105,17 +105,9 @@ export async function runHuntMessage(
   const remaining = await getCooldownRemainingMs(ctx.redis, cooldownKey, HUNT_COOLDOWN_MS);
 
   if (remaining > 0) {
-    let secs = Math.ceil(remaining / 1000);
+    const secs = Math.ceil(remaining / 1000);
     const sent = await message.reply(`⏰ Tekrar avlanmak icin **${secs}s** beklemelisin.`);
-    const interval = setInterval(async () => {
-      secs--;
-      if (secs <= 0) {
-        clearInterval(interval);
-        await sent.delete().catch(() => null);
-      } else {
-        await sent.edit(`⏰ Tekrar avlanmak icin **${secs}s** beklemelisin.`).catch(() => null);
-      }
-    }, 1000);
+    setTimeout(() => { sent.delete().catch(() => null); }, 3000);
     return;
   }
 

@@ -611,7 +611,9 @@ export async function settleSlotRace(
  * 3 eşleşme > 2 eşleşme > sembol değeri toplamı.
  */
 function calcSlotScore(symbols: string[]): number {
-  const [a, b, c] = symbols;
+  const a = symbols[0] ?? '';
+  const b = symbols[1] ?? '';
+  const c = symbols[2] ?? '';
   if (a === b && b === c) return 1000 + getSymbolValue(a); // 3 eşleşme
   if (a === b || b === c || a === c) return 100 + getSymbolValue(a); // 2 eşleşme
   return getSymbolValue(a) + getSymbolValue(b) + getSymbolValue(c); // Toplam değer

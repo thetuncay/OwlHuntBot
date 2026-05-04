@@ -246,8 +246,10 @@ export async function rollHunt(prisma: PrismaClient, playerId: string, owlId: st
     // ── Liderboard Istatistikleri ─────────────────────────────────────────────
     const rareSuccesses = catches.filter((c) => c.difficulty >= HUNT_HIGH_TIER_THRESHOLD).length;
     await recordHuntStats(prisma, playerId, catches.length, rareSuccesses);
-    // Power score'u async guncelle (kritik yolda degil)
-    refreshPowerScore(prisma, playerId).catch(() => null);
+    // Power score'u sadece level-up olduğunda güncelle (her hunt'ta değil)
+    if (xpResult.levelUp) {
+      refreshPowerScore(prisma, playerId).catch(() => null);
+    }
 
     // ── Hunt Buff Charge Tüketimi ─────────────────────────────────────────────
     // Her hunt'ta aktif hunt buff'larının charge'ını tüket

@@ -119,7 +119,7 @@ export const XP_RISK_BONUS_RATE = 0.5;
 // --- HUNT ---
 export const HUNT_ROLL_BASE = 3;
 export const HUNT_ROLL_PER_LEVEL = 5;
-export const HUNT_COOLDOWN_MS = 60 * 1000; // 60 saniye — ekonomi dengesi için (eskiden 10s, 990 materyal/saat exploit'ine yol açıyordu)
+export const HUNT_COOLDOWN_MS = 7 * 1000; // 7 saniye
 export const HUNT_CRITICAL_RATE = 10;
 export const HUNT_INJURY_RATE = 5;
 export const HUNT_HIGH_TIER_THRESHOLD = 7;
@@ -640,7 +640,7 @@ export const POWER_WEIGHT_RARE  = 80;    // Her nadir bulgu 80 puan
 export const SEASON_TYPE: 'weekly' | 'monthly' = 'weekly';  // 'weekly' | 'monthly'
 
 // --- LIDERBOARD CACHE (saniye) ---
-export const LEADERBOARD_CACHE_TTL = 120;  // 2 dakika cache
+export const LEADERBOARD_CACHE_TTL = 600;  // 120s → 600s: 10 dakika cache, yüksek yük altında DB spike önler
 export const LEADERBOARD_TOP_N     = 10;   // Gosterilecek max oyuncu
 
 // --- OZEL ROLLER (Discord Role ID'leri) ---
