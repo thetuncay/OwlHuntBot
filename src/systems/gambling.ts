@@ -83,44 +83,54 @@ export async function slot(prisma: PrismaClient, playerId: string, bet: number):
     if (!player) throw new Error('Oyuncu bulunamadi.');
     if (player.coins < bet) throw new Error('Yetersiz bakiye.');
 
+    // FIX: applyHouseChance kaldırıldı — slot sonucu artık şeffaf
+    // Oyuncu kazanan kombinasyon görürse gerçekten kazanır
+    // RTP doğrudan SLOT_TABLE'dan hesaplanır (~45%)
     const roll = weightedRandom(SLOT_TABLE.map((entry) => ({ value: entry, weight: entry.chance })));
-    const streakMod = streakModifier(player.gambleStreakWins, player.gambleStreakLosses);
-    const chance = finalWinChance(50, player.coins, bet, streakMod);
     const jackpot = Math.random() * 100 < GAMBLE_SLOT_HIDDEN_JACKPOT;
     const payout = jackpot ? roll.payout * 2 : roll.payout;
     const gain = Math.floor(bet * payout) - bet;
-    const win = applyHouseChance(gain >= 0, chance);
-    const finalGain = win ? gain : -bet;
+    const win = gain >= 0;
 
     const updated = await prisma.player.update({
       where: { id: playerId },
       data: {
-        coins: { increment: finalGain },
+        coins: { increment: gain },
         gambleStreakWins:   win ? { increment: 1 } : 0,
         gambleStreakLosses: win ? 0 : { increment: 1 },
       },
     });
 
-    if (win && finalGain > 0) {
-      recordCoinsEarned(prisma, playerId, finalGain).catch(() => null);
+    if (win && gain > 0) {
+      recordCoinsEarned(prisma, playerId, gain).catch(() => null);
     }
 
     return {
       win,
-      deltaCoins: finalGain,
+      deltaCoins: gain,
       finalCoins: updated.coins,
       message: jackpot ? `${roll.name} + Gizli Jackpot!` : roll.name,
     };
   });
 }
 
-function drawCard(playerHand: boolean): number {
-  const highCardBias = playerHand ? 0.62 : 0.54;
-  const weightedHigh = Math.random() < highCardBias;
-  const roll = weightedHigh ? Math.floor(Math.random() * 4) + 10 : Math.floor(Math.random() * 9) + 1;
-  if (roll === 1) return 11;
-  if (roll >= 10) return 10;
-  return roll;
+/**
+ * Standart 52 kartlık desteden rastgele kart çeker.
+ * FIX: Eski kod 62% yüksek kart bias uyguluyordu (gerçek: 30.8%).
+ * Yeni kod gerçek deste dağılımını simüle eder:
+ *   - 4 adet As (11 puan, bust durumunda 1'e düşer)
+ *   - 16 adet 10-değerli kart (10, J, Q, K)
+ *   - 4'er adet 2-9
+ * playerHand parametresi artık kullanılmıyor — her iki taraf aynı desteden çeker.
+ * NOT: Bu fonksiyon gambling.ts'teki auto-resolve blackjack için kullanılır.
+ * Interaktif bj.ts komutu kendi kart döngüsüne sahip.
+ */
+function drawCard(_playerHand?: boolean): number {
+  // 52 kartlık deste: 4×As, 4×2, 4×3, ..., 4×9, 16×10-değerli
+  const roll = Math.floor(Math.random() * 13) + 1; // 1-13 arası
+  if (roll === 1) return 11;   // As = 11 (bust durumunda 1'e düşer)
+  if (roll >= 10) return 10;   // 10, J, Q, K = 10
+  return roll;                  // 2-9 = yüz değeri
 }
 
 function handValue(cards: number[]): number {

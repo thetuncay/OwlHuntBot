@@ -14,6 +14,7 @@ import { handleRegistrationButton, isRegistrationButton } from './systems/onboar
 import { getLeaderboard, archiveAndResetSeason, currentSeasonId, seasonEndDate } from './systems/leaderboard';
 import { syncAllRoles } from './systems/roles';
 import { handleTopTextCommand } from './commands/leaderboard';
+import { addXP } from './systems/xp';
 import type { LeaderboardCategory } from './systems/leaderboard';
 
 const envSchema = z.object({
@@ -216,10 +217,70 @@ async function checkSeasonRollover(): Promise<void> {
   }
 }
 
-// Her saat basinda sezon kontrolu
-setInterval(() => { void checkSeasonRollover(); }, 60 * 60 * 1000);
+/**
+ * Training modundaki baykuşlara saatlik XP verir.
+ * Her saat başında checkSeasonRollover ile birlikte çalışır.
+ */
+async function applyPassiveTrainingXP(): Promise<void> {
+  try {
+    // training modundaki tüm baykuşları bul
+    const trainingOwls = await prisma.owl.findMany({
+      where: { passiveMode: 'training', isMain: false },
+      select: { id: true, ownerId: true },
+    });
+    if (trainingOwls.length === 0) return;
+
+    // Her baykuşun sahibine XP ver (fire-and-forget, hata saatlik döngüyü durdurmasın)
+    await Promise.allSettled(
+      trainingOwls.map((owl) =>
+        addXP(prisma, owl.ownerId, 5, 'passiveTraining'),
+      ),
+    );
+    console.info(`[Passive] ${trainingOwls.length} training baykusu icin XP verildi.`);
+  } catch (err) {
+    console.error('[Passive] Training XP hatasi:', err);
+  }
+}
+
+// Her saat basinda sezon kontrolu + passive training XP
+setInterval(() => {
+  void checkSeasonRollover();
+  void applyPassiveTrainingXP();
+}, 60 * 60 * 1000);
 // Baslangicta da kontrol et
 setTimeout(() => { void checkSeasonRollover(); }, 5000);
+
+// --- ORPHAN BOT PLAYER CLEANUP ---
+// Tame mini-PvP sırasında oluşturulan `wild:*` bot oyuncuları
+// encounter kapandıktan sonra DB'de kalıyor. Günde bir kez temizle.
+async function cleanupOrphanBotPlayers(): Promise<void> {
+  try {
+    // 24 saatten eski, ID'si "wild:" ile başlayan bot oyuncuları sil
+    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    // MongoDB'de startsWith için contains kullanıyoruz
+    const orphans = await prisma.player.findMany({
+      where: {
+        id: { startsWith: 'wild:' },
+        createdAt: { lt: cutoff },
+      },
+      select: { id: true },
+    });
+    if (orphans.length === 0) return;
+    const ids = orphans.map((p) => p.id);
+    // Önce ilişkili owl'ları sil
+    await prisma.owl.deleteMany({ where: { ownerId: { in: ids } } });
+    // Sonra bot oyuncuları sil
+    await prisma.player.deleteMany({ where: { id: { in: ids } } });
+    console.info(`[Cleanup] ${ids.length} orphan bot oyuncu temizlendi.`);
+  } catch (err) {
+    console.error('[Cleanup] Orphan cleanup hatasi:', err);
+  }
+}
+
+// Günde bir kez orphan cleanup (24 saat)
+setInterval(() => { void cleanupOrphanBotPlayers(); }, 24 * 60 * 60 * 1000);
+// Başlangıçta 30 saniye sonra çalıştır
+setTimeout(() => { void cleanupOrphanBotPlayers(); }, 30_000);
 
 async function shutdown() {
   console.info('Bot kapatiliyor...');

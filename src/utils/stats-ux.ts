@@ -87,7 +87,7 @@ export function buildOwlStatsEmbed(
   const isLowHp       = hpRatio < 0.3;
   const isRare        = owl.quality === 'Elite' || owl.quality === 'God Roll';
 
-  const qualityMeta = QUALITY_META[owl.quality] ?? QUALITY_META['Common']!;
+  const qualityMeta = QUALITY_META[owl.quality] ?? QUALITY_META.Common!;
   const embedColor  = isLowHp ? COLOR_WARNING : qualityMeta.color;
 
   // Derived stats

@@ -184,11 +184,11 @@ export async function sendEncounterMessage(
     species:   encounter.owlSpecies,
     tier:      encounter.owlTier,
     quality:   encounter.owlQuality,
-    statGaga:  rawStats['gaga']  ?? 10,
-    statGoz:   rawStats['goz']   ?? 10,
-    statKulak: rawStats['kulak'] ?? 10,
-    statKanat: rawStats['kanat'] ?? 10,
-    statPence: rawStats['pence'] ?? 10,
+    statGaga:  rawStats.gaga  ?? 10,
+    statGoz:   rawStats.goz   ?? 10,
+    statKulak: rawStats.kulak ?? 10,
+    statKanat: rawStats.kanat ?? 10,
+    statPence: rawStats.pence ?? 10,
     traits:    parseStoredTraits(encounter.owlTraits),
   };
 
@@ -370,7 +370,7 @@ export async function sendEncounterMessage(
 
       tameCollector.on('end', async (_: any, reason: string) => {
         if (reason === 'time') {
-          await (tameMsg as any).edit({ content: '⏰ Süre doldu.', components: [] }).catch(() => null);
+          await (tameMsg).edit({ content: '⏰ Süre doldu.', components: [] }).catch(() => null);
         }
       });
 

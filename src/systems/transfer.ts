@@ -18,6 +18,7 @@ import type Redis from 'ioredis';
 import {
   TRANSFER_COOLDOWN_MS,
   TRANSFER_DAILY_LIMIT,
+  TRANSFER_DAILY_RECEIVE_LIMIT,
   TRANSFER_MIN_AMOUNT,
   TRANSFER_MIN_LEVEL,
   TRANSFER_TAX_BRACKETS,
@@ -139,14 +140,21 @@ export async function transferCoins(
         );
       }
 
-      // Alıcı kontrolü
+      // Vergi hesapla
+      const { tax, received, rate } = calcTax(amount);
+
+      // Alıcı kontrolü + günlük alım limiti
       const receiver = await tx.player.findUnique({ where: { id: receiverId } });
       if (!receiver) {
         throw new Error('Alıcı oyuncu bulunamadı. Önce kayıt olması gerekiyor.');
       }
 
-      // Vergi hesapla
-      const { tax, received, rate } = calcTax(amount);
+      // Alıcı günlük alım limiti — tek seferde alınabilecek max
+      if (received > TRANSFER_DAILY_RECEIVE_LIMIT) {
+        throw new Error(
+          `Tek transferde maksimum **${TRANSFER_DAILY_RECEIVE_LIMIT}** 💰 alınabilir.`,
+        );
+      }
 
       // Gönderici: coin düş + günlük sayaç güncelle
       await tx.player.update({

@@ -19,12 +19,12 @@ import { successEmbed, warningEmbed, failEmbed } from '../utils/embed';
 import type { CommandDefinition } from '../types';
 
 // Prisma Owl modelinin lokal tip tanımı (generate edilmemiş @prisma/client için)
-type OwlRecord = {
+interface OwlRecord {
   id: string; ownerId: string; species: string; tier: number; bond: number;
   statGaga: number; statGoz: number; statKulak: number; statKanat: number; statPence: number;
   quality: string; hp: number; hpMax: number; staminaCur: number; isMain: boolean;
   effectiveness: number; createdAt: Date; passiveMode: string; traits: unknown;
-};
+}
 
 // ─── Slash: /owl setmain ──────────────────────────────────────────────────────
 

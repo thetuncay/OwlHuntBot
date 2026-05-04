@@ -59,10 +59,10 @@ Kayıt → Kukumav baykuşu al → Avlan → Item topla → Stat geliştir
 
 ## 2. Teknoloji Yığını
 
-| Katman | Teknoloji | Versiyon | Kullanım Amacı |
-|--------|-----------|----------|----------------|
-| Dil | TypeScript | 5.x (strict) | Tip güvenliği, IDE desteği |
-| Discord | discord.js | v14 | Bot API, slash komutlar, butonlar |
+| Katman     | Teknoloji | Versiyon | Kullanım Amacı |
+|--------    |-----------|----------|----------------|
+| Dil        | TypeScript | 5.x (strict) | Tip güvenliği, IDE desteği |
+| Discord    | discord.js | v14 | Bot API, slash komutlar, butonlar |
 | Veritabanı | MongoDB + Prisma | Prisma 6.x | Kalıcı oyuncu/baykuş verisi |
 | Cache | Redis (ioredis) | 5.x | Cooldown, anti-spam, prefix, tame session, pity |
 | Validasyon | Zod | 3.x | Ortam değişkeni doğrulama |

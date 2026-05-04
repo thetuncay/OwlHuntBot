@@ -140,11 +140,11 @@ export async function resolveEncounterFight(
   // Düşman stat'larını encounter'dan oku
   const rawStats = encounter.owlStats as Record<string, number>;
   const enemyPower =
-    statEffect(rawStats['gaga']  ?? 10) +
-    statEffect(rawStats['goz']   ?? 10) +
-    statEffect(rawStats['kulak'] ?? 10) +
-    statEffect(rawStats['kanat'] ?? 10) +
-    statEffect(rawStats['pence'] ?? 10);
+    statEffect(rawStats.gaga  ?? 10) +
+    statEffect(rawStats.goz   ?? 10) +
+    statEffect(rawStats.kulak ?? 10) +
+    statEffect(rawStats.kanat ?? 10) +
+    statEffect(rawStats.pence ?? 10);
 
   const winChance = calcWinChance(playerPower, enemyPower, player.level);
   const playerWon = Math.random() * 100 < winChance;

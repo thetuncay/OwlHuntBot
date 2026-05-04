@@ -19,6 +19,7 @@ import {
   PVP_STAM_FATIGUE_PEN,
   PVP_STAM_FULL_MIN,
   PVP_STAT_WEIGHT,
+  PVP_STREAK_MIN_OPPONENT_RATIO,
   SIM_PVP_DIFFICULTY_TABLE,
   SIM_PVP_FAKE_NAMES,
   SIM_PVP_FAKE_SPECIES,
@@ -306,8 +307,9 @@ export async function runSimulatedPvP(
   const oldStreak = player.pvpStreak;
   const oldBest   = player.pvpBestStreak;
 
-  // Simüle PvP'de anti-abuse yok (bot duel, her zaman sayılır)
-  const streakCounted = playerWon;
+  // Bot duel'da da anti-abuse kontrolü: rakip gücü oyuncunun %70'inden düşükse streak sayılmaz
+  const streakCounted =
+    playerWon && opponent.power >= playerPower * PVP_STREAK_MIN_OPPONENT_RATIO;
   const newStreak     = playerWon ? oldStreak + 1 : 0;
   const newBest       = Math.max(oldBest, newStreak);
   const isNewRecord   = newBest > oldBest;

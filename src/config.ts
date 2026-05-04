@@ -26,7 +26,6 @@ export const TIER_UNLOCK_LEVEL: Record<number, number> = {
   2: 30,
   1: 40,
 };
-//porno
 
 // --- EVCILLESTIRME TEMEL SANS ---
 export const TAME_BASE_CHANCE: Record<number, number> = {
@@ -91,10 +90,23 @@ export const SWITCH_PENALTY_DODGE = -0.1;
 
 // --- BOND ---
 export const BOND_BONUS_RATE = 0.2;
+// Bond artış sabitleri — her aktivitede main baykuşun bond'u artar
+export const BOND_GAIN_PER_HUNT    = 0.5;  // Her başarılı avda +0.5 bond
+export const BOND_GAIN_PER_PVP_WIN = 2;    // PvP kazanınca +2 bond
+export const BOND_GAIN_PER_TAME    = 5;    // Tame başarısında +5 bond
+export const BOND_MAX              = 100;  // Maksimum bond değeri
+
+// --- PASSIVE MODE ---
+// Main olmayan baykuşların pasif mod etkileri
+export const PASSIVE_TRAINING_XP_PER_HOUR = 5;    // training: saatte +5 XP (çok yavaş, sadece sembolik)
+export const PASSIVE_SCOUTING_ENCOUNTER_BONUS = 0.01; // scouting: encounter şansına +%1 eklenir
 
 // --- XP ---
+// FIX: XP_LEVEL_FORMULA base artırıldı — level 1→2 artık 500 XP gerektirir
+// Eski: round(100 * L^1.65 + L*20) → L=1: 120 XP (30 saniyede geçiliyordu)
+// Yeni: round(200 * L^1.65 + L*50) → L=1: 250 XP, L=5: 3.200 XP (daha anlamlı ilerleme)
 export const XP_LEVEL_FORMULA = (L: number): number =>
-  Math.round(100 * Math.pow(L, 1.65) + L * 20);
+  Math.round(200 * Math.pow(L, 1.65) + L * 50);
 export const XP_PVP_WIN = 50;
 export const XP_PVP_LOSE = 15;
 export const XP_TAME = 100;
@@ -107,7 +119,7 @@ export const XP_RISK_BONUS_RATE = 0.5;
 // --- HUNT ---
 export const HUNT_ROLL_BASE = 3;
 export const HUNT_ROLL_PER_LEVEL = 5;
-export const HUNT_COOLDOWN_MS = 10 * 1000; // 10 saniye
+export const HUNT_COOLDOWN_MS = 60 * 1000; // 60 saniye — ekonomi dengesi için (eskiden 10s, 990 materyal/saat exploit'ine yol açıyordu)
 export const HUNT_CRITICAL_RATE = 10;
 export const HUNT_INJURY_RATE = 5;
 export const HUNT_HIGH_TIER_THRESHOLD = 7;
@@ -133,7 +145,9 @@ export const HUNT_PITY_MAX_BONUS  = 0.25; // max +25% nadir şans
 export const HUNT_STREAK_BONUS_RATE = 0.05; // her streak için +5% catch chance
 export const HUNT_STREAK_MAX_BONUS  = 0.20; // max +20%
 
-// --- CATCH ---
+// Catch chance stat katkı sabitleri — 0-1 araliginda etki
+// Pence=50 → +0.125, Göz=50 → +0.075, Kanat=50 → +0.10
+// (Onceden /100 ile bolunuyordu, bu onlari neredeyse sifira indiriyordu)
 export const CATCH_STAT_PENCE = 0.25;
 export const CATCH_STAT_GOZ = 0.15;
 export const CATCH_STAT_KANAT = 0.2;
@@ -499,8 +513,8 @@ export const TAME_KULAK_RATE = 0.2;
 export const TAME_MIN = 2;
 export const TAME_MAX = 92;
 export const TAME_MAX_ATTEMPTS = 3;
-export const TAME_FAIL_STREAK_BONUS = 5;
-export const TAME_REPEAT_PENALTY = 10;
+export const TAME_FAIL_STREAK_BONUS = 8;  // +8 her basarisiz denemede (onceden +5, tekrar cezasini gecemiyordu)
+export const TAME_REPEAT_PENALTY = 0;    // Tekrar cezasi kaldirildi — fail streak bonusu artik anlamli
 export const TAME_MINI_PVP_BONUS = 10;
 export const TAME_FAIL_ESCAPE_RATE = 60;
 export const TAME_FAIL_ATTACK_RATE = 25;
@@ -528,8 +542,11 @@ export const PVP_BASE_HP = 100;
 // --- KUMAR ---
 export const GAMBLE_COINFLIP_WIN_CHANCE = 49;
 export const GAMBLE_COINFLIP_PAYOUT = 1.95;
-export const GAMBLE_BJ_BLACKJACK_PAYOUT = 1.5;
-export const GAMBLE_BJ_WIN_PAYOUT = 1.9;
+// FIX: Blackjack payout düzeltildi — natural BJ artık normal win'den fazla öder
+// Eski: BJ=1.5, WIN=1.9 (ters! BJ daha az ödüyordu)
+// Yeni: BJ=2.5, WIN=1.9 (doğru: BJ en iyi el, en yüksek ödül)
+export const GAMBLE_BJ_BLACKJACK_PAYOUT = 2.5;  // Natural 21: +%150 kazanç
+export const GAMBLE_BJ_WIN_PAYOUT = 1.9;         // Normal win: +%90 kazanç
 export const GAMBLE_WIN_CLAMP_MIN = 1;
 export const GAMBLE_WIN_CLAMP_MAX = 99;
 export const GAMBLE_STREAK_LOSS_3 = 3;
@@ -540,10 +557,10 @@ export const GAMBLE_RICH_PENALTY_MAX = 15;
 export const GAMBLE_BET_PENALTY_MULT = 5;
 export const GAMBLE_SLOT_HIDDEN_JACKPOT = 0.2;
 
-// Kumar cooldown süreleri (ms)
+// FIX: GAMBLE_BJ_COOLDOWN_MS yorum düzeltildi (5 saniye, 30 değil)
 export const GAMBLE_COINFLIP_COOLDOWN_MS = 5 * 1000;   // 5 saniye
 export const GAMBLE_SLOT_COOLDOWN_MS     = 5 * 1000;   // 5 saniye
-export const GAMBLE_BJ_COOLDOWN_MS       = 5 * 1000;  // 30 saniye (interaktif oyun)
+export const GAMBLE_BJ_COOLDOWN_MS       = 5 * 1000;   // 5 saniye (interaktif oyun)
 
 export const SLOT_TABLE = [
   { name: '🦉🦉🦉 Jackpot', chance: 0.3, payout: 4 },
@@ -1116,6 +1133,9 @@ export const TRANSFER_MIN_AMOUNT = 10;
 
 /** Günlük maksimum gönderim (gönderici başına) */
 export const TRANSFER_DAILY_LIMIT = 10_000;
+
+/** Günlük maksimum alım (alıcı başına) — iki hesap arası pump'ı önler */
+export const TRANSFER_DAILY_RECEIVE_LIMIT = 15_000;
 
 /** Transfer cooldown (ms) */
 export const TRANSFER_COOLDOWN_MS = 60 * 1000;  // 60 saniye

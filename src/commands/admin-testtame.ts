@@ -5,7 +5,8 @@
  * Sadece admin.ts tarafından çağrılır.
  */
 
-import { ActionRowBuilder, ButtonBuilder, ComponentType } from 'discord.js';
+import type { ActionRowBuilder, ButtonBuilder} from 'discord.js';
+import { ComponentType } from 'discord.js';
 import { OWL_SPECIES } from '../config';
 import {
   createTameSession,

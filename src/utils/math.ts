@@ -19,6 +19,7 @@ import {
   GAMBLE_WIN_CLAMP_MIN,
   HUNT_ROLL_BASE,
   HUNT_ROLL_PER_LEVEL,
+  PASSIVE_SCOUTING_ENCOUNTER_BONUS,
   PVP_MOMENTUM_RATE,
   SPAWN_GOZ_RATE,
   SPAWN_KULAK_RATE,
@@ -33,8 +34,6 @@ import {
   UPGRADE_LEVEL_BONUS,
   UPGRADE_MAX,
   UPGRADE_MIN,
-  UPGRADE_STAT_EXP,
-  UPGRADE_STAT_MULT,
   XP_LEVEL_FORMULA,
   XP_SCALE_RATE,
 } from '../config';
@@ -71,7 +70,17 @@ export const staminaMax = (kanat: number): number => 100 + kanat * 0.5;
 /** PvP tur hasar carpani (momentum sistemi). */
 export const damageMultiplier = (turn: number): number => 1 + turn * PVP_MOMENTUM_RATE;
 
-/** Final yakalama sansi (clamp uygulanmis, 0-1 arasi). */
+/** Final yakalama sansi (clamp uygulanmis, 0-1 arasi).
+ *
+ * DUZELTME: Stat katkilari artik dogru olcekte uygulanir.
+ * baseChance 0-100 araliginda gelir, powerMult ile carpilip /100 ile 0-1'e donusur.
+ * Stat katkilari ise /100 ile bolunerek 0-1 araligina getirilir (pence=50 → +0.125).
+ *
+ * FIX tier-gap penalty: Eskiden zayif baykus kendi havuzunun en zor avini
+ * avlarken ceza aliyordu (tier8 vs difficulty4 = fark 4 >= 2 → ceza).
+ * Yeni kural: Ceza sadece baykusun tier'inin ALTINDAKI avlar icin uygulanir.
+ * Guclu baykus zayif av avlarken ceza yok, zayif baykus zor av avlarken ceza var.
+ */
 export const catchChance = (
   baseChance: number,
   powerMult: number,
@@ -80,15 +89,28 @@ export const catchChance = (
   kanat: number,
   owlTier: number,
   preyDifficulty: number,
+  bond = 0,
+  effectiveness = 100,
 ): number => {
   const raw =
     (baseChance * powerMult) / 100 +
     (pence * CATCH_STAT_PENCE) / 100 +
     (goz * CATCH_STAT_GOZ) / 100 +
     (kanat * CATCH_STAT_KANAT) / 100;
-  const tierGap = Math.abs(owlTier - preyDifficulty);
+
+  // FIX: Tier-gap cezasi sadece baykusun tier'inden DAHA ZOR avlar icin
+  // (preyDifficulty > owlTier demek av baykustan daha guclu/zor)
+  // Eski: Math.abs(owlTier - preyDifficulty) — bu zayif baykusu cezalandiriyordu
+  const tierGap = preyDifficulty - owlTier; // sadece pozitif fark ceza verir
   const penalized = tierGap >= CATCH_TIER_GAP_MIN ? raw * CATCH_TIER_GAP_MULT : raw;
-  return clamp(CATCH_MIN, CATCH_MAX, penalized);
+
+  // Bond bonusu: max +%20 catch bonus (bond 100 = +0.20)
+  const bondMod = bondBonus(bond) / 100;
+
+  // Effectiveness: 100 = tam guc, 0 = hic etki yok
+  const effectMult = clamp(0.1, 1.0, effectiveness / 100);
+
+  return clamp(CATCH_MIN, CATCH_MAX, (penalized + bondMod) * effectMult);
 };
 
 /** Spawn puani (normalizasyon oncesi). */
@@ -96,12 +118,13 @@ export const spawnScore = (difficulty: number, goz: number, kulak: number): numb
   (1 / difficulty) * (1 + goz * SPAWN_GOZ_RATE) * (1 + kulak * SPAWN_KULAK_RATE);
 
 /** Encounter sansi (yuzde, clamp uygulanmis). */
-export const encounterChance = (playerLevel: number, goz: number, kulak: number): number => {
+export const encounterChance = (playerLevel: number, goz: number, kulak: number, scoutingOwlCount = 0): number => {
   const raw =
     ENCOUNTER_BASE +
     playerLevel * ENCOUNTER_LEVEL_RATE +
     goz * ENCOUNTER_GOZ_RATE +
-    kulak * ENCOUNTER_KULAK_RATE;
+    kulak * ENCOUNTER_KULAK_RATE +
+    scoutingOwlCount * PASSIVE_SCOUTING_ENCOUNTER_BONUS * 100; // +%1 per scouting owl
   return clamp(ENCOUNTER_MIN, ENCOUNTER_MAX, raw);
 };
 
@@ -117,18 +140,26 @@ export const tameChance = (
   return clamp(TAME_MIN, TAME_MAX, raw);
 };
 
-/** Upgrade basari sansi (clamp uygulanmis, yuzde). */
+/** Upgrade basari sansi (clamp uygulanmis, yuzde).
+ *
+ * DUZELTME: Stat cezasi artik logaritmik — endgame'de (stat 60+) formul
+ * eskiden her zaman %5'e dusuyordu cunku statLevel^1.15 * 0.8 > 65 oluyordu.
+ * Yeni formul: log(statLevel+1) * 12 → stat 100'de ceza sadece ~55 puan,
+ * level 40 oyuncu hala ~%34 sansa sahip olabiliyor.
+ */
 export const upgradeChance = (
   baseChance: number,
   playerLevel: number,
   itemBonus: number,
   statLevel: number,
 ): number => {
+  // Logaritmik ceza: stat yukseldikce zorlasir ama hicbir zaman imkansiz olmaz
+  const statPenalty = Math.log(statLevel + 1) * 12;
   const raw =
     baseChance +
     playerLevel * UPGRADE_LEVEL_BONUS +
     itemBonus -
-    Math.pow(statLevel, UPGRADE_STAT_EXP) * UPGRADE_STAT_MULT;
+    statPenalty;
   return clamp(UPGRADE_MIN, UPGRADE_MAX, raw);
 };
 

@@ -16,6 +16,8 @@ import {
   PVP_STAT_WEIGHT,
   XP_PVP_LOSE,
   XP_PVP_WIN,
+  BOND_GAIN_PER_PVP_WIN,
+  BOND_MAX,
 } from '../config';
 import type { PvpSimResult } from '../types';
 import type { PvpBattleData, PvpTurnEvent } from '../utils/pvp-ux';
@@ -109,7 +111,11 @@ export async function simulatePvP(prisma: PrismaClient, sessionId: string): Prom
       playerId: session.challengerId,
       hp: challengerOwl.hp,
       stamina: challengerOwl.staminaCur,
-      power: statEffect(challengerOwl.statGaga + challengerOwl.statPence + challengerOwl.statKanat),
+      // effectiveness: 100=tam güç, düşükse power azalır
+      // bond: max +%20 güç bonusu (bond 100 = ×1.20)
+      power: statEffect(challengerOwl.statGaga + challengerOwl.statPence + challengerOwl.statKanat)
+        * Math.max(0.1, challengerOwl.effectiveness / 100)
+        * (1 + challengerOwl.bond * 0.002), // bond 100 → ×1.20
       hpMax: challengerOwl.hpMax,
       buffDamageMult: challengerBuffs.pvpDamageMult,
       buffDodgeBonus: challengerBuffs.pvpDodgeBonus,
@@ -118,7 +124,9 @@ export async function simulatePvP(prisma: PrismaClient, sessionId: string): Prom
       playerId: session.defenderId,
       hp: defenderOwl.hp,
       stamina: defenderOwl.staminaCur,
-      power: statEffect(defenderOwl.statGaga + defenderOwl.statPence + defenderOwl.statKanat),
+      power: statEffect(defenderOwl.statGaga + defenderOwl.statPence + defenderOwl.statKanat)
+        * Math.max(0.1, defenderOwl.effectiveness / 100)
+        * (1 + defenderOwl.bond * 0.002),
       hpMax: defenderOwl.hpMax,
       buffDamageMult: defenderBuffs.pvpDamageMult,
       buffDodgeBonus: defenderBuffs.pvpDodgeBonus,
@@ -213,6 +221,20 @@ export async function simulatePvP(prisma: PrismaClient, sessionId: string): Prom
       addXP(prisma, loser.playerId, XP_PVP_LOSE, 'pvpLose'),
     ]);
 
+    // Bond artışı: kazanan baykuşun bond'u artar
+    const winnerOwl = winner.playerId === session.challengerId ? challengerOwl : defenderOwl;
+    if (winnerOwl.bond < BOND_MAX) {
+      const newBond = Math.min(BOND_MAX, winnerOwl.bond + BOND_GAIN_PER_PVP_WIN);
+      await prisma.owl.update({ where: { id: winnerOwl.id }, data: { bond: newBond } });
+    }
+
+    // Effectiveness uyarısı: %50 altına düştüyse result'a ekle
+    const winnerOwlUpdated = await prisma.owl.findFirst({
+      where: { ownerId: winner.playerId, isMain: true },
+      select: { effectiveness: true },
+    });
+    const effectivenessWarning = winnerOwlUpdated && winnerOwlUpdated.effectiveness <= 50;
+
     // PvP Buff Charge Tüketimi — her iki oyuncu için
     await Promise.all([
       drainBuffCharge(prisma, winner.playerId, 'pvp'),
@@ -248,6 +270,7 @@ export async function simulatePvP(prisma: PrismaClient, sessionId: string): Prom
       defenderHpMax: defenderOwl.hpMax,
       streak: streakResult,
       winnerXP,
+      effectivenessWarning: effectivenessWarning ?? false,
     };
   } finally {
     await releaseLock(session.challengerId, 'pvp');
@@ -287,7 +310,11 @@ export function resolveTurn(
     defender.hp <= defenderHpMax * PVP_EXECUTE_HP_THRESH &&
     defender.stamina < PVP_EXECUTE_STAM_THRESH;
 
-  if (isExecute) damage = PVP_EXECUTE_DAMAGE;
+  // FIX: Execute artık sabit 999 değil — saldırganın gücüne göre ölçeklenir
+  // Eski: damage = 999 (stat farkı önemsiz, her zaman anlık ölüm)
+  // Yeni: damage = attacker.power * 8 (güçlü baykuş daha sert execute yapar)
+  // Bu sayede stat yatırımı ve buff'lar execute'da da anlam taşır
+  if (isExecute) damage = attacker.power * 8;
 
   const effectiveDamage = Math.max(1, Math.round(damage + dodgeBonus));
   const isCrit = !isExecute && effectiveDamage > attacker.power * 1.5;

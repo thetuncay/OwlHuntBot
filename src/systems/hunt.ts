@@ -21,6 +21,8 @@ import {
   XP_COMBO_5,
   XP_FAIL_RATIO,
   XP_RISK_BONUS_RATE,
+  BOND_GAIN_PER_HUNT,
+  BOND_MAX,
 } from '../config';
 import type { HuntCatchResult, HuntRunResult, LootboxDrop } from '../types';
 import { catchChance, clamp, huntRolls, spawnScore } from '../utils/math';
@@ -57,9 +59,8 @@ export async function rollHunt(prisma: PrismaClient, playerId: string, owlId: st
     // 2. Streak bonus (ardışık başarılı hunt)
     const streakBonus = clamp(0, HUNT_STREAK_MAX_BONUS, player.huntComboStreak * HUNT_STREAK_BONUS_RATE);
 
-    // 3. Pity bonus (nadir drop yoksa artar) — Redis yerine huntComboStreak'i proxy olarak kullanıyoruz
-    //    Gerçek pity için ayrı bir DB alanı gerekir; şimdilik basit bir yaklaşım
-    const noRareStreak = (player as any).noRareStreak ?? 0;
+    // 3. Pity bonus — noRareStreak artık DB'de gerçek alan olarak var
+    const noRareStreak = (player as { noRareStreak?: number }).noRareStreak ?? 0;
     const pityBonus = noRareStreak >= HUNT_PITY_THRESHOLD
       ? clamp(0, HUNT_PITY_MAX_BONUS, (noRareStreak - HUNT_PITY_THRESHOLD) * HUNT_PITY_BONUS_RATE)
       : 0;
@@ -100,6 +101,8 @@ export async function rollHunt(prisma: PrismaClient, playerId: string, owlId: st
         owl.statKanat,
         owl.tier,
         picked.difficulty,
+        owl.bond,
+        owl.effectiveness,
       );
 
       // Gizli modifier'ları uygula
@@ -130,9 +133,13 @@ export async function rollHunt(prisma: PrismaClient, playerId: string, owlId: st
     }
 
     // ── Minimum Guarantee ────────────────────────────────────────────────────
-    // Hiç yakalama yoksa en düşük tier'dan 1 hayvan garantile
+    // Hiç yakalama yoksa en düşük tier'dan 1 hayvan garantile.
+    // ÖNEMLI: realCatches streak için kullanılır, guarantee sonrası catches değil.
+    // Bu sayede streak sadece gerçek başarılarda artar.
+    const realCatchCount = catches.length;
+
     if (catches.length === 0) {
-      const lowestPrey = PREY.find((p) => p.difficulty <= 2) ?? PREY[0]!;
+      const lowestPrey = PREY.find((p) => p.difficulty <= 2) ?? PREY[0];
       catches.push({
         preyName: lowestPrey.name,
         difficulty: lowestPrey.difficulty,
@@ -150,8 +157,8 @@ export async function rollHunt(prisma: PrismaClient, playerId: string, owlId: st
 
     const failXP = injured.reduce((sum, item) => sum + Math.round(item.xp * XP_FAIL_RATIO), 0);
 
-    // Combo streak
-    const comboStreakAfter = player.huntComboStreak + (catches.length > 0 ? 1 : 0);
+    // Combo streak — sadece gerçek yakalamalar sayılır (guarantee hariç)
+    const comboStreakAfter = realCatchCount > 0 ? player.huntComboStreak + 1 : 0;
     const comboBonus = comboStreakAfter >= 5 ? XP_COMBO_5 : comboStreakAfter >= 3 ? XP_COMBO_3 : 0;
 
     // Multi-success bonus
@@ -210,10 +217,29 @@ export async function rollHunt(prisma: PrismaClient, playerId: string, owlId: st
       prisma.player.update({
         where: { id: playerId },
         data: {
-          huntComboStreak: catches.length > 0 ? { increment: 1 } : 0,
+          // Streak: sadece gerçek yakalamalar sayılır (guarantee hariç)
+          huntComboStreak: realCatchCount > 0 ? { increment: 1 } : 0,
+          // Pity: nadir yakalandıysa sıfırla, yakalanmadıysa artır
+          noRareStreak: gotRare ? 0 : { increment: 1 },
           lastHunt: new Date(),
         },
       }),
+      // Bond artışı: gerçek yakalama varsa main baykuşun bond'u artar
+      ...(realCatchCount > 0 ? [
+        prisma.owl.update({
+          where: { id: owlId },
+          data: {
+            bond: {
+              increment: BOND_GAIN_PER_HUNT,
+            },
+          },
+        }).then(async (updated) => {
+          // Bond max'ı aşmasın
+          if (updated.bond > BOND_MAX) {
+            await prisma.owl.update({ where: { id: owlId }, data: { bond: BOND_MAX } });
+          }
+        }),
+      ] : []),
       ...inventoryOps,
     ]);
 

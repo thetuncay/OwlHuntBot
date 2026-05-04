@@ -1,0 +1,29 @@
+# Bağımlılıklar
+node_modules/
+
+# Build çıktısı
+dist/
+
+# Ortam değişkenleri (asla commit edilmemeli)
+.env
+
+# PostgreSQL veri dosyaları (binary DB dosyaları — repo'ya ait değil)
+.pgdata/
+*.pgdata/
+pg_log/
+.pglog.txt
+
+# PM2 logları
+logs/
+*.log
+
+# OS dosyaları
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# TypeScript cache
+*.tsbuildinfo

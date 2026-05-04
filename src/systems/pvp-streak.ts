@@ -157,17 +157,18 @@ export async function updatePvpStreak(
 
   // ── DB güncelle ───────────────────────────────────────────────────────────
   await Promise.all([
-    // Kazanan: bestStreak güncelle, anti-abuse ise streak'i düzelt
+    // Kazanan: streak ve bestStreak güncelle
+    // NOT: pvp.ts kazananın pvpStreak'ini ARTIRMIYOR (sadece pvpCount artırıyor).
+    // Streak yönetimi tamamen bu fonksiyonda. Anti-abuse durumunda streak sabit kalır.
     prisma.player.update({
       where: { id: winnerId },
       data: {
-        pvpStreak:     streakCounted ? { increment: 1 } : oldStreak, // pvp.ts zaten +1 yaptı, anti-abuse ise geri al
+        pvpStreak:     streakCounted ? { increment: 1 } : oldStreak,
         pvpBestStreak: newBest,
-        // Bonus coin varsa ekle
         ...(bonusCoins > 0 ? { coins: { increment: bonusCoins } } : {}),
       },
     }),
-    // Kaybeden: streak sıfırla (pvp.ts zaten yapıyor ama bestStreak için burada da kontrol)
+    // Kaybeden: streak sıfırla
     prisma.player.update({
       where: { id: loserId },
       data: { pvpStreak: 0 },

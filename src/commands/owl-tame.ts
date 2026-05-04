@@ -2,9 +2,10 @@
  * owl-tame.ts — /owl tame komutu
  */
 
-import {
+import type {
   ActionRowBuilder,
-  ButtonBuilder,
+  ButtonBuilder} from 'discord.js';
+import {
   ComponentType,
   type Message,
 } from 'discord.js';

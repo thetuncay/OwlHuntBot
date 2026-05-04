@@ -35,7 +35,7 @@ import { withLock } from '../utils/lock';
 type AnyPrisma = PrismaClient & Record<string, any>;
 
 // Prisma'dan gelen buff kaydı tipi
-type BuffRow = {
+interface BuffRow {
   id:          string;
   playerId:    string;
   buffItemId:  string;
@@ -45,7 +45,7 @@ type BuffRow = {
   chargeMax:   number;
   chargeCur:   number;
   createdAt:   Date;
-};
+}
 
 // ── BUFF AKTİFLEŞTİRME ───────────────────────────────────────────────────────
 

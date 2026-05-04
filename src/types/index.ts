@@ -66,6 +66,8 @@ export interface PvpSimResult {
   streak: StreakUpdateResult;
   /** Kazananın aldığı toplam XP (streak bonusu dahil) */
   winnerXP: number;
+  /** Kazananın baykuşu effectiveness %50 altındaysa true — tamir uyarısı */
+  effectivenessWarning?: boolean;
 }
 
 export interface GambleResult {

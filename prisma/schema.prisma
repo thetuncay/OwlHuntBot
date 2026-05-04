@@ -35,6 +35,9 @@ model Player {
   // --- PVP STREAK ---
   pvpBestStreak    Int      @default(0)   // Tum zamanlarin en yuksek streak'i
 
+  // --- PITY SISTEMI ---
+  noRareStreak     Int      @default(0)   // Kac hunt'tur nadir hayvan yakalanmadi
+
   // --- BUFF & LOOTBOX SISTEMI ---
   dailyLootboxDrops   Int       @default(0)   // Bugun kac lootbox drop aldi
   lastLootboxDropDate DateTime?               // Son lootbox drop tarihi (gunluk cap icin)

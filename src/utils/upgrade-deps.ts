@@ -97,7 +97,7 @@ export function suggestNextUpgrade(
   }
 
   return current === blockedStat
-    ? (UPGRADE_DEPENDENCIES[blockedStat]?.dependsOn ?? blockedStat) as OwlStatKey
+    ? (UPGRADE_DEPENDENCIES[blockedStat]?.dependsOn ?? blockedStat)
     : current;
 }
 

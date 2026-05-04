@@ -163,7 +163,7 @@ export function formatRankChange(
 export function buildSeasonArchiveEmbed(
   seasonId: string,
   category: LeaderboardCategory,
-  entries: Array<{ rank: number; playerId: string; score: number }>,
+  entries: { rank: number; playerId: string; score: number }[],
 ): EmbedBuilder {
   const meta = CATEGORY_META[category];
   const embed = new EmbedBuilder()

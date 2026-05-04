@@ -120,7 +120,7 @@ export async function runZooMessage(
 
   const grouped: Record<string, typeof items> = { Rare: [], Uncommon: [], Common: [] };
   for (const item of items) {
-    (grouped[item.rarity] ?? grouped['Common']!).push(item);
+    (grouped[item.rarity] ?? grouped.Common!).push(item);
   }
 
   let zoo = `🌿 **${name}'in Hayvanat Bahçesi**\n`;

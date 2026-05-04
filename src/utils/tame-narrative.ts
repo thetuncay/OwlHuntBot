@@ -128,7 +128,7 @@ export function generateNarrative(ctx: NarrativeContext): NarrativeOutput {
   };
   if (Math.random() < 0.01 && ultraRare[personality]) {
     return {
-      reaction:     ultraRare[personality]!,
+      reaction:     ultraRare[personality],
       continuation: '',
       hint:         '',
     };

@@ -104,7 +104,7 @@ export async function runInventory(
   collector.on('end', async () => {
     try {
       const disabledRow = renderRow();
-      disabledRow.components.forEach((b) => (b as ButtonBuilder).setDisabled(true));
+      disabledRow.components.forEach((b) => (b).setDisabled(true));
       await interaction.editReply({ components: [disabledRow] });
     } catch { /* mesaj silinmiş */ }
   });

@@ -18,6 +18,8 @@ import {
   STAT_ROLL_WEIGHT_LOW,
   STAT_ROLL_WEIGHT_MID,
   STAT_ROLL_WEIGHT_HIGH,
+  BOND_GAIN_PER_TAME,
+  BOND_MAX,
 } from '../config';
 import { encounterChance, tameChance, statEffect, clamp } from '../utils/math';
 import { withLock } from '../utils/lock';
@@ -75,6 +77,8 @@ function qualityByScore(score: number): OwlQuality {
 
 /**
  * Oyuncu icin yeni encounter olusturur.
+ * Limbo fix: Yeni encounter olusturmadan once oyuncunun suresi dolmus
+ * open encounter'larini kapatir — session TTL (5dk) gecmis kayitlar temizlenir.
  */
 export async function createEncounter(prisma: PrismaClient, playerId: string): Promise<string | null> {
   const player = await prisma.player.findUnique({ where: { id: playerId } });
@@ -83,7 +87,25 @@ export async function createEncounter(prisma: PrismaClient, playerId: string): P
     throw new Error('Encounter icin oyuncu veya main baykus bulunamadi.');
   }
 
-  const chance = encounterChance(player.level, mainOwl.statGoz, mainOwl.statKulak);
+  // ── Limbo Temizleme ───────────────────────────────────────────────────────
+  // Tame session TTL 5 dakika. Session süresi dolunca encounter DB'de "open"
+  // kalıyordu. Yeni encounter öncesinde 6+ dakika önce oluşturulmuş open
+  // encounter'ları kapat.
+  const limboThreshold = new Date(Date.now() - 6 * 60 * 1000); // 6 dakika önce
+  await prisma.encounter.updateMany({
+    where: {
+      playerId,
+      status: 'open',
+      createdAt: { lt: limboThreshold },
+    },
+    data: { status: 'closed' },
+  });
+  // ─────────────────────────────────────────────────────────────────────────
+
+  const chance = encounterChance(player.level, mainOwl.statGoz, mainOwl.statKulak,
+    // Scouting modundaki baykuş sayısını say — her biri +%1 encounter şansı verir
+    await prisma.owl.count({ where: { ownerId: playerId, passiveMode: 'scouting', isMain: false } }),
+  );
   if (Math.random() * 100 > chance) {
     return null;
   }
@@ -168,7 +190,7 @@ export async function createEncounter(prisma: PrismaClient, playerId: string): P
 
 /**
  * Tame session sonucunu DB'ye yazar.
- * attemptTame'in kendi şans hesabını bypass eder — karar zaten resolveTurn'de verildi.
+ * Race condition fix: withLock ile aynı encounter için çift owl oluşturma engellendi.
  */
 export async function commitTameResult(
   prisma: PrismaClient,
@@ -176,6 +198,7 @@ export async function commitTameResult(
   encounterId: string,
   success: boolean,
 ): Promise<void> {
+  return withLock(playerId, 'tame', async () => {
     const encounter = await prisma.encounter.findFirst({
       where: { id: encounterId, playerId },
       select: {
@@ -185,35 +208,43 @@ export async function commitTameResult(
         owlTier: true,
         owlQuality: true,
         owlTraits: true,
+        owlStats: true,
       } as any,
     }) as any;
     if (!encounter || encounter.status !== 'open') return;
 
-  if (success) {
-    const mainOwl = await prisma.owl.findFirst({ where: { ownerId: playerId, isMain: true } });
-    if (!mainOwl) return;
+    if (success) {
+      const mainOwl = await prisma.owl.findFirst({ where: { ownerId: playerId, isMain: true } });
+      if (!mainOwl) return;
 
-    const traits = parseStoredTraits(encounter.owlTraits);
+      const traits = parseStoredTraits(encounter.owlTraits);
+      const stats = encounter.owlStats as { gaga: number; goz: number; kulak: number; kanat: number; pence: number } | null;
 
-    await prisma.owl.create({
-      data: {
-        ownerId:    playerId,
-        species:    encounter.owlSpecies,
-        tier:       encounter.owlTier,
-        quality:    encounter.owlQuality,
-        hp:         mainOwl.hpMax,
-        hpMax:      mainOwl.hpMax,
-        staminaCur: mainOwl.staminaCur,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        traits:     traits as any,
-      } as any,
+      await prisma.owl.create({
+        data: {
+          ownerId:    playerId,
+          species:    encounter.owlSpecies,
+          tier:       encounter.owlTier,
+          quality:    encounter.owlQuality,
+          hp:         mainOwl.hpMax,
+          hpMax:      mainOwl.hpMax,
+          staminaCur: mainOwl.staminaCur,
+          statGaga:   stats?.gaga   ?? 1,
+          statGoz:    stats?.goz    ?? 1,
+          statKulak:  stats?.kulak  ?? 1,
+          statKanat:  stats?.kanat  ?? 1,
+          statPence:  stats?.pence  ?? 1,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          traits:     traits as any,
+        } as any,
+      });
+      await addXP(prisma, playerId, 100, 'tameSuccess');
+    }
+
+    await prisma.encounter.update({
+      where: { id: encounterId },
+      data: { status: 'closed' },
     });
-    await addXP(prisma, playerId, 100, 'tameSuccess');
-  }
-
-  await prisma.encounter.update({
-    where: { id: encounterId },
-    data: { status: 'closed' },
   });
 }
 
@@ -238,7 +269,7 @@ export async function attemptTame(
     // Direkt sorgular — transaction yok
     const encounter = await prisma.encounter.findFirst({
       where: { id: encounterId, playerId },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       select: {
         id: true,
         status: true,
@@ -246,6 +277,9 @@ export async function attemptTame(
         owlTier: true,
         owlQuality: true,
         owlTraits: true,
+        owlStats: true,   // FIX: stat'ları oku
+        tameAttempts: true,
+        failStreak: true,
       } as any,
     }) as any;
     if (!encounter) throw new Error('Encounter bulunamadi.');
@@ -301,21 +335,34 @@ export async function attemptTame(
 
     if (won) {
       const traits = parseStoredTraits(encounter.owlTraits);
+      // FIX: encounter'dan gelen pre-rolled stat'ları kullan
+      const stats = encounter.owlStats as { gaga: number; goz: number; kulak: number; kanat: number; pence: number } | null;
       await prisma.owl.create({
         data: {
-          ownerId: playerId,
-          species: encounter.owlSpecies,
-          tier: encounter.owlTier,
-          quality: encounter.owlQuality,
-          hp: mainOwl.hpMax,
-          hpMax: mainOwl.hpMax,
+          ownerId:    playerId,
+          species:    encounter.owlSpecies,
+          tier:       encounter.owlTier,
+          quality:    encounter.owlQuality,
+          hp:         mainOwl.hpMax,
+          hpMax:      mainOwl.hpMax,
           staminaCur: mainOwl.staminaCur,
+          statGaga:   stats?.gaga   ?? 1,
+          statGoz:    stats?.goz    ?? 1,
+          statKulak:  stats?.kulak  ?? 1,
+          statKanat:  stats?.kanat  ?? 1,
+          statPence:  stats?.pence  ?? 1,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           traits: traits as any,
         } as any,
       });
       await prisma.encounter.update({ where: { id: encounterId }, data: { status: 'closed' } });
       await addXP(prisma, playerId, 100, 'tameSuccess');
+
+      // Bond artışı: tame başarısında main baykuşun bond'u artar
+      if (mainOwl.bond < BOND_MAX) {
+        const newBond = Math.min(BOND_MAX, mainOwl.bond + BOND_GAIN_PER_TAME);
+        await prisma.owl.update({ where: { id: mainOwl.id }, data: { bond: newBond } });
+      }
 
       // Encounter tame başarısında lootbox drop şansı (en yüksek kaynak)
       const player = await prisma.player.findUnique({ where: { id: playerId }, select: { level: true } });
@@ -346,16 +393,23 @@ export async function attemptTame(
         select: { id: true },
       });
       if (!wildMain) {
+        // FIX: Bot owl'a encounter'ın gerçek stat'larını ver — artık trivial değil
+        const wildStats = encounter.owlStats as { gaga: number; goz: number; kulak: number; kanat: number; pence: number } | null;
         await prisma.owl.create({
           data: {
-            ownerId: attackerBotId,
-            species: encounter.owlSpecies,
-            tier: encounter.owlTier,
-            quality: encounter.owlQuality,
-            hp: 100,
-            hpMax: 100,
+            ownerId:    attackerBotId,
+            species:    encounter.owlSpecies,
+            tier:       encounter.owlTier,
+            quality:    encounter.owlQuality,
+            hp:         100,
+            hpMax:      100,
             staminaCur: 100,
-            isMain: true,
+            isMain:     true,
+            statGaga:   wildStats?.gaga   ?? 10,
+            statGoz:    wildStats?.goz    ?? 10,
+            statKulak:  wildStats?.kulak  ?? 10,
+            statKanat:  wildStats?.kanat  ?? 10,
+            statPence:  wildStats?.pence  ?? 10,
           },
         });
       }

@@ -122,7 +122,7 @@ export async function getSeasonArchive(
   seasonId: string,
   category: LeaderboardCategory,
   take = 10,
-): Promise<Array<{ rank: number; playerId: string; score: number }>> {
+): Promise<{ rank: number; playerId: string; score: number }[]> {
   const scoreField = archiveScoreField(category);
   const rows = await prisma.seasonArchive.findMany({
     where:   { seasonId },

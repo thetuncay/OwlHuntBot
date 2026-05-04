@@ -707,7 +707,7 @@ function resolveTarget(message: Message, args: string[]): { id: string; name: st
   // Mention parse edilmediyse args'tan manuel çıkar
   for (const arg of args) {
     // <@123456789> veya <@!123456789> formatı
-    const match = arg.match(/^<@!?(\d+)>$/);
+    const match = /^<@!?(\d+)>$/.exec(arg);
     if (match?.[1]) return { id: match[1], name: arg };
     // Düz ID (18+ haneli sayı)
     if (/^\d{17,20}$/.test(arg)) return { id: arg, name: arg };
