@@ -21,8 +21,23 @@ export async function assertRedisConnection(): Promise<void> {
   }
 }
 
+// Lua script: atomik token bucket
+// incr + expire race condition'ını önler, 2 call yerine 1 round-trip
+const RATE_LIMIT_LUA = `
+local count = redis.call('INCR', KEYS[1])
+if count == 1 then
+  redis.call('EXPIRE', KEYS[1], ARGV[2])
+end
+if count <= tonumber(ARGV[1]) then
+  return 1
+else
+  return 0
+end
+`;
+
 /**
- * Basit token bucket kontrolu uygular.
+ * Atomik token bucket kontrolu uygular.
+ * Lua script ile race condition olmadan 1 round-trip'te tamamlanır.
  * limit asildiginda false dondurur.
  */
 export async function consumeRateLimitToken(
@@ -30,9 +45,13 @@ export async function consumeRateLimitToken(
   limit: number,
   windowSeconds: number,
 ): Promise<boolean> {
-  const count = await redis.incr(key);
-  if (count === 1) {
-    await redis.expire(key, windowSeconds);
+  try {
+    const result = await redis.eval(
+      RATE_LIMIT_LUA, 1, key, String(limit), String(windowSeconds),
+    ) as number;
+    return result === 1;
+  } catch {
+    // Redis down → izin ver
+    return true;
   }
-  return count <= limit;
 }

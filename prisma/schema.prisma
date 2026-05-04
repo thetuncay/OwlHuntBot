@@ -26,25 +26,25 @@ model Player {
   updatedAt          DateTime @updatedAt
 
   // --- LIDERBOARD ISTATISTIKLERI ---
-  totalHunts       Int      @default(0)   // Toplam basarili av sayisi
-  totalRareFinds   Int      @default(0)   // Toplam Rare+ kalite esya/baykus bulma
-  totalPvpWins     Int      @default(0)   // Toplam PvP galibiyeti
-  totalCoinsEarned Int      @default(0)   // Toplam kazanilan coin (harcama sayilmaz)
-  powerScore       Int      @default(0)   // Hesaplanmis guc skoru (cache)
+  totalHunts       Int      @default(0)
+  totalRareFinds   Int      @default(0)
+  totalPvpWins     Int      @default(0)
+  totalCoinsEarned Int      @default(0)
+  powerScore       Int      @default(0)
 
   // --- PVP STREAK ---
-  pvpBestStreak    Int      @default(0)   // Tum zamanlarin en yuksek streak'i
+  pvpBestStreak    Int      @default(0)
 
   // --- PITY SISTEMI ---
-  noRareStreak     Int      @default(0)   // Kac hunt'tur nadir hayvan yakalanmadi
+  noRareStreak     Int      @default(0)
 
   // --- BUFF & LOOTBOX SISTEMI ---
-  dailyLootboxDrops   Int       @default(0)   // Bugun kac lootbox drop aldi
-  lastLootboxDropDate DateTime?               // Son lootbox drop tarihi (gunluk cap icin)
+  dailyLootboxDrops   Int       @default(0)
+  lastLootboxDropDate DateTime?
 
   // --- TRANSFER SİSTEMİ ---
-  dailyTransferSent   Int       @default(0)   // Bugun gonderilen toplam coin
-  lastTransferDate    DateTime?               // Son transfer tarihi (gunluk cap icin)
+  dailyTransferSent   Int       @default(0)
+  lastTransferDate    DateTime?
 
   owls            Owl[]
   inventory       InventoryItem[]
@@ -54,24 +54,33 @@ model Player {
   registrations   PlayerRegistration[]
   seasonArchives  SeasonArchive[]
   activeBuffs     PlayerBuff[]
+
+  // Liderboard sıralama index'leri — full table scan'i önler
+  @@index([powerScore])
+  @@index([totalHunts])
+  @@index([totalRareFinds])
+  @@index([totalPvpWins])
+  @@index([totalCoinsEarned])
 }
 
 // Aktif buff kayitlari — oyuncunun kullandigı geçici buff'lar
 model PlayerBuff {
   id          String   @id @default(uuid()) @map("_id")
   playerId    String
-  buffItemId  String   // BUFF_ITEMS[].id
-  category    String   // 'hunt' | 'upgrade' | 'pvp'
-  effectType  String   // 'catch_bonus' | 'loot_mult' | vb.
+  buffItemId  String
+  category    String
+  effectType  String
   effectValue Float
-  chargeMax   Int      // Maksimum charge (item tanımından kopyalanır)
-  chargeCur   Int      // Kalan charge (0 = pasif, item silinmez)
+  chargeMax   Int
+  chargeCur   Int
   createdAt   DateTime @default(now())
 
   player Player @relation(fields: [playerId], references: [id])
 
   @@index([playerId, category])
   @@index([playerId, effectType])
+  // Aktif buff sorgusu için (chargeCur > 0 filtresi)
+  @@index([playerId, category, chargeCur])
 }
 
 // Sezon kayitlari — her sezon sonunda anlık snapshot
@@ -122,11 +131,13 @@ model Owl {
   isMain        Boolean  @default(false)
   effectiveness Int      @default(100)
   createdAt     DateTime @default(now())
-  // Trait sistemi: [{ id, bonus, penalty }] formatinda JSON dizi
-  // Eski kayitlarda null gelir — sistem null'u gracefully handle eder
   traits        Json?
 
   owner Player @relation(fields: [ownerId], references: [id])
+
+  // Main owl lookup index'i — her hunt/pvp/tame'de kullanılır
+  @@index([ownerId, isMain])
+  @@index([ownerId, passiveMode])
 }
 
 model InventoryItem {
@@ -163,13 +174,17 @@ model Encounter {
   owlTier      Int
   owlQuality   String
   owlStats     Json
-  owlTraits    Json?    // Encounter sirasinda uretilen trait listesi
+  owlTraits    Json?
   tameAttempts Int      @default(0)
   failStreak   Int      @default(0)
   status       String   @default("open")
   createdAt    DateTime @default(now())
 
   player Player @relation(fields: [playerId], references: [id])
+
+  // Limbo cleanup ve tame lookup için
+  @@index([playerId, status])
+  @@index([status, createdAt])
 }
 
 model PlayerRegistration {

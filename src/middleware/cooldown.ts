@@ -1,7 +1,23 @@
 import type { Redis } from 'ioredis';
 
+// Lua script: atomik check-and-set
+// Tek round-trip ile hem kontrol hem set yapar
+// Döner: 0 = cooldown yok (set edildi), >0 = kalan ms
+const COOLDOWN_LUA = `
+local ttl = redis.call('PTTL', KEYS[1])
+if ttl > 0 then
+  return ttl
+end
+local result = redis.call('SET', KEYS[1], '1', 'PX', ARGV[1], 'NX')
+if result then
+  return 0
+end
+return redis.call('PTTL', KEYS[1])
+`;
+
 /**
  * Komut cooldown anahtarini kontrol eder.
+ * Lua script ile atomik — 3 Redis call yerine 1 round-trip.
  * Cooldown aktifse kalan sureyi milisaniye cinsinden dondurur.
  * Aktif değilse cooldownMs süresiyle set eder.
  * Redis erişilemezse 0 döner (cooldown'u engelleme).
@@ -12,15 +28,8 @@ export async function getCooldownRemainingMs(
   cooldownMs: number,
 ): Promise<number> {
   try {
-    const ttl = await redis.pttl(key);
-    if (ttl > 0) return ttl;
-
-    const setResult = await redis.set(key, '1', 'PX', cooldownMs, 'NX');
-    if (setResult === 'OK') return 0;
-
-    // Başka bir istek aynı anda set ettiyse TTL'yi oku
-    const fallbackTtl = await redis.pttl(key);
-    return Math.max(0, fallbackTtl);
+    const result = await redis.eval(COOLDOWN_LUA, 1, key, String(cooldownMs)) as number;
+    return Math.max(0, result);
   } catch {
     // Redis down → cooldown'u atla, komutu engelleme
     return 0;

@@ -105,9 +105,12 @@ export async function activateBuff(
           effectType:  def.effectType,
           effectValue: def.effectValue,
           chargeMax:   def.chargeMax,
-          chargeCur:   def.chargeMax,   // tam dolu başlar
+          chargeCur:   def.chargeMax,
         },
       });
+
+      // Buff cache'ini temizle — yeni buff aktif oldu
+      buffCache.delete(`${playerId}:${def.category}`);
 
       return {
         buffItemId: def.id,
@@ -124,14 +127,27 @@ export async function activateBuff(
 
 /**
  * Oyuncunun belirli bir kategorideki aktif buff etkilerini hesaplar.
+ * In-memory cache: 30 saniye TTL — buff nadiren değişir, her hunt'ta DB sorgusu gereksiz.
  * Sadece chargeCur > 0 olan buff'lar dahil edilir.
  * Diminishing returns: aynı effectType'tan 1. buff %100, 2. %60, 3. %30.
  */
+
+// In-memory buff cache: { key → { effects, expiresAt } }
+const buffCache = new Map<string, { effects: BuffEffects; expiresAt: number }>();
+const BUFF_CACHE_TTL_MS = 30_000; // 30 saniye
+
 export async function getBuffEffects(
   prisma: AnyPrisma,
   playerId: string,
   category: 'hunt' | 'upgrade' | 'pvp',
 ): Promise<BuffEffects> {
+  // Cache kontrolü
+  const cacheKey = `${playerId}:${category}`;
+  const cached = buffCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.effects;
+  }
+
   const effects: BuffEffects = {
     catchBonus:      0,
     lootMult:        1.0,
@@ -200,6 +216,9 @@ export async function getBuffEffects(
   effects.pvpDamageMult = Math.min(effects.pvpDamageMult, PVP_BUFF_DAMAGE_MULT_MAX);
   effects.pvpDodgeBonus = Math.min(effects.pvpDodgeBonus, PVP_BUFF_DODGE_BONUS_MAX);
   effects.lootMult      = clamp(1.0, 3.0, effects.lootMult);
+
+  // Cache'e yaz
+  buffCache.set(cacheKey, { effects, expiresAt: Date.now() + BUFF_CACHE_TTL_MS });
 
   return effects;
 }
