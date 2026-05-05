@@ -11,7 +11,7 @@ import {
   type Message,
 } from 'discord.js';
 import { HUNT_COOLDOWN_MS, SWITCH_COOLDOWN_MS, SWITCH_HP_THRESHOLD, SWITCH_PENALTY_DURATION } from '../config';
-import { getCooldownRemainingMs } from '../middleware/cooldown';
+import { checkCooldownRemainingMs, setCooldown } from '../middleware/cooldown';
 import { switchCost } from '../utils/math';
 import { withLock } from '../utils/lock';
 import { formatDuration } from '../utils/format';
@@ -35,7 +35,7 @@ export async function runSetMain(
   const userId = interaction.user.id;
   const owlId  = interaction.options.getString('baykus', true);
 
-  const cooldown = await getCooldownRemainingMs(ctx.redis, `cooldown:switch:${userId}`, SWITCH_COOLDOWN_MS);
+  const cooldown = await checkCooldownRemainingMs(ctx.redis, `cooldown:switch:${userId}`);
   if (cooldown > 0) {
     await interaction.reply({
       embeds: [warningEmbed('Switch Cooldown', `${formatDuration(cooldown)} sonra tekrar deneyebilirsin.`)],
@@ -79,6 +79,8 @@ export async function runSetMain(
     });
   });
 
+  // Cooldown sadece başarılı işlemden sonra set edilir
+  await setCooldown(ctx.redis, `cooldown:switch:${userId}`, SWITCH_COOLDOWN_MS);
   await interaction.reply({ embeds: [successEmbed('Main Degisti', 'Yeni main baykus aktif. 🦉')], flags: 64 });
 }
 
@@ -120,7 +122,7 @@ export async function runSetMainMessage(
   }
 
   const userId = message.author.id;
-  const cooldown = await getCooldownRemainingMs(ctx.redis, `cooldown:switch:${userId}`, SWITCH_COOLDOWN_MS);
+  const cooldown = await checkCooldownRemainingMs(ctx.redis, `cooldown:switch:${userId}`);
   if (cooldown > 0) {
     await message.reply(`⏰ **Switch Cooldown** | ${formatDuration(cooldown)} sonra tekrar deneyebilirsin.`);
     return;
@@ -161,6 +163,8 @@ export async function runSetMainMessage(
     });
   });
 
+  // Cooldown sadece başarılı işlemden sonra set edilir
+  await setCooldown(ctx.redis, `cooldown:switch:${userId}`, SWITCH_COOLDOWN_MS);
   await message.reply(`✅ **Main Degisti** | Yeni main baykus aktif. 🦉`);
 }
 
@@ -252,7 +256,7 @@ export async function runOwls(
     else if (i.customId.startsWith('setmain:')) {
       const targetOwlId = i.customId.split(':')[1]!;
       try {
-        const cooldown = await getCooldownRemainingMs(ctx.redis, `cooldown:switch:${userId}`, SWITCH_COOLDOWN_MS);
+        const cooldown = await checkCooldownRemainingMs(ctx.redis, `cooldown:switch:${userId}`);
         if (cooldown > 0) {
           await i.reply({ content: `⏰ Switch cooldown: ${formatDuration(cooldown)}`, flags: 64 });
           return;
@@ -276,6 +280,8 @@ export async function runOwls(
             });
           });
         });
+        // Cooldown sadece başarılı işlemden sonra set edilir
+        await setCooldown(ctx.redis, `cooldown:switch:${userId}`, SWITCH_COOLDOWN_MS);
         // Listeyi güncelle
         currentOwls = currentOwls.map((o) => ({ ...o, isMain: o.id === targetOwlId }));
       } catch (err) {
@@ -371,7 +377,7 @@ export async function runOwlsMessage(
     else if (i.customId.startsWith('setmain:')) {
       const targetOwlId = i.customId.split(':')[1]!;
       try {
-        const cooldown = await getCooldownRemainingMs(ctx.redis, `cooldown:switch:${userId}`, SWITCH_COOLDOWN_MS);
+        const cooldown = await checkCooldownRemainingMs(ctx.redis, `cooldown:switch:${userId}`);
         if (cooldown > 0) {
           await i.reply({ content: `⏰ Switch cooldown: ${formatDuration(cooldown)}`, flags: 64 });
           return;
@@ -395,6 +401,8 @@ export async function runOwlsMessage(
             });
           });
         });
+        // Cooldown sadece başarılı işlemden sonra set edilir
+        await setCooldown(ctx.redis, `cooldown:switch:${userId}`, SWITCH_COOLDOWN_MS);
         currentOwls = currentOwls.map((o) => ({ ...o, isMain: o.id === targetOwlId }));
       } catch (err) {
         const errMsg = err instanceof Error ? err.message : 'Bir hata oluştu.';
