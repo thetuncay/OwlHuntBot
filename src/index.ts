@@ -16,6 +16,7 @@ import { syncAllRoles } from './systems/roles';
 import { handleTopTextCommand } from './commands/leaderboard';
 import { addXP } from './systems/xp';
 import type { LeaderboardCategory } from './systems/leaderboard';
+import { initDbQueue, closeDbQueue } from './utils/db-queue';
 
 const envSchema = z.object({
   DISCORD_TOKEN: z.string().min(1),
@@ -69,6 +70,10 @@ async function bootstrap(): Promise<void> {
   console.info('Redis connected');
   await prisma.$connect();
   console.info('MongoDB connected');
+
+  // DB write queue başlat — kullanıcı cevapları DB yazmasını beklemez
+  initDbQueue(prisma);
+
   await loadCommands();
 
   client.once(Events.ClientReady, (readyClient) => {
@@ -296,6 +301,7 @@ setTimeout(() => { void cleanupOrphanBotPlayers(); }, 30_000);
 
 async function shutdown() {
   console.info('Bot kapatiliyor...');
+  await closeDbQueue();
   await client.destroy();
   await redis.quit();
   await prisma.$disconnect();
