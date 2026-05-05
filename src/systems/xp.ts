@@ -5,6 +5,7 @@ import { finalXP, xpRequired } from '../utils/math';
 /**
  * Oyuncuya XP ekler, level-up durumunu hesaplar ve sonucu dondurur.
  * Opsiyonel olarak mevcut player verisi geçilebilir — DB sorgusu azaltır.
+ * Hunt gibi yoğun akışlarda existingPlayer her zaman geçilmeli.
  */
 export async function addXP(
   prisma: PrismaClient,
@@ -13,6 +14,7 @@ export async function addXP(
   source: string,
   existingPlayer?: { level: number; xp: number },
 ): Promise<XpApplyResult> {
+  // existingPlayer geçildiyse DB'ye gitme — round-trip tasarrufu
   const player = existingPlayer ?? await prisma.player.findUnique({
     where: { id: playerId },
     select: { id: true, level: true, xp: true },

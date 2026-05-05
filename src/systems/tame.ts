@@ -79,10 +79,22 @@ function qualityByScore(score: number): OwlQuality {
  * Oyuncu icin yeni encounter olusturur.
  * Limbo fix: Yeni encounter olusturmadan once oyuncunun suresi dolmus
  * open encounter'larini kapatir — session TTL (5dk) gecmis kayitlar temizlenir.
+ *
+ * Performans notu: playerSnapshot ve owlSnapshot geçilirse DB sorgusu atlanır.
+ * rollHunt gibi zaten bu verilere sahip çağrıcılar için round-trip tasarrufu sağlar.
  */
-export async function createEncounter(prisma: PrismaClient, playerId: string): Promise<string | null> {
-  const player = await prisma.player.findUnique({ where: { id: playerId } });
-  const mainOwl = await prisma.owl.findFirst({ where: { ownerId: playerId, isMain: true } });
+export async function createEncounter(
+  prisma: PrismaClient,
+  playerId: string,
+  playerSnapshot?: { level: number },
+  owlSnapshot?: {
+    tier: number; statGoz: number; statKulak: number;
+    statGaga: number; statKanat: number; statPence: number;
+  },
+): Promise<string | null> {
+  // Snapshot geçilmişse DB'ye gitme — round-trip tasarrufu
+  const player = playerSnapshot ?? await prisma.player.findUnique({ where: { id: playerId } });
+  const mainOwl = owlSnapshot ?? await prisma.owl.findFirst({ where: { ownerId: playerId, isMain: true } });
   if (!player || !mainOwl) {
     throw new Error('Encounter icin oyuncu veya main baykus bulunamadi.');
   }

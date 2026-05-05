@@ -32,6 +32,7 @@ import {
 import { animateHuntInteraction, animateHuntMessage, compressHuntResult } from '../utils/hunt-ux';
 import { listActiveBuffs } from '../systems/items';
 import { BUFF_ITEM_MAP } from '../config';
+import { getPlayerBundle } from '../utils/player-cache';
 import {
   buildEncounterEmbed,
   buildEncounterActionRow,
@@ -65,16 +66,15 @@ export async function runHunt(
 
   await interaction.deferReply();
 
-  const [player, main] = await Promise.all([
-    ctx.prisma.player.findUnique({ where: { id: userId } }),
-    ctx.prisma.owl.findFirst({ where: { ownerId: userId, isMain: true } }),
-  ]);
-  if (!player || !main) {
+  // Cache'den veya DB'den player + main owl çek (cache hit = 0 DB round-trip)
+  const bundle = await getPlayerBundle(ctx.redis, ctx.prisma, userId);
+  if (!bundle || !bundle.mainOwl) {
     await interaction.editReply({ content: `❌ **Hata** | Main baykus bulunamadi.` });
     return;
   }
+  const main = bundle.mainOwl;
 
-  const result = await rollHunt(ctx.prisma, userId, main.id);
+  const result = await rollHunt(ctx.prisma, ctx.redis, userId, main.id);
   const compressed = compressHuntResult(result);
 
   const name = interaction.member && 'displayName' in interaction.member
@@ -111,16 +111,15 @@ export async function runHuntMessage(
     return;
   }
 
-  const [player, main] = await Promise.all([
-    ctx.prisma.player.findUnique({ where: { id: userId } }),
-    ctx.prisma.owl.findFirst({ where: { ownerId: userId, isMain: true } }),
-  ]);
-  if (!player || !main) {
+  // Cache'den veya DB'den player + main owl çek (cache hit = 0 DB round-trip)
+  const bundle = await getPlayerBundle(ctx.redis, ctx.prisma, userId);
+  if (!bundle || !bundle.mainOwl) {
     await message.reply(`❌ **Hata** | Main baykus bulunamadi.`);
     return;
   }
+  const main = bundle.mainOwl;
 
-  const result = await rollHunt(ctx.prisma, userId, main.id);
+  const result = await rollHunt(ctx.prisma, ctx.redis, userId, main.id);
   const compressed = compressHuntResult(result);
   const name = message.member?.displayName ?? message.author.username;
 

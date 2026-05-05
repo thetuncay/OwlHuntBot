@@ -22,6 +22,7 @@ import type { UpgradePanelData } from '../utils/upgrade-ux';
 import { failEmbed } from '../utils/embed';
 import type { CommandDefinition, OwlStatKey } from '../types';
 import { UPGRADE_COOLDOWN_SUCCESS_MS, UPGRADE_COOLDOWN_FAIL_MS, UPGRADE_STATS } from './owl-utils';
+import { getPlayerBundle, invalidatePlayerCache } from '../utils/player-cache';
 
 // ─── Slash: /owl upgrade ──────────────────────────────────────────────────────
 
@@ -54,18 +55,17 @@ export async function runUpgrade(
   }
   await ctx.redis.set(panelLockKey, '1', 'EX', 32);
 
-  const [player, main] = await Promise.all([
-    ctx.prisma.player.findUnique({ where: { id: interaction.user.id } }),
-    ctx.prisma.owl.findFirst({ where: { ownerId: interaction.user.id, isMain: true } }),
-  ]);
+  // Cache'den veya DB'den player + main owl çek
+  const bundle = await getPlayerBundle(ctx.redis, ctx.prisma, interaction.user.id);
+  const player = bundle?.player;
+  const main = bundle?.mainOwl;
   if (!main || !player) {
     await ctx.redis.del(panelLockKey);
     await interaction.reply({ embeds: [failEmbed('Hata', 'Main baykus bulunamadi.')], flags: 64 });
     return;
   }
 
-  const preview = await getUpgradePreview(ctx.prisma, interaction.user.id, main.id, stat, []);
-  const panelData: UpgradePanelData = {
+  const preview = await getUpgradePreview(ctx.prisma, interaction.user.id, main.id, stat, []);  const panelData: UpgradePanelData = {
     owlName:     main.species,
     owlQuality:  main.quality,
     playerLevel: player.level,
@@ -115,6 +115,8 @@ export async function runUpgrade(
       await Promise.all([
         setCooldown(ctx.redis, cooldownKey, cdMs),
         ctx.redis.del(panelLockKey),
+        // Stat değişti — cache'i invalidate et
+        invalidatePlayerCache(ctx.redis, interaction.user.id),
       ]);
       await i.update({
         embeds: [buildUpgradeResult({
@@ -176,10 +178,10 @@ export async function runUpgradeMessage(
   }
   await ctx.redis.set(upgradePanelKey, '1', 'EX', 32);
 
-  const [player, main] = await Promise.all([
-    ctx.prisma.player.findUnique({ where: { id: message.author.id } }),
-    ctx.prisma.owl.findFirst({ where: { ownerId: message.author.id, isMain: true } }),
-  ]);
+  // Cache'den veya DB'den player + main owl çek
+  const msgBundle = await getPlayerBundle(ctx.redis, ctx.prisma, message.author.id);
+  const player = msgBundle?.player;
+  const main = msgBundle?.mainOwl;
   if (!main || !player) {
     await ctx.redis.del(upgradePanelKey);
     await message.reply(`❌ **Hata** | Main baykus bulunamadi.`);
@@ -235,6 +237,8 @@ export async function runUpgradeMessage(
       await Promise.all([
         setCooldown(ctx.redis, upgradeCooldownKey, cdMs),
         ctx.redis.del(upgradePanelKey),
+        // Stat değişti — cache'i invalidate et
+        invalidatePlayerCache(ctx.redis, message.author.id),
       ]);
       await i.update({
         embeds: [buildUpgradeResult({

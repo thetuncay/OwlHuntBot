@@ -7,6 +7,7 @@ import type { OwlStatsData, PlayerStatsData } from '../utils/stats-ux';
 import { failEmbed } from '../utils/embed';
 import type { CommandDefinition } from '../types';
 import type { Message } from 'discord.js';
+import { getPlayerBundle } from '../utils/player-cache';
 
 // ─── Slash: /owl stats ────────────────────────────────────────────────────────
 
@@ -16,10 +17,9 @@ export async function runStats(
 ): Promise<void> {
   const deep = interaction.options.getBoolean('deep') ?? false;
 
-  const [player, owl] = await Promise.all([
-    ctx.prisma.player.findUnique({ where: { id: interaction.user.id } }),
-    ctx.prisma.owl.findFirst({ where: { ownerId: interaction.user.id, isMain: true } }),
-  ]);
+  const bundle = await getPlayerBundle(ctx.redis, ctx.prisma, interaction.user.id);
+  const player = bundle?.player;
+  const owl = bundle?.mainOwl;
   if (!player || !owl) {
     await interaction.reply({ embeds: [failEmbed('Hata', 'Main baykus bulunamadi.')], flags: 64 });
     return;
@@ -54,10 +54,9 @@ export async function runStatsMessage(
 ): Promise<void> {
   const deep = (args[0] ?? '').toLowerCase() === 'deep';
 
-  const [player, owl] = await Promise.all([
-    ctx.prisma.player.findUnique({ where: { id: message.author.id } }),
-    ctx.prisma.owl.findFirst({ where: { ownerId: message.author.id, isMain: true } }),
-  ]);
+  const bundle = await getPlayerBundle(ctx.redis, ctx.prisma, message.author.id);
+  const player = bundle?.player;
+  const owl = bundle?.mainOwl;
   if (!player || !owl) {
     await message.reply(`❌ **Hata** | Main baykus bulunamadi.`);
     return;

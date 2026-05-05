@@ -1,4 +1,5 @@
 import type { PrismaClient } from '@prisma/client';
+import type { Redis } from 'ioredis';
 import {
   HUNT_CRITICAL_RATE,
   HUNT_HIGH_TIER_THRESHOLD,
@@ -28,6 +29,7 @@ import type { HuntCatchResult, HuntRunResult, LootboxDrop } from '../types';
 import { catchChance, clamp, huntRolls, spawnScore } from '../utils/math';
 import { rollPercent, weightedRandom } from '../utils/rng';
 import { withLock } from '../utils/lock';
+import { invalidatePlayerCache } from '../utils/player-cache';
 import { addXP } from './xp';
 import { recordHuntStats, refreshPowerScore } from './leaderboard';
 import { createEncounter } from './tame';
@@ -37,16 +39,35 @@ import { rollHuntLootboxDrop } from './drops';
 /**
  * Oyuncunun ana baykusu ile av turunu simule eder.
  * Rebalanced: minimum guarantee, soft scaling, pity, streak, multi-success bonus.
+ *
+ * Performans notları:
+ *   - Player upsert + Owl fetch + BuffEffects paralel çalışır (3 round-trip → 1)
+ *   - addXP player verisini tekrar çekmez (existingPlayer geçilir)
+ *   - Encounter player/owl snapshot ile çalışır — ekstra DB sorgusu yok
+ *   - Yazma sonrası player cache invalidate edilir
+ *   - Bond cap kontrolü tek update'e indirildi
  */
-export async function rollHunt(prisma: PrismaClient, playerId: string, owlId: string): Promise<HuntRunResult> {
+export async function rollHunt(
+  prisma: PrismaClient,
+  redis: Redis,
+  playerId: string,
+  owlId: string,
+): Promise<HuntRunResult> {
   return withLock(playerId, 'hunt', async () => {
-    // Transaction yerine direkt sorgular — Atlas M0 transaction timeout'unu önler
-    const player = await prisma.player.upsert({
-      where: { id: playerId },
-      create: { id: playerId },
-      update: {},
-    });
-    const owl = await prisma.owl.findUnique({ where: { id: owlId } });
+    // ── Paralel veri çekimi ───────────────────────────────────────────────────
+    // Player upsert + Owl fetch + BuffEffects aynı anda başlar.
+    // Atlas M0'da her round-trip ~50-200ms — 3 sıralı yerine 1 paralel tur.
+    // Not: upsert zorunlu (yeni oyuncu oluşturabilir), cache bypass edilir.
+    const [player, owl, buffEffects] = await Promise.all([
+      prisma.player.upsert({
+        where: { id: playerId },
+        create: { id: playerId },
+        update: {},
+      }),
+      prisma.owl.findUnique({ where: { id: owlId } }),
+      getBuffEffects(prisma, playerId, 'hunt'),
+    ]);
+
     if (!owl || owl.ownerId !== playerId) throw new Error('Av icin gecersiz baykus.');
 
     const species = OWL_SPECIES.find((s) => s.name === owl.species);
@@ -64,9 +85,6 @@ export async function rollHunt(prisma: PrismaClient, playerId: string, owlId: st
     const pityBonus = noRareStreak >= HUNT_PITY_THRESHOLD
       ? clamp(0, HUNT_PITY_MAX_BONUS, (noRareStreak - HUNT_PITY_THRESHOLD) * HUNT_PITY_BONUS_RATE)
       : 0;
-
-    // 4. Aktif hunt buff'larını al (diminishing returns uygulanmış)
-    const buffEffects = await getBuffEffects(prisma, playerId, 'hunt');
 
     const totalRoll = huntRolls(player.level);
     const catches: HuntCatchResult[] = [];
@@ -169,13 +187,9 @@ export async function rollHunt(prisma: PrismaClient, playerId: string, owlId: st
 
     const totalXP = successXP + failXP + comboBonus + multiBonus;
 
-    const xpResult = await addXP(prisma, playerId, totalXP, 'hunt', {
-      level: player.level,
-      xp: player.xp,
-    });
-
     // ── DB Güncelleme ─────────────────────────────────────────────────────────
-    // Player güncelleme + envanter upsert'leri paralel başlat
+    // addXP + Player güncelleme + envanter upsert'leri paralel başlat.
+    // addXP'ye mevcut player verisi geçilir — ekstra DB round-trip'i önler.
     const inventoryOps: Promise<unknown>[] = [];
 
     for (const c of catches) {
@@ -215,8 +229,13 @@ export async function rollHunt(prisma: PrismaClient, playerId: string, owlId: st
       }
     }
 
-    // Player güncelleme + tüm envanter işlemleri paralel
-    await Promise.all([
+    // Player güncelleme + XP + tüm envanter işlemleri paralel
+    // addXP'ye mevcut player snapshot'ı geçilir — tekrar DB'ye gitmez
+    const [xpResult] = await Promise.all([
+      addXP(prisma, playerId, totalXP, 'hunt', {
+        level: player.level,
+        xp: player.xp,
+      }),
       prisma.player.update({
         where: { id: playerId },
         data: {
@@ -226,6 +245,7 @@ export async function rollHunt(prisma: PrismaClient, playerId: string, owlId: st
         },
       }),
       // Bond artışı: gerçek yakalama varsa main baykuşun bond'u artar
+      // Tek update ile cap kontrolü — BOND_MAX'ı aşarsa clamp eder
       ...(realCatchCount > 0 ? [
         prisma.owl.update({
           where: { id: owlId },
@@ -249,8 +269,21 @@ export async function rollHunt(prisma: PrismaClient, playerId: string, owlId: st
     const lootboxDropsPromise = rollHuntLootboxDrop(prisma, playerId, player.level, hasCritical)
       .catch(() => [] as LootboxDrop[]);
 
-    // Encounter — arka planda oluştur
-    const encounterPromise = createEncounter(prisma, playerId).catch(() => null);
+    // Encounter — player ve owl snapshot'larını geçerek ekstra DB sorgusunu önle.
+    // Sonuç UI için gerekli (buton mesajı), bu yüzden lootbox ile paralel beklenir.
+    const encounterPromise = createEncounter(
+      prisma,
+      playerId,
+      { level: player.level },
+      {
+        tier: owl.tier,
+        statGoz: owl.statGoz,
+        statKulak: owl.statKulak,
+        statGaga: owl.statGaga,
+        statKanat: owl.statKanat,
+        statPence: owl.statPence,
+      },
+    ).catch(() => null);
 
     // Liderboard, buff, power score — tamamen fire-and-forget
     recordHuntStats(prisma, playerId, catches.length, rareSuccesses).catch(() => null);
@@ -259,7 +292,10 @@ export async function rollHunt(prisma: PrismaClient, playerId: string, owlId: st
       refreshPowerScore(prisma, playerId).catch(() => null);
     }
 
-    // Lootbox ve encounter sonuçlarını bekle (UI için gerekli ama hızlı)
+    // Player cache'i invalidate et — veri değişti, sonraki komut taze çeksin
+    invalidatePlayerCache(redis, playerId).catch(() => null);
+
+    // Lootbox ve encounter sonuçlarını paralel bekle (UI için gerekli)
     const [lootboxDrops, encounterId] = await Promise.all([
       lootboxDropsPromise,
       encounterPromise,
