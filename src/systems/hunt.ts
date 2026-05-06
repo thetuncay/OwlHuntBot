@@ -29,9 +29,10 @@ import type { HuntCatchResult, HuntRunResult, LootboxDrop } from '../types';
 import { catchChance, clamp, huntRolls, spawnScore } from '../utils/math';
 import { rollPercent, weightedRandom } from '../utils/rng';
 import { withLock } from '../utils/lock';
-import { invalidatePlayerCache } from '../utils/player-cache';
+import { invalidatePlayerCache, getPlayerBundle, setCachedPlayerBundle, type CachedPlayerBundle } from '../utils/player-cache';
+import { enqueueDbWriteBulk, type UpsertInventoryJob } from '../utils/db-queue';
 import { addXP } from './xp';
-import { recordHuntStats, refreshPowerScore } from './leaderboard';
+import { refreshPowerScore } from './leaderboard';
 import { createEncounter } from './tame';
 import { getBuffEffects, drainBuffCharge } from './items';
 import { rollHuntLootboxDrop } from './drops';
@@ -55,18 +56,41 @@ export async function rollHunt(
 ): Promise<HuntRunResult> {
   return withLock(playerId, 'hunt', async () => {
     // ── Paralel veri çekimi ───────────────────────────────────────────────────
-    // Player upsert + Owl fetch + BuffEffects aynı anda başlar.
-    // Atlas M0'da her round-trip ~50-200ms — 3 sıralı yerine 1 paralel tur.
-    // Not: upsert zorunlu (yeni oyuncu oluşturabilir), cache bypass edilir.
-    const [player, owl, buffEffects] = await Promise.all([
-      prisma.player.upsert({
-        where: { id: playerId },
-        create: { id: playerId },
-        update: {},
-      }),
+    // Player bundle (cache-first) + Owl fetch + BuffEffects aynı anda başlar.
+    // Atlas M0'da her round-trip ~50-200ms — paralel yapı korunur.
+    // Cache hit → 0 DB round-trip player için; cache miss → DB'den çeker.
+    const [bundle, owl, buffEffects] = await Promise.all([
+      getPlayerBundle(redis, prisma, playerId),
       prisma.owl.findUnique({ where: { id: owlId } }),
       getBuffEffects(prisma, playerId, 'hunt'),
     ]);
+
+    // Yeni oyuncu: cache miss + DB miss → upsert ile oluştur ve cache'e yaz
+    let resolvedBundle: CachedPlayerBundle;
+    if (!bundle) {
+      const newPlayer = await prisma.player.upsert({
+        where: { id: playerId },
+        create: { id: playerId },
+        update: {},
+        select: {
+          id: true, level: true, xp: true, coins: true,
+          huntComboStreak: true, noRareStreak: true, mainOwlId: true,
+          dailyLootboxDrops: true, lastLootboxDropDate: true,
+        },
+      });
+      resolvedBundle = {
+        player: {
+          ...newPlayer,
+          lastLootboxDropDate: newPlayer.lastLootboxDropDate?.toISOString() ?? null,
+        },
+        mainOwl: null,
+      };
+      await setCachedPlayerBundle(redis, playerId, resolvedBundle);
+    } else {
+      resolvedBundle = bundle;
+    }
+
+    const player = resolvedBundle.player;
 
     if (!owl || owl.ownerId !== playerId) throw new Error('Av icin gecersiz baykus.');
 
@@ -80,8 +104,8 @@ export async function rollHunt(
     // 2. Streak bonus (ardışık başarılı hunt)
     const streakBonus = clamp(0, HUNT_STREAK_MAX_BONUS, player.huntComboStreak * HUNT_STREAK_BONUS_RATE);
 
-    // 3. Pity bonus — noRareStreak artık DB'de gerçek alan olarak var
-    const noRareStreak = (player as { noRareStreak?: number }).noRareStreak ?? 0;
+    // 3. Pity bonus — noRareStreak CachedPlayerData'da gerçek alan olarak var
+    const noRareStreak = player.noRareStreak;
     const pityBonus = noRareStreak >= HUNT_PITY_THRESHOLD
       ? clamp(0, HUNT_PITY_MAX_BONUS, (noRareStreak - HUNT_PITY_THRESHOLD) * HUNT_PITY_BONUS_RATE)
       : 0;
@@ -188,64 +212,52 @@ export async function rollHunt(
     const totalXP = successXP + failXP + comboBonus + multiBonus;
 
     // ── DB Güncelleme ─────────────────────────────────────────────────────────
-    // addXP + Player güncelleme + envanter upsert'leri paralel başlat.
-    // addXP'ye mevcut player verisi geçilir — ekstra DB round-trip'i önler.
-    const inventoryOps: Promise<unknown>[] = [];
+    // Kritik path: sadece player XP + streak güncelleme + bond.
+    // Envanter upsert'leri queue'ya alınır — kullanıcı bunları beklemez.
+    // addXP'ye mevcut player snapshot'ı geçilir — tekrar DB'ye gitmez.
+
+    // Envanter job'larını hazırla (queue'ya gidecek)
+    const inventoryJobs: UpsertInventoryJob[] = [];
 
     for (const c of catches) {
-      inventoryOps.push(
-        prisma.inventoryItem.upsert({
-          where: { ownerId_itemName: { ownerId: playerId, itemName: c.preyName } },
-          create: {
-            ownerId: playerId,
-            itemName: c.preyName,
-            itemType: 'Av',
-            rarity: c.difficulty >= 7 ? 'Rare' : c.difficulty >= 4 ? 'Uncommon' : 'Common',
-            quantity: 1,
-          },
-          update: { quantity: { increment: 1 } },
-        }),
-      );
+      inventoryJobs.push({
+        type: 'upsertInventory',
+        playerId,
+        itemName: c.preyName,
+        itemType: 'Av',
+        rarity: c.difficulty >= 7 ? 'Rare' : c.difficulty >= 4 ? 'Uncommon' : 'Common',
+        quantity: 1,
+      });
 
       // Item drop şansı (kritik avda 1.5x, buff loot_mult de uygulanır)
       for (const drop of HUNT_ITEM_DROPS) {
         if (c.difficulty < drop.minDifficulty) continue;
         const dropChance = (c.critical ? drop.dropChance * 1.5 : drop.dropChance) * buffEffects.lootMult;
         if (Math.random() * 100 < dropChance) {
-          inventoryOps.push(
-            prisma.inventoryItem.upsert({
-              where: { ownerId_itemName: { ownerId: playerId, itemName: drop.itemName } },
-              create: {
-                ownerId: playerId,
-                itemName: drop.itemName,
-                itemType: drop.itemType,
-                rarity: drop.rarity,
-                quantity: 1,
-              },
-              update: { quantity: { increment: 1 } },
-            }),
-          );
+          inventoryJobs.push({
+            type: 'upsertInventory',
+            playerId,
+            itemName: drop.itemName,
+            itemType: drop.itemType,
+            rarity: drop.rarity,
+            quantity: 1,
+          });
         }
       }
     }
 
-    // Player güncelleme + XP + tüm envanter işlemleri paralel
-    // addXP'ye mevcut player snapshot'ı geçilir — tekrar DB'ye gitmez
+    // Kritik path: XP hesaplama + bond güncelleme paralel
+    // addXP skipDbWrite:true ile çağrılır — hesaplanan değerleri döndürür, DB yazmasını rollHunt üstlenir.
+    // Bond artışı paralel bırakılır (streak/xp ile birleştirilmez).
+    const newStreak = realCatchCount > 0 ? player.huntComboStreak + 1 : 0;
+    const newNoRareStreak = gotRare ? 0 : player.noRareStreak + 1;
+
     const [xpResult] = await Promise.all([
       addXP(prisma, playerId, totalXP, 'hunt', {
         level: player.level,
         xp: player.xp,
-      }),
-      prisma.player.update({
-        where: { id: playerId },
-        data: {
-          huntComboStreak: realCatchCount > 0 ? { increment: 1 } : 0,
-          noRareStreak: gotRare ? 0 : { increment: 1 },
-          lastHunt: new Date(),
-        },
-      }),
+      }, true),
       // Bond artışı: gerçek yakalama varsa main baykuşun bond'u artar
-      // Tek update ile cap kontrolü — BOND_MAX'ı aşarsa clamp eder
       ...(realCatchCount > 0 ? [
         prisma.owl.update({
           where: { id: owlId },
@@ -256,8 +268,36 @@ export async function rollHunt(
           }
         }),
       ] : []),
-      ...inventoryOps,
     ]);
+
+    // Birleşik player yazma: streak + xp/level tek round-trip'te
+    // Level-up varsa: level ve xp:0 da dahil edilir
+    // Level-up yoksa: hesaplanan xp değeri yazılır
+    if (xpResult.levelUp) {
+      await prisma.player.update({
+        where: { id: playerId },
+        data: {
+          huntComboStreak: newStreak,
+          noRareStreak: newNoRareStreak,
+          lastHunt: new Date(),
+          level: xpResult.levelUp.newLevel,
+          xp: 0,
+        },
+      });
+    } else {
+      await prisma.player.update({
+        where: { id: playerId },
+        data: {
+          huntComboStreak: newStreak,
+          noRareStreak: newNoRareStreak,
+          lastHunt: new Date(),
+          xp: xpResult.currentXP,
+        },
+      });
+    }
+
+    // Envanter job'larını queue'ya gönder — kullanıcı beklemez
+    enqueueDbWriteBulk(inventoryJobs);
 
     // ── Arka Plan İşlemleri (fire-and-forget) ────────────────────────────────
     // Bu işlemler kullanıcı cevabını BEKLETMEZ — arka planda çalışır.
@@ -266,7 +306,8 @@ export async function rollHunt(
     const hasCritical = catches.some((c) => c.critical);
 
     // Lootbox drop — arka planda hesapla
-    const lootboxDropsPromise = rollHuntLootboxDrop(prisma, playerId, player.level, hasCritical)
+    // bundle.player gerçek cache verisi olduğundan tempCachedPlayer'a gerek yok.
+    const lootboxDropsPromise = rollHuntLootboxDrop(prisma, redis, playerId, player.level, hasCritical, player)
       .catch(() => [] as LootboxDrop[]);
 
     // Encounter — player ve owl snapshot'larını geçerek ekstra DB sorgusunu önle.
@@ -285,8 +326,16 @@ export async function rollHunt(
       },
     ).catch(() => null);
 
-    // Liderboard, buff, power score — tamamen fire-and-forget
-    recordHuntStats(prisma, playerId, catches.length, rareSuccesses).catch(() => null);
+    // Liderboard istatistikleri — queue'ya gönder (DB'ye direkt yazma yok)
+    // recordHuntStats yerine enqueueDbWrite kullan — kritik path dışı
+    if (catches.length > 0 || rareSuccesses > 0) {
+      enqueueDbWriteBulk([{
+        type: 'recordStats',
+        playerId,
+        hunts: catches.length,
+        rareFinds: rareSuccesses,
+      }]);
+    }
     drainBuffCharge(prisma, playerId, 'hunt').catch(() => null);
     if (xpResult.levelUp) {
       refreshPowerScore(prisma, playerId).catch(() => null);

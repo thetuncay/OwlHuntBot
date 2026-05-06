@@ -16,6 +16,7 @@
 // ============================================================
 
 import type { PrismaClient } from '@prisma/client';
+import type { Redis } from 'ioredis';
 import {
   LOOTBOX_CRIT_MULT,
   LOOTBOX_DEF_MAP,
@@ -26,6 +27,8 @@ import {
   type LootboxTier,
 } from '../config';
 import type { LootboxDrop } from '../types';
+import { enqueueDbWrite, enqueueDbWriteBulk } from '../utils/db-queue';
+import type { CachedPlayerData } from '../utils/player-cache';
 
 // ── SABİTLER ─────────────────────────────────────────────────────────────────
 
@@ -58,15 +61,49 @@ function levelDropMult(level: number): number {
 }
 
 /**
- * Oyuncunun bugün kaç lootbox drop aldığını kontrol eder ve atomik olarak artırır.
- * Race condition fix: check + increment tek bir atomic upsert ile yapılır.
+ * Oyuncunun bugün kaç lootbox drop aldığını kontrol eder ve artırır.
+ * Günlük sayaç Player_Cache üzerinden okunur (DB round-trip yok).
+ * Drop gerçekleşirse DB_Queue'ya fire-and-forget yazma yapılır.
  * Döner: true = drop verildi, false = günlük cap doldu
  */
-async function tryClaimDailyDrop(prisma: PrismaClient, playerId: string): Promise<boolean> {
+async function tryClaimDailyDrop(
+  prisma: PrismaClient,
+  redis: Redis,
+  playerId: string,
+  cachedPlayer: CachedPlayerData,
+): Promise<boolean> {
   const today = new Date();
   const todayStr = today.toDateString();
 
-  // Atomic read-then-conditional-write: findUnique + update tek sorguda
+  // Cache'den oku — DB round-trip yok
+  const lastDateStr = cachedPlayer.lastLootboxDropDate;
+  const isNewDay = !lastDateStr || new Date(lastDateStr).toDateString() !== todayStr;
+  const currentCount = isNewDay ? 0 : (cachedPlayer.dailyLootboxDrops ?? 0);
+
+  // Senkron cap kontrolü — DB yok
+  if (currentCount >= DAILY_DROP_CAP) return false;
+
+  // Drop gerçekleşti: DB_Queue'ya fire-and-forget yaz
+  enqueueDbWrite({
+    type: 'updatePlayer',
+    playerId,
+    data: {
+      dailyLootboxDrops:   isNewDay ? 1 : currentCount + 1,
+      lastLootboxDropDate: today,
+    },
+  });
+
+  return true;
+}
+
+/**
+ * PvP ve Encounter gibi cache verisi olmayan akışlar için DB tabanlı cap kontrolü.
+ * Döner: true = drop verildi, false = günlük cap doldu
+ */
+async function tryClaimDailyDropFromDb(prisma: PrismaClient, playerId: string): Promise<boolean> {
+  const today = new Date();
+  const todayStr = today.toDateString();
+
   const player = await prisma.player.findUnique({
     where: { id: playerId },
     select: {
@@ -82,8 +119,6 @@ async function tryClaimDailyDrop(prisma: PrismaClient, playerId: string): Promis
 
   if (currentCount >= DAILY_DROP_CAP) return false;
 
-  // Atomic increment — eğer başka bir istek aynı anda gelirse
-  // en kötü ihtimalle cap'i 1 aşar, bu kabul edilebilir
   await prisma.player.update({
     where: { id: playerId },
     data: {
@@ -125,15 +160,19 @@ async function addLootboxToInventory(
  * Başarılı bir av rolünde lootbox düşüp düşmeyeceğini hesaplar.
  * Kritik avda şans 2x.
  *
+ * @param redis Redis bağlantısı (tryClaimDailyDrop için)
+ * @param cachedPlayer Oyuncunun cache verisi (günlük drop sayacı için)
  * @param isCritical Kritik av mı?
  * @param playerLevel Oyuncu seviyesi (soft cap için)
  * @returns Düşen lootbox listesi (genellikle 0 veya 1 item)
  */
 export async function rollHuntLootboxDrop(
   prisma: PrismaClient,
+  redis: Redis,
   playerId: string,
   playerLevel: number,
   isCritical: boolean,
+  cachedPlayer: CachedPlayerData,
 ): Promise<LootboxDrop[]> {
   const mult = levelDropMult(playerLevel) * (isCritical ? LOOTBOX_CRIT_MULT : 1.0);
   const drops: LootboxDrop[] = [];
@@ -146,11 +185,23 @@ export async function rollHuntLootboxDrop(
       const def = LOOTBOX_DEFS.find((l) => l.tier === tier);
       if (!def) continue;
 
-      // Atomic cap check + increment
-      const claimed = await tryClaimDailyDrop(prisma, playerId);
+      // Cache tabanlı günlük drop kontrolü — DB round-trip yok
+      const claimed = await tryClaimDailyDrop(prisma, redis, playerId, cachedPlayer);
       if (!claimed) break;
 
-      await addLootboxToInventory(prisma, playerId, def.id);
+      // Envanter yazma kritik yol dışı — DB_Queue'ya taşındı
+      const lootboxDef = LOOTBOX_DEF_MAP[def.id];
+      if (lootboxDef) {
+        enqueueDbWriteBulk([{
+          type: 'upsertInventory',
+          playerId,
+          itemName: lootboxDef.name,
+          itemType: 'Kutu',
+          rarity: lootboxDef.tier === 'Efsane' ? 'Legendary' : lootboxDef.tier === 'Nadir' ? 'Rare' : 'Common',
+          quantity: 1,
+        }]);
+      }
+
       drops.push({ lootboxId: def.id, lootboxName: def.name, emoji: def.emoji });
       break;
     }
@@ -179,7 +230,7 @@ export async function rollPvpLootboxDrop(
       const def = LOOTBOX_DEFS.find((l) => l.tier === tier);
       if (!def) continue;
 
-      const claimed = await tryClaimDailyDrop(prisma, playerId);
+      const claimed = await tryClaimDailyDropFromDb(prisma, playerId);
       if (!claimed) return null;
 
       await addLootboxToInventory(prisma, playerId, def.id);
@@ -211,7 +262,7 @@ export async function rollEncounterLootboxDrop(
       const def = LOOTBOX_DEFS.find((l) => l.tier === tier);
       if (!def) continue;
 
-      const claimed = await tryClaimDailyDrop(prisma, playerId);
+      const claimed = await tryClaimDailyDropFromDb(prisma, playerId);
       if (!claimed) return null;
 
       await addLootboxToInventory(prisma, playerId, def.id);
