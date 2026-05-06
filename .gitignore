@@ -1,6 +1,9 @@
 # Bağımlılıklar
 node_modules/
 
+.env
+.env.example
+
 # Build çıktısı
 dist/
 

@@ -31,6 +31,9 @@ export interface CachedPlayerData {
   huntComboStreak: number;
   noRareStreak: number;
   mainOwlId: string | null;
+  // YENİ: günlük lootbox drop takibi
+  dailyLootboxDrops: number;
+  lastLootboxDropDate: string | null; // ISO 8601 string
 }
 
 export interface CachedOwlData {
@@ -134,6 +137,7 @@ export async function getPlayerBundle(
       select: {
         id: true, level: true, xp: true, coins: true,
         huntComboStreak: true, noRareStreak: true, mainOwlId: true,
+        dailyLootboxDrops: true, lastLootboxDropDate: true,
       },
     }),
     prisma.owl.findFirst({

@@ -236,12 +236,40 @@ export async function drainBuffCharge(
   playerId: string,
   activityType: 'hunt' | 'pvp' | 'upgrade',
 ): Promise<void> {
-  // Aktif buff'ları al
+  // Buff_Cache kontrolü — aktif buff yoksa DB'ye gitme (Gereksinim 3.1, 3.2, 3.5)
+  const cacheKey = `${playerId}:${activityType}`;
+  const cached = buffCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) {
+    const hasActiveBuff =
+      cached.effects.catchBonus > 0 ||
+      cached.effects.lootMult > 1.0 ||
+      cached.effects.rareDropBonus > 0 ||
+      cached.effects.upgradeBonus > 0 ||
+      cached.effects.downgradeShield < 1.0 ||
+      cached.effects.pvpDamageMult > 1.0 ||
+      cached.effects.pvpDodgeBonus > 0;
+    if (!hasActiveBuff) return; // Aktif buff yok, DB sorgusu gerekmez
+  }
+
+  // Aktif buff'ları al (Gereksinim 3.3)
   const buffs: BuffRow[] = await prisma.playerBuff.findMany({
     where: { playerId, chargeCur: { gt: 0 } },
   });
 
-  if (buffs.length === 0) return;
+  if (buffs.length === 0) {
+    // Cache miss durumunda boş sonucu cache'e yaz (Gereksinim 3.4)
+    const emptyEffects: BuffEffects = {
+      catchBonus:      0,
+      lootMult:        1.0,
+      rareDropBonus:   0,
+      upgradeBonus:    0,
+      downgradeShield: 1.0,
+      pvpDamageMult:   1.0,
+      pvpDodgeBonus:   0,
+    };
+    buffCache.set(cacheKey, { effects: emptyEffects, expiresAt: Date.now() + BUFF_CACHE_TTL_MS });
+    return;
+  }
 
   // Her buff için aktivite tipine göre maliyet hesapla
   const updates: Promise<unknown>[] = [];
@@ -267,6 +295,8 @@ export async function drainBuffCharge(
 
   if (updates.length > 0) {
     await Promise.all(updates);
+    // Charge güncellemesi sonrası cache'i geçersiz kıl (Gereksinim 3.6)
+    buffCache.delete(cacheKey);
   }
 }
 
