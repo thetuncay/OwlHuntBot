@@ -64,7 +64,8 @@ manager.on('shardCreate', (shard) => {
   });
 
   shard.on('death', (process) => {
-    console.error(`[Shard] Shard #${shard.id} öldü (exit: ${process.exitCode}).`);
+    const code = 'exitCode' in process ? (process as unknown as { exitCode: number | null }).exitCode : null;
+    console.error(`[Shard] Shard #${shard.id} öldü (exit: ${code}).`);
   });
 });
 
