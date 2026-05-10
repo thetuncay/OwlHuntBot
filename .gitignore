@@ -31,4 +31,7 @@ Thumbs.db
 # TypeScript cache
 *.tsbuildinfo
 
-node_modules/
+# Artifact dosyaları
+baykusbot@*
+pnpm
+tsx

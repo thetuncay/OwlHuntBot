@@ -2,6 +2,8 @@ import type { PrismaClient } from '@prisma/client';
 import {
   ITEM_MAX_PER_ATTEMPT,
   OWL_SPECIES,
+  OWL_BASE_HP,
+  OWL_BASE_STAMINA,
   QUALITY_TAME_ADJ,
   TAME_BASE_CHANCE,
   TAME_FAIL_ATTACK_RATE,
@@ -232,15 +234,17 @@ export async function commitTameResult(
       const traits = parseStoredTraits(encounter.owlTraits);
       const stats = encounter.owlStats as { gaga: number; goz: number; kulak: number; kanat: number; pence: number } | null;
 
+      const baseHp = OWL_BASE_HP[encounter.owlTier] ?? 100;
+      const baseStamina = OWL_BASE_STAMINA[encounter.owlTier] ?? 100;
       await prisma.owl.create({
         data: {
           ownerId:    playerId,
           species:    encounter.owlSpecies,
           tier:       encounter.owlTier,
           quality:    encounter.owlQuality,
-          hp:         mainOwl.hpMax,
-          hpMax:      mainOwl.hpMax,
-          staminaCur: mainOwl.staminaCur,
+          hp:         baseHp,
+          hpMax:      baseHp,
+          staminaCur: baseStamina,
           statGaga:   stats?.gaga   ?? 1,
           statGoz:    stats?.goz    ?? 1,
           statKulak:  stats?.kulak  ?? 1,
@@ -349,15 +353,17 @@ export async function attemptTame(
       const traits = parseStoredTraits(encounter.owlTraits);
       // FIX: encounter'dan gelen pre-rolled stat'ları kullan
       const stats = encounter.owlStats as { gaga: number; goz: number; kulak: number; kanat: number; pence: number } | null;
+      const tameBaseHp = OWL_BASE_HP[encounter.owlTier] ?? 100;
+      const tameBaseStamina = OWL_BASE_STAMINA[encounter.owlTier] ?? 100;
       await prisma.owl.create({
         data: {
           ownerId:    playerId,
           species:    encounter.owlSpecies,
           tier:       encounter.owlTier,
           quality:    encounter.owlQuality,
-          hp:         mainOwl.hpMax,
-          hpMax:      mainOwl.hpMax,
-          staminaCur: mainOwl.staminaCur,
+          hp:         tameBaseHp,
+          hpMax:      tameBaseHp,
+          staminaCur: tameBaseStamina,
           statGaga:   stats?.gaga   ?? 1,
           statGoz:    stats?.goz    ?? 1,
           statKulak:  stats?.kulak  ?? 1,

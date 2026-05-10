@@ -1,6 +1,6 @@
 import type { PrismaClient } from '@prisma/client';
 import {
-  PVP_EXECUTE_DAMAGE,
+  PVP_EXECUTE_POWER_MULT,
   PVP_EXECUTE_HP_THRESH,
   PVP_EXECUTE_STAM_THRESH,
   PVP_MAX_TURNS,
@@ -167,7 +167,7 @@ export async function simulatePvP(prisma: PrismaClient, sessionId: string): Prom
       });
     }
 
-    const winner = left.hp >= right.hp ? left : right;
+    const winner = left.hp > right.hp ? left : left.hp < right.hp ? right : (Math.random() < 0.5 ? left : right);
     const loser = winner.playerId === left.playerId ? right : left;
 
     await prisma.$transaction(async (tx) => {
@@ -296,7 +296,7 @@ export function resolveTurn(
   // Buff hasar çarpanı uygula (cap config'de tanımlı, getBuffEffects'te uygulandı)
   damage = damage * attacker.buffDamageMult;
 
-  let dodgeBonus = attacker.buffDodgeBonus;  // Buff dodge bonus başlangıç değeri
+  let dodgeBonus = 0;  // Attacker dodge penalty (stamina-based)
 
   if (attacker.stamina < PVP_STAM_FULL_MIN && attacker.stamina >= PVP_STAM_DODGE_MIN) {
     dodgeBonus += PVP_STAM_DODGE_PEN;
@@ -314,15 +314,22 @@ export function resolveTurn(
   // Eski: damage = 999 (stat farkı önemsiz, her zaman anlık ölüm)
   // Yeni: damage = attacker.power * 8 (güçlü baykuş daha sert execute yapar)
   // Bu sayede stat yatırımı ve buff'lar execute'da da anlam taşır
-  if (isExecute) damage = attacker.power * 8;
+  if (isExecute) damage = attacker.power * PVP_EXECUTE_POWER_MULT;
 
   const effectiveDamage = Math.max(1, Math.round(damage + dodgeBonus));
-  const isCrit = !isExecute && effectiveDamage > attacker.power * 1.5;
 
-  defender.hp = Math.max(0, defender.hp - effectiveDamage);
+  // Defender dodge check: dodge bonus gives a chance to reduce damage
+  const dodgeRoll = Math.random();
+  const finalDamage = dodgeRoll < defender.buffDodgeBonus
+    ? Math.max(1, Math.round(effectiveDamage * 0.3))  // Dodged: only 30% damage
+    : effectiveDamage;
+
+  const isCrit = !isExecute && finalDamage > attacker.power * 1.5;
+
+  defender.hp = Math.max(0, defender.hp - finalDamage);
   attacker.stamina = Math.max(0, attacker.stamina - 10);
 
-  log.push(`${attacker.playerId} -> ${defender.playerId}: ${effectiveDamage} hasar`);
+  log.push(`${attacker.playerId} -> ${defender.playerId}: ${finalDamage} hasar`);
 
-  return { damage: effectiveDamage, isCrit, isExecute };
+  return { damage: finalDamage, isCrit, isExecute };
 }

@@ -4,6 +4,14 @@
 // ============================================================
 
 // --- BAYKUS TURLERI ---
+// Tier bazlı base HP ve stamina değerleri
+export const OWL_BASE_HP: Record<number, number> = {
+  1: 150, 2: 140, 3: 130, 4: 120, 5: 110, 6: 100, 7: 90, 8: 80,
+};
+export const OWL_BASE_STAMINA: Record<number, number> = {
+  1: 120, 2: 115, 3: 110, 4: 105, 5: 100, 6: 95, 7: 90, 8: 85,
+};
+
 export const OWL_SPECIES = [
   { name: 'Blakiston balik baykusu', tier: 1, powerMultiplier: 1.5 },
   { name: 'Puhu baykusu', tier: 2, powerMultiplier: 1.35 },
@@ -527,7 +535,7 @@ export const PVP_RNG_WEIGHT = 0.3;
 export const PVP_MOMENTUM_RATE = 0.05;
 export const PVP_EXECUTE_HP_THRESH = 0.2;
 export const PVP_EXECUTE_STAM_THRESH = 30;
-export const PVP_EXECUTE_DAMAGE = 999;
+export const PVP_EXECUTE_POWER_MULT = 8;
 export const PVP_STAM_FULL_MIN = 60;
 export const PVP_STAM_DODGE_MIN = 30;
 export const PVP_STAM_DAMAGE_MIN = 10;
@@ -587,13 +595,13 @@ export const AUTO_SINK_MODES = ['auto-sell', 'auto-disassemble', 'auto-convert']
 
 export const UPGRADE_ITEM_BONUS: Record<string, number> = {
   'Kemik Tozu': 3,
-  'Parlak Tuy': 4,
-  'Av Gozu Kristali': 5,
+  'Parlak Tüy': 4,
+  'Av Gözü Kristali': 5,
   'Sessizlik Teli': 3,
-  'Yirtici Pence Parcasi': 6,
-  'Orman Yankisi': 5,
-  'Kirik Av Zinciri': 4,
-  'Golge Tuyu': 2,
+  'Yırtıcı Pençe Parçası': 6,
+  'Orman Yankısı': 5,
+  'Kırık Av Zinciri': 4,
+  'Gölge Tüyü': 2,
 };
 
 export const TAME_ITEM_BONUS: Record<string, number> = {

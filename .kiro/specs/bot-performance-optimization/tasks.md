@@ -25,7 +25,7 @@ Bu plan, `/hunt` kritik yolundaki MongoDB round-trip sayısını 4–6'dan en fa
     - `enqueueDbWrite` import'unu `src/utils/db-queue.ts`'den ekle
     - _Gereksinimler: 4.1, 4.2, 4.3, 4.5_
 
-  - [~] 2.2 `addXP` için özellik tabanlı test yaz (Özellik 3)
+  - [ ] 2.2 `addXP` için özellik tabanlı test yaz (Özellik 3)
     - **Özellik 3: XP Hesaplama Tutarlılığı**
     - **Doğrular: Gereksinim 4.3**
     - `fast-check` ile `fc.record({ level: fc.integer({min:1,max:100}), xp: fc.integer({min:0,max:10000}), amount: fc.integer({min:1,max:500}) })` üreteci kullan

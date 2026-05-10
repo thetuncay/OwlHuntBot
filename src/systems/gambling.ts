@@ -27,11 +27,6 @@ function streakModifier(streakWins: number, streakLosses: number): number {
   return 0;
 }
 
-function applyHouseChance(win: boolean, chance: number): boolean {
-  if (!win) return false;
-  return Math.random() * 100 < chance;
-}
-
 async function settleGamble(
   prisma: PrismaClient,
   playerId: string,
@@ -90,7 +85,7 @@ export async function slot(prisma: PrismaClient, playerId: string, bet: number):
     const jackpot = Math.random() * 100 < GAMBLE_SLOT_HIDDEN_JACKPOT;
     const payout = jackpot ? roll.payout * 2 : roll.payout;
     const gain = Math.floor(bet * payout) - bet;
-    const win = gain >= 0;
+    const win = gain > 0;
 
     const updated = await prisma.player.update({
       where: { id: playerId },
@@ -125,7 +120,7 @@ export async function slot(prisma: PrismaClient, playerId: string, bet: number):
  * NOT: Bu fonksiyon gambling.ts'teki auto-resolve blackjack için kullanılır.
  * Interaktif bj.ts komutu kendi kart döngüsüne sahip.
  */
-function drawCard(_playerHand?: boolean): number {
+function drawCard(): number {
   // 52 kartlık deste: 4×As, 4×2, 4×3, ..., 4×9, 16×10-değerli
   const roll = Math.floor(Math.random() * 13) + 1; // 1-13 arası
   if (roll === 1) return 11;   // As = 11 (bust durumunda 1'e düşer)
@@ -174,10 +169,10 @@ export async function blackjack(prisma: PrismaClient, playerId: string, bet: num
     if (!player) throw new Error('Oyuncu bulunamadi.');
     if (player.coins < bet) throw new Error('Yetersiz bakiye.');
 
-    const playerCards = [drawCard(true), drawCard(true)];
-    const dealerCards = [drawCard(false), drawCard(false)];
-    while (handValue(playerCards) < 17) playerCards.push(drawCard(true));
-    while (handValue(dealerCards) < 17 || (handValue(dealerCards) === 17 && dealerCards.includes(11))) dealerCards.push(drawCard(false));
+    const playerCards = [drawCard(), drawCard()];
+    const dealerCards = [drawCard(), drawCard()];
+    while (handValue(playerCards) < 12) playerCards.push(drawCard());
+    while (handValue(dealerCards) < 17 || (handValue(dealerCards) === 17 && dealerCards.includes(11))) dealerCards.push(drawCard());
 
     const playerScore = handValue(playerCards);
     const dealerScore = handValue(dealerCards);
@@ -194,27 +189,23 @@ export async function blackjack(prisma: PrismaClient, playerId: string, bet: num
       }
     }
 
-    const streakMod = streakModifier(player.gambleStreakWins, player.gambleStreakLosses);
-    const chance = finalWinChance(50, player.coins, bet, streakMod);
-    const baseGain = Math.floor(bet * payout) - bet;
-    const effectiveWin = applyHouseChance(win, chance);
-    const gain = effectiveWin ? baseGain : -bet;
+    const gain = win ? Math.floor(bet * payout) - bet : -bet;
 
     const updated = await prisma.player.update({
       where: { id: playerId },
       data: {
         coins: { increment: gain },
-        gambleStreakWins:   effectiveWin ? { increment: 1 } : 0,
-        gambleStreakLosses: effectiveWin ? 0 : { increment: 1 },
+        gambleStreakWins:   win ? { increment: 1 } : 0,
+        gambleStreakLosses: win ? 0 : { increment: 1 },
       },
     });
 
-    if (effectiveWin && gain > 0) {
+    if (win && gain > 0) {
       recordCoinsEarned(prisma, playerId, gain).catch(() => null);
     }
 
     return {
-      win: effectiveWin,
+      win,
       deltaCoins: gain,
       finalCoins: updated.coins,
       message: `Blackjack sonuc: Oyuncu ${playerScore} - Dealer ${dealerScore}`,

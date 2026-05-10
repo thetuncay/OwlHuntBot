@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
-import { Client, Collection, Events, GatewayIntentBits } from 'discord.js';
+import { Client, Collection, Events, GatewayIntentBits, Options, Sweepers } from 'discord.js';
 import { access, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -31,6 +31,33 @@ const env = envSchema.parse(process.env);
 const prisma = new PrismaClient();
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
+  // RAM optimizasyonu: discord.js varsayılan olarak tüm mesajları, üyeleri ve
+  // kanalları bellekte tutar. Yüksek sunucu sayısında bu bellek sızıntısına yol açar.
+  // makeCache: sadece ihtiyaç duyulan miktarı tut.
+  makeCache: Options.cacheWithLimits({
+    MessageManager:    50,   // Kanal başına max 50 mesaj (varsayılan: sınırsız)
+    GuildMemberManager: 200, // Guild başına max 200 üye (komutlar user ID ile çalışır, üye listesi gerekmez)
+    UserManager:       500,  // Global max 500 kullanıcı objesi
+    ReactionManager:   0,    // Reaksiyon cache'i tamamen kapat (kullanılmıyor)
+    GuildEmojiManager: 0,    // Emoji cache'i kapat (kullanılmıyor)
+    StageInstanceManager: 0,
+    GuildStickerManager: 0,
+  }),
+  // sweepers: belirli aralıklarla eski cache girişlerini temizle
+  sweepers: {
+    messages: {
+      interval: 300,    // Her 5 dakikada bir tara
+      lifetime: 600,    // 10 dakikadan eski mesajları sil
+    },
+    users: {
+      interval: 3_600,  // Her saatte bir tara
+      filter: Sweepers.filterByLifetime({ lifetime: 3_600 }), // 1 saatten eski user objelerini sil
+    },
+    guildMembers: {
+      interval: 3_600,
+      filter: Sweepers.filterByLifetime({ lifetime: 3_600 }),
+    },
+  },
 });
 const commandMap = new Collection<string, CommandDefinition>();
 
@@ -265,7 +292,6 @@ async function cleanupOrphanBotPlayers(): Promise<void> {
   try {
     // 24 saatten eski, ID'si "wild:" ile başlayan bot oyuncuları sil
     const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    // MongoDB'de startsWith için contains kullanıyoruz
     const orphans = await prisma.player.findMany({
       where: {
         id: { startsWith: 'wild:' },

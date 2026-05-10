@@ -257,16 +257,21 @@ export async function rollHunt(
         level: player.level,
         xp: player.xp,
       }, true),
-      // Bond artışı: gerçek yakalama varsa main baykuşun bond'u artar
+      // Bond artışı: gerçek yakalama varsa main baykuşun bond'u artar (atomic cap)
       ...(realCatchCount > 0 ? [
-        prisma.owl.update({
-          where: { id: owlId },
-          data: { bond: { increment: BOND_GAIN_PER_HUNT } },
-        }).then(async (updated) => {
-          if (updated.bond > BOND_MAX) {
-            await prisma.owl.update({ where: { id: owlId }, data: { bond: BOND_MAX } });
-          }
-        }),
+        prisma.$runCommandRaw({
+          update: 'Owl',
+          updates: [{
+            q: { _id: owlId },
+            u: [{ $set: { bond: { $min: [{ $add: ['$bond', BOND_GAIN_PER_HUNT] }, BOND_MAX] } } }],
+          }],
+        }).catch(() =>
+          // Fallback: MongoDB < 4.2 doesn't support pipeline updates
+          prisma.owl.update({
+            where: { id: owlId },
+            data: { bond: Math.min(BOND_MAX, (owl.bond ?? 0) + BOND_GAIN_PER_HUNT) },
+          }),
+        ),
       ] : []),
     ]);
 

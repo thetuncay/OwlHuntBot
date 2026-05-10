@@ -7,7 +7,7 @@
 import type { PrismaClient } from '@prisma/client';
 import {
   OWL_SPECIES,
-  PVP_EXECUTE_DAMAGE,
+  PVP_EXECUTE_POWER_MULT,
   PVP_EXECUTE_HP_THRESH,
   PVP_EXECUTE_STAM_THRESH,
   PVP_MAX_TURNS,
@@ -172,7 +172,7 @@ function resolveTurn(
     defender.hp <= defender.hpMax * PVP_EXECUTE_HP_THRESH &&
     defender.stamina < PVP_EXECUTE_STAM_THRESH;
 
-  if (isExecute) damage = PVP_EXECUTE_DAMAGE;
+  if (isExecute) damage = attacker.power * PVP_EXECUTE_POWER_MULT;
 
   const effectiveDamage = Math.max(1, Math.round(damage + dodgeBonus));
   const isCrit = !isExecute && effectiveDamage > attacker.power * 1.5;
