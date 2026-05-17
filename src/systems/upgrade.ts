@@ -97,6 +97,9 @@ export async function getUpgradePreview(
   const chance    = upgradeChance(UPGRADE_BASE_CHANCE, player.level, totalItemBonus, statValue);
 
   const requiredCosts = UPGRADE_COST[stat] ?? [];
+  const matRequirement = upgradeMaterialRequirement(statValue);
+  const coinCost = upgradeCoinCost(statValue);
+
   const invChecks = await Promise.all(
     requiredCosts.map((cost) =>
       prisma.inventoryItem
@@ -104,9 +107,13 @@ export async function getUpgradePreview(
         .then((inv) => ({ cost, has: inv?.quantity ?? 0 })),
     ),
   );
-  const requiredItems = invChecks.map(
-    ({ cost, has }) => `${cost.itemName} x${cost.quantity} (sahip: ${has})`,
-  );
+  
+  const requiredItems = [
+    ...invChecks.map(
+      ({ cost, has }) => `${cost.itemName} x${matRequirement} (sahip: ${has})`,
+    ),
+    `Ücret: ${coinCost.toLocaleString('tr-TR')} 💰 (sahip: ${player.coins.toLocaleString('tr-TR')})`
+  ];
 
   return {
     chance,
@@ -159,20 +166,34 @@ export async function attemptUpgrade(
 
       // ── Zorunlu malzemeleri kontrol et ve tüket ───────────────────────────
       const requiredCosts = UPGRADE_COST[stat] ?? [];
+      const matRequirement = upgradeMaterialRequirement(oldValue);
+      const coinCost = upgradeCoinCost(oldValue);
+
+      if (player.coins < coinCost) {
+        throw new Error(`Yetersiz bakiye: **${coinCost.toLocaleString('tr-TR')}** 💰 gerekli.`);
+      }
+
       for (const cost of requiredCosts) {
         const inv = await tx.inventoryItem.findUnique({
           where: { ownerId_itemName: { ownerId: playerId, itemName: cost.itemName } },
         });
-        if (!inv || inv.quantity < cost.quantity) {
+        if (!inv || inv.quantity < matRequirement) {
           throw new Error(
-            `Yetersiz malzeme: **${cost.itemName}** (gerekli: ${cost.quantity}, sahip: ${inv?.quantity ?? 0})`,
+            `Yetersiz malzeme: **${cost.itemName}** (gerekli: ${matRequirement}, sahip: ${inv?.quantity ?? 0})`,
           );
         }
       }
+
+      // Coin ve malzeme tüketimi
+      await tx.player.update({
+        where: { id: playerId },
+        data: { coins: { decrement: coinCost } },
+      });
+
       for (const cost of requiredCosts) {
         await tx.inventoryItem.update({
           where: { ownerId_itemName: { ownerId: playerId, itemName: cost.itemName } },
-          data: { quantity: { decrement: cost.quantity } },
+          data: { quantity: { decrement: matRequirement } },
         });
       }
 

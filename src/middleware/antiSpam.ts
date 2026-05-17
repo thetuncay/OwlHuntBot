@@ -30,10 +30,12 @@ export async function enforceAntiSpam(redis: Redis, userId: string): Promise<voi
       throw new Error(`Spam algilandi. ${SPAM_MUTE_SECONDS} sn susturuldun.`);
     }
   } catch (err) {
-    // Spam/mute hataları yeniden fırlat, Redis bağlantı hatalarını yut
+    // Spam/mute hataları yeniden fırlat
     if (err instanceof Error && (err.message.includes('hizli') || err.message.includes('Spam'))) {
       throw err;
     }
-    // Redis down → geç, komutu engelleme
+    // Redis down GÜVENLİK FİX: "Open Bar" modunu engellemek için hata fırlat
+    // Kritik sistemlerde availability yerine security önceliklidir.
+    throw new Error('⚠️ Sistem şu an yoğunluk nedeniyle kapalı (Redis Error). Lütfen az sonra tekrar deneyin.');
   }
 }

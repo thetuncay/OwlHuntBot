@@ -163,6 +163,26 @@ export const upgradeChance = (
   return clamp(UPGRADE_MIN, UPGRADE_MAX, raw);
 };
 
+/**
+ * Stat seviyesine göre upgrade coin maliyeti.
+ * EKONOMİ FİX: Üst seviyelerde enflasyonu önlemek için eksponansiyel ölçeklenme.
+ */
+export const upgradeCoinCost = (statLevel: number): number => {
+  // Stat 1: 50 | Stat 50: ~19k | Stat 90: ~58k
+  return 50 + Math.floor(Math.pow(statLevel, 1.8) * 5);
+};
+
+/**
+ * Stat seviyesine göre malzeme gereksinimi.
+ * EKONOMİ FİX: Malzeme bolluğunu dengelemek için artan gereksinim.
+ */
+export const upgradeMaterialRequirement = (statLevel: number): number => {
+  if (statLevel < 20) return 2;
+  if (statLevel < 50) return 5;
+  if (statLevel < 80) return 10;
+  return 20;
+};
+
 /** Kumar zenginlik cezasi. */
 export const gamblingRichPenalty = (coins: number): number =>
   Math.min(GAMBLE_RICH_PENALTY_MAX, Math.log10(1 + Math.max(coins, 0)));

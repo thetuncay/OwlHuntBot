@@ -31,8 +31,8 @@ export async function getCooldownRemainingMs(
     const result = await redis.eval(COOLDOWN_LUA, 1, key, String(cooldownMs)) as number;
     return Math.max(0, result);
   } catch {
-    // Redis down → cooldown'u atla, komutu engelleme
-    return 0;
+    // Redis down GÜVENLİK FİX: Flood'u engellemek için hata fırlat
+    throw new Error('⚠️ Cooldown kontrolü yapılamadı (Redis Error). Lütfen az sonra tekrar deneyin.');
   }
 }
 
