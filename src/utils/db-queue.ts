@@ -196,31 +196,61 @@ async function processJob(job: Job<DbWriteJob>): Promise<void> {
 // ── Enqueue yardımcıları ──────────────────────────────────────────────────────
 
 /**
+ * Queue başlatılmamışken gelen job'ları direkt Prisma ile yazar.
+ * Veri kaybını önler — queue yoksa "sessizce at" yerine "direkt yaz".
+ * WHY: Process restart sırasında gelen hunt/tame isteklerinde envanter
+ * item'larının kaybolmasını engeller.
+ */
+async function processFallback(job: DbWriteJob): Promise<void> {
+  if (!prismaRef) {
+    console.error('[Queue] Fallback: Prisma da başlatılmamış, job atılıyor:', job.type);
+    return;
+  }
+  try {
+    await processJob({ data: job } as Job<DbWriteJob>);
+  } catch (err) {
+    console.error('[Queue] Fallback yazma hatası:', (err as Error).message, job);
+  }
+}
+
+/**
  * DB yazma işini kuyruğa ekler.
  * Kullanıcı bu işlemin bitmesini BEKLEMEZ.
  * Hata olursa retry mekanizması devreye girer.
+ * Queue başlatılmamışsa direkt Prisma ile yazar (veri kaybı önlenir).
  */
 export function enqueueDbWrite(job: DbWriteJob): void {
   if (!queue) {
-    // Queue başlatılmamışsa direkt yaz (graceful degradation)
-    console.warn('[Queue] Queue başlatılmamış, direkt yazma yapılıyor.');
+    // WHY: Queue yoksa sessizce atmak veri kaybına yol açar.
+    // Fallback: direkt Prisma yazma (yavaş ama güvenli).
+    console.warn('[Queue] Queue başlatılmamış, fallback ile direkt yazılıyor:', job.type);
+    void processFallback(job);
     return;
   }
   // Fire-and-forget: hata olursa worker retry eder
   queue.add(job.type, job).catch((err) => {
     console.error('[Queue] Enqueue hatası:', err.message);
+    // Enqueue başarısız olursa da fallback ile yaz
+    void processFallback(job);
   });
 }
 
 /**
  * Birden fazla DB yazma işini tek seferde kuyruğa ekler.
  * addBulk ile tek Redis round-trip'te tüm job'lar eklenir.
+ * Queue yoksa her job için fallback çalışır.
  */
 export function enqueueDbWriteBulk(jobs: DbWriteJob[]): void {
-  if (!queue || jobs.length === 0) return;
+  if (jobs.length === 0) return;
+  if (!queue) {
+    for (const job of jobs) void processFallback(job);
+    return;
+  }
   queue.addBulk(
     jobs.map((j) => ({ name: j.type, data: j })),
   ).catch((err) => {
     console.error('[Queue] Bulk enqueue hatası:', err.message);
+    // Bulk enqueue başarısız olursa her job için fallback
+    for (const job of jobs) void processFallback(job);
   });
 }

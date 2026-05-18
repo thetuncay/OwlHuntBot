@@ -27,7 +27,7 @@ import { encounterChance, tameChance, statEffect, clamp } from '../utils/math';
 import { withLock } from '../utils/lock';
 import { simulatePvP, startPvP } from './pvp';
 import { addXP } from './xp';
-import { rollTraits, parseStoredTraits } from './traits';
+import { rollTraits, parseStoredTraits, resolveTraits, calcTraitEffects } from './traits';
 import {
   ENCOUNTER_SCALE_THRESHOLD,
   ENCOUNTER_SCALE_RATE,
@@ -336,13 +336,20 @@ export async function attemptTame(
     const qualityAdj = QUALITY_TAME_ADJ[encounter.owlQuality] ?? 0;
     const failStreakBonus = encounter.failStreak * TAME_FAIL_STREAK_BONUS;
     const repeatPenalty = encounter.tameAttempts >= 1 ? TAME_REPEAT_PENALTY : 0;
-    const chance = tameChance(
+
+    // WHY: Trait tameChance çarpanı uygulanıyor.
+    // Evcil Ruh (+%28) veya Keskin Göz (-%20) gibi trait'ler artık gerçekten etkili.
+    const mainOwlTraits = parseStoredTraits((mainOwl as any).traits);
+    const mainOwlTraitEffects = calcTraitEffects(resolveTraits(mainOwlTraits));
+
+    const rawChance = tameChance(
       baseChance,
       mainOwl.statGoz,
       mainOwl.statKulak,
       itemBonus + failStreakBonus - repeatPenalty,
       qualityAdj,
     );
+    const chance = rawChance * mainOwlTraitEffects.tameChance;
     const won = Math.random() * 100 < chance;
 
     // Deneme sayısını güncelle

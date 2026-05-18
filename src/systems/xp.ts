@@ -37,21 +37,34 @@ export async function addXP(
   const nextXP   = player.xp + gainedXP;
   const required = xpRequired(player.level);
 
-  if (nextXP < required) {
+  // WHY: Eski kod sadece 1 level atlıyordu. Quest ödülü + hunt XP aynı anda
+  // geldiğinde fazla XP kayboluyordu. while döngüsü tüm level-up'ları işler.
+  const oldLevel = player.level;
+  let currentLevel = player.level;
+  let remainingXP  = nextXP;
+
+  // Birden fazla level atlama desteği
+  while (remainingXP >= xpRequired(currentLevel)) {
+    remainingXP -= xpRequired(currentLevel);
+    currentLevel++;
+  }
+
+  const didLevelUp = currentLevel > oldLevel;
+
+  if (!didLevelUp) {
     // Level-up yok
     if (skipDbWrite) {
-      // Fire-and-forget: DB_Queue'ya ekle, senkron bekleme
-      enqueueDbWrite({ type: 'updatePlayer', playerId, data: { xp: nextXP } });
+      enqueueDbWrite({ type: 'updatePlayer', playerId, data: { xp: remainingXP } });
       return {
         gainedXP,
-        currentXP:    nextXP,
-        currentLevel: player.level,
+        currentXP:    remainingXP,
+        currentLevel: oldLevel,
       };
     }
 
     const updated = await prisma.player.update({
       where: { id: playerId },
-      data:  { xp: nextXP },
+      data:  { xp: remainingXP },
       select: { level: true, xp: true },
     });
     return {
@@ -61,24 +74,22 @@ export async function addXP(
     };
   }
 
-  // Level-up var — her iki modda da senkron yazma yapılır (level değişimi kritik)
-  const oldLevel = player.level;
-  const newLevel = player.level + 1;
-  const updated  = await prisma.player.update({
+  // Level-up var — senkron yazma (level değişimi kritik, queue'ya bırakılmaz)
+  const updated = await prisma.player.update({
     where: { id: playerId },
-    data:  { level: newLevel, xp: 0 },
+    data:  { level: currentLevel, xp: remainingXP },
     select: { level: true, xp: true },
   });
 
-  console.info(`[XP] ${playerId} kaynak=${source} +${gainedXP} XP (Lv ${oldLevel} -> ${newLevel})`);
+  console.info(`[XP] ${playerId} kaynak=${source} +${gainedXP} XP (Lv ${oldLevel} -> ${currentLevel})`);
   return {
     gainedXP,
     currentXP:    updated.xp,
     currentLevel: updated.level,
     levelUp: {
       oldLevel,
-      newLevel,
-      remainingXP: 0,
+      newLevel:    currentLevel,
+      remainingXP: updated.xp,
     },
   };
 }

@@ -11,13 +11,13 @@ import { enforceAntiSpam } from './middleware/antiSpam';
 import { getGuildPrefix } from './utils/prefix';
 import { handleOwlTextCommand } from './commands/owl';
 import { handleRegistrationButton, isRegistrationButton } from './systems/onboarding';
-import { getLeaderboard, archiveAndResetSeason, currentSeasonId, seasonEndDate } from './systems/leaderboard';
+import { archiveAndResetSeason } from './systems/leaderboard';
 import { syncAllRoles } from './systems/roles';
 import { handleTopTextCommand } from './commands/leaderboard';
 import { addXP } from './systems/xp';
-import type { LeaderboardCategory } from './systems/leaderboard';
 import { initDbQueue, closeDbQueue } from './utils/db-queue';
 import { cleanupExpiredListings } from './systems/market';
+import { dailyMaintenance } from './systems/economy';
 
 const envSchema = z.object({
   DISCORD_TOKEN: z.string().min(1),
@@ -325,6 +325,53 @@ async function cleanupOrphanBotPlayers(): Promise<void> {
 setInterval(() => { void cleanupOrphanBotPlayers(); }, 24 * 60 * 60 * 1000);
 // Başlangıçta 30 saniye sonra çalıştır
 setTimeout(() => { void cleanupOrphanBotPlayers(); }, 30_000);
+
+// --- GÜNLÜK BAKIM (MAINTENANCE) ---
+// WHY: dailyMaintenance() fonksiyonu economy.ts'de tanımlıydı ama hiç çağrılmıyordu.
+// Baykuşlar hiç yıpranmıyor, effectiveness asla düşmüyor, repair sink çalışmıyordu.
+// Gece yarısı (UTC 00:00) tüm aktif oyuncular için bakım çalıştırılır.
+// Batch işleme: 100'er gruplar halinde — büyük sunucularda timeout önlenir.
+async function runDailyMaintenance(): Promise<void> {
+  try {
+    const players = await prisma.player.findMany({
+      select: { id: true },
+      // Sadece son 7 günde aktif olan oyuncular — inaktif hesaplar için gereksiz yük yok
+      where: { updatedAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } },
+    });
+    if (players.length === 0) return;
+
+    // 100'er batch — Atlas M0'da büyük paralel yük önlenir
+    const BATCH_SIZE = 100;
+    let processed = 0;
+    for (let i = 0; i < players.length; i += BATCH_SIZE) {
+      const batch = players.slice(i, i + BATCH_SIZE);
+      await Promise.allSettled(
+        batch.map((p) => dailyMaintenance(prisma, p.id)),
+      );
+      processed += batch.length;
+    }
+    console.info(`[Maintenance] ${processed} oyuncu için günlük bakım tamamlandı.`);
+  } catch (err) {
+    console.error('[Maintenance] Günlük bakım hatası:', err);
+  }
+}
+
+// Gece yarısı UTC'de çalıştır
+function scheduleNextMaintenance(): void {
+  const now = new Date();
+  const nextMidnight = new Date(now);
+  nextMidnight.setUTCHours(24, 0, 0, 0); // Bir sonraki UTC gece yarısı
+  const msUntilMidnight = nextMidnight.getTime() - now.getTime();
+
+  setTimeout(() => {
+    void runDailyMaintenance();
+    // Sonraki gün için tekrar planla
+    setInterval(() => { void runDailyMaintenance(); }, 24 * 60 * 60 * 1000);
+  }, msUntilMidnight);
+
+  console.info(`[Maintenance] Sonraki bakım: ${nextMidnight.toISOString()} (${Math.round(msUntilMidnight / 60000)} dakika sonra)`);
+}
+scheduleNextMaintenance();
 
 // --- MARKET EXPIRED LISTING CLEANUP ---
 // Süresi dolan ilanları temizle ve eşyaları satıcılara iade et.

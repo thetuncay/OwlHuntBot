@@ -38,6 +38,8 @@ import { createEncounter } from './tame';
 import { getBuffEffects, drainBuffCharge } from './items';
 import { rollHuntLootboxDrop } from './drops';
 import { trackQuestProgress } from './daily-quests';
+import { getBiomeSession, setBiomeSession } from '../utils/biome-session';
+import { parseStoredTraits, resolveTraits, calcTraitEffects } from './traits';
 
 /**
  * Oyuncunun ana baykusu ile av turunu simule eder.
@@ -103,10 +105,49 @@ export async function rollHunt(
       throw new Error(`Bu biyoma girmek için en az **${safeBiome.minLevel}** seviye olmalısın.`);
     }
 
+    // ── Biome Giriş Ücreti ────────────────────────────────────────────────────
+    // WHY: entryCost config'de tanımlıydı ama hiç tahsil edilmiyordu.
+    // Bu, tasarlanmış en büyük coin sink'in çalışmaması demekti.
+    // Çözüm: İlk girişte (session yoksa) entryCost tahsil et, 30dk session başlat.
+    // Sonraki hunt'larda aynı biyomda session varsa ücret alınmaz.
+    if (safeBiome.entryCost > 0) {
+      const existingSession = await getBiomeSession(redis, playerId);
+      const isNewEntry = !existingSession || existingSession.biomeId !== biomeId;
+
+      if (isNewEntry) {
+        // Coin kontrolü — player.coins cache'de olmayabilir, DB'den çek
+        const freshPlayer = await prisma.player.findUnique({
+          where: { id: playerId },
+          select: { coins: true },
+        });
+        if (!freshPlayer || freshPlayer.coins < safeBiome.entryCost) {
+          throw new Error(
+            `**${safeBiome.name}** biyomuna girmek için **${safeBiome.entryCost}** 💰 gerekiyor.\n` +
+            `Sahip olduğun: **${freshPlayer?.coins ?? 0}** 💰`,
+          );
+        }
+        // Giriş ücretini tahsil et
+        await prisma.player.update({
+          where: { id: playerId },
+          data: { coins: { decrement: safeBiome.entryCost } },
+        });
+        // 30 dakikalık session başlat
+        await setBiomeSession(redis, playerId, biomeId);
+      }
+    }
+
     if (!owl || owl.ownerId !== playerId) throw new Error('Av icin gecersiz baykus.');
 
     const species = OWL_SPECIES.find((s) => s.name === owl.species);
     if (!species) throw new Error('Baykus tur bilgisi bulunamadi.');
+
+    // ── Trait Etkileri ────────────────────────────────────────────────────────
+    // WHY: Trait sistemi config'de tanımlıydı, DB'de saklanıyordu ama hiçbir
+    // yerde uygulanmıyordu. God Roll baykuş ile Trash baykuş aynı performansı
+    // veriyordu — bu oyuncu güvenini zedeliyor ve God Roll'u değersizleştiriyordu.
+    const storedTraits = parseStoredTraits((owl as any).traits);
+    const resolvedTraits = resolveTraits(storedTraits);
+    const traitEffects = calcTraitEffects(resolvedTraits);
 
     // ── Gizli modifierlar ────────────────────────────────────────────────────
     // 1. Soft level scaling (kullanıcıya gösterilmez)
@@ -167,8 +208,9 @@ export async function rollHunt(
 
       // Gizli modifier'ları uygula
       // Buff catch bonus da eklenir (diminishing returns zaten uygulandı)
+      // Trait huntCatch çarpanı da uygulanır
       const extraBonus = levelBonus + streakBonus + (isRarePrey ? pityBonus : 0) + buffEffects.catchBonus;
-      const finalChance = clamp(0.05, 0.95, (baseChanceVal + extraBonus) * safeBiome.catchModifier);
+      const finalChance = clamp(0.05, 0.95, (baseChanceVal + extraBonus) * safeBiome.catchModifier * traitEffects.huntCatch);
 
       const isSuccess = Math.random() < finalChance;
       const critical = isSuccess && rollPercent(HUNT_CRITICAL_RATE);
@@ -227,7 +269,8 @@ export async function rollHunt(
       catches.length >= 3 ? HUNT_MULTI_BONUS_3 :
       catches.length >= 2 ? HUNT_MULTI_BONUS_2 : 0;
 
-    const totalXP = successXP + failXP + comboBonus + multiBonus;
+    // Trait xpGain çarpanı uygulanır
+    const totalXP = Math.round((successXP + failXP + comboBonus + multiBonus) * traitEffects.xpGain);
 
     // ── DB Güncelleme ─────────────────────────────────────────────────────────
     // Kritik path: sadece player XP + streak güncelleme + bond.
@@ -270,33 +313,25 @@ export async function rollHunt(
     const newStreak = realCatchCount > 0 ? player.huntComboStreak + 1 : 0;
     const newNoRareStreak = gotRare ? 0 : player.noRareStreak + 1;
 
+    // WHY: $runCommandRaw MongoDB'ye özgüdür, PostgreSQL'de her hunt'ta hata
+    // logu üretiyordu. Direkt prisma.owl.update ile aynı sonuç, sıfır hata.
+    const bondUpdatePromise = realCatchCount > 0
+      ? prisma.owl.update({
+          where: { id: owlId },
+          data:  { bond: Math.min(BOND_MAX, (owl.bond ?? 0) + BOND_GAIN_PER_HUNT) },
+        }).catch(() => null)
+      : Promise.resolve(null);
+
     const [xpResult] = await Promise.all([
       addXP(prisma, playerId, totalXP, 'hunt', {
         level: player.level,
         xp: player.xp,
         prestigeLevel: (player as any).prestigeLevel ?? 0,
       }, true),
-      // Bond artışı: gerçek yakalama varsa main baykuşun bond'u artar (atomic cap)
-      ...(realCatchCount > 0 ? [
-        prisma.$runCommandRaw({
-          update: 'Owl',
-          updates: [{
-            q: { _id: owlId },
-            u: [{ $set: { bond: { $min: [{ $add: ['$bond', BOND_GAIN_PER_HUNT] }, BOND_MAX] } } }],
-          }],
-        }).catch(() =>
-          // Fallback: MongoDB < 4.2 doesn't support pipeline updates
-          prisma.owl.update({
-            where: { id: owlId },
-            data: { bond: Math.min(BOND_MAX, (owl.bond ?? 0) + BOND_GAIN_PER_HUNT) },
-          }),
-        ),
-      ] : []),
+      bondUpdatePromise,
     ]);
 
     // Birleşik player yazma: streak + xp/level tek round-trip'te
-    // Level-up varsa: level ve xp:0 da dahil edilir
-    // Level-up yoksa: hesaplanan xp değeri yazılır
     if (xpResult.levelUp) {
       await prisma.player.update({
         where: { id: playerId },
@@ -305,7 +340,7 @@ export async function rollHunt(
           noRareStreak: newNoRareStreak,
           lastHunt: new Date(),
           level: xpResult.levelUp.newLevel,
-          xp: 0,
+          xp: xpResult.levelUp.remainingXP,
         },
       });
     } else {

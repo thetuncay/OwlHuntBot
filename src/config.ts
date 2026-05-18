@@ -1279,16 +1279,22 @@ export const DAILY_QUEST_CONFIG = {
 };
 
 /** Gönderici için minimum oyuncu seviyesi */
-export const TRANSFER_MIN_LEVEL = 5;
+// WHY: Level 5 çok düşüktü — 1 saatte alt hesap oluşturup transfer yapılabiliyordu.
+// Level 15 ile alt hesap farming maliyeti anlamlı ölçüde artıyor.
+export const TRANSFER_MIN_LEVEL = 15;
 
 /** Tek transferde minimum coin */
 export const TRANSFER_MIN_AMOUNT = 10;
 
 /** Günlük maksimum gönderim (gönderici başına) */
-export const TRANSFER_DAILY_LIMIT = 10_000;
+// WHY: 10.000 coin/gün çok yüksekti. Alt hesaplar ana hesaba ciddi kaynak aktarabiliyordu.
+// 3.000 coin/gün ile ekonomi manipülasyonu zorlaşıyor.
+export const TRANSFER_DAILY_LIMIT = 3_000;
 
 /** Günlük maksimum alım (alıcı başına) — iki hesap arası pump'ı önler */
-export const TRANSFER_DAILY_RECEIVE_LIMIT = 15_000;
+// WHY: 15.000 coin/gün alım limiti anlamsız derecede yüksekti.
+// 5.000 ile gönderim limitiyle orantılı hale getirildi.
+export const TRANSFER_DAILY_RECEIVE_LIMIT = 5_000;
 
 /** Transfer cooldown (ms) */
 export const TRANSFER_COOLDOWN_MS = 60 * 1000;  // 60 saniye
