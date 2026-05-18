@@ -104,6 +104,8 @@ export async function buyListing(
       const listing = listingId.length === 36
         ? await tx.marketListing.findUnique({ where: { id: listingId } })
         : await tx.marketListing.findFirst({ where: { id: { startsWith: listingId } } });
+      // Gerçek ID'yi kullan (kısa ID ile arama yapıldıysa listing.id tam UUID'dir)
+      const realListingId = listing?.id ?? listingId;
 
       if (!listing) throw new Error('İlan bulunamadı veya süresi dolmuş.');
       if (listing.sellerId === buyerId) throw new Error('Kendi ilanını satın alamazsın.');
@@ -148,9 +150,9 @@ export async function buyListing(
         }
       });
 
-      // İlanı sil
+      // İlanı sil (gerçek tam UUID ile)
       await tx.marketListing.delete({
-        where: { id: listingId }
+        where: { id: realListingId }
       });
 
       return { listing, tax, sellerGain };
