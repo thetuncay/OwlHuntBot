@@ -3,6 +3,7 @@ import { ensureDailyQuests, claimQuestReward } from '../systems/daily-quests';
 import { successEmbed, failEmbed, infoEmbed } from '../utils/embed';
 import { DAILY_QUEST_CONFIG } from '../config';
 import type { CommandContext } from '../types';
+import { hpBar } from '../utils/theme';
 
 /**
  * /owl quests komutu (UI)
@@ -35,7 +36,7 @@ export async function runQuestsMessage(
 
   quests.forEach((q, i) => {
     const cfg = DAILY_QUEST_CONFIG[q.type as keyof typeof DAILY_QUEST_CONFIG];
-    const status = q.isClaimed ? '✅ Alındı' : q.current >= q.target ? '🌟 Tamamlandı' : `⏳ ${q.current}/${q.target}`;
+    const status = q.isClaimed ? '✅ Alındı' : q.current >= q.target ? '🌟 Tamamlandı' : `\`${hpBar(q.current, q.target, 10)}\` ${q.current}/${q.target}`;
 
     embed.addFields({
       name: `${i + 1}. ${cfg.label}`,
@@ -108,7 +109,7 @@ export async function runQuestsSlash(interaction: ChatInputCommandInteraction, c
 
   quests.forEach((q, i) => {
     const cfg = DAILY_QUEST_CONFIG[q.type as keyof typeof DAILY_QUEST_CONFIG];
-    const status = q.isClaimed ? '✅ Alındı' : q.current >= q.target ? '🌟 Tamamlandı' : `⏳ ${q.current}/${q.target}`;
+    const status = q.isClaimed ? '✅ Alındı' : q.current >= q.target ? '🌟 Tamamlandı' : `\`${hpBar(q.current, q.target, 10)}\` ${q.current}/${q.target}`;
 
     embed.addFields({
       name: `${i + 1}. ${cfg.label}`,

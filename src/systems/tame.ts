@@ -259,7 +259,7 @@ export async function commitTameResult(
       });
       await addXP(prisma, playerId, 100, 'tameSuccess');
       // Quest tracking: encounter butonuyla gelen tame akışı buradan geçer
-      trackQuestProgress(prisma, playerId, 'tame').catch(() => null);
+      trackQuestProgress(prisma, playerId, 'tame', 1).catch(() => null);
     }
 
     await prisma.encounter.update({
@@ -380,7 +380,7 @@ export async function attemptTame(
       });
       await prisma.encounter.update({ where: { id: encounterId }, data: { status: 'closed' } });
       await addXP(prisma, playerId, 100, 'tameSuccess');
-      trackQuestProgress(prisma, playerId, 'tame').catch(() => null);
+      trackQuestProgress(prisma, playerId, 'tame', 1).catch(() => null);
 
       // Bond artışı: tame başarısında main baykuşun bond'u artar
       if (mainOwl.bond < BOND_MAX) {
