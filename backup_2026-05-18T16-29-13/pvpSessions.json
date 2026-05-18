@@ -1,0 +1,2392 @@
+[
+  {
+    "id": "e969370d-6287-4ed5-84f1-34aa6410840b",
+    "challengerId": "362666788149788672",
+    "defenderId": "1110219662509224006",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 3,
+    "createdAt": "2026-04-15T17:48:16.649Z",
+    "finishedAt": "2026-04-15T17:48:20.743Z"
+  },
+  {
+    "id": "571a4e3f-bd84-42c7-8993-8677f2a13153",
+    "challengerId": "362666788149788672",
+    "defenderId": "1110219662509224006",
+    "status": "pending",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-15T18:26:26.592Z",
+    "finishedAt": null
+  },
+  {
+    "id": "91923e0b-5b34-4020-937a-a755a114af3a",
+    "challengerId": "1110219662509224006",
+    "defenderId": "362666788149788672",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 6,
+    "createdAt": "2026-04-15T18:26:28.418Z",
+    "finishedAt": "2026-04-15T18:26:33.900Z"
+  },
+  {
+    "id": "1ee5dcb1-6e7d-45b1-82a1-a13f05d4f97b",
+    "challengerId": "362666788149788672",
+    "defenderId": "1110219662509224006",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 5,
+    "createdAt": "2026-04-15T18:27:23.329Z",
+    "finishedAt": "2026-04-15T18:27:25.195Z"
+  },
+  {
+    "id": "a4e84bcb-fae6-4e18-88fa-866f08196ac9",
+    "challengerId": "362666788149788672",
+    "defenderId": "1110219662509224006",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 7,
+    "createdAt": "2026-04-15T18:27:56.783Z",
+    "finishedAt": "2026-04-15T18:28:04.833Z"
+  },
+  {
+    "id": "01f5d8b7-4c4e-4e0a-8bd4-272e50690efd",
+    "challengerId": "1110219662509224006",
+    "defenderId": "362666788149788672",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 6,
+    "createdAt": "2026-04-15T18:28:02.517Z",
+    "finishedAt": "2026-04-15T18:28:06.817Z"
+  },
+  {
+    "id": "5cd94b24-7b7b-4d44-be04-08ffac0ca695",
+    "challengerId": "362666788149788672",
+    "defenderId": "1110219662509224006",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 5,
+    "createdAt": "2026-04-15T18:31:41.170Z",
+    "finishedAt": "2026-04-15T18:31:45.527Z"
+  },
+  {
+    "id": "a20b6933-989b-48ae-9b0e-092996a27962",
+    "challengerId": "362666788149788672",
+    "defenderId": "1110219662509224006",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 5,
+    "createdAt": "2026-04-15T18:31:59.769Z",
+    "finishedAt": "2026-04-15T18:32:08.326Z"
+  },
+  {
+    "id": "a2695582-a5ab-4ac5-86ea-4b3aaaa4d9f4",
+    "challengerId": "763430490354221086",
+    "defenderId": "1110219662509224006",
+    "status": "finished",
+    "winnerId": "763430490354221086",
+    "totalTurns": 23,
+    "createdAt": "2026-04-15T18:51:40.812Z",
+    "finishedAt": "2026-04-15T18:51:42.718Z"
+  },
+  {
+    "id": "d8b2e116-fb5a-4024-9bcd-3a134195a01d",
+    "challengerId": "1110219662509224006",
+    "defenderId": "362666788149788672",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 6,
+    "createdAt": "2026-04-15T19:04:02.128Z",
+    "finishedAt": "2026-04-15T19:04:55.709Z"
+  },
+  {
+    "id": "b753a04e-e7c2-4d57-ad0e-3b5687dcbb20",
+    "challengerId": "763430490354221086",
+    "defenderId": "1197562104446726225",
+    "status": "finished",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-15T19:04:29.060Z",
+    "finishedAt": null
+  },
+  {
+    "id": "aea50538-4bf8-4bd1-824c-764bead09857",
+    "challengerId": "362666788149788672",
+    "defenderId": "1110219662509224006",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 5,
+    "createdAt": "2026-04-15T19:05:57.179Z",
+    "finishedAt": "2026-04-15T19:06:02.533Z"
+  },
+  {
+    "id": "29cf2572-1222-436b-b858-62fe00ca1553",
+    "challengerId": "763430490354221086",
+    "defenderId": "1043601444240105584",
+    "status": "pending",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-15T19:06:23.817Z",
+    "finishedAt": null
+  },
+  {
+    "id": "167aa2fd-50ea-4558-900d-84d8e8e3e91b",
+    "challengerId": "1110219662509224006",
+    "defenderId": "362666788149788672",
+    "status": "finished",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-15T19:07:31.707Z",
+    "finishedAt": null
+  },
+  {
+    "id": "59fa4905-b32c-4655-98b6-7a0280ad1e6a",
+    "challengerId": "763430490354221086",
+    "defenderId": "1197562104446726225",
+    "status": "finished",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-15T19:07:42.487Z",
+    "finishedAt": null
+  },
+  {
+    "id": "908fb1f5-fb48-4850-af4e-759686a3ee8b",
+    "challengerId": "1110219662509224006",
+    "defenderId": "362666788149788672",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 6,
+    "createdAt": "2026-04-15T19:07:49.714Z",
+    "finishedAt": "2026-04-15T19:07:52.428Z"
+  },
+  {
+    "id": "23e0eb8f-4048-494b-8671-bfd74abd900d",
+    "challengerId": "1110219662509224006",
+    "defenderId": "763430490354221086",
+    "status": "finished",
+    "winnerId": "763430490354221086",
+    "totalTurns": 22,
+    "createdAt": "2026-04-15T19:23:55.971Z",
+    "finishedAt": "2026-04-15T19:24:00.506Z"
+  },
+  {
+    "id": "c8b560f6-987f-48c1-84d4-7e64154bd1ab",
+    "challengerId": "362666788149788672",
+    "defenderId": "1110219662509224006",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 7,
+    "createdAt": "2026-04-15T19:24:36.560Z",
+    "finishedAt": "2026-04-15T19:24:39.206Z"
+  },
+  {
+    "id": "6558cbd7-6582-486e-b16e-cff370482e96",
+    "challengerId": "1089435359944921089",
+    "defenderId": "escortavcisi",
+    "status": "finished",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-15T19:24:59.907Z",
+    "finishedAt": null
+  },
+  {
+    "id": "818ad0df-2f17-49e9-a03e-f60c9e912133",
+    "challengerId": "1089435359944921089",
+    "defenderId": "luxima",
+    "status": "finished",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-15T19:26:15.628Z",
+    "finishedAt": null
+  },
+  {
+    "id": "2bb500bb-f0e4-4fb8-9fc6-2f28de3df35f",
+    "challengerId": "1110219662509224006",
+    "defenderId": "897829226915434496",
+    "status": "finished",
+    "winnerId": "897829226915434496",
+    "totalTurns": 22,
+    "createdAt": "2026-04-15T19:27:50.952Z",
+    "finishedAt": "2026-04-15T19:27:55.187Z"
+  },
+  {
+    "id": "29db228d-0fc6-414d-99fd-aa30ef986e29",
+    "challengerId": "362666788149788672",
+    "defenderId": "1110219662509224006",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 5,
+    "createdAt": "2026-04-15T19:28:30.912Z",
+    "finishedAt": "2026-04-15T19:28:35.890Z"
+  },
+  {
+    "id": "09819523-a090-4c0f-b0cd-8c48494a7e71",
+    "challengerId": "1197562104446726225",
+    "defenderId": "897829226915434496",
+    "status": "finished",
+    "winnerId": "897829226915434496",
+    "totalTurns": 12,
+    "createdAt": "2026-04-15T19:41:29.645Z",
+    "finishedAt": "2026-04-15T19:41:32.922Z"
+  },
+  {
+    "id": "e22ff1e8-8933-444f-808d-4ddcea54fe15",
+    "challengerId": "1110219662509224006",
+    "defenderId": "1282000157453582362",
+    "status": "pending",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-15T19:44:13.127Z",
+    "finishedAt": null
+  },
+  {
+    "id": "88914f11-c615-45f2-9de9-4db80b6fa0e3",
+    "challengerId": "1110219662509224006",
+    "defenderId": "897829226915434496",
+    "status": "finished",
+    "winnerId": "897829226915434496",
+    "totalTurns": 8,
+    "createdAt": "2026-04-15T20:07:58.935Z",
+    "finishedAt": "2026-04-15T20:08:04.047Z"
+  },
+  {
+    "id": "8b19c31d-3f8d-43da-82f6-889f26552eb5",
+    "challengerId": "763430490354221086",
+    "defenderId": "897829226915434496",
+    "status": "finished",
+    "winnerId": "897829226915434496",
+    "totalTurns": 8,
+    "createdAt": "2026-04-15T20:08:25.811Z",
+    "finishedAt": "2026-04-15T20:08:29.752Z"
+  },
+  {
+    "id": "42b044f0-c507-46e4-a507-4f9755c40432",
+    "challengerId": "1110219662509224006",
+    "defenderId": "897829226915434496",
+    "status": "finished",
+    "winnerId": "897829226915434496",
+    "totalTurns": 6,
+    "createdAt": "2026-04-15T20:24:27.919Z",
+    "finishedAt": "2026-04-15T20:24:53.261Z"
+  },
+  {
+    "id": "54e020a8-c28a-4845-bb5c-ab8efba47996",
+    "challengerId": "1110219662509224006",
+    "defenderId": "897829226915434496",
+    "status": "finished",
+    "winnerId": "1110219662509224006",
+    "totalTurns": 3,
+    "createdAt": "2026-04-15T20:59:48.694Z",
+    "finishedAt": "2026-04-15T20:59:56.684Z"
+  },
+  {
+    "id": "e469d727-5af7-4b41-a804-3656b46d4880",
+    "challengerId": "897829226915434496",
+    "defenderId": "1110219662509224006",
+    "status": "finished",
+    "winnerId": "897829226915434496",
+    "totalTurns": 5,
+    "createdAt": "2026-04-15T21:01:53.608Z",
+    "finishedAt": "2026-04-15T21:01:58.152Z"
+  },
+  {
+    "id": "2ed52eec-2968-47e3-98c9-45be6fe940e9",
+    "challengerId": "362666788149788672",
+    "defenderId": "1110219662509224006",
+    "status": "finished",
+    "winnerId": "1110219662509224006",
+    "totalTurns": 4,
+    "createdAt": "2026-04-15T21:03:37.353Z",
+    "finishedAt": "2026-04-15T21:03:54.323Z"
+  },
+  {
+    "id": "5dab5627-20f3-4757-a206-c233f2443877",
+    "challengerId": "897829226915434496",
+    "defenderId": "1110219662509224006",
+    "status": "finished",
+    "winnerId": "1110219662509224006",
+    "totalTurns": 4,
+    "createdAt": "2026-04-15T21:05:15.855Z",
+    "finishedAt": "2026-04-15T21:05:23.287Z"
+  },
+  {
+    "id": "54f73236-b12a-4a3c-9e08-cb5a6a5000fe",
+    "challengerId": "763430490354221086",
+    "defenderId": "1110219662509224006",
+    "status": "finished",
+    "winnerId": "1110219662509224006",
+    "totalTurns": 6,
+    "createdAt": "2026-04-15T21:13:54.974Z",
+    "finishedAt": "2026-04-15T21:13:57.929Z"
+  },
+  {
+    "id": "5d18a610-1f89-4ba1-bf69-471b9c9944c9",
+    "challengerId": "1110219662509224006",
+    "defenderId": "1348272228390801441",
+    "status": "finished",
+    "winnerId": "1110219662509224006",
+    "totalTurns": 5,
+    "createdAt": "2026-04-15T21:18:34.246Z",
+    "finishedAt": "2026-04-15T21:18:36.624Z"
+  },
+  {
+    "id": "be409578-41ff-4c37-b759-759e126c9961",
+    "challengerId": "897829226915434496",
+    "defenderId": "763430490354221086",
+    "status": "finished",
+    "winnerId": "897829226915434496",
+    "totalTurns": 5,
+    "createdAt": "2026-04-15T21:18:51.284Z",
+    "finishedAt": "2026-04-15T21:19:03.999Z"
+  },
+  {
+    "id": "b3e2ac53-f10b-4ca3-9f59-964ed52f6a79",
+    "challengerId": "897829226915434496",
+    "defenderId": "1348272228390801441",
+    "status": "pending",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-15T21:21:37.970Z",
+    "finishedAt": null
+  },
+  {
+    "id": "db8b375b-1c38-474a-ae8d-b204cacb909a",
+    "challengerId": "897829226915434496",
+    "defenderId": "1027661467266326669",
+    "status": "finished",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-15T21:23:45.763Z",
+    "finishedAt": null
+  },
+  {
+    "id": "7936f51f-0a09-4b20-818b-1cb010f465e0",
+    "challengerId": "1110219662509224006",
+    "defenderId": "1319705679577219208",
+    "status": "finished",
+    "winnerId": "1110219662509224006",
+    "totalTurns": 5,
+    "createdAt": "2026-04-15T21:28:21.855Z",
+    "finishedAt": "2026-04-15T21:28:26.416Z"
+  },
+  {
+    "id": "b5bf945a-2d75-47b0-bd4a-d891009a8176",
+    "challengerId": "763430490354221086",
+    "defenderId": "1493293836645171221",
+    "status": "finished",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-15T21:29:32.184Z",
+    "finishedAt": null
+  },
+  {
+    "id": "1596b4a5-7c30-4d53-8a0c-4385c3866efc",
+    "challengerId": "897829226915434496",
+    "defenderId": "1089435359944921089",
+    "status": "finished",
+    "winnerId": "897829226915434496",
+    "totalTurns": 5,
+    "createdAt": "2026-04-15T21:36:36.085Z",
+    "finishedAt": "2026-04-15T21:36:45.555Z"
+  },
+  {
+    "id": "661e0332-5e9e-4ad6-a6c9-985f7bf290ee",
+    "challengerId": "1089435359944921089",
+    "defenderId": "1319705679577219208",
+    "status": "finished",
+    "winnerId": "1089435359944921089",
+    "totalTurns": 17,
+    "createdAt": "2026-04-15T21:43:35.432Z",
+    "finishedAt": "2026-04-15T21:43:38.879Z"
+  },
+  {
+    "id": "54c5e540-08a5-425e-ace3-b96a74da7bcc",
+    "challengerId": "1089435359944921089",
+    "defenderId": "1282000157453582362",
+    "status": "pending",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-15T21:57:24.579Z",
+    "finishedAt": null
+  },
+  {
+    "id": "88c9e3cf-9513-43db-be2a-7e0a5a4cabf8",
+    "challengerId": "1319705679577219208",
+    "defenderId": "1089435359944921089",
+    "status": "finished",
+    "winnerId": "1319705679577219208",
+    "totalTurns": 7,
+    "createdAt": "2026-04-15T22:15:15.525Z",
+    "finishedAt": "2026-04-15T22:15:18.489Z"
+  },
+  {
+    "id": "e74be3d5-638d-4aa2-800d-3ebde3420072",
+    "challengerId": "1089435359944921089",
+    "defenderId": "1319705679577219208",
+    "status": "finished",
+    "winnerId": "1319705679577219208",
+    "totalTurns": 10,
+    "createdAt": "2026-04-15T22:16:39.831Z",
+    "finishedAt": "2026-04-15T22:16:43.886Z"
+  },
+  {
+    "id": "87187809-3430-4a44-9c04-355d9af1f705",
+    "challengerId": "1319705679577219208",
+    "defenderId": "1348272228390801441",
+    "status": "finished",
+    "winnerId": "1319705679577219208",
+    "totalTurns": 7,
+    "createdAt": "2026-04-15T22:27:49.357Z",
+    "finishedAt": "2026-04-15T22:27:52.861Z"
+  },
+  {
+    "id": "10a0aadd-1670-4cef-8dad-99804b57c521",
+    "challengerId": "1319705679577219208",
+    "defenderId": "763430490354221086",
+    "status": "finished",
+    "winnerId": "763430490354221086",
+    "totalTurns": 6,
+    "createdAt": "2026-04-15T22:29:17.056Z",
+    "finishedAt": "2026-04-15T22:29:30.724Z"
+  },
+  {
+    "id": "a2aa8125-b1dd-4400-b7a1-a4b60bcb19fc",
+    "challengerId": "1348272228390801441",
+    "defenderId": "1110219662509224006",
+    "status": "pending",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-16T06:10:50.904Z",
+    "finishedAt": null
+  },
+  {
+    "id": "1befa780-d806-44ae-9df8-b69b2703c60e",
+    "challengerId": "1110219662509224006",
+    "defenderId": "1348272228390801441",
+    "status": "finished",
+    "winnerId": "1110219662509224006",
+    "totalTurns": 5,
+    "createdAt": "2026-04-16T06:18:10.115Z",
+    "finishedAt": "2026-04-16T06:18:16.045Z"
+  },
+  {
+    "id": "f81797c2-938f-420e-ac20-66d1af6c4e0b",
+    "challengerId": "1110219662509224006",
+    "defenderId": "1348272228390801441",
+    "status": "finished",
+    "winnerId": "1348272228390801441",
+    "totalTurns": 6,
+    "createdAt": "2026-04-16T06:25:10.521Z",
+    "finishedAt": "2026-04-16T06:25:14.595Z"
+  },
+  {
+    "id": "da21e753-c5f4-4c0c-88ef-0c4cdc157240",
+    "challengerId": "1348272228390801441",
+    "defenderId": "1110219662509224006",
+    "status": "pending",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-16T06:37:31.303Z",
+    "finishedAt": null
+  },
+  {
+    "id": "5e6cde7e-2999-41c0-8b3a-af1dcc79adf1",
+    "challengerId": "1110219662509224006",
+    "defenderId": "1348272228390801441",
+    "status": "finished",
+    "winnerId": "1110219662509224006",
+    "totalTurns": 5,
+    "createdAt": "2026-04-16T06:38:51.889Z",
+    "finishedAt": "2026-04-16T06:38:54.835Z"
+  },
+  {
+    "id": "57abe341-559c-4d9b-bf9f-f9d3e0a12597",
+    "challengerId": "1110219662509224006",
+    "defenderId": "1348272228390801441",
+    "status": "finished",
+    "winnerId": "1110219662509224006",
+    "totalTurns": 5,
+    "createdAt": "2026-04-16T06:40:17.534Z",
+    "finishedAt": "2026-04-16T06:40:19.930Z"
+  },
+  {
+    "id": "47c3f49e-b98a-4de9-870a-fb7a758c44db",
+    "challengerId": "1110219662509224006",
+    "defenderId": "1224054730716614667",
+    "status": "finished",
+    "winnerId": "1110219662509224006",
+    "totalTurns": 7,
+    "createdAt": "2026-04-16T06:44:18.909Z",
+    "finishedAt": "2026-04-16T06:44:28.635Z"
+  },
+  {
+    "id": "cc5f4e11-cc58-4d82-94c7-cac3d88048b6",
+    "challengerId": "1110219662509224006",
+    "defenderId": "1348272228390801441",
+    "status": "finished",
+    "winnerId": "1110219662509224006",
+    "totalTurns": 5,
+    "createdAt": "2026-04-16T06:55:39.603Z",
+    "finishedAt": "2026-04-16T06:55:43.073Z"
+  },
+  {
+    "id": "f0f4d867-659e-4a27-a7fa-b95562771716",
+    "challengerId": "1110219662509224006",
+    "defenderId": "1348272228390801441",
+    "status": "finished",
+    "winnerId": "1110219662509224006",
+    "totalTurns": 5,
+    "createdAt": "2026-04-16T07:15:32.639Z",
+    "finishedAt": "2026-04-16T07:15:35.634Z"
+  },
+  {
+    "id": "3681ea30-0a30-4912-b5cb-057645b1e40b",
+    "challengerId": "1348272228390801441",
+    "defenderId": "1110219662509224006",
+    "status": "finished",
+    "winnerId": "1348272228390801441",
+    "totalTurns": 5,
+    "createdAt": "2026-04-16T07:19:40.027Z",
+    "finishedAt": "2026-04-16T07:19:46.065Z"
+  },
+  {
+    "id": "75f281b0-9b55-4564-a99c-98d935a93f61",
+    "challengerId": "1348272228390801441",
+    "defenderId": "1224054730716614667",
+    "status": "finished",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-16T07:22:05.793Z",
+    "finishedAt": null
+  },
+  {
+    "id": "f1edeeac-bb81-43ff-9292-dc000915c8e6",
+    "challengerId": "1348272228390801441",
+    "defenderId": "362666788149788672",
+    "status": "pending",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-16T07:25:20.913Z",
+    "finishedAt": null
+  },
+  {
+    "id": "e53d9219-3439-422e-ad7a-1f62bd99fb5f",
+    "challengerId": "1348272228390801441",
+    "defenderId": "362666788149788672",
+    "status": "pending",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-16T07:26:37.230Z",
+    "finishedAt": null
+  },
+  {
+    "id": "fb834224-b2a5-4334-b9a8-4cf809d80b2a",
+    "challengerId": "1348272228390801441",
+    "defenderId": "763430490354221086",
+    "status": "finished",
+    "winnerId": "1348272228390801441",
+    "totalTurns": 5,
+    "createdAt": "2026-04-16T07:27:38.805Z",
+    "finishedAt": "2026-04-16T07:27:42.172Z"
+  },
+  {
+    "id": "8213d3d2-ac7c-42b1-bcf3-2402c4998a12",
+    "challengerId": "362666788149788672",
+    "defenderId": "1348272228390801441",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 5,
+    "createdAt": "2026-04-16T07:28:07.459Z",
+    "finishedAt": "2026-04-16T07:28:21.531Z"
+  },
+  {
+    "id": "56b6558c-b6c5-4b9c-a5fd-1e39efe751d0",
+    "challengerId": "1348272228390801441",
+    "defenderId": "754978008410095666",
+    "status": "finished",
+    "winnerId": "1348272228390801441",
+    "totalTurns": 5,
+    "createdAt": "2026-04-16T07:29:24.675Z",
+    "finishedAt": "2026-04-16T07:29:29.385Z"
+  },
+  {
+    "id": "6572dd05-3f94-44d6-ac30-48d67d3320d3",
+    "challengerId": "362666788149788672",
+    "defenderId": "1348272228390801441",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 5,
+    "createdAt": "2026-04-16T07:30:50.142Z",
+    "finishedAt": "2026-04-16T07:30:55.756Z"
+  },
+  {
+    "id": "614a7893-e584-46a8-a206-455c472f96f5",
+    "challengerId": "362666788149788672",
+    "defenderId": "754978008410095666",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 5,
+    "createdAt": "2026-04-16T07:31:23.810Z",
+    "finishedAt": "2026-04-16T07:31:44.671Z"
+  },
+  {
+    "id": "0cb88164-8619-47da-a55b-97c9f3dafba5",
+    "challengerId": "362666788149788672",
+    "defenderId": "1110219662509224006",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 5,
+    "createdAt": "2026-04-16T07:31:59.569Z",
+    "finishedAt": "2026-04-16T07:32:40.061Z"
+  },
+  {
+    "id": "b80d787e-ba96-421f-851a-84d7af690037",
+    "challengerId": "362666788149788672",
+    "defenderId": "1348272228390801441",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 5,
+    "createdAt": "2026-04-16T07:33:58.525Z",
+    "finishedAt": "2026-04-16T07:34:13.799Z"
+  },
+  {
+    "id": "bcd1f3e5-c7a4-4e77-bde1-dfd6b6f6f1c6",
+    "challengerId": "362666788149788672",
+    "defenderId": "1110219662509224006",
+    "status": "finished",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-16T07:34:36.558Z",
+    "finishedAt": null
+  },
+  {
+    "id": "6ef76909-91f8-4ef1-b62e-84bdf4b820be",
+    "challengerId": "362666788149788672",
+    "defenderId": "1224054730716614667",
+    "status": "pending",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-16T07:35:45.459Z",
+    "finishedAt": null
+  },
+  {
+    "id": "14dbecbc-79af-4924-a422-f4919ca070f8",
+    "challengerId": "1348272228390801441",
+    "defenderId": "1224054730716614667",
+    "status": "finished",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-16T07:37:13.634Z",
+    "finishedAt": null
+  },
+  {
+    "id": "cea51b1b-f44a-4dcf-9c20-e57d73d83c07",
+    "challengerId": "1348272228390801441",
+    "defenderId": "754978008410095666",
+    "status": "finished",
+    "winnerId": "1348272228390801441",
+    "totalTurns": 5,
+    "createdAt": "2026-04-16T07:38:21.488Z",
+    "finishedAt": "2026-04-16T07:38:33.378Z"
+  },
+  {
+    "id": "57d8f306-226b-4338-8648-8d7678f817e7",
+    "challengerId": "362666788149788672",
+    "defenderId": "1348272228390801441",
+    "status": "pending",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-16T07:38:57.416Z",
+    "finishedAt": null
+  },
+  {
+    "id": "f5c41ee9-f1ee-43bd-8052-6bf7f7870937",
+    "challengerId": "362666788149788672",
+    "defenderId": "754978008410095666",
+    "status": "pending",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-16T07:40:35.285Z",
+    "finishedAt": null
+  },
+  {
+    "id": "d87a8899-9f24-4263-984e-65e46624dbe4",
+    "challengerId": "1348272228390801441",
+    "defenderId": "754978008410095666",
+    "status": "finished",
+    "winnerId": "1348272228390801441",
+    "totalTurns": 5,
+    "createdAt": "2026-04-16T07:44:59.377Z",
+    "finishedAt": "2026-04-16T07:45:03.182Z"
+  },
+  {
+    "id": "855d9a58-7dd5-4c1a-918f-5e4a95588f72",
+    "challengerId": "1348272228390801441",
+    "defenderId": "754978008410095666",
+    "status": "finished",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-16T07:46:22.926Z",
+    "finishedAt": null
+  },
+  {
+    "id": "0fcd6db7-b3a4-4e5f-8831-061e30ee16ac",
+    "challengerId": "362666788149788672",
+    "defenderId": "754978008410095666",
+    "status": "finished",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-16T07:47:25.036Z",
+    "finishedAt": null
+  },
+  {
+    "id": "498ca87a-a421-441a-a35d-122ddc3ed6a9",
+    "challengerId": "1348272228390801441",
+    "defenderId": "1110219662509224006",
+    "status": "finished",
+    "winnerId": "1348272228390801441",
+    "totalTurns": 5,
+    "createdAt": "2026-04-16T07:47:31.390Z",
+    "finishedAt": "2026-04-16T07:47:35.616Z"
+  },
+  {
+    "id": "3403016c-9be5-462e-9935-ecf2cfeb3e84",
+    "challengerId": "362666788149788672",
+    "defenderId": "1348272228390801441",
+    "status": "finished",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-16T07:48:09.899Z",
+    "finishedAt": null
+  },
+  {
+    "id": "925dfce0-789d-4b2f-804c-bebcf8002326",
+    "challengerId": "362666788149788672",
+    "defenderId": "1348272228390801441",
+    "status": "pending",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-16T07:58:19.688Z",
+    "finishedAt": null
+  },
+  {
+    "id": "ad2e7beb-56e5-4cca-a08e-37900e1d1987",
+    "challengerId": "1348272228390801441",
+    "defenderId": "1027661467266326669",
+    "status": "pending",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-16T07:59:25.722Z",
+    "finishedAt": null
+  },
+  {
+    "id": "ad906a8a-d06d-4fe2-999d-5bbb26a51efa",
+    "challengerId": "464870640856596482",
+    "defenderId": "362666788149788672",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 6,
+    "createdAt": "2026-04-16T07:59:42.274Z",
+    "finishedAt": "2026-04-16T07:59:46.861Z"
+  },
+  {
+    "id": "4e2f3526-5a52-4670-ab02-e8469ec5a108",
+    "challengerId": "1348272228390801441",
+    "defenderId": "464870640856596482",
+    "status": "finished",
+    "winnerId": "1348272228390801441",
+    "totalTurns": 5,
+    "createdAt": "2026-04-16T08:00:31.002Z",
+    "finishedAt": "2026-04-16T08:00:41.448Z"
+  },
+  {
+    "id": "15e70bb6-3c5a-4ee6-be36-ff9304a79ca3",
+    "challengerId": "1348272228390801441",
+    "defenderId": "1197562104446726225",
+    "status": "finished",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-16T08:02:21.829Z",
+    "finishedAt": null
+  },
+  {
+    "id": "dccf8a5b-ea54-459b-9f7b-ccc7b451a818",
+    "challengerId": "1197562104446726225",
+    "defenderId": "362666788149788672",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 6,
+    "createdAt": "2026-04-16T08:03:32.874Z",
+    "finishedAt": "2026-04-16T08:03:35.928Z"
+  },
+  {
+    "id": "9c6d0f00-68f9-4f50-a349-a1fb2f1399c2",
+    "challengerId": "1348272228390801441",
+    "defenderId": "1197562104446726225",
+    "status": "finished",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-16T08:10:55.006Z",
+    "finishedAt": null
+  },
+  {
+    "id": "17088a37-a8c0-49b4-b051-b38133214aad",
+    "challengerId": "1348272228390801441",
+    "defenderId": "763430490354221086",
+    "status": "pending",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-16T08:13:01.918Z",
+    "finishedAt": null
+  },
+  {
+    "id": "368d06fe-eb74-454f-b1bf-d73ad942f239",
+    "challengerId": "362666788149788672",
+    "defenderId": "754978008410095666",
+    "status": "pending",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-16T08:21:16.636Z",
+    "finishedAt": null
+  },
+  {
+    "id": "bf9bc05b-a13c-4708-8b03-45570ebff9ee",
+    "challengerId": "1348272228390801441",
+    "defenderId": "362666788149788672",
+    "status": "pending",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-16T08:26:30.178Z",
+    "finishedAt": null
+  },
+  {
+    "id": "693fd1d8-10be-42cb-8a18-efc1197b836f",
+    "challengerId": "362666788149788672",
+    "defenderId": "1348272228390801441",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 5,
+    "createdAt": "2026-04-16T08:32:22.239Z",
+    "finishedAt": "2026-04-16T08:32:26.529Z"
+  },
+  {
+    "id": "0f84042c-3005-46c5-b84f-74a66566828a",
+    "challengerId": "362666788149788672",
+    "defenderId": "1348272228390801441",
+    "status": "finished",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-16T08:35:45.069Z",
+    "finishedAt": null
+  },
+  {
+    "id": "a7b6d719-f9cc-4ef7-95d9-9278f89d0f22",
+    "challengerId": "362666788149788672",
+    "defenderId": "1110219662509224006",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 5,
+    "createdAt": "2026-04-16T08:36:45.731Z",
+    "finishedAt": "2026-04-16T08:36:50.772Z"
+  },
+  {
+    "id": "1f324f3c-f85f-4a07-9c38-ba5fb3998bbc",
+    "challengerId": "1348272228390801441",
+    "defenderId": "1110219662509224006",
+    "status": "finished",
+    "winnerId": "1348272228390801441",
+    "totalTurns": 5,
+    "createdAt": "2026-04-16T08:37:23.253Z",
+    "finishedAt": "2026-04-16T08:37:34.042Z"
+  },
+  {
+    "id": "c301909f-66d0-476a-8aee-2665fa1cd1ea",
+    "challengerId": "362666788149788672",
+    "defenderId": "1110219662509224006",
+    "status": "finished",
+    "winnerId": "1110219662509224006",
+    "totalTurns": 6,
+    "createdAt": "2026-04-16T08:38:21.213Z",
+    "finishedAt": "2026-04-16T08:38:25.749Z"
+  },
+  {
+    "id": "0a709ca8-e032-4fd4-bdaf-93991dd1536b",
+    "challengerId": "362666788149788672",
+    "defenderId": "1348272228390801441",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 5,
+    "createdAt": "2026-04-16T08:39:22.530Z",
+    "finishedAt": "2026-04-16T08:39:28.287Z"
+  },
+  {
+    "id": "e02c6940-ffa4-4848-bd50-58668b41c336",
+    "challengerId": "1110219662509224006",
+    "defenderId": "763430490354221086",
+    "status": "finished",
+    "winnerId": "1110219662509224006",
+    "totalTurns": 5,
+    "createdAt": "2026-04-16T08:40:55.429Z",
+    "finishedAt": "2026-04-16T08:41:10.547Z"
+  },
+  {
+    "id": "c497bbfc-6426-4ac6-a1fb-f321841c42c8",
+    "challengerId": "362666788149788672",
+    "defenderId": "763430490354221086",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 5,
+    "createdAt": "2026-04-16T08:44:57.588Z",
+    "finishedAt": "2026-04-16T08:45:06.204Z"
+  },
+  {
+    "id": "b61205e3-9fdd-4249-b816-ce3f18600178",
+    "challengerId": "362666788149788672",
+    "defenderId": "763430490354221086",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 5,
+    "createdAt": "2026-04-16T08:59:17.164Z",
+    "finishedAt": "2026-04-16T08:59:30.213Z"
+  },
+  {
+    "id": "f1a4591c-46a6-430b-a26d-68ac26164af4",
+    "challengerId": "362666788149788672",
+    "defenderId": "763430490354221086",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 5,
+    "createdAt": "2026-04-16T09:01:00.026Z",
+    "finishedAt": "2026-04-16T09:01:03.385Z"
+  },
+  {
+    "id": "40261342-8766-466e-9c69-ad1fdff37d31",
+    "challengerId": "362666788149788672",
+    "defenderId": "763430490354221086",
+    "status": "pending",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-16T09:01:48.340Z",
+    "finishedAt": null
+  },
+  {
+    "id": "f39343fb-8c20-4286-b7e1-1c15653302d5",
+    "challengerId": "362666788149788672",
+    "defenderId": "763430490354221086",
+    "status": "pending",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-16T09:02:50.852Z",
+    "finishedAt": null
+  },
+  {
+    "id": "db20d92e-0f27-430f-9192-44e717b28acb",
+    "challengerId": "362666788149788672",
+    "defenderId": "1348272228390801441",
+    "status": "pending",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-16T09:06:54.358Z",
+    "finishedAt": null
+  },
+  {
+    "id": "22efe1a1-df44-41b0-b388-7f69958b9175",
+    "challengerId": "362666788149788672",
+    "defenderId": "1110219662509224006",
+    "status": "pending",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-16T09:15:29.753Z",
+    "finishedAt": null
+  },
+  {
+    "id": "fbbf85b4-1dec-418a-8d1e-c4b42b4f8859",
+    "challengerId": "362666788149788672",
+    "defenderId": "1224054730716614667",
+    "status": "finished",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-16T09:17:55.788Z",
+    "finishedAt": null
+  },
+  {
+    "id": "efdc954f-8c2b-47b0-893d-44ee0fb36f5b",
+    "challengerId": "1089435359944921089",
+    "defenderId": "1224054730716614667",
+    "status": "finished",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-16T09:22:02.018Z",
+    "finishedAt": null
+  },
+  {
+    "id": "bfd03e6f-81c8-4752-8006-25c99c4797d9",
+    "challengerId": "362666788149788672",
+    "defenderId": "1224054730716614667",
+    "status": "finished",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-16T09:25:03.374Z",
+    "finishedAt": null
+  },
+  {
+    "id": "87872768-35aa-48dd-aabc-95f7676bdd40",
+    "challengerId": "362666788149788672",
+    "defenderId": "1089435359944921089",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 5,
+    "createdAt": "2026-04-16T09:26:12.345Z",
+    "finishedAt": "2026-04-16T09:26:16.212Z"
+  },
+  {
+    "id": "b76a6cd8-c930-4d92-8eb5-2f02881747e6",
+    "challengerId": "362666788149788672",
+    "defenderId": "1282000157453582362",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 5,
+    "createdAt": "2026-04-16T09:27:21.561Z",
+    "finishedAt": "2026-04-16T09:27:31.740Z"
+  },
+  {
+    "id": "0a94f807-e306-493a-a65c-cfafa069be2a",
+    "challengerId": "362666788149788672",
+    "defenderId": "1282000157453582362",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 5,
+    "createdAt": "2026-04-16T09:53:55.447Z",
+    "finishedAt": "2026-04-16T09:54:08.769Z"
+  },
+  {
+    "id": "cdb4353b-bada-45c9-b139-e5951212314f",
+    "challengerId": "362666788149788672",
+    "defenderId": "763430490354221086",
+    "status": "pending",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-16T09:56:32.506Z",
+    "finishedAt": null
+  },
+  {
+    "id": "62c630d5-56ad-4354-bb6e-1b93b24ec46f",
+    "challengerId": "362666788149788672",
+    "defenderId": "763430490354221086",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 5,
+    "createdAt": "2026-04-16T09:59:22.822Z",
+    "finishedAt": "2026-04-16T09:59:38.699Z"
+  },
+  {
+    "id": "bfd4c634-e594-41d4-90c0-29a540bf29d8",
+    "challengerId": "362666788149788672",
+    "defenderId": "1177669406613049368",
+    "status": "finished",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-16T10:04:59.855Z",
+    "finishedAt": null
+  },
+  {
+    "id": "8341def4-c738-42af-a5f3-542d65710759",
+    "challengerId": "362666788149788672",
+    "defenderId": "1089435359944921089",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 5,
+    "createdAt": "2026-04-16T10:05:08.868Z",
+    "finishedAt": "2026-04-16T10:05:11.973Z"
+  },
+  {
+    "id": "6421c54a-2536-463f-94e1-87c7b93d322f",
+    "challengerId": "362666788149788672",
+    "defenderId": "1282000157453582362",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 5,
+    "createdAt": "2026-04-16T10:07:12.737Z",
+    "finishedAt": "2026-04-16T10:07:18.488Z"
+  },
+  {
+    "id": "a5fc04a9-f1da-49f3-acd9-a0db41e865d5",
+    "challengerId": "1110219662509224006",
+    "defenderId": "362666788149788672",
+    "status": "finished",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-16T22:40:51.029Z",
+    "finishedAt": null
+  },
+  {
+    "id": "9bc428e0-8bdb-4626-aa65-e5b42bd2fcaf",
+    "challengerId": "362666788149788672",
+    "defenderId": "1110219662509224006",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 5,
+    "createdAt": "2026-04-16T22:42:03.096Z",
+    "finishedAt": "2026-04-16T22:42:06.007Z"
+  },
+  {
+    "id": "c0c41824-fbd6-40c2-a326-f9a4b82d0f53",
+    "challengerId": "1197562104446726225",
+    "defenderId": "1319705679577219208",
+    "status": "finished",
+    "winnerId": "1319705679577219208",
+    "totalTurns": 6,
+    "createdAt": "2026-04-16T23:11:51.841Z",
+    "finishedAt": "2026-04-16T23:11:55.229Z"
+  },
+  {
+    "id": "52332939-9ec4-41cd-bb42-d32eef4a6cb6",
+    "challengerId": "362666788149788672",
+    "defenderId": "1319705679577219208",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 5,
+    "createdAt": "2026-04-16T23:12:16.615Z",
+    "finishedAt": "2026-04-16T23:12:25.179Z"
+  },
+  {
+    "id": "88dd9073-bd73-4cd4-9dc5-1f0d37bec23d",
+    "challengerId": "362666788149788672",
+    "defenderId": "1197562104446726225",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 5,
+    "createdAt": "2026-04-16T23:12:44.218Z",
+    "finishedAt": "2026-04-16T23:12:48.963Z"
+  },
+  {
+    "id": "989aa8be-18d4-4ed7-8d20-c200380d4626",
+    "challengerId": "853227090357518356",
+    "defenderId": "362666788149788672",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 6,
+    "createdAt": "2026-04-16T23:17:16.620Z",
+    "finishedAt": "2026-04-16T23:17:21.038Z"
+  },
+  {
+    "id": "0224a719-1133-4e2a-9aff-9d1b2d142721",
+    "challengerId": "1319705679577219208",
+    "defenderId": "1110219662509224006",
+    "status": "finished",
+    "winnerId": "1319705679577219208",
+    "totalTurns": 5,
+    "createdAt": "2026-04-16T23:17:18.206Z",
+    "finishedAt": "2026-04-16T23:17:20.287Z"
+  },
+  {
+    "id": "a537ac1b-4e5a-4361-b008-922cfb2dcbcd",
+    "challengerId": "362666788149788672",
+    "defenderId": "1110219662509224006",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 5,
+    "createdAt": "2026-04-16T23:17:29.427Z",
+    "finishedAt": "2026-04-16T23:17:31.662Z"
+  },
+  {
+    "id": "ac70c2ed-4985-499b-b038-e438fad0fd8c",
+    "challengerId": "853227090357518356",
+    "defenderId": "362666788149788672",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 6,
+    "createdAt": "2026-04-16T23:18:00.756Z",
+    "finishedAt": "2026-04-16T23:18:17.264Z"
+  },
+  {
+    "id": "231202f3-fae6-4db5-8b09-706c63372feb",
+    "challengerId": "853227090357518356",
+    "defenderId": "1319705679577219208",
+    "status": "finished",
+    "winnerId": "1319705679577219208",
+    "totalTurns": 6,
+    "createdAt": "2026-04-16T23:20:08.864Z",
+    "finishedAt": "2026-04-16T23:20:14.414Z"
+  },
+  {
+    "id": "336c7c26-b359-4ff3-baef-0a3154e9f375",
+    "challengerId": "1319705679577219208",
+    "defenderId": "451430824903049216",
+    "status": "finished",
+    "winnerId": "1319705679577219208",
+    "totalTurns": 5,
+    "createdAt": "2026-04-16T23:21:00.603Z",
+    "finishedAt": "2026-04-16T23:21:03.070Z"
+  },
+  {
+    "id": "d60b339f-31a4-4aac-b772-d971efe6a399",
+    "challengerId": "1319705679577219208",
+    "defenderId": "1110219662509224006",
+    "status": "finished",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-16T23:21:32.060Z",
+    "finishedAt": null
+  },
+  {
+    "id": "df1e4969-c54e-464c-86ea-0322209851df",
+    "challengerId": "1319705679577219208",
+    "defenderId": "1110219662509224006",
+    "status": "finished",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-16T23:26:28.343Z",
+    "finishedAt": null
+  },
+  {
+    "id": "938505aa-9a15-4f07-ab9b-85a887d9d591",
+    "challengerId": "1319705679577219208",
+    "defenderId": "763430490354221086",
+    "status": "finished",
+    "winnerId": "763430490354221086",
+    "totalTurns": 6,
+    "createdAt": "2026-04-16T23:29:46.869Z",
+    "finishedAt": "2026-04-16T23:29:51.471Z"
+  },
+  {
+    "id": "a3d6e24c-b3be-47ca-96f6-5e4ce02ca68d",
+    "challengerId": "1319705679577219208",
+    "defenderId": "1110219662509224006",
+    "status": "finished",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-16T23:30:20.043Z",
+    "finishedAt": null
+  },
+  {
+    "id": "32432d14-1ba7-41f7-a343-97a4ef83305f",
+    "challengerId": "1319705679577219208",
+    "defenderId": "1110219662509224006",
+    "status": "finished",
+    "winnerId": "1319705679577219208",
+    "totalTurns": 5,
+    "createdAt": "2026-04-16T23:31:45.579Z",
+    "finishedAt": "2026-04-16T23:31:57.634Z"
+  },
+  {
+    "id": "4be0e94e-74ca-432e-80a8-e151e9e8d10f",
+    "challengerId": "362666788149788672",
+    "defenderId": "1110219662509224006",
+    "status": "finished",
+    "winnerId": "1110219662509224006",
+    "totalTurns": 4,
+    "createdAt": "2026-04-16T23:32:48.497Z",
+    "finishedAt": "2026-04-16T23:32:52.257Z"
+  },
+  {
+    "id": "e073c3ac-4823-4d41-88fb-e6cc588a4099",
+    "challengerId": "362666788149788672",
+    "defenderId": "1319705679577219208",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 5,
+    "createdAt": "2026-04-16T23:34:13.663Z",
+    "finishedAt": "2026-04-16T23:34:16.237Z"
+  },
+  {
+    "id": "634817a6-5197-4659-9a84-d56dea51bd6e",
+    "challengerId": "763430490354221086",
+    "defenderId": "897829226915434496",
+    "status": "finished",
+    "winnerId": "897829226915434496",
+    "totalTurns": 4,
+    "createdAt": "2026-04-17T00:09:09.451Z",
+    "finishedAt": "2026-04-17T00:09:12.301Z"
+  },
+  {
+    "id": "1ffde61a-59ee-4242-bec8-425d57042a04",
+    "challengerId": "362666788149788672",
+    "defenderId": "1110219662509224006",
+    "status": "finished",
+    "winnerId": "1110219662509224006",
+    "totalTurns": 4,
+    "createdAt": "2026-04-17T17:22:12.946Z",
+    "finishedAt": "2026-04-17T17:22:36.897Z"
+  },
+  {
+    "id": "c7be696e-987b-4af4-a3c5-2db01d763b38",
+    "challengerId": "362666788149788672",
+    "defenderId": "1110219662509224006",
+    "status": "finished",
+    "winnerId": "1110219662509224006",
+    "totalTurns": 4,
+    "createdAt": "2026-04-17T17:23:03.481Z",
+    "finishedAt": "2026-04-17T17:23:14.010Z"
+  },
+  {
+    "id": "d8b1e1ee-b993-4ea1-9b1d-9d221b9cf83c",
+    "challengerId": "362666788149788672",
+    "defenderId": "1110219662509224006",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 5,
+    "createdAt": "2026-04-17T17:44:34.904Z",
+    "finishedAt": "2026-04-17T17:44:37.712Z"
+  },
+  {
+    "id": "6f9d816a-1e92-466c-9cbb-d69918a8d5b1",
+    "challengerId": "362666788149788672",
+    "defenderId": "763430490354221086",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 5,
+    "createdAt": "2026-04-17T18:03:23.310Z",
+    "finishedAt": "2026-04-17T18:03:26.977Z"
+  },
+  {
+    "id": "96804b79-8059-4fb4-b919-d2d5da2fd584",
+    "challengerId": "362666788149788672",
+    "defenderId": "763430490354221086",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 5,
+    "createdAt": "2026-04-17T18:03:53.679Z",
+    "finishedAt": "2026-04-17T18:04:05.816Z"
+  },
+  {
+    "id": "eee25cad-177f-4d44-858a-f6de0f4749f4",
+    "challengerId": "1110219662509224006",
+    "defenderId": "763430490354221086",
+    "status": "finished",
+    "winnerId": "1110219662509224006",
+    "totalTurns": 5,
+    "createdAt": "2026-04-17T18:42:11.710Z",
+    "finishedAt": "2026-04-17T18:42:20.205Z"
+  },
+  {
+    "id": "d8585e8c-506a-47b2-8ad5-c93d639a2714",
+    "challengerId": "362666788149788672",
+    "defenderId": "1110219662509224006",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 5,
+    "createdAt": "2026-04-17T18:42:32.748Z",
+    "finishedAt": "2026-04-17T18:42:39.047Z"
+  },
+  {
+    "id": "2dcb2c63-4abe-4d35-bb0b-478e24208005",
+    "challengerId": "1348272228390801441",
+    "defenderId": "1260238208084480113",
+    "status": "pending",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-17T18:42:55.647Z",
+    "finishedAt": null
+  },
+  {
+    "id": "3fea04e7-6924-4ee9-bd55-fe0e2c6102bc",
+    "challengerId": "1348272228390801441",
+    "defenderId": "1260238208084480113",
+    "status": "pending",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-17T18:43:51.292Z",
+    "finishedAt": null
+  },
+  {
+    "id": "143f913d-f2be-4654-9fc7-9ed7748321d3",
+    "challengerId": "362666788149788672",
+    "defenderId": "1373010439272927353",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 5,
+    "createdAt": "2026-04-17T18:51:53.076Z",
+    "finishedAt": "2026-04-17T18:51:56.393Z"
+  },
+  {
+    "id": "99b04a44-cd80-4de9-979b-a7e9bd1cba0b",
+    "challengerId": "362666788149788672",
+    "defenderId": "1110219662509224006",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 5,
+    "createdAt": "2026-04-17T18:52:58.880Z",
+    "finishedAt": "2026-04-17T18:53:02.124Z"
+  },
+  {
+    "id": "8e772ced-ea5e-44cd-a333-cef3db7fa33a",
+    "challengerId": "1043601444240105584",
+    "defenderId": "1110219662509224006",
+    "status": "finished",
+    "winnerId": "1110219662509224006",
+    "totalTurns": 6,
+    "createdAt": "2026-04-17T18:53:17.090Z",
+    "finishedAt": "2026-04-17T18:53:59.512Z"
+  },
+  {
+    "id": "58c2b5de-e35d-49de-a567-f0a06fe9b1d6",
+    "challengerId": "1043601444240105584",
+    "defenderId": "362666788149788672",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 6,
+    "createdAt": "2026-04-17T18:54:10.478Z",
+    "finishedAt": "2026-04-17T18:54:14.006Z"
+  },
+  {
+    "id": "6f6bc5cd-c9e7-4ef8-80d0-665d966d2e46",
+    "challengerId": "1043601444240105584",
+    "defenderId": "1110219662509224006",
+    "status": "finished",
+    "winnerId": "1110219662509224006",
+    "totalTurns": 6,
+    "createdAt": "2026-04-17T18:54:30.868Z",
+    "finishedAt": "2026-04-17T18:54:39.434Z"
+  },
+  {
+    "id": "3719b0e3-ed0c-4c4b-aed4-2443d93886d3",
+    "challengerId": "362666788149788672",
+    "defenderId": "1110219662509224006",
+    "status": "finished",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-17T18:54:50.446Z",
+    "finishedAt": null
+  },
+  {
+    "id": "6f9aad8a-2115-454c-a227-eda120fe54a9",
+    "challengerId": "1043601444240105584",
+    "defenderId": "1110219662509224006",
+    "status": "finished",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-17T18:56:55.706Z",
+    "finishedAt": null
+  },
+  {
+    "id": "d3722f83-e4b3-457d-8318-cf11343bb23c",
+    "challengerId": "1043601444240105584",
+    "defenderId": "1197562104446726225",
+    "status": "finished",
+    "winnerId": "1197562104446726225",
+    "totalTurns": 10,
+    "createdAt": "2026-04-17T18:57:39.181Z",
+    "finishedAt": "2026-04-17T18:57:52.302Z"
+  },
+  {
+    "id": "d7cca2af-60e6-4196-99ae-170177034e26",
+    "challengerId": "362666788149788672",
+    "defenderId": "1110219662509224006",
+    "status": "pending",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-17T18:57:49.196Z",
+    "finishedAt": null
+  },
+  {
+    "id": "e4991a58-3f2c-4a19-903d-c442aade6292",
+    "challengerId": "362666788149788672",
+    "defenderId": "763430490354221086",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 5,
+    "createdAt": "2026-04-17T19:15:27.809Z",
+    "finishedAt": "2026-04-17T19:15:32.334Z"
+  },
+  {
+    "id": "a227c0cb-82ac-4a89-abe1-5e3cd1ff815f",
+    "challengerId": "362666788149788672",
+    "defenderId": "1197562104446726225",
+    "status": "finished",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-17T19:49:30.981Z",
+    "finishedAt": null
+  },
+  {
+    "id": "2d903b7b-4f6f-4a7b-8a05-52b295d8f6cd",
+    "challengerId": "1110219662509224006",
+    "defenderId": "897829226915434496",
+    "status": "finished",
+    "winnerId": "897829226915434496",
+    "totalTurns": 4,
+    "createdAt": "2026-04-17T21:35:31.022Z",
+    "finishedAt": "2026-04-17T21:35:42.496Z"
+  },
+  {
+    "id": "1ce91620-afa5-4def-bcb1-0657c8916965",
+    "challengerId": "763430490354221086",
+    "defenderId": "1110219662509224006",
+    "status": "pending",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-17T21:36:10.068Z",
+    "finishedAt": null
+  },
+  {
+    "id": "47c94faa-1084-48ae-bcce-b97eb77ab383",
+    "challengerId": "1063750211870150758",
+    "defenderId": "1197562104446726225",
+    "status": "finished",
+    "winnerId": "1197562104446726225",
+    "totalTurns": 10,
+    "createdAt": "2026-04-17T21:36:28.925Z",
+    "finishedAt": "2026-04-17T21:36:33.816Z"
+  },
+  {
+    "id": "0e9483fe-a084-45ba-b78c-ca490d5a6bb3",
+    "challengerId": "1063750211870150758",
+    "defenderId": "1319705679577219208",
+    "status": "finished",
+    "winnerId": "1319705679577219208",
+    "totalTurns": 6,
+    "createdAt": "2026-04-17T21:36:50.203Z",
+    "finishedAt": "2026-04-17T21:36:55.542Z"
+  },
+  {
+    "id": "76909c02-68f9-455c-aad3-c09a0fb413ac",
+    "challengerId": "1319705679577219208",
+    "defenderId": "1197562104446726225",
+    "status": "finished",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-17T21:37:11.391Z",
+    "finishedAt": null
+  },
+  {
+    "id": "3c0bfef1-14fa-473a-9c83-f2187c22eca0",
+    "challengerId": "1063750211870150758",
+    "defenderId": "1348272228390801441",
+    "status": "finished",
+    "winnerId": "1348272228390801441",
+    "totalTurns": 6,
+    "createdAt": "2026-04-17T21:38:12.317Z",
+    "finishedAt": "2026-04-17T21:38:16.858Z"
+  },
+  {
+    "id": "2bb4fc27-beaa-47fa-8a92-c74c721dc16d",
+    "challengerId": "1348272228390801441",
+    "defenderId": "754978008410095666",
+    "status": "finished",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-17T21:39:00.470Z",
+    "finishedAt": null
+  },
+  {
+    "id": "f057c0b9-b454-48d8-aa7e-37456daeddde",
+    "challengerId": "1043601444240105584",
+    "defenderId": "897829226915434496",
+    "status": "finished",
+    "winnerId": "897829226915434496",
+    "totalTurns": 4,
+    "createdAt": "2026-04-17T21:39:17.143Z",
+    "finishedAt": "2026-04-17T21:39:29.885Z"
+  },
+  {
+    "id": "e7ca868f-397e-4949-b31e-e29f6bd18fa3",
+    "challengerId": "1319705679577219208",
+    "defenderId": "897829226915434496",
+    "status": "finished",
+    "winnerId": "1319705679577219208",
+    "totalTurns": 5,
+    "createdAt": "2026-04-17T21:40:13.263Z",
+    "finishedAt": "2026-04-17T21:40:18.709Z"
+  },
+  {
+    "id": "693bde27-78e0-4242-ade0-6e984c9f335a",
+    "challengerId": "1319705679577219208",
+    "defenderId": "754978008410095666",
+    "status": "finished",
+    "winnerId": "1319705679577219208",
+    "totalTurns": 5,
+    "createdAt": "2026-04-17T21:40:40.818Z",
+    "finishedAt": "2026-04-17T21:40:46.391Z"
+  },
+  {
+    "id": "85025713-6d0a-45b3-a716-516dba7da854",
+    "challengerId": "1110219662509224006",
+    "defenderId": "763430490354221086",
+    "status": "finished",
+    "winnerId": "1110219662509224006",
+    "totalTurns": 5,
+    "createdAt": "2026-04-17T21:41:09.641Z",
+    "finishedAt": "2026-04-17T21:41:19.454Z"
+  },
+  {
+    "id": "7e8189ed-a404-4c44-bd42-b505e7cd7b08",
+    "challengerId": "1319705679577219208",
+    "defenderId": "1348272228390801441",
+    "status": "finished",
+    "winnerId": "1348272228390801441",
+    "totalTurns": 6,
+    "createdAt": "2026-04-17T21:41:46.563Z",
+    "finishedAt": "2026-04-17T21:41:51.418Z"
+  },
+  {
+    "id": "19446506-befb-439a-8836-6e2581e843c5",
+    "challengerId": "1197562104446726225",
+    "defenderId": "1110219662509224006",
+    "status": "finished",
+    "winnerId": "1110219662509224006",
+    "totalTurns": 6,
+    "createdAt": "2026-04-17T21:42:27.535Z",
+    "finishedAt": "2026-04-17T21:42:43.406Z"
+  },
+  {
+    "id": "515c0e75-e779-4655-b6f6-33416b2d8b4a",
+    "challengerId": "1063750211870150758",
+    "defenderId": "528855313936285753",
+    "status": "finished",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-17T21:42:54.856Z",
+    "finishedAt": null
+  },
+  {
+    "id": "8a186b6b-bad4-4bad-b63d-9d33c0f6791b",
+    "challengerId": "1319705679577219208",
+    "defenderId": "1110219662509224006",
+    "status": "finished",
+    "winnerId": "1110219662509224006",
+    "totalTurns": 6,
+    "createdAt": "2026-04-17T21:43:09.002Z",
+    "finishedAt": "2026-04-17T21:43:15.649Z"
+  },
+  {
+    "id": "afea9f1a-640d-4855-853e-5891bf6e9168",
+    "challengerId": "763430490354221086",
+    "defenderId": "1110219662509224006",
+    "status": "finished",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-17T21:43:47.365Z",
+    "finishedAt": null
+  },
+  {
+    "id": "5ab32839-a118-4b8b-9446-bc963b72ea4d",
+    "challengerId": "897829226915434496",
+    "defenderId": "763430490354221086",
+    "status": "pending",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-17T21:45:12.564Z",
+    "finishedAt": null
+  },
+  {
+    "id": "f539a603-4b83-4c2a-a015-c55e4faec68f",
+    "challengerId": "1348272228390801441",
+    "defenderId": "528855313936285753",
+    "status": "finished",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-17T21:45:29.579Z",
+    "finishedAt": null
+  },
+  {
+    "id": "0f698bab-9366-4d17-b674-62a0465d776f",
+    "challengerId": "1319705679577219208",
+    "defenderId": "754978008410095666",
+    "status": "pending",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-17T21:46:03.666Z",
+    "finishedAt": null
+  },
+  {
+    "id": "760aa8bf-1f2d-4c28-b3fd-14e2d4f75fb5",
+    "challengerId": "362666788149788672",
+    "defenderId": "1110219662509224006",
+    "status": "pending",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-17T21:52:50.544Z",
+    "finishedAt": null
+  },
+  {
+    "id": "12358bd6-e443-4fdd-8c4b-d5c770017ee2",
+    "challengerId": "362666788149788672",
+    "defenderId": "754978008410095666",
+    "status": "pending",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-17T22:46:55.257Z",
+    "finishedAt": null
+  },
+  {
+    "id": "194b2d75-387d-455a-b43d-961e60f1f2d9",
+    "challengerId": "1319705679577219208",
+    "defenderId": "362666788149788672",
+    "status": "finished",
+    "winnerId": "1319705679577219208",
+    "totalTurns": 5,
+    "createdAt": "2026-04-17T22:51:52.752Z",
+    "finishedAt": "2026-04-17T22:51:56.388Z"
+  },
+  {
+    "id": "a1fb1e05-60ab-4f83-a7a0-5d4947d9d137",
+    "challengerId": "1063750211870150758",
+    "defenderId": "1110219662509224006",
+    "status": "pending",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-18T18:36:45.627Z",
+    "finishedAt": null
+  },
+  {
+    "id": "cf49d3cf-64d0-4869-9d62-8de40a54177e",
+    "challengerId": "763430490354221086",
+    "defenderId": "515024193633517572",
+    "status": "finished",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-18T18:39:41.621Z",
+    "finishedAt": null
+  },
+  {
+    "id": "78ab0f2c-5fff-4b4f-a433-0fca2aa2e419",
+    "challengerId": "763430490354221086",
+    "defenderId": "515024193633517572",
+    "status": "finished",
+    "winnerId": "763430490354221086",
+    "totalTurns": 5,
+    "createdAt": "2026-04-18T18:42:11.242Z",
+    "finishedAt": "2026-04-18T18:42:15.909Z"
+  },
+  {
+    "id": "7d1b4bda-399c-45d0-b07d-24c6a7a2b5b3",
+    "challengerId": "362666788149788672",
+    "defenderId": "1110219662509224006",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 5,
+    "createdAt": "2026-04-18T19:01:01.588Z",
+    "finishedAt": "2026-04-18T19:01:04.964Z"
+  },
+  {
+    "id": "9a2e23aa-929c-470e-998e-e2805638b0e9",
+    "challengerId": "362666788149788672",
+    "defenderId": "1110219662509224006",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 3,
+    "createdAt": "2026-04-18T19:19:14.434Z",
+    "finishedAt": "2026-04-18T19:19:16.981Z"
+  },
+  {
+    "id": "7a648ca9-81ff-41d1-99ec-b2528ddb7d3c",
+    "challengerId": "362666788149788672",
+    "defenderId": "763430490354221086",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 5,
+    "createdAt": "2026-04-18T19:19:37.175Z",
+    "finishedAt": "2026-04-18T19:19:40.118Z"
+  },
+  {
+    "id": "a06ad05a-8336-4dd4-a330-81adbe088a34",
+    "challengerId": "362666788149788672",
+    "defenderId": "1373010439272927353",
+    "status": "finished",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-18T20:34:52.476Z",
+    "finishedAt": null
+  },
+  {
+    "id": "24ef5a3a-8558-4d48-9bbd-fe8fc850ee4b",
+    "challengerId": "362666788149788672",
+    "defenderId": "1373010439272927353",
+    "status": "pending",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-18T20:40:32.023Z",
+    "finishedAt": null
+  },
+  {
+    "id": "86ed7660-695e-4812-8f9f-e7aa4f8743d7",
+    "challengerId": "362666788149788672",
+    "defenderId": "1110219662509224006",
+    "status": "finished",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-18T21:06:20.100Z",
+    "finishedAt": null
+  },
+  {
+    "id": "d90cea43-3159-4a91-a5fb-47506a647ba0",
+    "challengerId": "362666788149788672",
+    "defenderId": "1224054730716614667",
+    "status": "pending",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-18T21:07:37.505Z",
+    "finishedAt": null
+  },
+  {
+    "id": "4b39e280-67df-4304-b1eb-d3229e6e5824",
+    "challengerId": "763430490354221086",
+    "defenderId": "1110219662509224006",
+    "status": "pending",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-18T21:08:49.794Z",
+    "finishedAt": null
+  },
+  {
+    "id": "bdbf45d4-170a-48c4-a7df-01d0e9b292d3",
+    "challengerId": "763430490354221086",
+    "defenderId": "1110219662509224006",
+    "status": "finished",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-18T21:10:57.179Z",
+    "finishedAt": null
+  },
+  {
+    "id": "60530253-b6f1-478f-8b50-7470ed24301b",
+    "challengerId": "763430490354221086",
+    "defenderId": "1110219662509224006",
+    "status": "pending",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-18T21:12:55.477Z",
+    "finishedAt": null
+  },
+  {
+    "id": "c0410e67-04c8-470b-9d65-1f113e8b0ffa",
+    "challengerId": "763430490354221086",
+    "defenderId": "1110219662509224006",
+    "status": "finished",
+    "winnerId": "763430490354221086",
+    "totalTurns": 5,
+    "createdAt": "2026-04-18T21:19:27.425Z",
+    "finishedAt": "2026-04-18T21:19:35.823Z"
+  },
+  {
+    "id": "ee236ad2-fcf0-42c3-b0d1-91b46e780934",
+    "challengerId": "1373010439272927353",
+    "defenderId": "1110219662509224006",
+    "status": "finished",
+    "winnerId": "1110219662509224006",
+    "totalTurns": 6,
+    "createdAt": "2026-04-18T21:20:07.835Z",
+    "finishedAt": "2026-04-18T21:20:12.260Z"
+  },
+  {
+    "id": "c47a4ebb-4239-4086-809c-6ecb6a700546",
+    "challengerId": "1373010439272927353",
+    "defenderId": "984901369867669514",
+    "status": "finished",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-18T21:22:28.706Z",
+    "finishedAt": null
+  },
+  {
+    "id": "efd315d0-3f97-491a-b9af-2a333d1cd64e",
+    "challengerId": "1373010439272927353",
+    "defenderId": "1060550882061713478",
+    "status": "pending",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-18T21:23:01.028Z",
+    "finishedAt": null
+  },
+  {
+    "id": "0b87bd1f-fac1-4b95-8126-8148bb3d08e9",
+    "challengerId": "984901369867669514",
+    "defenderId": "1401125565666164888",
+    "status": "finished",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-18T21:26:06.774Z",
+    "finishedAt": null
+  },
+  {
+    "id": "1b8a3690-2da2-49a1-93ca-1486349ce643",
+    "challengerId": "1063750211870150758",
+    "defenderId": "1401125565666164888",
+    "status": "finished",
+    "winnerId": "1063750211870150758",
+    "totalTurns": 15,
+    "createdAt": "2026-04-18T22:13:51.821Z",
+    "finishedAt": "2026-04-18T22:14:07.075Z"
+  },
+  {
+    "id": "776e806c-2fd7-4394-9fdb-5f0509dadfcd",
+    "challengerId": "1348272228390801441",
+    "defenderId": "945713316976820254",
+    "status": "finished",
+    "winnerId": "1348272228390801441",
+    "totalTurns": 5,
+    "createdAt": "2026-04-19T13:06:47.623Z",
+    "finishedAt": "2026-04-19T13:06:54.524Z"
+  },
+  {
+    "id": "dc248aee-ccfd-4e9f-ac08-b99536b19221",
+    "challengerId": "362666788149788672",
+    "defenderId": "754978008410095666",
+    "status": "finished",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-19T15:58:55.617Z",
+    "finishedAt": null
+  },
+  {
+    "id": "5eb55e3d-c203-45ba-82c3-2046f3eb2441",
+    "challengerId": "362666788149788672",
+    "defenderId": "897829226915434496",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 5,
+    "createdAt": "2026-04-19T18:24:25.317Z",
+    "finishedAt": "2026-04-19T18:24:30.814Z"
+  },
+  {
+    "id": "37dbe858-e9e5-4ed9-81e5-35ac117cbf60",
+    "challengerId": "984901369867669514",
+    "defenderId": "1401125565666164888",
+    "status": "pending",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-19T19:59:44.836Z",
+    "finishedAt": null
+  },
+  {
+    "id": "30698006-ae73-4a70-a9f0-37fc965db438",
+    "challengerId": "1348272228390801441",
+    "defenderId": "1110219662509224006",
+    "status": "pending",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-20T14:47:57.072Z",
+    "finishedAt": null
+  },
+  {
+    "id": "d3239b89-3bcc-44bb-b09b-f83c47c54996",
+    "challengerId": "362666788149788672",
+    "defenderId": "1210240077033250917",
+    "status": "pending",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-20T17:03:19.668Z",
+    "finishedAt": null
+  },
+  {
+    "id": "ee676520-0050-4083-bcc2-58f12ade2d62",
+    "challengerId": "1161337097261686814",
+    "defenderId": "1274809970117971988",
+    "status": "finished",
+    "winnerId": "1161337097261686814",
+    "totalTurns": 17,
+    "createdAt": "2026-04-20T18:27:06.073Z",
+    "finishedAt": "2026-04-20T18:27:12.248Z"
+  },
+  {
+    "id": "1a4f3c37-357b-4b69-928e-23b438940a87",
+    "challengerId": "362666788149788672",
+    "defenderId": "897829226915434496",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 5,
+    "createdAt": "2026-04-20T19:08:21.662Z",
+    "finishedAt": "2026-04-20T19:08:37.048Z"
+  },
+  {
+    "id": "d75adca7-53d0-42c1-823e-86c4ab08d1fc",
+    "challengerId": "362666788149788672",
+    "defenderId": "@tun",
+    "status": "finished",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-20T19:55:07.954Z",
+    "finishedAt": null
+  },
+  {
+    "id": "b2ca158e-2cfb-4e43-802a-d995a94575c1",
+    "challengerId": "897829226915434496",
+    "defenderId": "1110219662509224006",
+    "status": "pending",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-20T19:55:12.842Z",
+    "finishedAt": null
+  },
+  {
+    "id": "1ee595c6-7a62-4737-81c6-501e4e96ed5a",
+    "challengerId": "362666788149788672",
+    "defenderId": "1110219662509224006",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 5,
+    "createdAt": "2026-04-20T19:58:40.641Z",
+    "finishedAt": "2026-04-20T19:58:57.566Z"
+  },
+  {
+    "id": "d9e7b2fb-46ee-416c-ac2e-ed854564468d",
+    "challengerId": "1043601444240105584",
+    "defenderId": "1110219662509224006",
+    "status": "pending",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-20T19:59:21.432Z",
+    "finishedAt": null
+  },
+  {
+    "id": "5e07e4a9-9a77-40ee-b817-7460db91dac8",
+    "challengerId": "1110219662509224006",
+    "defenderId": "362666788149788672",
+    "status": "finished",
+    "winnerId": "1110219662509224006",
+    "totalTurns": 1,
+    "createdAt": "2026-04-21T15:50:45.197Z",
+    "finishedAt": "2026-04-21T15:50:45.195Z"
+  },
+  {
+    "id": "fe8cefce-b5b5-488d-9c44-bbbc4ed3f302",
+    "challengerId": "362666788149788672",
+    "defenderId": "1110219662509224006",
+    "status": "finished",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-04-21T15:50:52.152Z",
+    "finishedAt": null
+  },
+  {
+    "id": "f77c8ad9-1e8b-452b-b3a6-809d9f090585",
+    "challengerId": "1110219662509224006",
+    "defenderId": "362666788149788672",
+    "status": "finished",
+    "winnerId": "1110219662509224006",
+    "totalTurns": 6,
+    "createdAt": "2026-04-21T15:52:05.245Z",
+    "finishedAt": "2026-04-21T15:52:05.244Z"
+  },
+  {
+    "id": "c9961b45-b8d1-4ba9-a412-3b51de04f7a7",
+    "challengerId": "362666788149788672",
+    "defenderId": "1224054730716614667",
+    "status": "finished",
+    "winnerId": "1224054730716614667",
+    "totalTurns": 1,
+    "createdAt": "2026-04-21T19:32:34.980Z",
+    "finishedAt": "2026-04-21T19:32:34.965Z"
+  },
+  {
+    "id": "c8ed88ee-1699-4f9c-a120-24439f4cfb12",
+    "challengerId": "362666788149788672",
+    "defenderId": "1224054730716614667",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 1,
+    "createdAt": "2026-04-21T19:33:08.707Z",
+    "finishedAt": "2026-04-21T19:33:08.692Z"
+  },
+  {
+    "id": "55920654-45dc-43ea-b8ec-ddf93f660d48",
+    "challengerId": "362666788149788672",
+    "defenderId": "1197562104446726225",
+    "status": "finished",
+    "winnerId": "1197562104446726225",
+    "totalTurns": 1,
+    "createdAt": "2026-04-21T19:34:00.000Z",
+    "finishedAt": "2026-04-21T19:33:59.999Z"
+  },
+  {
+    "id": "d13bf942-1c56-446b-a647-173319902e66",
+    "challengerId": "362666788149788672",
+    "defenderId": "1197562104446726225",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 1,
+    "createdAt": "2026-04-21T19:34:29.578Z",
+    "finishedAt": "2026-04-21T19:34:29.576Z"
+  },
+  {
+    "id": "9e053146-2062-43b2-8b5d-f91e72877d7c",
+    "challengerId": "362666788149788672",
+    "defenderId": "1197562104446726225",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 7,
+    "createdAt": "2026-04-21T19:35:21.063Z",
+    "finishedAt": "2026-04-21T19:35:21.056Z"
+  },
+  {
+    "id": "e583c328-fbef-4aa1-ad66-0592f25aea60",
+    "challengerId": "1110219662509224006",
+    "defenderId": "362666788149788672",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 6,
+    "createdAt": "2026-04-21T17:52:38.849Z",
+    "finishedAt": "2026-04-21T17:52:38.848Z"
+  },
+  {
+    "id": "23114204-94cc-4ae2-b5cb-ff1dcab1fb79",
+    "challengerId": "1110219662509224006",
+    "defenderId": "362666788149788672",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 5,
+    "createdAt": "2026-04-21T17:54:45.638Z",
+    "finishedAt": "2026-04-21T17:54:45.637Z"
+  },
+  {
+    "id": "9f9b5265-d05f-47ff-a32a-4cac71f8f944",
+    "challengerId": "1110219662509224006",
+    "defenderId": "362666788149788672",
+    "status": "finished",
+    "winnerId": "1110219662509224006",
+    "totalTurns": 6,
+    "createdAt": "2026-04-21T17:59:14.088Z",
+    "finishedAt": "2026-04-21T17:59:14.087Z"
+  },
+  {
+    "id": "d9dd34cb-c1bd-41d0-a9c2-8043145aac7d",
+    "challengerId": "1110219662509224006",
+    "defenderId": "362666788149788672",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 6,
+    "createdAt": "2026-04-21T18:05:14.849Z",
+    "finishedAt": "2026-04-21T18:05:14.848Z"
+  },
+  {
+    "id": "62ca609d-6417-474e-bd8f-4ee16bb42a8c",
+    "challengerId": "1110219662509224006",
+    "defenderId": "362666788149788672",
+    "status": "finished",
+    "winnerId": "1110219662509224006",
+    "totalTurns": 1,
+    "createdAt": "2026-04-21T18:14:03.332Z",
+    "finishedAt": "2026-04-21T18:14:03.331Z"
+  },
+  {
+    "id": "92d83be5-754f-4ddf-b8c5-b817312f9f32",
+    "challengerId": "1110219662509224006",
+    "defenderId": "362666788149788672",
+    "status": "finished",
+    "winnerId": "1110219662509224006",
+    "totalTurns": 1,
+    "createdAt": "2026-04-21T18:14:31.291Z",
+    "finishedAt": "2026-04-21T18:14:31.290Z"
+  },
+  {
+    "id": "759c64f1-3b92-449e-a4b8-163f4e248b10",
+    "challengerId": "1110219662509224006",
+    "defenderId": "362666788149788672",
+    "status": "finished",
+    "winnerId": "362666788149788672",
+    "totalTurns": 1,
+    "createdAt": "2026-04-21T18:17:54.455Z",
+    "finishedAt": "2026-04-21T18:17:54.454Z"
+  },
+  {
+    "id": "a16d23fb-9851-4495-9de5-fa1b5ab9d100",
+    "challengerId": "1110219662509224006",
+    "defenderId": "1197562104446726225",
+    "status": "finished",
+    "winnerId": "1110219662509224006",
+    "totalTurns": 1,
+    "createdAt": "2026-04-21T18:24:00.097Z",
+    "finishedAt": "2026-04-21T18:24:00.095Z"
+  },
+  {
+    "id": "8ef66e78-f3ed-4867-9bac-36fe8dd7719c",
+    "challengerId": "1110219662509224006",
+    "defenderId": "1197562104446726225",
+    "status": "finished",
+    "winnerId": "1197562104446726225",
+    "totalTurns": 1,
+    "createdAt": "2026-04-21T18:28:33.623Z",
+    "finishedAt": "2026-04-21T18:28:33.622Z"
+  },
+  {
+    "id": "b2b135f9-9b53-4ec1-8bce-e02f8808f6b4",
+    "challengerId": "1110219662509224006",
+    "defenderId": "362666788149788672",
+    "status": "finished",
+    "winnerId": "1110219662509224006",
+    "totalTurns": 5,
+    "createdAt": "2026-04-21T18:30:48.433Z",
+    "finishedAt": "2026-04-21T18:30:48.432Z"
+  },
+  {
+    "id": "f952f9ce-fd66-40a0-aafa-66fe376a109d",
+    "challengerId": "1110219662509224006",
+    "defenderId": "1401125565666164888",
+    "status": "finished",
+    "winnerId": "1110219662509224006",
+    "totalTurns": 7,
+    "createdAt": "2026-05-04T18:15:37.635Z",
+    "finishedAt": "2026-05-04T18:15:40.461Z"
+  },
+  {
+    "id": "c257a156-5bb4-425a-a968-c74491bb5843",
+    "challengerId": "1161337097261686814",
+    "defenderId": "1401125565666164888",
+    "status": "finished",
+    "winnerId": "1161337097261686814",
+    "totalTurns": 11,
+    "createdAt": "2026-05-05T17:39:42.031Z",
+    "finishedAt": "2026-05-05T17:39:47.973Z"
+  },
+  {
+    "id": "a3352a56-14c9-476c-bf92-0efd43a404d6",
+    "challengerId": "1161337097261686814",
+    "defenderId": "1274809970117971988",
+    "status": "finished",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-05-05T17:51:23.498Z",
+    "finishedAt": null
+  },
+  {
+    "id": "d6f7198f-a4e0-43cf-b52d-2cc59726535a",
+    "challengerId": "1401125565666164888",
+    "defenderId": "1274809970117971988",
+    "status": "finished",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-05-05T17:51:40.519Z",
+    "finishedAt": null
+  },
+  {
+    "id": "0db5d871-f2e2-4d5b-aa3a-a445845fb284",
+    "challengerId": "1161337097261686814",
+    "defenderId": "1401125565666164888",
+    "status": "finished",
+    "winnerId": "1161337097261686814",
+    "totalTurns": 11,
+    "createdAt": "2026-05-05T17:51:49.564Z",
+    "finishedAt": "2026-05-05T17:51:52.949Z"
+  },
+  {
+    "id": "77cacb6c-3e05-4a27-b784-cca4293d4f3c",
+    "challengerId": "1161337097261686814",
+    "defenderId": "1401125565666164888",
+    "status": "finished",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-05-05T17:55:43.696Z",
+    "finishedAt": null
+  },
+  {
+    "id": "6c7e2242-43d2-41cf-b9f2-b6f6e2596688",
+    "challengerId": "1161337097261686814",
+    "defenderId": "1401125565666164888",
+    "status": "finished",
+    "winnerId": "1161337097261686814",
+    "totalTurns": 13,
+    "createdAt": "2026-05-05T17:56:14.819Z",
+    "finishedAt": "2026-05-05T17:56:19.224Z"
+  },
+  {
+    "id": "25feb0f1-cab0-4311-9545-7416735a5b3e",
+    "challengerId": "1161337097261686814",
+    "defenderId": "1401125565666164888",
+    "status": "pending",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-05-05T17:57:48.151Z",
+    "finishedAt": null
+  },
+  {
+    "id": "9f59f2e0-97c0-4248-a15c-40a00047f77d",
+    "challengerId": "985474588689440871",
+    "defenderId": "1401125565666164888",
+    "status": "finished",
+    "winnerId": "1401125565666164888",
+    "totalTurns": 16,
+    "createdAt": "2026-05-05T17:58:26.716Z",
+    "finishedAt": "2026-05-05T17:58:32.848Z"
+  },
+  {
+    "id": "eaf8fcc1-3a6d-4b0f-aec9-169df1a4109c",
+    "challengerId": "1161337097261686814",
+    "defenderId": "1401125565666164888",
+    "status": "finished",
+    "winnerId": "1161337097261686814",
+    "totalTurns": 5,
+    "createdAt": "2026-05-05T17:58:58.506Z",
+    "finishedAt": "2026-05-05T17:59:06.046Z"
+  },
+  {
+    "id": "f64bdeff-0398-4e51-8ee9-3ee18a18f202",
+    "challengerId": "1401125565666164888",
+    "defenderId": "1161337097261686814",
+    "status": "finished",
+    "winnerId": "1401125565666164888",
+    "totalTurns": 3,
+    "createdAt": "2026-05-05T18:27:24.302Z",
+    "finishedAt": "2026-05-05T18:27:27.224Z"
+  },
+  {
+    "id": "98d18a40-9299-4ea1-9257-4b0a77fca654",
+    "challengerId": "1161337097261686814",
+    "defenderId": "1274809970117971988",
+    "status": "finished",
+    "winnerId": "1161337097261686814",
+    "totalTurns": 5,
+    "createdAt": "2026-05-05T18:28:12.743Z",
+    "finishedAt": "2026-05-05T18:28:15.431Z"
+  },
+  {
+    "id": "7a64f92e-e6a1-47bd-ab52-60ea90cbf1a8",
+    "challengerId": "1401125565666164888",
+    "defenderId": "1274809970117971988",
+    "status": "finished",
+    "winnerId": "1401125565666164888",
+    "totalTurns": 5,
+    "createdAt": "2026-05-05T18:28:23.063Z",
+    "finishedAt": "2026-05-05T18:28:27.043Z"
+  },
+  {
+    "id": "a5dfcf91-f00a-41dc-9f76-4ed4bd2e488c",
+    "challengerId": "1401125565666164888",
+    "defenderId": "1493293836645171221",
+    "status": "pending",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-05-05T18:39:28.415Z",
+    "finishedAt": null
+  },
+  {
+    "id": "b9429b73-61cc-4bbe-b865-0b4c421a852e",
+    "challengerId": "1110219662509224006",
+    "defenderId": "1493293836645171221",
+    "status": "pending",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-05-05T18:47:23.668Z",
+    "finishedAt": null
+  },
+  {
+    "id": "e2d8397f-955c-49e7-9480-b67530918069",
+    "challengerId": "1161337097261686814",
+    "defenderId": "1493293836645171221",
+    "status": "pending",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-05-05T18:47:54.184Z",
+    "finishedAt": null
+  },
+  {
+    "id": "a3fcf098-4df8-4f9a-bedc-391c90cca6d0",
+    "challengerId": "1401125565666164888",
+    "defenderId": "984901369867669514",
+    "status": "finished",
+    "winnerId": "1401125565666164888",
+    "totalTurns": 5,
+    "createdAt": "2026-05-09T12:27:44.984Z",
+    "finishedAt": "2026-05-09T12:27:51.402Z"
+  },
+  {
+    "id": "6f7e27e6-082f-4afc-afa1-c7652cb4c5af",
+    "challengerId": "362666788149788672",
+    "defenderId": "1110219662509224006",
+    "status": "finished",
+    "winnerId": null,
+    "totalTurns": null,
+    "createdAt": "2026-05-18T13:10:49.058Z",
+    "finishedAt": null
+  }
+]

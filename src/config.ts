@@ -1162,16 +1162,26 @@ export const BUFF_ITEM_MAP: Record<string, BuffItemDef> = Object.fromEntries(
 export const BUFF_DIMINISHING_RATES = [1.0, 0.6, 0.3] as const;
 
 // ── LOOTBOX TANIMLARI ────────────────────────────────────────────────────────
+//
+// İki kutu tipi:
+//   Silah Kutusu (sk / wc) — PvP buff item'ları içerir
+//   Eşya Kutusu  (ek / ec) — Hunt & Upgrade buff item'ları içerir
+//
+// Komutlar:
+//   w sk        → 1 silah kutusu aç
+//   w sk all    → tüm silah kutularını aç
+//   w ek        → 1 eşya kutusu aç
+//   w ek all    → tüm eşya kutularını aç
 
-export type LootboxTier = 'Ortak' | 'Nadir' | 'Efsane';
+export type LootboxTier = 'Silah' | 'Eşya';
 
 export interface LootboxDef {
   id:          string;
   name:        string;
   emoji:       string;
   tier:        LootboxTier;
-  /** Kaç item içerir */
-  itemCount:   [number, number];  // [min, max]
+  /** Bu kutunun içerebileceği buff kategorileri */
+  categories:  BuffItemCategory[];
   /** Ağırlıklı rarity dağılımı */
   weights:     { rarity: BuffItemRarity; weight: number }[];
   /** Pity: X kutu açmadan Rare+ gelmezse garanti */
@@ -1180,46 +1190,32 @@ export interface LootboxDef {
 
 export const LOOTBOX_DEFS: LootboxDef[] = [
   {
-    id:            'l001',
-    name:          'Ortak Kutu',
-    emoji:         '📦',
-    tier:          'Ortak',
-    itemCount:     [1, 2],
-    weights:       [
-      { rarity: 'Common',    weight: 70 },
-      { rarity: 'Rare',      weight: 25 },
-      { rarity: 'Epic',      weight: 5  },
-      { rarity: 'Legendary', weight: 0  },
-    ],
-    pityThreshold: 8,   // 8 kutu açmadan Rare+ gelmezse garanti
-  },
-  {
-    id:            'l002',
-    name:          'Nadir Kutu',
-    emoji:         '🎁',
-    tier:          'Nadir',
-    itemCount:     [2, 3],
-    weights:       [
-      { rarity: 'Common',    weight: 40 },
-      { rarity: 'Rare',      weight: 45 },
-      { rarity: 'Epic',      weight: 14 },
+    id:         'wc',
+    name:       'Silah Kutusu',
+    emoji:      '�️',
+    tier:       'Silah',
+    categories: ['pvp'],
+    weights:    [
+      { rarity: 'Common',    weight: 60 },
+      { rarity: 'Rare',      weight: 30 },
+      { rarity: 'Epic',      weight: 9  },
       { rarity: 'Legendary', weight: 1  },
     ],
-    pityThreshold: 5,   // 5 kutu açmadan Epic+ gelmezse garanti
+    pityThreshold: 6,   // 6 kutu açmadan Rare+ gelmezse garanti
   },
   {
-    id:            'l003',
-    name:          'Efsane Kutu',
-    emoji:         '💎',
-    tier:          'Efsane',
-    itemCount:     [2, 3],
-    weights:       [
-      { rarity: 'Common',    weight: 20 },
-      { rarity: 'Rare',      weight: 45 },
-      { rarity: 'Epic',      weight: 30 },
-      { rarity: 'Legendary', weight: 5  },
+    id:         'ec',
+    name:       'Eşya Kutusu',
+    emoji:      '�',
+    tier:       'Eşya',
+    categories: ['hunt', 'upgrade'],
+    weights:    [
+      { rarity: 'Common',    weight: 65 },
+      { rarity: 'Rare',      weight: 28 },
+      { rarity: 'Epic',      weight: 6  },
+      { rarity: 'Legendary', weight: 1  },
     ],
-    pityThreshold: 3,   // 3 kutu açmadan Epic+ gelmezse garanti
+    pityThreshold: 8,   // 8 kutu açmadan Rare+ gelmezse garanti
   },
 ];
 
@@ -1231,9 +1227,8 @@ export const LOOTBOX_DEF_MAP: Record<string, LootboxDef> = Object.fromEntries(
 // ── LOOTBOX DROP ŞANSLARI ────────────────────────────────────────────────────
 // Hunt'tan düşen lootbox şansları (her başarılı av rolünde)
 export const LOOTBOX_HUNT_DROP_CHANCE: Record<LootboxTier, number> = {
-  Ortak:   4,    // %4 — her avda küçük şans
-  Nadir:   0.8,  // %0.8 — nadir
-  Efsane:  0.1,  // %0.1 — çok nadir
+  Silah:  2,    // %2 — PvP odaklı, avdan daha az düşer
+  Eşya:   5,    // %5 — Hunt odaklı, avdan daha sık düşer
 };
 
 // Kritik avda çarpan
@@ -1241,16 +1236,14 @@ export const LOOTBOX_CRIT_MULT = 2.0;
 
 // PvP kazanmada lootbox şansı
 export const LOOTBOX_PVP_WIN_CHANCE: Record<LootboxTier, number> = {
-  Ortak:   8,    // %8
-  Nadir:   2,    // %2
-  Efsane:  0.3,  // %0.3
+  Silah:  10,   // %10 — PvP'den silah kutusu daha sık düşer
+  Eşya:   4,    // %4
 };
 
 // Encounter kazanmada (tame başarısı) lootbox şansı
 export const LOOTBOX_ENCOUNTER_WIN_CHANCE: Record<LootboxTier, number> = {
-  Ortak:   15,   // %15 — encounter daha ödüllendirici
-  Nadir:   4,    // %4
-  Efsane:  0.5,  // %0.5
+  Silah:  5,    // %5
+  Eşya:   12,   // %12 — encounter eşya odaklı
 };
 
 // ── PVP BUFF CAP'LERİ ────────────────────────────────────────────────────────

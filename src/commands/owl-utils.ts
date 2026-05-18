@@ -19,7 +19,8 @@ export const TEXT_SUBCOMMANDS = [
   'upgrade', 'up', 'vs', 'sell', 'zoo', 'prefix', 'cash',
   'tame', 'owls', 'ver', 'give', 'duel',
   'cf', 'slot', 'bj',
-  'aç', 'ac', 'buff', 'buffs', 'b', 'bs', 'gem', 'gems',
+  'aç', 'ac', 'sk', 'ek', 'wc', 'ec',
+  'buff', 'buffs', 'b', 'bs', 'gem', 'gems',
   'craft', 'dismantle', 'market', 'prestige', 'quests',
   // kısaltmalar
   'h', 's', 'sm', 'z', 'd', 'c', 't', 'g',
@@ -40,6 +41,8 @@ export const ALIASES: Record<string, string> = {
   g:    'ver',
   give: 'ver',
   ac:   'aç',
+  wc:   'sk',   // weapon crate → sk
+  ec:   'ek',   // equipment crate → ek
   b:    'buff',
   bs:   'buffs',
   gem:  'buff',

@@ -61,7 +61,7 @@ describe('bar function property tests', () => {
         fc.integer({ min: 0 }),
         fc.integer({ min: 1 }),
         fc.integer({ min: 1, max: 20 }),
-        (current, max, length) => {
+        (current: number, max: number, length: number) => {
           const result = hpBar(current, max, length);
           const filled = (result.match(/█/g) ?? []).length;
           const expected = Math.round(Math.min(Math.max(current / max, 0), 1) * length);
@@ -83,7 +83,7 @@ describe('bar function property tests', () => {
       fc.property(
         fc.integer({ min: 1 }),
         fc.integer({ min: 1 }),
-        (extra, max) => {
+        (extra: number, max: number) => {
           const current = max + extra;
           const result = hpBar(current, max);
           return !result.includes('░');
@@ -96,7 +96,7 @@ describe('bar function property tests', () => {
     fc.assert(
       fc.property(
         fc.integer({ min: 0 }),
-        (current) => {
+        (current: number) => {
           const result = hpBar(current, 0);
           return !result.includes('█');
         }
@@ -109,7 +109,7 @@ describe('bar function property tests', () => {
       fc.property(
         fc.integer({ min: 1 }),
         fc.integer({ min: 1 }),
-        (extra, max) => {
+        (extra: number, max: number) => {
           const current = max + extra;
           const result = chargeBar(current, max);
           return !result.includes('▱');
@@ -122,7 +122,7 @@ describe('bar function property tests', () => {
     fc.assert(
       fc.property(
         fc.integer({ min: 0 }),
-        (current) => {
+        (current: number) => {
           const result = chargeBar(current, 0);
           return !result.includes('▰');
         }
@@ -135,7 +135,7 @@ describe('bar function property tests', () => {
       fc.property(
         fc.integer({ min: 1 }),
         fc.integer({ min: 1 }),
-        (extra, total) => {
+        (extra: number, total: number) => {
           const used = total + extra;
           const result = slotBar(used, total);
           // slotBar output: `████████` used/total — check bar portion inside backticks
@@ -151,7 +151,7 @@ describe('bar function property tests', () => {
     fc.assert(
       fc.property(
         fc.integer({ min: 0 }),
-        (used) => {
+        (used: number) => {
           const result = slotBar(used, 0);
           // slotBar output: `░░░░░░░░░░` used/0 — check bar portion inside backticks
           const barMatch = result.match(/`([^`]+)`/);
@@ -175,7 +175,7 @@ describe('bar function property tests', () => {
       fc.property(
         fc.integer({ min: 1, max: 1000 }),
         fc.integer({ min: 1, max: 1000 }),
-        (hp, hpMax) => {
+        (hp: number, hpMax: number) => {
           const ratio = hp / hpMax;
           const result = hpBarColored(hp, hpMax);
           if (ratio > 0.5) return result.includes('🟩');
@@ -196,10 +196,10 @@ describe('bar function property tests', () => {
   it('Property 5: hpBar always returns a string of exactly 10 characters', () => {
     fc.assert(
       fc.property(
-        fc.integer({ min: 1, max: 1000 }).chain((target) =>
+        fc.integer({ min: 1, max: 1000 }).chain((target: number) =>
           fc.tuple(fc.constant(target), fc.integer({ min: 0, max: target - 1 }))
         ),
-        ([target, current]) => {
+        ([target, current]: [number, number]) => {
           const result = hpBar(current, target, 10);
           return [...result].length === 10;
         }
@@ -217,10 +217,10 @@ describe('bar function property tests', () => {
   it('Property 6: hpBar filled segment count equals Math.round((current/target)*10)', () => {
     fc.assert(
       fc.property(
-        fc.integer({ min: 1, max: 1000 }).chain((target) =>
+        fc.integer({ min: 1, max: 1000 }).chain((target: number) =>
           fc.tuple(fc.constant(target), fc.integer({ min: 0, max: target }))
         ),
-        ([target, current]) => {
+        ([target, current]: [number, number]) => {
           const result = hpBar(current, target, 10);
           const filled = (result.match(/█/g) ?? []).length;
           const expected = Math.round((current / target) * 10);
@@ -240,10 +240,10 @@ describe('bar function property tests', () => {
   it('Property 7: hpBar output consists only of █ and ░ characters', () => {
     fc.assert(
       fc.property(
-        fc.integer({ min: 1, max: 1000 }).chain((target) =>
+        fc.integer({ min: 1, max: 1000 }).chain((target: number) =>
           fc.tuple(fc.constant(target), fc.integer({ min: 0, max: target }))
         ),
-        ([target, current]) => {
+        ([target, current]: [number, number]) => {
           const result = hpBar(current, target, 10);
           return /^[█░]+$/.test(result);
         }
@@ -266,7 +266,7 @@ describe('bar function property tests', () => {
     fc.assert(
       fc.property(
         fc.integer({ min: 0, max: 200 }),
-        (n) => {
+        (n: number) => {
           const result = toSuperscript(n);
 
           // n > 99 → must return '⁹⁹'

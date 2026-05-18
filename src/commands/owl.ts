@@ -28,7 +28,7 @@ import { runStats, runStatsMessage } from './owl-stats';
 import { runUpgrade, runUpgradeMessage } from './owl-upgrade';
 import { runTame, runTameMessage } from './owl-tame';
 import { runTransfer, runTransferMessage } from './owl-transfer';
-import { runSellMessage, runZooMessage, runCashMessage, runPrefixMessage, runPrefix, runAcMessage, runBuffMessage, runBuffsMessage } from './owl-misc';
+import { runSellMessage, runZooMessage, runCashMessage, runPrefixMessage, runPrefix, runAcMessage, runSkMessage, runEkMessage, runBuffMessage, runBuffsMessage } from './owl-misc';
 import { runCraftMessage, runDismantleMessage, runCraftSlash, runDismantleSlash } from './owl-crafting';
 import { runMarketMessage, runMarketSlash } from './owl-market';
 import { runPrestigeMessage, runPrestigeSlash } from './owl-prestige';
@@ -198,6 +198,8 @@ export async function handleOwlTextCommand(
     case 'slot':      await runPvpSlot(message, args, ctx);                 break;
     case 'bj':        await runPvpBlackjack(message, args, ctx);            break;
     case 'aç':        await runAcMessage(message, args, ctx, helpPrefix);    break;
+    case 'sk':        await runSkMessage(message, args, ctx, helpPrefix);    break;
+    case 'ek':        await runEkMessage(message, args, ctx, helpPrefix);    break;
     case 'buff':      await runBuffMessage(message, args, ctx, helpPrefix);   break;
     case 'buffs':     await runBuffsMessage(message, args, helpPrefix);        break;
     case 'craft':     await runCraftMessage(message, args, ctx, helpPrefix);   break;

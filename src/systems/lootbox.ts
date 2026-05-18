@@ -1,20 +1,19 @@
 // ============================================================
 // lootbox.ts — Lootbox Sistemi
 //
-// Sorumluluklar:
-//   1. Lootbox açma (weighted RNG + pity sistemi)
-//   2. Lootbox envanterini yönetmek
-//   3. Drop sonuçlarını buff item envanterine eklemek
+// İki kutu tipi:
+//   Silah Kutusu (wc) — PvP buff item'ları
+//   Eşya Kutusu  (ec) — Hunt & Upgrade buff item'ları
+//
+// Komutlar:
+//   w sk        → 1 silah kutusu aç
+//   w sk all    → tüm silah kutularını aç
+//   w ek        → 1 eşya kutusu aç
+//   w ek all    → tüm eşya kutularını aç
 //
 // Pity Sistemi:
-//   Her lootbox tipi için ayrı pity sayacı tutulur.
+//   Her kutu tipi için ayrı pity sayacı (Redis).
 //   X kutu açmadan Rare+ gelmezse bir sonraki açılışta garanti.
-//   Pity sayacı Redis'te tutulur (hafif, geçici veri).
-//
-// Lootbox Kaynakları (drop sistemi drops.ts'de):
-//   - Hunt: her başarılı av rolünde küçük şans
-//   - PvP kazanma: orta şans
-//   - Encounter tame başarısı: yüksek şans
 // ============================================================
 
 import type { PrismaClient } from '@prisma/client';
@@ -42,12 +41,19 @@ function rollRarity(weights: LootboxDef['weights']): BuffItemRarity {
   return weights[weights.length - 1]!.rarity;
 }
 
-/** Belirli rarity'deki buff item'larından rastgele seç */
-function pickBuffItem(rarity: BuffItemRarity): (typeof BUFF_ITEMS)[number] | null {
-  const pool = BUFF_ITEMS.filter((b) => b.rarity === rarity);
+/** Belirli rarity + kategori havuzundan rastgele item seç */
+function pickBuffItem(
+  rarity: BuffItemRarity,
+  categories: string[],
+): (typeof BUFF_ITEMS)[number] | null {
+  const pool = BUFF_ITEMS.filter(
+    (b) => b.rarity === rarity && categories.includes(b.category),
+  );
   if (pool.length === 0) {
-    // Fallback: bir üst rarity'e in
-    const fallback = BUFF_ITEMS.filter((b) => b.rarity === 'Common');
+    // Fallback: aynı kategoride Common'a in
+    const fallback = BUFF_ITEMS.filter(
+      (b) => b.rarity === 'Common' && categories.includes(b.category),
+    );
     return fallback[Math.floor(Math.random() * fallback.length)] ?? null;
   }
   return pool[Math.floor(Math.random() * pool.length)] ?? null;
@@ -58,34 +64,26 @@ function pityKey(playerId: string, lootboxId: string): string {
   return `pity:${playerId}:${lootboxId}`;
 }
 
-/** Pity sayacını oku */
 async function getPityCount(redis: Redis, playerId: string, lootboxId: string): Promise<number> {
   const val = await redis.get(pityKey(playerId, lootboxId));
   return val ? parseInt(val, 10) : 0;
 }
 
-/** Pity sayacını artır */
 async function incrementPity(redis: Redis, playerId: string, lootboxId: string): Promise<void> {
   const key = pityKey(playerId, lootboxId);
   await redis.incr(key);
-  // 30 gün TTL — aktif olmayan oyuncuların pity'si sıfırlanır
   await redis.expire(key, 30 * 24 * 60 * 60);
 }
 
-/** Pity sayacını sıfırla */
 async function resetPity(redis: Redis, playerId: string, lootboxId: string): Promise<void> {
   await redis.del(pityKey(playerId, lootboxId));
 }
 
-// ── LOOTBOX AÇMA ─────────────────────────────────────────────────────────────
+// ── TEK KUTU AÇMA ─────────────────────────────────────────────────────────────
 
 /**
- * Oyuncunun envanterindeki bir lootbox'ı açar.
- *
- * Pity sistemi:
- *   - Ortak Kutu: 8 açılışta Rare+ gelmezse garanti
- *   - Nadir Kutu: 5 açılışta Epic+ gelmezse garanti
- *   - Efsane Kutu: 3 açılışta Epic+ gelmezse garanti
+ * Oyuncunun envanterindeki bir kutuyu açar.
+ * `lootboxId`: 'wc' (silah) veya 'ec' (eşya)
  */
 export async function openLootbox(
   prisma: PrismaClient,
@@ -95,7 +93,7 @@ export async function openLootbox(
 ): Promise<LootboxOpenResult> {
   return withLock(playerId, 'lootbox', async () => {
     const def = LOOTBOX_DEF_MAP[lootboxId];
-    if (!def) throw new Error(`Bilinmeyen lootbox: ${lootboxId}`);
+    if (!def) throw new Error(`Bilinmeyen kutu: ${lootboxId}`);
 
     // Envanterde var mı?
     const inv = await prisma.inventoryItem.findUnique({
@@ -106,39 +104,28 @@ export async function openLootbox(
     }
 
     // Pity kontrolü
-    const pityCount = await getPityCount(redis, playerId, lootboxId);
+    const pityCount    = await getPityCount(redis, playerId, lootboxId);
     const pityTriggered = pityCount >= def.pityThreshold;
 
-    // Kaç item çıkacak?
-    const [minItems, maxItems] = def.itemCount;
-    const itemCount = minItems + Math.floor(Math.random() * (maxItems - minItems + 1));
+    // Rarity seç
+    let rarity: BuffItemRarity;
+    if (pityTriggered) {
+      const pityWeights = def.weights.filter((w) => {
+        const order: BuffItemRarity[] = ['Common', 'Rare', 'Epic', 'Legendary'];
+        return order.indexOf(w.rarity) >= order.indexOf('Rare') && w.weight > 0;
+      });
+      rarity = pityWeights.length > 0 ? rollRarity(pityWeights) : 'Rare';
+    } else {
+      rarity = rollRarity(def.weights);
+    }
 
+    const gotRarePlus = rarity === 'Rare' || rarity === 'Epic' || rarity === 'Legendary';
+
+    // Item seç (kutunun kategorisine göre)
+    const item = pickBuffItem(rarity, def.categories);
     const droppedItems: LootboxOpenResult['items'] = [];
-    let gotRarePlus = false;
 
-    for (let i = 0; i < itemCount; i++) {
-      let rarity: BuffItemRarity;
-
-      // İlk item için pity kontrolü
-      if (i === 0 && pityTriggered) {
-        // Pity tetiklendi — minimum Rare garantisi
-        const pityWeights = def.weights.filter((w) => {
-          const rarityOrder: BuffItemRarity[] = ['Common', 'Rare', 'Epic', 'Legendary'];
-          const minIdx = rarityOrder.indexOf('Rare');
-          return rarityOrder.indexOf(w.rarity) >= minIdx && w.weight > 0;
-        });
-        rarity = pityWeights.length > 0 ? rollRarity(pityWeights) : 'Rare';
-        gotRarePlus = true;
-      } else {
-        rarity = rollRarity(def.weights);
-        if (rarity === 'Rare' || rarity === 'Epic' || rarity === 'Legendary') {
-          gotRarePlus = true;
-        }
-      }
-
-      const item = pickBuffItem(rarity);
-      if (!item) continue;
-
+    if (item) {
       droppedItems.push({
         buffItemId: item.id,
         buffName:   `${item.emoji} ${item.name}`,
@@ -147,9 +134,8 @@ export async function openLootbox(
       });
     }
 
-    // DB işlemleri: lootbox tüket + buff item'larını envantere ekle
+    // DB: kutuyu tüket + item'ı envantere ekle
     await prisma.$transaction(async (tx) => {
-      // Lootbox'ı tüket
       if (inv.quantity === 1) {
         await tx.inventoryItem.delete({
           where: { ownerId_itemName: { ownerId: playerId, itemName: def.name } },
@@ -161,11 +147,9 @@ export async function openLootbox(
         });
       }
 
-      // Buff item'larını envantere ekle
       for (const dropped of droppedItems) {
         const buffDef = BUFF_ITEMS.find((b) => b.id === dropped.buffItemId);
         if (!buffDef) continue;
-
         await tx.inventoryItem.upsert({
           where: { ownerId_itemName: { ownerId: playerId, itemName: buffDef.name } },
           create: {
@@ -180,7 +164,7 @@ export async function openLootbox(
       }
     });
 
-    // Pity sayacını güncelle
+    // Pity güncelle
     if (gotRarePlus || pityTriggered) {
       await resetPity(redis, playerId, lootboxId);
     } else {
@@ -188,7 +172,7 @@ export async function openLootbox(
     }
 
     return {
-      lootboxId:     def.id,
+      lootboxId,
       lootboxName:   `${def.emoji} ${def.name}`,
       items:         droppedItems,
       pityTriggered,
@@ -196,9 +180,46 @@ export async function openLootbox(
   });
 }
 
+// ── TOPLU KUTU AÇMA ───────────────────────────────────────────────────────────
+
+export interface BulkOpenResult {
+  opened:  number;
+  results: LootboxOpenResult[];
+}
+
 /**
- * Oyuncunun lootbox envanterini döndürür.
+ * Oyuncunun envanterindeki tüm belirli kutuları açar.
+ * Her açılış ayrı pity sayacı günceller.
  */
+export async function openAllLootboxes(
+  prisma: PrismaClient,
+  redis: Redis,
+  playerId: string,
+  lootboxId: string,
+): Promise<BulkOpenResult> {
+  const def = LOOTBOX_DEF_MAP[lootboxId];
+  if (!def) throw new Error(`Bilinmeyen kutu: ${lootboxId}`);
+
+  const inv = await prisma.inventoryItem.findUnique({
+    where: { ownerId_itemName: { ownerId: playerId, itemName: def.name } },
+  });
+  if (!inv || inv.quantity < 1) {
+    throw new Error(`Envanterinde **${def.emoji} ${def.name}** yok.`);
+  }
+
+  const count = inv.quantity;
+  const results: LootboxOpenResult[] = [];
+
+  for (let i = 0; i < count; i++) {
+    const result = await openLootbox(prisma, redis, playerId, lootboxId);
+    results.push(result);
+  }
+
+  return { opened: count, results };
+}
+
+// ── ENVANTER SORGULAMA ────────────────────────────────────────────────────────
+
 export async function listLootboxInventory(
   prisma: PrismaClient,
   playerId: string,
@@ -217,9 +238,6 @@ export async function listLootboxInventory(
     .filter((x): x is NonNullable<typeof x> => x !== null);
 }
 
-/**
- * Oyuncunun pity sayaçlarını döndürür (UI için).
- */
 export async function getPityCounts(
   redis: Redis,
   playerId: string,

@@ -1,0 +1,46 @@
+[
+  {
+    "id": "e9009af2-d505-4c31-a45e-0519c3fcd840",
+    "playerId": "1110219662509224006",
+    "type": "market",
+    "target": 2,
+    "current": 0,
+    "rewardCoins": 400,
+    "rewardXp": 150,
+    "isClaimed": false,
+    "resetAt": "2026-05-18T21:00:00.000Z"
+  },
+  {
+    "id": "b59fe20a-1b20-4170-9692-b544d0759b99",
+    "playerId": "1110219662509224006",
+    "type": "hunt",
+    "target": 10,
+    "current": 22,
+    "rewardCoins": 500,
+    "rewardXp": 200,
+    "isClaimed": true,
+    "resetAt": "2026-05-18T21:00:00.000Z"
+  },
+  {
+    "id": "b9e9900c-7e84-405c-98c1-bbd83571bed8",
+    "playerId": "1110219662509224006",
+    "type": "tame",
+    "target": 1,
+    "current": 0,
+    "rewardCoins": 1200,
+    "rewardXp": 500,
+    "isClaimed": false,
+    "resetAt": "2026-05-18T21:00:00.000Z"
+  },
+  {
+    "id": "1ecfaa74-b08d-4e3a-a384-fcdab2acfbde",
+    "playerId": "1110219662509224006",
+    "type": "craft",
+    "target": 3,
+    "current": 0,
+    "rewardCoins": 800,
+    "rewardXp": 300,
+    "isClaimed": false,
+    "resetAt": "2026-05-18T21:00:00.000Z"
+  }
+]

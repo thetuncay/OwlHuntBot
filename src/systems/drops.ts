@@ -1,18 +1,16 @@
 // ============================================================
 // drops.ts — Lootbox Drop Sistemi
 //
-// Sorumluluklar:
-//   1. Hunt sonrası lootbox drop şansını hesaplamak
-//   2. PvP kazanma sonrası lootbox drop şansını hesaplamak
-//   3. Encounter tame başarısı sonrası lootbox drop şansını hesaplamak
-//   4. Lootbox'ı oyuncunun envanterine eklemek
+// İki kutu tipi:
+//   Silah Kutusu (wc) — PvP'den daha sık düşer
+//   Eşya Kutusu  (ec) — Hunt/Encounter'dan daha sık düşer
 //
-// Tasarım:
-//   - Drop şansları config.ts'de tanımlı (LOOTBOX_*_CHANCE)
-//   - Kritik avda drop şansı 2x
-//   - Soft cap: oyuncu seviyesi yükseldikçe drop şansı hafifçe azalır
-//     (güçlü oyuncular item spam yapamaz)
-//   - Günlük soft cap: 24 saatte max 5 lootbox drop (anti-farm)
+// Drop kaynakları:
+//   Hunt    → Eşya Kutusu ağırlıklı
+//   PvP     → Silah Kutusu ağırlıklı
+//   Encounter → Eşya Kutusu ağırlıklı
+//
+// Günlük soft cap: 24 saatte max 5 lootbox drop (anti-farm)
 // ============================================================
 
 import type { PrismaClient } from '@prisma/client';
@@ -32,25 +30,13 @@ import type { CachedPlayerData } from '../utils/player-cache';
 
 // ── SABİTLER ─────────────────────────────────────────────────────────────────
 
-/** Günlük maksimum lootbox drop sayısı (anti-farm) */
 const DAILY_DROP_CAP = 5;
-
-/** Seviye soft cap başlangıcı — bu seviyeden sonra drop şansı azalır */
 const LEVEL_SOFTCAP_START = 20;
-
-/** Her seviye için drop şansı azalma oranı (0.01 = %1 azalır) */
-const LEVEL_SOFTCAP_RATE = 0.01;
-
-/** Maksimum drop şansı azalması (0.30 = max %30 azalır) */
-const LEVEL_SOFTCAP_MAX = 0.30;
+const LEVEL_SOFTCAP_RATE  = 0.01;
+const LEVEL_SOFTCAP_MAX   = 0.30;
 
 // ── YARDIMCI FONKSİYONLAR ────────────────────────────────────────────────────
 
-/**
- * Seviyeye göre drop şansı çarpanı.
- * Lv.20'den sonra her seviye için %1 azalır, max %30.
- * Yeni oyuncular daha fazla lootbox görür, veteran oyuncular daha az.
- */
 function levelDropMult(level: number): number {
   if (level <= LEVEL_SOFTCAP_START) return 1.0;
   const reduction = Math.min(
@@ -60,32 +46,23 @@ function levelDropMult(level: number): number {
   return 1.0 - reduction;
 }
 
-/**
- * Oyuncunun bugün kaç lootbox drop aldığını kontrol eder ve artırır.
- * Günlük sayaç Player_Cache üzerinden okunur (DB round-trip yok).
- * Drop gerçekleşirse DB_Queue'ya fire-and-forget yazma yapılır.
- * Döner: true = drop verildi, false = günlük cap doldu
- */
 async function tryClaimDailyDrop(
   prisma: PrismaClient,
   redis: Redis,
   playerId: string,
   cachedPlayer: CachedPlayerData,
 ): Promise<boolean> {
-  const today = new Date();
+  const today    = new Date();
   const todayStr = today.toDateString();
 
-  // Cache'den oku — DB round-trip yok
-  const lastDateStr = cachedPlayer.lastLootboxDropDate;
-  const isNewDay = !lastDateStr || new Date(lastDateStr).toDateString() !== todayStr;
+  const lastDateStr  = cachedPlayer.lastLootboxDropDate;
+  const isNewDay     = !lastDateStr || new Date(lastDateStr).toDateString() !== todayStr;
   const currentCount = isNewDay ? 0 : (cachedPlayer.dailyLootboxDrops ?? 0);
 
-  // Senkron cap kontrolü — DB yok
   if (currentCount >= DAILY_DROP_CAP) return false;
 
-  // Drop gerçekleşti: DB_Queue'ya fire-and-forget yaz
   enqueueDbWrite({
-    type: 'updatePlayer',
+    type:     'updatePlayer',
     playerId,
     data: {
       dailyLootboxDrops:   isNewDay ? 1 : currentCount + 1,
@@ -96,25 +73,18 @@ async function tryClaimDailyDrop(
   return true;
 }
 
-/**
- * PvP ve Encounter gibi cache verisi olmayan akışlar için DB tabanlı cap kontrolü.
- * Döner: true = drop verildi, false = günlük cap doldu
- */
 async function tryClaimDailyDropFromDb(prisma: PrismaClient, playerId: string): Promise<boolean> {
-  const today = new Date();
+  const today    = new Date();
   const todayStr = today.toDateString();
 
   const player = await prisma.player.findUnique({
-    where: { id: playerId },
-    select: {
-      dailyLootboxDrops:   true,
-      lastLootboxDropDate: true,
-    },
+    where:  { id: playerId },
+    select: { dailyLootboxDrops: true, lastLootboxDropDate: true },
   });
   if (!player) return false;
 
-  const lastDate = player.lastLootboxDropDate;
-  const isNewDay = !lastDate || lastDate.toDateString() !== todayStr;
+  const lastDate     = player.lastLootboxDropDate;
+  const isNewDay     = !lastDate || lastDate.toDateString() !== todayStr;
   const currentCount = isNewDay ? 0 : (player.dailyLootboxDrops ?? 0);
 
   if (currentCount >= DAILY_DROP_CAP) return false;
@@ -130,9 +100,6 @@ async function tryClaimDailyDropFromDb(prisma: PrismaClient, playerId: string): 
   return true;
 }
 
-/**
- * Lootbox'ı oyuncunun envanterine ekler.
- */
 async function addLootboxToInventory(
   prisma: PrismaClient,
   playerId: string,
@@ -142,12 +109,12 @@ async function addLootboxToInventory(
   if (!def) return;
 
   await prisma.inventoryItem.upsert({
-    where: { ownerId_itemName: { ownerId: playerId, itemName: def.name } },
+    where:  { ownerId_itemName: { ownerId: playerId, itemName: def.name } },
     create: {
       ownerId:  playerId,
       itemName: def.name,
       itemType: 'Kutu',
-      rarity:   def.tier === 'Efsane' ? 'Legendary' : def.tier === 'Nadir' ? 'Rare' : 'Common',
+      rarity:   'Common',
       quantity: 1,
     },
     update: { quantity: { increment: 1 } },
@@ -157,14 +124,8 @@ async function addLootboxToInventory(
 // ── HUNT DROP ────────────────────────────────────────────────────────────────
 
 /**
- * Başarılı bir av rolünde lootbox düşüp düşmeyeceğini hesaplar.
- * Kritik avda şans 2x.
- *
- * @param redis Redis bağlantısı (tryClaimDailyDrop için)
- * @param cachedPlayer Oyuncunun cache verisi (günlük drop sayacı için)
- * @param isCritical Kritik av mı?
- * @param playerLevel Oyuncu seviyesi (soft cap için)
- * @returns Düşen lootbox listesi (genellikle 0 veya 1 item)
+ * Başarılı av rolünde kutu düşüp düşmeyeceğini hesaplar.
+ * Eşya Kutusu ağırlıklı, Silah Kutusu daha nadir.
  */
 export async function rollHuntLootboxDrop(
   prisma: PrismaClient,
@@ -174,36 +135,37 @@ export async function rollHuntLootboxDrop(
   isCritical: boolean,
   cachedPlayer: CachedPlayerData,
 ): Promise<LootboxDrop[]> {
-  const mult = levelDropMult(playerLevel) * (isCritical ? LOOTBOX_CRIT_MULT : 1.0);
+  const mult  = levelDropMult(playerLevel) * (isCritical ? LOOTBOX_CRIT_MULT : 1.0);
   const drops: LootboxDrop[] = [];
 
-  const tierOrder: LootboxTier[] = ['Efsane', 'Nadir', 'Ortak'];
+  // Hunt'ta önce Eşya Kutusu, sonra Silah Kutusu kontrol edilir
+  const tierOrder: LootboxTier[] = ['Eşya', 'Silah'];
+
   for (const tier of tierOrder) {
-    const baseChance = LOOTBOX_HUNT_DROP_CHANCE[tier];
+    const baseChance  = LOOTBOX_HUNT_DROP_CHANCE[tier];
     const finalChance = baseChance * mult;
+
     if (Math.random() * 100 < finalChance) {
       const def = LOOTBOX_DEFS.find((l) => l.tier === tier);
       if (!def) continue;
 
-      // Cache tabanlı günlük drop kontrolü — DB round-trip yok
       const claimed = await tryClaimDailyDrop(prisma, redis, playerId, cachedPlayer);
       if (!claimed) break;
 
-      // Envanter yazma kritik yol dışı — DB_Queue'ya taşındı
       const lootboxDef = LOOTBOX_DEF_MAP[def.id];
       if (lootboxDef) {
         enqueueDbWriteBulk([{
-          type: 'upsertInventory',
+          type:     'upsertInventory',
           playerId,
           itemName: lootboxDef.name,
           itemType: 'Kutu',
-          rarity: lootboxDef.tier === 'Efsane' ? 'Legendary' : lootboxDef.tier === 'Nadir' ? 'Rare' : 'Common',
+          rarity:   'Common',
           quantity: 1,
         }]);
       }
 
       drops.push({ lootboxId: def.id, lootboxName: def.name, emoji: def.emoji });
-      break;
+      break; // Bir hunt'ta en fazla 1 kutu
     }
   }
 
@@ -213,7 +175,8 @@ export async function rollHuntLootboxDrop(
 // ── PVP DROP ─────────────────────────────────────────────────────────────────
 
 /**
- * PvP kazanma sonrası lootbox düşüp düşmeyeceğini hesaplar.
+ * PvP kazanma sonrası kutu düşüp düşmeyeceğini hesaplar.
+ * Silah Kutusu ağırlıklı.
  */
 export async function rollPvpLootboxDrop(
   prisma: PrismaClient,
@@ -221,11 +184,14 @@ export async function rollPvpLootboxDrop(
   playerLevel: number,
 ): Promise<LootboxDrop | null> {
   const mult = levelDropMult(playerLevel);
-  const tierOrder: LootboxTier[] = ['Efsane', 'Nadir', 'Ortak'];
+
+  // PvP'de önce Silah Kutusu, sonra Eşya Kutusu
+  const tierOrder: LootboxTier[] = ['Silah', 'Eşya'];
 
   for (const tier of tierOrder) {
-    const baseChance = LOOTBOX_PVP_WIN_CHANCE[tier];
+    const baseChance  = LOOTBOX_PVP_WIN_CHANCE[tier];
     const finalChance = baseChance * mult;
+
     if (Math.random() * 100 < finalChance) {
       const def = LOOTBOX_DEFS.find((l) => l.tier === tier);
       if (!def) continue;
@@ -244,8 +210,8 @@ export async function rollPvpLootboxDrop(
 // ── ENCOUNTER DROP ───────────────────────────────────────────────────────────
 
 /**
- * Encounter tame başarısı sonrası lootbox düşüp düşmeyeceğini hesaplar.
- * Encounter en yüksek drop şansına sahip kaynak.
+ * Encounter tame başarısı sonrası kutu düşüp düşmeyeceğini hesaplar.
+ * Eşya Kutusu ağırlıklı.
  */
 export async function rollEncounterLootboxDrop(
   prisma: PrismaClient,
@@ -253,11 +219,14 @@ export async function rollEncounterLootboxDrop(
   playerLevel: number,
 ): Promise<LootboxDrop | null> {
   const mult = levelDropMult(playerLevel);
-  const tierOrder: LootboxTier[] = ['Efsane', 'Nadir', 'Ortak'];
+
+  // Encounter'da önce Eşya Kutusu, sonra Silah Kutusu
+  const tierOrder: LootboxTier[] = ['Eşya', 'Silah'];
 
   for (const tier of tierOrder) {
-    const baseChance = LOOTBOX_ENCOUNTER_WIN_CHANCE[tier];
+    const baseChance  = LOOTBOX_ENCOUNTER_WIN_CHANCE[tier];
     const finalChance = baseChance * mult;
+
     if (Math.random() * 100 < finalChance) {
       const def = LOOTBOX_DEFS.find((l) => l.tier === tier);
       if (!def) continue;

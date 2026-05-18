@@ -1,0 +1,2754 @@
+[
+  {
+    "id": "76b0ee72-9a10-48d6-829a-947b080ad81a",
+    "ownerId": "1110219662509224006",
+    "itemName": "Kemik Tozu",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 786
+  },
+  {
+    "id": "db31ab7c-fe34-4a51-9af1-e1d113c2f0f2",
+    "ownerId": "362666788149788672",
+    "itemName": "Kemik Tozu",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 713
+  },
+  {
+    "id": "08ecb3bd-0eba-4d0f-abc1-27b156b2410c",
+    "ownerId": "362666788149788672",
+    "itemName": "Sessizlik Teli",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 102
+  },
+  {
+    "id": "94cf26b0-3bd5-4a43-b4bf-29d611d614d0",
+    "ownerId": "1110219662509224006",
+    "itemName": "Sessizlik Teli",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 108
+  },
+  {
+    "id": "22f1deb5-9502-455f-b272-f0282f34ec20",
+    "ownerId": "1110219662509224006",
+    "itemName": "Kırık Av Zinciri",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 150
+  },
+  {
+    "id": "540c7b7b-42fe-4fc8-9b2b-a6fe907dbedc",
+    "ownerId": "1110219662509224006",
+    "itemName": "Parlak Tüy",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 414
+  },
+  {
+    "id": "5a3dfc75-33ea-4112-b67d-3ce2fc9e474f",
+    "ownerId": "1110219662509224006",
+    "itemName": "Av Gözü Kristali",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 29
+  },
+  {
+    "id": "4b509b42-d070-47c5-8b5f-f4022cdb3db1",
+    "ownerId": "763430490354221086",
+    "itemName": "Kemik Tozu",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 533
+  },
+  {
+    "id": "94c60a3f-d728-4418-baa7-59b101c77931",
+    "ownerId": "763430490354221086",
+    "itemName": "Parlak Tüy",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 182
+  },
+  {
+    "id": "ae150aa7-27b8-4854-929f-ca2bc0f5f72a",
+    "ownerId": "763430490354221086",
+    "itemName": "Kırık Av Zinciri",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 94
+  },
+  {
+    "id": "2e2c9aee-a82d-4651-9491-4ec914fc2583",
+    "ownerId": "1089435359944921089",
+    "itemName": "Kemik Tozu",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 296
+  },
+  {
+    "id": "a82c5219-8250-4d47-acaf-3befaf41641e",
+    "ownerId": "1089435359944921089",
+    "itemName": "Parlak Tüy",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 168
+  },
+  {
+    "id": "2bea2dff-1ec1-4a9e-9300-6de1be952caf",
+    "ownerId": "1197562104446726225",
+    "itemName": "Kemik Tozu",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 221
+  },
+  {
+    "id": "b0a27810-b50b-43f0-9a13-2d164fc25056",
+    "ownerId": "1197562104446726225",
+    "itemName": "Parlak Tüy",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 99
+  },
+  {
+    "id": "83b3e8ad-786d-4c8f-91ea-682ab03124f4",
+    "ownerId": "1196945573178257460",
+    "itemName": "fare",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 1
+  },
+  {
+    "id": "0447b5b9-774d-445c-a56e-f2a93be73842",
+    "ownerId": "763430490354221086",
+    "itemName": "Sessizlik Teli",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 89
+  },
+  {
+    "id": "5f6a0150-b619-4a66-9a8f-9dfc0730a43a",
+    "ownerId": "1196945573178257460",
+    "itemName": "serce",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 1
+  },
+  {
+    "id": "37b83a78-5050-45dc-8ec3-b8cbfa7326fd",
+    "ownerId": "1196945573178257460",
+    "itemName": "Kemik Tozu",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 1
+  },
+  {
+    "id": "95bf0f9a-248e-4583-9234-f3354ffe1343",
+    "ownerId": "1196945573178257460",
+    "itemName": "Parlak Tüy",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 1
+  },
+  {
+    "id": "c94f253c-a674-404d-ac35-50d2c16091cb",
+    "ownerId": "1197562104446726225",
+    "itemName": "Kırık Av Zinciri",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 39
+  },
+  {
+    "id": "1d340da8-da6c-41f5-a304-d93a4df0348a",
+    "ownerId": "1043601444240105584",
+    "itemName": "Parlak Tüy",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 5
+  },
+  {
+    "id": "da986d55-b5c0-4746-b1aa-fcb3c68c9b40",
+    "ownerId": "1043601444240105584",
+    "itemName": "Kırık Av Zinciri",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 3
+  },
+  {
+    "id": "535963eb-b045-49ce-b5bc-a38d2ef7af37",
+    "ownerId": "1043601444240105584",
+    "itemName": "Av Gözü Kristali",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 2
+  },
+  {
+    "id": "a1d1bc93-14a6-4da1-8f32-4104cb298fbc",
+    "ownerId": "1043601444240105584",
+    "itemName": "Sessizlik Teli",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 2
+  },
+  {
+    "id": "3a0beb65-e294-4cab-8c89-a603920dc298",
+    "ownerId": "1197562104446726225",
+    "itemName": "Sessizlik Teli",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 32
+  },
+  {
+    "id": "e1859ff4-ef8f-4d1f-b40f-038da3a889a8",
+    "ownerId": "1043601444240105584",
+    "itemName": "Kemik Tozu",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 12
+  },
+  {
+    "id": "a030e39e-09be-4fb3-8908-ada8078fdb9a",
+    "ownerId": "1197562104446726225",
+    "itemName": "Av Gözü Kristali",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 2
+  },
+  {
+    "id": "24d3ffc0-6f65-4be9-89be-d62137a2efb0",
+    "ownerId": "1027661467266326669",
+    "itemName": "Kemik Tozu",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 8
+  },
+  {
+    "id": "f6808e13-4e0c-4955-a84e-aa03530f7f07",
+    "ownerId": "1477266761794588782",
+    "itemName": "fare",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 1
+  },
+  {
+    "id": "b7e244f1-92e4-428b-b7cd-1ab55b1e364e",
+    "ownerId": "1089435359944921089",
+    "itemName": "Av Gözü Kristali",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 13
+  },
+  {
+    "id": "e42f8477-5718-4375-9954-caa7247dd086",
+    "ownerId": "984901369867669514",
+    "itemName": "Kemik Tozu",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 75
+  },
+  {
+    "id": "5290fe75-abd6-4417-a64e-8aad286b7879",
+    "ownerId": "984901369867669514",
+    "itemName": "Parlak Tüy",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 28
+  },
+  {
+    "id": "057408ed-dcc8-4587-b076-986683ffdec7",
+    "ownerId": "897829226915434496",
+    "itemName": "Kemik Tozu",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 1678
+  },
+  {
+    "id": "ca9d9bd1-1fa9-4fd8-ada8-4e48020c2b9e",
+    "ownerId": "1110219662509224006",
+    "itemName": "Av gözü kristali",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 11
+  },
+  {
+    "id": "c0691bf7-6807-4162-b70d-aee8d8f80c94",
+    "ownerId": "1110219662509224006",
+    "itemName": "Sessizlik teli",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 11
+  },
+  {
+    "id": "fd55f7dc-049b-424c-8e4f-57735b9efc34",
+    "ownerId": "897829226915434496",
+    "itemName": "Av Gözü Kristali",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 12
+  },
+  {
+    "id": "fcda0449-33d9-457d-abba-d7c1dd312bd6",
+    "ownerId": "897829226915434496",
+    "itemName": "Parlak Tüy",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 884
+  },
+  {
+    "id": "9332fa9b-c45e-4941-8f8d-59ffdea6525f",
+    "ownerId": "897829226915434496",
+    "itemName": "Sessizlik Teli",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 283
+  },
+  {
+    "id": "599560fd-1ca8-450b-9c4a-4f9b2c43fc48",
+    "ownerId": "897829226915434496",
+    "itemName": "Kırık Av Zinciri",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 267
+  },
+  {
+    "id": "a3234ffc-c8ee-4ed5-b7ec-f6d67da5de11",
+    "ownerId": "1282000157453582362",
+    "itemName": "Kemik Tozu",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 251
+  },
+  {
+    "id": "08923441-b425-4241-ba73-7d103af2e5e6",
+    "ownerId": "362666788149788672",
+    "itemName": "Parlak Tüy",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 299
+  },
+  {
+    "id": "3239ceba-bd04-4e6a-a48c-c0e76b3623cb",
+    "ownerId": "362666788149788672",
+    "itemName": "Kırık Av Zinciri",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 48
+  },
+  {
+    "id": "ba8b51af-9b61-4f30-a51b-175b944af7a8",
+    "ownerId": "763430490354221086",
+    "itemName": "Av Gözü Kristali",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 1
+  },
+  {
+    "id": "0adc8ba0-5112-4aba-9eb3-af1d5f052c0d",
+    "ownerId": "1005456438782591147",
+    "itemName": "fare",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 1
+  },
+  {
+    "id": "64297a15-0e71-4399-8d7f-c4620e5235a7",
+    "ownerId": "1110219662509224006",
+    "itemName": "Yırtıcı Pençe Parçası",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 22
+  },
+  {
+    "id": "b81a3460-1bbb-4f6f-b22a-2fd03cc8dcc3",
+    "ownerId": "1168424514594537496",
+    "itemName": "Kırık Av Zinciri",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 1
+  },
+  {
+    "id": "cae8ac53-4052-469b-a46d-bba21fc48643",
+    "ownerId": "1168424514594537496",
+    "itemName": "Kemik Tozu",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 2
+  },
+  {
+    "id": "cf420594-66ca-4a4c-bce5-e0f12f6f9ad0",
+    "ownerId": "1168424514594537496",
+    "itemName": "Parlak Tüy",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 1
+  },
+  {
+    "id": "825f3a33-52bb-4572-bfe4-bbc29d5b08b5",
+    "ownerId": "515024193633517572",
+    "itemName": "fare",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 1
+  },
+  {
+    "id": "bcef9171-0c6b-4804-bcf4-9cc413f5356e",
+    "ownerId": "1027661467266326669",
+    "itemName": "Parlak Tüy",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 5
+  },
+  {
+    "id": "23dec69a-bc56-406e-934f-19050c94c03c",
+    "ownerId": "1027661467266326669",
+    "itemName": "Kırık Av Zinciri",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 2
+  },
+  {
+    "id": "7c5d835c-ac50-4c8d-a85c-95ceb537faa2",
+    "ownerId": "984901369867669514",
+    "itemName": "Sessizlik Teli",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 9
+  },
+  {
+    "id": "d7d13559-141e-4862-ba7e-0f3ec4ff00de",
+    "ownerId": "984901369867669514",
+    "itemName": "Kırık Av Zinciri",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 4
+  },
+  {
+    "id": "fc61ad82-af46-40d7-b125-07763c4f25f5",
+    "ownerId": "1348272228390801441",
+    "itemName": "Kemik Tozu",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 694
+  },
+  {
+    "id": "4edcad04-cf46-40cb-bc67-c179df1fb489",
+    "ownerId": "1319705679577219208",
+    "itemName": "Kemik Tozu",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 33
+  },
+  {
+    "id": "5ceb79e9-c652-4f5a-b0c5-fc1a211af3a6",
+    "ownerId": "1348272228390801441",
+    "itemName": "Parlak Tüy",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 339
+  },
+  {
+    "id": "c9451f36-3382-43a0-b390-0af8f6b4b979",
+    "ownerId": "1319705679577219208",
+    "itemName": "Parlak Tüy",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 43
+  },
+  {
+    "id": "b7fc7bd0-d178-4e50-8c8f-2baf009f49d7",
+    "ownerId": "1319705679577219208",
+    "itemName": "Sessizlik Teli",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 20
+  },
+  {
+    "id": "53f9381b-93e5-4b3f-ac0a-b45cf938f0a4",
+    "ownerId": "1319705679577219208",
+    "itemName": "Kırık Av Zinciri",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 25
+  },
+  {
+    "id": "efe11f24-242e-4502-8787-94f6dc572cb0",
+    "ownerId": "1027661467266326669",
+    "itemName": "kertenkele",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 7
+  },
+  {
+    "id": "04e684dd-f73d-4505-88ae-a4df2cb24183",
+    "ownerId": "1027661467266326669",
+    "itemName": "hamster",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 4
+  },
+  {
+    "id": "9a8f892c-4ed5-4254-a15c-c745768bef24",
+    "ownerId": "1027661467266326669",
+    "itemName": "fare",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 5
+  },
+  {
+    "id": "e0525898-311e-4ff5-9233-502f9f165f31",
+    "ownerId": "1348272228390801441",
+    "itemName": "Kırık Av Zinciri",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 102
+  },
+  {
+    "id": "5017c3c3-696d-4166-96e0-9f4114ad6107",
+    "ownerId": "1027661467266326669",
+    "itemName": "kostebek",
+    "itemType": "Av",
+    "rarity": "Uncommon",
+    "quantity": 1
+  },
+  {
+    "id": "aa0887de-7386-44da-89b3-5b2659143d2d",
+    "ownerId": "1027661467266326669",
+    "itemName": "kurbaga",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 2
+  },
+  {
+    "id": "7c916053-5dc9-48a8-9f84-7a930cdbcef4",
+    "ownerId": "1027661467266326669",
+    "itemName": "Sessizlik Teli",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 3
+  },
+  {
+    "id": "7122bdf4-fc95-45ef-af8d-59744b2cba09",
+    "ownerId": "1027661467266326669",
+    "itemName": "serce",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 2
+  },
+  {
+    "id": "30837aa8-efdb-486e-b023-bf8c248ebb3c",
+    "ownerId": "1348272228390801441",
+    "itemName": "Sessizlik Teli",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 114
+  },
+  {
+    "id": "62812244-9659-4790-83e0-cde24d8b3f78",
+    "ownerId": "1348272228390801441",
+    "itemName": "Av Gözü Kristali",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 0
+  },
+  {
+    "id": "8216a2da-59bd-4aaf-a445-fac5fec03782",
+    "ownerId": "1089435359944921089",
+    "itemName": "Kırık Av Zinciri",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 54
+  },
+  {
+    "id": "071ac7dc-5da3-4b5a-a127-4d85890fe0cc",
+    "ownerId": "1089435359944921089",
+    "itemName": "Sessizlik Teli",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 36
+  },
+  {
+    "id": "98c68a42-b06e-4669-87ef-77bdbae5f948",
+    "ownerId": "1282000157453582362",
+    "itemName": "Sessizlik Teli",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 39
+  },
+  {
+    "id": "6e77610d-00c9-41c9-b6cc-2c58607ee115",
+    "ownerId": "1282000157453582362",
+    "itemName": "Parlak Tüy",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 104
+  },
+  {
+    "id": "0ff41eed-d850-4897-a99a-fb1d25a06400",
+    "ownerId": "1282000157453582362",
+    "itemName": "Kırık Av Zinciri",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 47
+  },
+  {
+    "id": "d6671d02-9115-48df-a7ff-ae3fa712a02e",
+    "ownerId": "1319705679577219208",
+    "itemName": "Av Gözü Kristali",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 9
+  },
+  {
+    "id": "eaa9d248-ed24-499c-b5fd-9b8fadefe9e9",
+    "ownerId": "853227090357518356",
+    "itemName": "kurbaga",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 4
+  },
+  {
+    "id": "4acec74d-f6f2-40dc-a583-b002677e9af8",
+    "ownerId": "853227090357518356",
+    "itemName": "Kemik Tozu",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 4
+  },
+  {
+    "id": "86f61713-c2d0-4716-acb0-857d10d8d811",
+    "ownerId": "1282000157453582362",
+    "itemName": "Av Gözü Kristali",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 2
+  },
+  {
+    "id": "5bf817ec-b1e1-45ca-9c84-5963528a7144",
+    "ownerId": "1348272228390801441",
+    "itemName": "Yırtıcı Pençe Parçası",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 1
+  },
+  {
+    "id": "29cd296f-9e0a-415d-ba01-b5bbe68175a6",
+    "ownerId": "1224054730716614667",
+    "itemName": "Kırık Av Zinciri",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 8
+  },
+  {
+    "id": "fa1ff917-d596-4310-a590-29a41493f57f",
+    "ownerId": "1224054730716614667",
+    "itemName": "Kemik Tozu",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 126
+  },
+  {
+    "id": "c882fb23-31bf-4f87-b0a2-797c5e87a112",
+    "ownerId": "1224054730716614667",
+    "itemName": "Parlak Tüy",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 61
+  },
+  {
+    "id": "346357b0-637b-4022-8831-b8d9662ca143",
+    "ownerId": "1224054730716614667",
+    "itemName": "Av Gözü Kristali",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 12
+  },
+  {
+    "id": "31037007-2611-46bd-bc66-3859d5d820c8",
+    "ownerId": "1224054730716614667",
+    "itemName": "Sessizlik Teli",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 32
+  },
+  {
+    "id": "2b897853-aafb-4191-80d8-c3abb8b7b842",
+    "ownerId": "754978008410095666",
+    "itemName": "Parlak Tüy",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 44
+  },
+  {
+    "id": "21ac18b0-9988-491b-bcee-370303ccb7cb",
+    "ownerId": "754978008410095666",
+    "itemName": "Kırık Av Zinciri",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 11
+  },
+  {
+    "id": "aa21d3b1-17b0-46cc-a87c-345aa1f528be",
+    "ownerId": "754978008410095666",
+    "itemName": "Kemik Tozu",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 83
+  },
+  {
+    "id": "086dfcc5-ae3a-458c-a880-6564a98098bb",
+    "ownerId": "754978008410095666",
+    "itemName": "Sessizlik Teli",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 12
+  },
+  {
+    "id": "9de8cf3f-0d2a-48e9-9f07-fa3546e03b0d",
+    "ownerId": "464870640856596482",
+    "itemName": "Parlak Tüy",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 3
+  },
+  {
+    "id": "e5f8fc5b-6436-46f1-b0c9-7cbba4f508e2",
+    "ownerId": "464870640856596482",
+    "itemName": "Kemik Tozu",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 13
+  },
+  {
+    "id": "25a36860-3152-4366-b1bd-daccb910b09c",
+    "ownerId": "464870640856596482",
+    "itemName": "Av Gözü Kristali",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 1
+  },
+  {
+    "id": "a9569974-7f48-465a-b6a6-6d8bf0599110",
+    "ownerId": "362666788149788672",
+    "itemName": "Av Gözü Kristali",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 5
+  },
+  {
+    "id": "6615f27b-34da-45fb-8222-497028a4cf85",
+    "ownerId": "763430490354221086",
+    "itemName": "kurbaga",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 347
+  },
+  {
+    "id": "ef9f576f-f376-495f-89c9-f7e33250877f",
+    "ownerId": "763430490354221086",
+    "itemName": "yarasa",
+    "itemType": "Av",
+    "rarity": "Uncommon",
+    "quantity": 154
+  },
+  {
+    "id": "b22cf851-4f37-450d-aec8-e5aa1973924c",
+    "ownerId": "763430490354221086",
+    "itemName": "kertenkele",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 207
+  },
+  {
+    "id": "9a5f836a-c6d1-4b84-b2db-5ec963cfc49c",
+    "ownerId": "763430490354221086",
+    "itemName": "kostebek",
+    "itemType": "Av",
+    "rarity": "Uncommon",
+    "quantity": 173
+  },
+  {
+    "id": "ee54d4bc-5402-4162-a01c-68b7323b0f28",
+    "ownerId": "763430490354221086",
+    "itemName": "hamster",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 210
+  },
+  {
+    "id": "adfa72b4-2a43-41e5-91bb-55692b600520",
+    "ownerId": "1224423700426788957",
+    "itemName": "Kemik Tozu",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 6
+  },
+  {
+    "id": "6f430d0c-532d-414c-8e8c-60cb763bbdfa",
+    "ownerId": "1224423700426788957",
+    "itemName": "Parlak Tüy",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 3
+  },
+  {
+    "id": "c8cf0519-6276-4e13-b365-6b44d2ea7259",
+    "ownerId": "1089435359944921089",
+    "itemName": "serce",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 125
+  },
+  {
+    "id": "ce36649d-f3c1-497a-b511-5bdb0774afa2",
+    "ownerId": "1089435359944921089",
+    "itemName": "fare",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 225
+  },
+  {
+    "id": "4a679484-1796-4318-a3cd-2c0e2b1082a5",
+    "ownerId": "1089435359944921089",
+    "itemName": "kurbaga",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 103
+  },
+  {
+    "id": "564f2a7e-17eb-47d2-a0c3-fa511c717309",
+    "ownerId": "1089435359944921089",
+    "itemName": "kostebek",
+    "itemType": "Av",
+    "rarity": "Uncommon",
+    "quantity": 46
+  },
+  {
+    "id": "888ccf70-f73c-4615-a4dc-15d6df28cb54",
+    "ownerId": "1089435359944921089",
+    "itemName": "yarasa",
+    "itemType": "Av",
+    "rarity": "Uncommon",
+    "quantity": 56
+  },
+  {
+    "id": "54735d7f-1b21-4445-88d1-73bd4ff6e255",
+    "ownerId": "1089435359944921089",
+    "itemName": "hamster",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 62
+  },
+  {
+    "id": "9241e816-4177-447a-accc-199137ee1185",
+    "ownerId": "1089435359944921089",
+    "itemName": "kertenkele",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 55
+  },
+  {
+    "id": "ed8ca97d-60a4-4856-83f4-4875877c68ea",
+    "ownerId": "1168424514594537496",
+    "itemName": "fare",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 2
+  },
+  {
+    "id": "81f7a08d-3734-4446-8eb6-f01bf1db4019",
+    "ownerId": "1168424514594537496",
+    "itemName": "hamster",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 1
+  },
+  {
+    "id": "4644afc1-1a71-479e-b5c9-00f206941d1a",
+    "ownerId": "1168424514594537496",
+    "itemName": "kurbaga",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 1
+  },
+  {
+    "id": "f3369f35-0de6-4ccc-ae20-5ed2778d99e3",
+    "ownerId": "1282000157453582362",
+    "itemName": "serce",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 1
+  },
+  {
+    "id": "5518c2c4-a778-4138-ad1b-6cdee33539ae",
+    "ownerId": "1282000157453582362",
+    "itemName": "fare",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 4
+  },
+  {
+    "id": "fbbbfbe3-b0be-4b1d-bb9e-9da168b4ca04",
+    "ownerId": "853227090357518356",
+    "itemName": "fare",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 2
+  },
+  {
+    "id": "ff12a11c-3aba-4316-8b86-ebcb05e820eb",
+    "ownerId": "853227090357518356",
+    "itemName": "serce",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 3
+  },
+  {
+    "id": "2b55d1d7-fedb-413c-9efa-9123b1f9087b",
+    "ownerId": "853227090357518356",
+    "itemName": "kertenkele",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 2
+  },
+  {
+    "id": "987bcdbb-4175-49d2-a4b2-d8a1df1aea0e",
+    "ownerId": "451430824903049216",
+    "itemName": "hamster",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 2
+  },
+  {
+    "id": "5e101da0-eee3-4c54-8fa1-3b9212d21e04",
+    "ownerId": "451430824903049216",
+    "itemName": "Parlak Tüy",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 4
+  },
+  {
+    "id": "4b89a622-fa24-4093-a015-4dbb23fe3990",
+    "ownerId": "451430824903049216",
+    "itemName": "Kemik Tozu",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 6
+  },
+  {
+    "id": "67c87723-dd7e-4040-848a-fbfe67269f7c",
+    "ownerId": "451430824903049216",
+    "itemName": "serce",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 3
+  },
+  {
+    "id": "52bbb8fb-70c1-462d-8268-7e28aff59a31",
+    "ownerId": "451430824903049216",
+    "itemName": "kurbaga",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 1
+  },
+  {
+    "id": "38ee73b5-2a79-45a5-ac2b-5d7c57782900",
+    "ownerId": "451430824903049216",
+    "itemName": "fare",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 6
+  },
+  {
+    "id": "c58adb7c-eb3d-4e55-a635-2aa1dc033404",
+    "ownerId": "451430824903049216",
+    "itemName": "kertenkele",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 2
+  },
+  {
+    "id": "c2a3d625-9b5b-43f0-9de8-d1774201358a",
+    "ownerId": "451430824903049216",
+    "itemName": "Kırık Av Zinciri",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 2
+  },
+  {
+    "id": "a5468680-7990-4479-8467-37f40cc9bfa0",
+    "ownerId": "763430490354221086",
+    "itemName": "Yırtıcı Pençe Parçası",
+    "itemType": "Materyal",
+    "rarity": "Rare",
+    "quantity": 1
+  },
+  {
+    "id": "6972fcff-23cb-417f-8330-669136698617",
+    "ownerId": "451430824903049216",
+    "itemName": "kostebek",
+    "itemType": "Av",
+    "rarity": "Uncommon",
+    "quantity": 1
+  },
+  {
+    "id": "122be448-38bc-4f75-a65f-75c2c912cc06",
+    "ownerId": "1197562104446726225",
+    "itemName": "Yırtıcı Pençe Parçası",
+    "itemType": "Materyal",
+    "rarity": "Rare",
+    "quantity": 3
+  },
+  {
+    "id": "17edb8ab-6484-477f-a11e-cd229bb2b674",
+    "ownerId": "362666788149788672",
+    "itemName": "Yırtıcı Pençe Parçası",
+    "itemType": "Materyal",
+    "rarity": "Rare",
+    "quantity": 1
+  },
+  {
+    "id": "e4d949b1-829a-43c1-9bad-99dd549ca663",
+    "ownerId": "853227090357518356",
+    "itemName": "Parlak Tüy",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 2
+  },
+  {
+    "id": "fb3cbab9-4adc-4797-8abf-eff2716f122a",
+    "ownerId": "853227090357518356",
+    "itemName": "yarasa",
+    "itemType": "Av",
+    "rarity": "Uncommon",
+    "quantity": 1
+  },
+  {
+    "id": "1e8a0b66-af66-4465-96aa-e0f604528e5d",
+    "ownerId": "897829226915434496",
+    "itemName": "Yırtıcı Pençe Parçası",
+    "itemType": "Materyal",
+    "rarity": "Rare",
+    "quantity": 1
+  },
+  {
+    "id": "43841beb-85c7-4180-83ff-a5f495396c81",
+    "ownerId": "1224054730716614667",
+    "itemName": "Yırtıcı Pençe Parçası",
+    "itemType": "Materyal",
+    "rarity": "Rare",
+    "quantity": 2
+  },
+  {
+    "id": "e77024c6-5b7d-4e94-a3c2-db0329b22d4d",
+    "ownerId": "1224423700426788957",
+    "itemName": "Sessizlik Teli",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 3
+  },
+  {
+    "id": "c9f1f217-b4fa-4769-80dc-5ac2b5e08a59",
+    "ownerId": "1063750211870150758",
+    "itemName": "Parlak Tüy",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 30
+  },
+  {
+    "id": "9a977ffd-7d7e-4d47-b89f-8ce33211ffa8",
+    "ownerId": "1063750211870150758",
+    "itemName": "Kemik Tozu",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 52
+  },
+  {
+    "id": "c5dbd367-8bcd-4fae-950d-fd29814a0485",
+    "ownerId": "1373010439272927353",
+    "itemName": "Kemik Tozu",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 163
+  },
+  {
+    "id": "29236c21-8afc-417f-b0a9-1b69a7583e30",
+    "ownerId": "1063750211870150758",
+    "itemName": "Sessizlik Teli",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 9
+  },
+  {
+    "id": "200d2e94-ef2a-481d-95be-66e4a80de28e",
+    "ownerId": "1063750211870150758",
+    "itemName": "Kırık Av Zinciri",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 18
+  },
+  {
+    "id": "0aff4beb-a3f2-4cb0-b2ef-809b5ea6aa8b",
+    "ownerId": "1063750211870150758",
+    "itemName": "Yırtıcı Pençe Parçası",
+    "itemType": "Materyal",
+    "rarity": "Rare",
+    "quantity": 0
+  },
+  {
+    "id": "0a99756b-d915-4d87-854b-19d19895585b",
+    "ownerId": "1373010439272927353",
+    "itemName": "Parlak Tüy",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 82
+  },
+  {
+    "id": "760702c0-ebe3-4400-8dfb-0027b55cc43f",
+    "ownerId": "1373010439272927353",
+    "itemName": "Kırık Av Zinciri",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 34
+  },
+  {
+    "id": "d9de5e2e-2e68-49d4-b79a-afd78df39308",
+    "ownerId": "1373010439272927353",
+    "itemName": "Sessizlik Teli",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 31
+  },
+  {
+    "id": "9fd7ee85-5b14-4fd7-9564-2aad84b9dd5a",
+    "ownerId": "1373010439272927353",
+    "itemName": "Yırtıcı Pençe Parçası",
+    "itemType": "Materyal",
+    "rarity": "Rare",
+    "quantity": 8
+  },
+  {
+    "id": "6d0f59ff-3ffc-4662-9555-af675f98c550",
+    "ownerId": "763430490354221086",
+    "itemName": "fare",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 297
+  },
+  {
+    "id": "4da73d1b-6c0f-4633-9796-feca3f0b1454",
+    "ownerId": "763430490354221086",
+    "itemName": "serce",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 142
+  },
+  {
+    "id": "19c94bfd-1244-4ef7-9d37-e55b4e1d1c50",
+    "ownerId": "1063750211870150758",
+    "itemName": "Av Gözü Kristali",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 5
+  },
+  {
+    "id": "3d4fe17e-9d71-49e3-86fd-3e72e758a91e",
+    "ownerId": "1161337097261686814",
+    "itemName": "Kemik Tozu",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 139
+  },
+  {
+    "id": "daf0681d-1222-47af-bda3-d3e2e554aa35",
+    "ownerId": "1161337097261686814",
+    "itemName": "Parlak Tüy",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 72
+  },
+  {
+    "id": "c773972a-a171-4d7f-8dce-200888c07789",
+    "ownerId": "528855313936285753",
+    "itemName": "fare",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 5
+  },
+  {
+    "id": "c1ebe2dd-f833-49b5-b7e8-b55f8116786e",
+    "ownerId": "754978008410095666",
+    "itemName": "Av Gözü Kristali",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 2
+  },
+  {
+    "id": "ab39a371-0e5a-4935-bf6a-c78b30426c9e",
+    "ownerId": "528855313936285753",
+    "itemName": "yarasa",
+    "itemType": "Av",
+    "rarity": "Uncommon",
+    "quantity": 1
+  },
+  {
+    "id": "7a37f779-e7d2-403a-9112-081aa8703f72",
+    "ownerId": "528855313936285753",
+    "itemName": "serce",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 1
+  },
+  {
+    "id": "13a1b919-ba17-4924-a9dc-45d9fed2039f",
+    "ownerId": "1319705679577219208",
+    "itemName": "Yırtıcı Pençe Parçası",
+    "itemType": "Materyal",
+    "rarity": "Rare",
+    "quantity": 0
+  },
+  {
+    "id": "d8847425-12c8-4fbc-9574-8e2bf95d32f4",
+    "ownerId": "1319705679577219208",
+    "itemName": "yarasa",
+    "itemType": "Av",
+    "rarity": "Uncommon",
+    "quantity": 2
+  },
+  {
+    "id": "a55a6b47-7c84-48cc-96dd-5f6641deb582",
+    "ownerId": "1319705679577219208",
+    "itemName": "kostebek",
+    "itemType": "Av",
+    "rarity": "Uncommon",
+    "quantity": 2
+  },
+  {
+    "id": "16c1f84e-9d76-4742-9a19-6fa06b77c866",
+    "ownerId": "1319705679577219208",
+    "itemName": "fare",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 7
+  },
+  {
+    "id": "8ca3d9e5-9b94-4ade-b62b-9c1bac9992ba",
+    "ownerId": "1319705679577219208",
+    "itemName": "kurbaga",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 4
+  },
+  {
+    "id": "aeb1a63a-1805-41f4-bcb8-29783da62251",
+    "ownerId": "1319705679577219208",
+    "itemName": "serce",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 4
+  },
+  {
+    "id": "ba0f29db-1422-446c-8d23-b2fe19ddd855",
+    "ownerId": "754978008410095666",
+    "itemName": "Yırtıcı Pençe Parçası",
+    "itemType": "Materyal",
+    "rarity": "Rare",
+    "quantity": 3
+  },
+  {
+    "id": "f95c20b8-4ccb-4db3-8830-0f58d55f8975",
+    "ownerId": "1319705679577219208",
+    "itemName": "hamster",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 3
+  },
+  {
+    "id": "53b823b6-c552-4821-8708-b160519000b0",
+    "ownerId": "1319705679577219208",
+    "itemName": "kertenkele",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 4
+  },
+  {
+    "id": "e4f59407-f910-4a72-9f2f-f992ac8fb2ba",
+    "ownerId": "1373010439272927353",
+    "itemName": "Av Gözü Kristali",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 12
+  },
+  {
+    "id": "6583bc61-2939-4e01-8fac-536babfe4c95",
+    "ownerId": "515024193633517572",
+    "itemName": "hamster",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 1
+  },
+  {
+    "id": "61420f47-7933-4faf-8be4-70c995046f69",
+    "ownerId": "984901369867669514",
+    "itemName": "Yırtıcı Pençe Parçası",
+    "itemType": "Materyal",
+    "rarity": "Rare",
+    "quantity": 1
+  },
+  {
+    "id": "d7a0007c-f0df-4b16-b164-f129f0d7cc78",
+    "ownerId": "984901369867669514",
+    "itemName": "Av Gözü Kristali",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 1
+  },
+  {
+    "id": "49022ef7-a0e2-46be-ac5a-bcd95b07e1cf",
+    "ownerId": "1373010439272927353",
+    "itemName": "fare",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 22
+  },
+  {
+    "id": "db863428-af75-4ef3-9059-aa91053d1891",
+    "ownerId": "1373010439272927353",
+    "itemName": "kurbaga",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 4
+  },
+  {
+    "id": "8af62bf1-22b3-40b4-8583-d2f96f9807a7",
+    "ownerId": "1373010439272927353",
+    "itemName": "serce",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 6
+  },
+  {
+    "id": "2213b38e-a836-4875-93b9-4e1231a61907",
+    "ownerId": "1373010439272927353",
+    "itemName": "kostebek",
+    "itemType": "Av",
+    "rarity": "Uncommon",
+    "quantity": 2
+  },
+  {
+    "id": "a9c7393f-639f-4894-b075-a424cecd2eac",
+    "ownerId": "1373010439272927353",
+    "itemName": "hamster",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 2
+  },
+  {
+    "id": "4ce96269-b9cc-4db6-a764-00a9df6dc01c",
+    "ownerId": "1373010439272927353",
+    "itemName": "yarasa",
+    "itemType": "Av",
+    "rarity": "Uncommon",
+    "quantity": 2
+  },
+  {
+    "id": "d0edea04-f882-4974-9d1c-ef5affbd3660",
+    "ownerId": "1373010439272927353",
+    "itemName": "kertenkele",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 2
+  },
+  {
+    "id": "21b15246-7c12-459e-a237-6d43a114ca52",
+    "ownerId": "1401125565666164888",
+    "itemName": "Kemik Tozu",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 235
+  },
+  {
+    "id": "d167ff61-3022-4000-96b3-434ae73aa4b8",
+    "ownerId": "1274809970117971988",
+    "itemName": "Kemik Tozu",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 107
+  },
+  {
+    "id": "7df90477-42e7-4294-bd3a-85d89a551fa4",
+    "ownerId": "1274809970117971988",
+    "itemName": "Parlak Tüy",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 56
+  },
+  {
+    "id": "7f6c3bb5-95f2-45ce-8590-96fc1ceaf82a",
+    "ownerId": "1161337097261686814",
+    "itemName": "Kırık Av Zinciri",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 27
+  },
+  {
+    "id": "05f28ffc-2c28-4501-bb07-83719a933355",
+    "ownerId": "945713316976820254",
+    "itemName": "Parlak Tüy",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 12
+  },
+  {
+    "id": "2f841ba9-a071-4e32-93a8-555273548d26",
+    "ownerId": "945713316976820254",
+    "itemName": "Kemik Tozu",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 25
+  },
+  {
+    "id": "fb8e3273-df35-435a-a224-cfa0ea2d2545",
+    "ownerId": "945713316976820254",
+    "itemName": "Kırık Av Zinciri",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 6
+  },
+  {
+    "id": "3d57b25b-7bde-45a4-91e5-495a92ce36de",
+    "ownerId": "945713316976820254",
+    "itemName": "Sessizlik Teli",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 3
+  },
+  {
+    "id": "f58c6b7c-997f-4416-8137-f22761e18de4",
+    "ownerId": "945713316976820254",
+    "itemName": "Yırtıcı Pençe Parçası",
+    "itemType": "Materyal",
+    "rarity": "Rare",
+    "quantity": 1
+  },
+  {
+    "id": "dc24f324-cf81-4d05-8a0f-623bbc2c776e",
+    "ownerId": "945713316976820254",
+    "itemName": "Av Gözü Kristali",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 2
+  },
+  {
+    "id": "2c2a3cf5-9569-4505-b208-e1e17521c6de",
+    "ownerId": "754978008410095666",
+    "itemName": "fare",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 65
+  },
+  {
+    "id": "83f03d86-9030-45d5-a99b-1310d918cb37",
+    "ownerId": "754978008410095666",
+    "itemName": "yarasa",
+    "itemType": "Av",
+    "rarity": "Uncommon",
+    "quantity": 9
+  },
+  {
+    "id": "ef82d6d0-476b-4136-9d10-6ce733b0e635",
+    "ownerId": "754978008410095666",
+    "itemName": "kertenkele",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 24
+  },
+  {
+    "id": "e3866b48-f2f9-4b8e-8c03-bff81999ef50",
+    "ownerId": "754978008410095666",
+    "itemName": "kurbaga",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 37
+  },
+  {
+    "id": "61db6663-d413-4c55-a8ff-a9ad667cc421",
+    "ownerId": "754978008410095666",
+    "itemName": "hamster",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 15
+  },
+  {
+    "id": "49b70d57-1084-4411-b248-bd998429fb5d",
+    "ownerId": "754978008410095666",
+    "itemName": "serce",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 24
+  },
+  {
+    "id": "c00db3d1-4476-4090-96df-0b00367cd6a1",
+    "ownerId": "754978008410095666",
+    "itemName": "kostebek",
+    "itemType": "Av",
+    "rarity": "Uncommon",
+    "quantity": 9
+  },
+  {
+    "id": "f6e2f0b1-0c95-43e6-8b1d-8ae8021d1afc",
+    "ownerId": "1224423700426788957",
+    "itemName": "Kırık Av Zinciri",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 1
+  },
+  {
+    "id": "71984960-b5cf-47c8-9707-14dce69b7e20",
+    "ownerId": "1224423700426788957",
+    "itemName": "yarasa",
+    "itemType": "Av",
+    "rarity": "Uncommon",
+    "quantity": 1
+  },
+  {
+    "id": "91b88832-f01d-4e38-9139-4bab606f8978",
+    "ownerId": "1224423700426788957",
+    "itemName": "kurbaga",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 1
+  },
+  {
+    "id": "4bbe156f-d3b1-4392-9895-4c08275e5ad3",
+    "ownerId": "1224423700426788957",
+    "itemName": "Yırtıcı Pençe Parçası",
+    "itemType": "Materyal",
+    "rarity": "Rare",
+    "quantity": 1
+  },
+  {
+    "id": "0cf8b98b-99f1-4686-8ae7-e2fd9a958960",
+    "ownerId": "1224423700426788957",
+    "itemName": "fare",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 1
+  },
+  {
+    "id": "235342f6-7ed9-4c86-b9b6-0a149d4e208b",
+    "ownerId": "984901369867669514",
+    "itemName": "serce",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 9
+  },
+  {
+    "id": "787fc16c-3e1b-4c5c-ae80-863138158d42",
+    "ownerId": "984901369867669514",
+    "itemName": "fare",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 10
+  },
+  {
+    "id": "b3e3b76c-b6ad-4d86-981e-1ccd80340577",
+    "ownerId": "984901369867669514",
+    "itemName": "kurbaga",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 5
+  },
+  {
+    "id": "9b5f8595-1f4e-41f7-a85f-0469980f2d6c",
+    "ownerId": "984901369867669514",
+    "itemName": "hamster",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 4
+  },
+  {
+    "id": "667c295e-05a0-4f2c-8ba2-174c93f04829",
+    "ownerId": "984901369867669514",
+    "itemName": "kertenkele",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 5
+  },
+  {
+    "id": "c596510c-a790-41c9-9e27-87dd9d71524a",
+    "ownerId": "984901369867669514",
+    "itemName": "kostebek",
+    "itemType": "Av",
+    "rarity": "Uncommon",
+    "quantity": 2
+  },
+  {
+    "id": "d50efce4-3dd3-40e7-9bb7-ac06955ccd83",
+    "ownerId": "1063750211870150758",
+    "itemName": "fare",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 3
+  },
+  {
+    "id": "d535e4bc-1207-49d6-abcb-c0b43c31f492",
+    "ownerId": "1063750211870150758",
+    "itemName": "serce",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 2
+  },
+  {
+    "id": "0ee28044-7680-492d-b081-f84e9aff329c",
+    "ownerId": "1063750211870150758",
+    "itemName": "kurbaga",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 1
+  },
+  {
+    "id": "5152fb70-ed32-49c9-8c1f-98a8cfa9de33",
+    "ownerId": "984901369867669514",
+    "itemName": "yarasa",
+    "itemType": "Av",
+    "rarity": "Uncommon",
+    "quantity": 3
+  },
+  {
+    "id": "0fc7f546-bbca-4414-bf44-ede2d970e6a6",
+    "ownerId": "1063750211870150758",
+    "itemName": "yarasa",
+    "itemType": "Av",
+    "rarity": "Uncommon",
+    "quantity": 2
+  },
+  {
+    "id": "68df625d-e815-4e65-ab76-c19e1bc48ff5",
+    "ownerId": "1063750211870150758",
+    "itemName": "kertenkele",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 1
+  },
+  {
+    "id": "7afc6a17-2215-4bed-9c2e-a9d9c8eb4ec5",
+    "ownerId": "1210240077033250917",
+    "itemName": "kurbaga",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 16
+  },
+  {
+    "id": "e8c5927d-8cf7-4145-9264-713cd1b08249",
+    "ownerId": "1210240077033250917",
+    "itemName": "Kemik Tozu",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 25
+  },
+  {
+    "id": "270eb335-9253-4a7e-a734-934b2b6f3b6a",
+    "ownerId": "1210240077033250917",
+    "itemName": "yarasa",
+    "itemType": "Av",
+    "rarity": "Uncommon",
+    "quantity": 5
+  },
+  {
+    "id": "8870ac17-e50e-43f1-9ee6-af3913203fab",
+    "ownerId": "1210240077033250917",
+    "itemName": "serce",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 18
+  },
+  {
+    "id": "1d0c8467-5886-4aa7-9d3a-407f63e5e376",
+    "ownerId": "1210240077033250917",
+    "itemName": "kertenkele",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 11
+  },
+  {
+    "id": "9f18d485-34a6-4dd2-8abb-5be489bb6760",
+    "ownerId": "1210240077033250917",
+    "itemName": "fare",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 40
+  },
+  {
+    "id": "4afe146e-40e0-4aca-9098-a8b391a91d36",
+    "ownerId": "1210240077033250917",
+    "itemName": "hamster",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 7
+  },
+  {
+    "id": "9e5f1c08-24c4-4bd3-bb51-91cfe9d7d379",
+    "ownerId": "1210240077033250917",
+    "itemName": "Kırık Av Zinciri",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 7
+  },
+  {
+    "id": "f37d5dbf-356c-41cf-a484-dcd8f2ddd75d",
+    "ownerId": "1210240077033250917",
+    "itemName": "kostebek",
+    "itemType": "Av",
+    "rarity": "Uncommon",
+    "quantity": 16
+  },
+  {
+    "id": "98be7c51-8b22-440c-81af-63528dfb253a",
+    "ownerId": "1210240077033250917",
+    "itemName": "Parlak Tüy",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 16
+  },
+  {
+    "id": "6e4330ef-f4fe-470f-a938-b484894a4af0",
+    "ownerId": "1210240077033250917",
+    "itemName": "Yırtıcı Pençe Parçası",
+    "itemType": "Materyal",
+    "rarity": "Rare",
+    "quantity": 1
+  },
+  {
+    "id": "a49e5e9b-cf9d-45cd-9589-0096e535b39b",
+    "ownerId": "1110219662509224006",
+    "itemName": "kurbaga",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 41
+  },
+  {
+    "id": "15e6c2ae-5a22-427e-9ff5-29f30655881a",
+    "ownerId": "1110219662509224006",
+    "itemName": "fare",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 108
+  },
+  {
+    "id": "2c928f4a-975a-4f3c-932b-9f9e719b5094",
+    "ownerId": "1110219662509224006",
+    "itemName": "kertenkele",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 24
+  },
+  {
+    "id": "0b5c303e-540b-4bb0-93e6-67c907a4ff22",
+    "ownerId": "1110219662509224006",
+    "itemName": "serce",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 43
+  },
+  {
+    "id": "9ff52b8d-5ca5-443c-a07a-7a43dd8050f8",
+    "ownerId": "1210240077033250917",
+    "itemName": "Av Gözü Kristali",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 3
+  },
+  {
+    "id": "9a0f7105-4e27-4a3a-adce-1aaa73f3afdc",
+    "ownerId": "1274809970117971988",
+    "itemName": "Kırık Av Zinciri",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 18
+  },
+  {
+    "id": "a3465a06-f32f-47b7-a1fa-f173ed2c9f30",
+    "ownerId": "1197562104446726225",
+    "itemName": "serce",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 24
+  },
+  {
+    "id": "652892a2-c401-49e8-9069-b823df66f4c6",
+    "ownerId": "1197562104446726225",
+    "itemName": "fare",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 56
+  },
+  {
+    "id": "d98e995e-1073-40ef-ade2-3c8b383e0388",
+    "ownerId": "1197562104446726225",
+    "itemName": "kostebek",
+    "itemType": "Av",
+    "rarity": "Uncommon",
+    "quantity": 21
+  },
+  {
+    "id": "c2be76c7-5f03-4407-b746-e2b064e4daa7",
+    "ownerId": "1197562104446726225",
+    "itemName": "hamster",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 23
+  },
+  {
+    "id": "4e8a0c86-ef43-434a-adaa-597329d6be2d",
+    "ownerId": "1197562104446726225",
+    "itemName": "kurbaga",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 30
+  },
+  {
+    "id": "3c20b119-6c5e-494b-a70c-6aacb8552da4",
+    "ownerId": "1274809970117971988",
+    "itemName": "Sessizlik Teli",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 13
+  },
+  {
+    "id": "69994cb5-cafa-4272-83ae-e8b2646d1126",
+    "ownerId": "1197562104446726225",
+    "itemName": "kertenkele",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 20
+  },
+  {
+    "id": "88bc4e6d-4cb8-4a79-be4d-7ae0c793e29c",
+    "ownerId": "1197562104446726225",
+    "itemName": "yarasa",
+    "itemType": "Av",
+    "rarity": "Uncommon",
+    "quantity": 15
+  },
+  {
+    "id": "9fa362ef-8f25-4fe1-a659-5c42c32fe686",
+    "ownerId": "1274809970117971988",
+    "itemName": "Yırtıcı Pençe Parçası",
+    "itemType": "Materyal",
+    "rarity": "Rare",
+    "quantity": 6
+  },
+  {
+    "id": "e18dd013-e31d-44d2-bdfd-e79e5e55717f",
+    "ownerId": "1274809970117971988",
+    "itemName": "Av Gözü Kristali",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 8
+  },
+  {
+    "id": "6d2fd5ae-6c6b-47f4-a5dc-8bac9294d91d",
+    "ownerId": "1043601444240105584",
+    "itemName": "kostebek",
+    "itemType": "Av",
+    "rarity": "Uncommon",
+    "quantity": 6
+  },
+  {
+    "id": "7d46d26c-b1b9-4587-96d8-33645d36ffa6",
+    "ownerId": "1043601444240105584",
+    "itemName": "serce",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 2
+  },
+  {
+    "id": "15622460-ad2e-4ce6-95a2-dd14a3fc511b",
+    "ownerId": "1043601444240105584",
+    "itemName": "kurbaga",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 6
+  },
+  {
+    "id": "4cf75e9c-b78e-474a-94c1-a9bc38b4f813",
+    "ownerId": "1043601444240105584",
+    "itemName": "hamster",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 3
+  },
+  {
+    "id": "26ed8b36-551e-4e3b-9584-7493a436b588",
+    "ownerId": "1161337097261686814",
+    "itemName": "Sessizlik Teli",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 22
+  },
+  {
+    "id": "a1c7d81e-f06e-4fe8-b318-c23cac7a220e",
+    "ownerId": "1110219662509224006",
+    "itemName": "kostebek",
+    "itemType": "Av",
+    "rarity": "Uncommon",
+    "quantity": 28
+  },
+  {
+    "id": "f982b915-6515-4922-8b3a-59ec115896e2",
+    "ownerId": "1110219662509224006",
+    "itemName": "yarasa",
+    "itemType": "Av",
+    "rarity": "Uncommon",
+    "quantity": 25
+  },
+  {
+    "id": "3461ac2d-b33c-443c-9301-87bf8098d31e",
+    "ownerId": "1110219662509224006",
+    "itemName": "hamster",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 27
+  },
+  {
+    "id": "d20a4bbe-a0ca-41a5-a771-8c93fab927ef",
+    "ownerId": "1197562104446726225",
+    "itemName": "Ortak Kutu",
+    "itemType": "Kutu",
+    "rarity": "Common",
+    "quantity": 1
+  },
+  {
+    "id": "08b08dce-0330-468f-a2b1-a831dc69cbfd",
+    "ownerId": "362666788149788672",
+    "itemName": "Keskin Nişan",
+    "itemType": "Buff",
+    "rarity": "Common",
+    "quantity": 2
+  },
+  {
+    "id": "c4dc9628-4868-4930-9a85-5807df61fe9e",
+    "ownerId": "1110219662509224006",
+    "itemName": "Keskin Nişan",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 8
+  },
+  {
+    "id": "a11abe9e-5884-49da-969d-f140005bd996",
+    "ownerId": "1110219662509224006",
+    "itemName": "Berrak Zihin",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 9
+  },
+  {
+    "id": "357676a1-454e-41d3-9416-e25e09fcf200",
+    "ownerId": "1401125565666164888",
+    "itemName": "Parlak Tüy",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 119
+  },
+  {
+    "id": "a3662f62-20c8-4c5e-9415-9d7de1b618dd",
+    "ownerId": "1401125565666164888",
+    "itemName": "Kırık Av Zinciri",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 56
+  },
+  {
+    "id": "de41f9fc-2a9d-463b-be6f-c8f32593044a",
+    "ownerId": "1401125565666164888",
+    "itemName": "Yırtıcı Pençe Parçası",
+    "itemType": "Materyal",
+    "rarity": "Rare",
+    "quantity": 10
+  },
+  {
+    "id": "179e1bf2-373b-47d7-8136-37685f121e3f",
+    "ownerId": "464870640856596482",
+    "itemName": "Sessizlik Teli",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 1
+  },
+  {
+    "id": "f0577d21-e16d-45c3-8c3a-72e674027990",
+    "ownerId": "464870640856596482",
+    "itemName": "Yırtıcı Pençe Parçası",
+    "itemType": "Materyal",
+    "rarity": "Rare",
+    "quantity": 1
+  },
+  {
+    "id": "6abdc618-a834-417e-8b73-d312dfc6d273",
+    "ownerId": "985474588689440871",
+    "itemName": "Parlak Tüy",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 28
+  },
+  {
+    "id": "76968ed6-58b1-4cb7-bbc0-3861335d92c7",
+    "ownerId": "985474588689440871",
+    "itemName": "Kemik Tozu",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 80
+  },
+  {
+    "id": "454fc699-370c-45a6-b96c-752ee124efc9",
+    "ownerId": "985474588689440871",
+    "itemName": "Kırık Av Zinciri",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 3
+  },
+  {
+    "id": "fd5445c4-8679-4594-aa52-06be852b3111",
+    "ownerId": "1401125565666164888",
+    "itemName": "Av Gözü Kristali",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 17
+  },
+  {
+    "id": "df18b32a-6d42-47e5-b87d-19083f11f89f",
+    "ownerId": "464870640856596482",
+    "itemName": "fare",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 7
+  },
+  {
+    "id": "30bff54b-08dc-47dd-b4c6-4c755c8cf551",
+    "ownerId": "464870640856596482",
+    "itemName": "kurbaga",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 2
+  },
+  {
+    "id": "b367cbd5-28ae-4012-b992-2b9c3e2fae46",
+    "ownerId": "464870640856596482",
+    "itemName": "kertenkele",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 1
+  },
+  {
+    "id": "751598d2-cd08-4a66-8698-3012e49364d9",
+    "ownerId": "1089435359944921089",
+    "itemName": "Ortak Kutu",
+    "itemType": "Kutu",
+    "rarity": "Common",
+    "quantity": 1
+  },
+  {
+    "id": "7473efeb-cadc-4880-9473-aa9aba5524cd",
+    "ownerId": "1401125565666164888",
+    "itemName": "Sessizlik Teli",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 31
+  },
+  {
+    "id": "87286707-f8ef-4fef-af7f-71d4c2b3c545",
+    "ownerId": "1348272228390801441",
+    "itemName": "Ortak Kutu",
+    "itemType": "Kutu",
+    "rarity": "Common",
+    "quantity": 2
+  },
+  {
+    "id": "ddb357bc-87aa-4784-a6d8-86699ad46946",
+    "ownerId": "897829226915434496",
+    "itemName": "Ortak Kutu",
+    "itemType": "Kutu",
+    "rarity": "Common",
+    "quantity": 6
+  },
+  {
+    "id": "d6556c76-d73c-456c-9d49-84ec47e55c61",
+    "ownerId": "1348272228390801441",
+    "itemName": "kostebek",
+    "itemType": "Av",
+    "rarity": "Uncommon",
+    "quantity": 1
+  },
+  {
+    "id": "5d661249-26fe-4cc1-9361-aa353c467f7b",
+    "ownerId": "1348272228390801441",
+    "itemName": "fare",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 2
+  },
+  {
+    "id": "beb8c470-c28a-4c71-b3f3-275209a2f866",
+    "ownerId": "1348272228390801441",
+    "itemName": "hamster",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 1
+  },
+  {
+    "id": "0c201cf1-a946-47bd-834f-71a3594a6ba5",
+    "ownerId": "985474588689440871",
+    "itemName": "Ortak Kutu",
+    "itemType": "Kutu",
+    "rarity": "Common",
+    "quantity": 5
+  },
+  {
+    "id": "646444a2-92f2-45b4-a4ba-9ce171a54f0f",
+    "ownerId": "985474588689440871",
+    "itemName": "Av Gözü Kristali",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 2
+  },
+  {
+    "id": "c88c0801-361e-406a-93cc-c1a36f4c5be7",
+    "ownerId": "985474588689440871",
+    "itemName": "Sessizlik Teli",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 6
+  },
+  {
+    "id": "f3cc4920-199a-4de2-a38e-f28fde054ce1",
+    "ownerId": "985474588689440871",
+    "itemName": "Yırtıcı Pençe Parçası",
+    "itemType": "Materyal",
+    "rarity": "Rare",
+    "quantity": 2
+  },
+  {
+    "id": "70e68224-ee78-4e50-bcc9-9ca252af948d",
+    "ownerId": "985474588689440871",
+    "itemName": "yarasa",
+    "itemType": "Av",
+    "rarity": "Uncommon",
+    "quantity": 9
+  },
+  {
+    "id": "cf1fba1d-59f1-40eb-87a1-e79119186921",
+    "ownerId": "985474588689440871",
+    "itemName": "hamster",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 15
+  },
+  {
+    "id": "abeafbb3-f2e7-4a66-8a51-80806cf77569",
+    "ownerId": "985474588689440871",
+    "itemName": "serce",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 22
+  },
+  {
+    "id": "a90d0e5e-dd4b-4a36-8cc2-1458b80fc353",
+    "ownerId": "985474588689440871",
+    "itemName": "kurbaga",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 15
+  },
+  {
+    "id": "11607de1-9cc6-4b86-816f-1869c259d379",
+    "ownerId": "985474588689440871",
+    "itemName": "fare",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 49
+  },
+  {
+    "id": "cd9f441e-c7a9-4576-99bd-4235a97b0a3e",
+    "ownerId": "985474588689440871",
+    "itemName": "kertenkele",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 15
+  },
+  {
+    "id": "6d3288a0-0890-4bb8-a469-542a3d582d95",
+    "ownerId": "985474588689440871",
+    "itemName": "kostebek",
+    "itemType": "Av",
+    "rarity": "Uncommon",
+    "quantity": 6
+  },
+  {
+    "id": "b7e4244d-3c65-419c-bb68-45cbe15a34b3",
+    "ownerId": "897829226915434496",
+    "itemName": "Nadir Kutu",
+    "itemType": "Kutu",
+    "rarity": "Rare",
+    "quantity": 3
+  },
+  {
+    "id": "e4733a37-7fc1-43da-ab4e-25b096a546c1",
+    "ownerId": "1401125565666164888",
+    "itemName": "Nadir İz",
+    "itemType": "Buff",
+    "rarity": "Rare",
+    "quantity": 1
+  },
+  {
+    "id": "9f6b89c3-96db-4302-b54f-33606ebf4331",
+    "ownerId": "1401125565666164888",
+    "itemName": "Berrak Zihin",
+    "itemType": "Buff",
+    "rarity": "Common",
+    "quantity": 4
+  },
+  {
+    "id": "639e56f8-a52f-4ef3-9046-91854429b752",
+    "ownerId": "1401125565666164888",
+    "itemName": "Keskin Nişan",
+    "itemType": "Buff",
+    "rarity": "Common",
+    "quantity": 1
+  },
+  {
+    "id": "5b61c500-88b0-41d1-a49c-73521e788f17",
+    "ownerId": "1401125565666164888",
+    "itemName": "Savaş Ruhu",
+    "itemType": "Buff",
+    "rarity": "Common",
+    "quantity": 5
+  },
+  {
+    "id": "2e4f2964-40bc-444b-b9b3-f6a09e856e86",
+    "ownerId": "1401125565666164888",
+    "itemName": "Yıldız Tüy",
+    "itemType": "Buff",
+    "rarity": "Epic",
+    "quantity": 2
+  },
+  {
+    "id": "dd9bc081-4d36-4fc1-936f-ed071977b487",
+    "ownerId": "362666788149788672",
+    "itemName": "Nadir Kutu",
+    "itemType": "Kutu",
+    "rarity": "Rare",
+    "quantity": 1
+  },
+  {
+    "id": "0a5b04c6-6d02-4378-9c6f-21b9b7b046ce",
+    "ownerId": "1274809970117971988",
+    "itemName": "serce",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 30
+  },
+  {
+    "id": "381b3efd-4a2e-419c-b913-189d8e06a30c",
+    "ownerId": "1274809970117971988",
+    "itemName": "hamster",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 23
+  },
+  {
+    "id": "c316b0a7-91c8-46b1-84f1-32b84132f56c",
+    "ownerId": "1274809970117971988",
+    "itemName": "yarasa",
+    "itemType": "Av",
+    "rarity": "Uncommon",
+    "quantity": 18
+  },
+  {
+    "id": "4b4dd76c-9820-49b7-8bcb-9ee96ce49485",
+    "ownerId": "1274809970117971988",
+    "itemName": "fare",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 75
+  },
+  {
+    "id": "78f5a8d9-a034-44ab-84c8-5b0d77d1ca57",
+    "ownerId": "1274809970117971988",
+    "itemName": "kertenkele",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 17
+  },
+  {
+    "id": "4ffedc7a-a4e7-4588-9ce2-e6cd515ea0b3",
+    "ownerId": "1274809970117971988",
+    "itemName": "kostebek",
+    "itemType": "Av",
+    "rarity": "Uncommon",
+    "quantity": 9
+  },
+  {
+    "id": "96061dff-83b2-4bea-b179-bc27f8d934e3",
+    "ownerId": "1161337097261686814",
+    "itemName": "Av Gözü Kristali",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 8
+  },
+  {
+    "id": "15fe8f21-1cf1-4d9a-bbae-c2d1162ef951",
+    "ownerId": "1401125565666164888",
+    "itemName": "hamster",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 50
+  },
+  {
+    "id": "16d4ac39-988d-4dbf-8f8e-2e20a6e6b304",
+    "ownerId": "1401125565666164888",
+    "itemName": "kertenkele",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 42
+  },
+  {
+    "id": "4b721234-94b2-45b6-8634-c18db8659aca",
+    "ownerId": "1401125565666164888",
+    "itemName": "fare",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 136
+  },
+  {
+    "id": "dd128742-7443-4b96-a52c-e985e7ad884f",
+    "ownerId": "1401125565666164888",
+    "itemName": "kurbaga",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 70
+  },
+  {
+    "id": "3be686d5-8d5e-40b7-adda-32576d7e492a",
+    "ownerId": "1401125565666164888",
+    "itemName": "serce",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 72
+  },
+  {
+    "id": "d176a906-97fc-45e1-a941-697431c5f465",
+    "ownerId": "1401125565666164888",
+    "itemName": "kostebek",
+    "itemType": "Av",
+    "rarity": "Uncommon",
+    "quantity": 37
+  },
+  {
+    "id": "a3567979-b19e-460d-a687-954e54474bba",
+    "ownerId": "1274809970117971988",
+    "itemName": "kurbaga",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 25
+  },
+  {
+    "id": "c348def9-aaa9-48df-abab-fc0c6a94794c",
+    "ownerId": "1274809970117971988",
+    "itemName": "Av Kokusu",
+    "itemType": "Buff",
+    "rarity": "Common",
+    "quantity": 1
+  },
+  {
+    "id": "e5e00bd4-ba54-4e7f-b4cf-b2812f461697",
+    "ownerId": "1401125565666164888",
+    "itemName": "yarasa",
+    "itemType": "Av",
+    "rarity": "Uncommon",
+    "quantity": 27
+  },
+  {
+    "id": "4daf675d-646f-4db0-894a-8f616cde16af",
+    "ownerId": "1274809970117971988",
+    "itemName": "Ortak Kutu",
+    "itemType": "Kutu",
+    "rarity": "Common",
+    "quantity": 1
+  },
+  {
+    "id": "65425292-a950-4166-ae0e-0aa190417ac8",
+    "ownerId": "1161337097261686814",
+    "itemName": "Yırtıcı Pençe Parçası",
+    "itemType": "Materyal",
+    "rarity": "Rare",
+    "quantity": 3
+  },
+  {
+    "id": "1e6116f5-eff8-4e50-aa82-441846f93544",
+    "ownerId": "1274809970117971988",
+    "itemName": "Nadir Kutu",
+    "itemType": "Kutu",
+    "rarity": "Rare",
+    "quantity": 1
+  },
+  {
+    "id": "8ffa41de-2472-4db8-8126-d249c73f55a4",
+    "ownerId": "1161337097261686814",
+    "itemName": "Koruyucu Talisman",
+    "itemType": "Buff",
+    "rarity": "Rare",
+    "quantity": 1
+  },
+  {
+    "id": "4e2b5980-5669-46a3-92e2-65dc1fddb1f6",
+    "ownerId": "1161337097261686814",
+    "itemName": "Keskin Nişan",
+    "itemType": "Buff",
+    "rarity": "Common",
+    "quantity": 1
+  },
+  {
+    "id": "5571c98f-7e6e-42ce-8f95-9c0554591b99",
+    "ownerId": "1161337097261686814",
+    "itemName": "Arena Ustası",
+    "itemType": "Buff",
+    "rarity": "Epic",
+    "quantity": 1
+  },
+  {
+    "id": "d4f36ff8-9962-4660-b51d-bf4526054f68",
+    "ownerId": "1161337097261686814",
+    "itemName": "Berrak Zihin",
+    "itemType": "Buff",
+    "rarity": "Common",
+    "quantity": 2
+  },
+  {
+    "id": "f4cf6e0f-822c-4ae3-a798-4f10cca90935",
+    "ownerId": "1161337097261686814",
+    "itemName": "Nadir İz",
+    "itemType": "Buff",
+    "rarity": "Rare",
+    "quantity": 1
+  },
+  {
+    "id": "5ff2066d-6815-43be-9a7e-cd52e093c779",
+    "ownerId": "1161337097261686814",
+    "itemName": "kostebek",
+    "itemType": "Av",
+    "rarity": "Uncommon",
+    "quantity": 5
+  },
+  {
+    "id": "d12eac71-8bd6-4efb-84b7-6e92212af84e",
+    "ownerId": "1161337097261686814",
+    "itemName": "kurbaga",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 9
+  },
+  {
+    "id": "aae36219-95e6-4b99-9ded-ff1e9aeca02a",
+    "ownerId": "1161337097261686814",
+    "itemName": "serce",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 6
+  },
+  {
+    "id": "6623de59-d0ed-4742-85c6-9fa9305d44df",
+    "ownerId": "1161337097261686814",
+    "itemName": "fare",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 18
+  },
+  {
+    "id": "654c2635-63fb-4cfb-bbf3-9763968dee73",
+    "ownerId": "1161337097261686814",
+    "itemName": "kertenkele",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 8
+  },
+  {
+    "id": "e1e710e3-79d4-4a57-bdb1-f9b6738e6e70",
+    "ownerId": "1161337097261686814",
+    "itemName": "hamster",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 6
+  },
+  {
+    "id": "7e995a31-16c3-4995-827b-64b41d90d27e",
+    "ownerId": "1401125565666164888",
+    "itemName": "Ortak Kutu",
+    "itemType": "Kutu",
+    "rarity": "Common",
+    "quantity": 1
+  },
+  {
+    "id": "9b7a3e41-e280-4b8d-ba77-9ea5ed38f794",
+    "ownerId": "1282000157453582362",
+    "itemName": "kurbaga",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 1
+  },
+  {
+    "id": "91ef4a42-efe6-4236-b2b9-40ef76c3b4c7",
+    "ownerId": "503235992510267402",
+    "itemName": "Kemik Tozu",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 1
+  },
+  {
+    "id": "37b943e8-02e0-41c5-90cf-e5f003d1e4b4",
+    "ownerId": "503235992510267402",
+    "itemName": "Parlak Tüy",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 1
+  },
+  {
+    "id": "a6ce5c81-72c6-42a6-ba8a-edeaa3f8c19e",
+    "ownerId": "1043601444240105584",
+    "itemName": "fare",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 8
+  },
+  {
+    "id": "fda0a2cd-6486-4d0f-b1f4-cd72ccb5fb21",
+    "ownerId": "1161337097261686814",
+    "itemName": "yarasa",
+    "itemType": "Av",
+    "rarity": "Uncommon",
+    "quantity": 3
+  },
+  {
+    "id": "af7e81f6-656a-43c2-a9fa-d1152dd23c6e",
+    "ownerId": "1089435359944921089",
+    "itemName": "Yırtıcı Pençe Parçası",
+    "itemType": "Materyal",
+    "rarity": "Rare",
+    "quantity": 1
+  },
+  {
+    "id": "e332a9f6-a931-45e4-aef4-da8c52059ce3",
+    "ownerId": "1401125565666164888",
+    "itemName": "guvercin",
+    "itemType": "Av",
+    "rarity": "Uncommon",
+    "quantity": 2
+  },
+  {
+    "id": "522b5e91-bb89-4bf3-820b-72b4e63a7868",
+    "ownerId": "1401125565666164888",
+    "itemName": "bildircin",
+    "itemType": "Av",
+    "rarity": "Uncommon",
+    "quantity": 3
+  },
+  {
+    "id": "3cfeb27c-f014-4be8-8b70-824a3e17ab79",
+    "ownerId": "945713316976820254",
+    "itemName": "kurbaga",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 1
+  },
+  {
+    "id": "e5305535-78b8-4433-9c13-d952f6373c89",
+    "ownerId": "945713316976820254",
+    "itemName": "serce",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 1
+  },
+  {
+    "id": "458d9bbe-f260-43a8-ab91-11aa1e664e91",
+    "ownerId": "945713316976820254",
+    "itemName": "fare",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 3
+  },
+  {
+    "id": "54e59488-d05f-4c33-be8e-7c19e9892ed2",
+    "ownerId": "1143216306255036457",
+    "itemName": "fare",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 2
+  },
+  {
+    "id": "5cf6126d-8533-4ddf-8f26-efdaba3d017f",
+    "ownerId": "1143216306255036457",
+    "itemName": "Kemik Tozu",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 1
+  },
+  {
+    "id": "dcc2b4fa-07b8-41df-a2d9-96714911bd13",
+    "ownerId": "945713316976820254",
+    "itemName": "kostebek",
+    "itemType": "Av",
+    "rarity": "Uncommon",
+    "quantity": 1
+  },
+  {
+    "id": "e493aac9-aab4-4b8b-8ada-b058b9687ad4",
+    "ownerId": "822170189302595635",
+    "itemName": "fare",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 1
+  },
+  {
+    "id": "2088ad12-4448-4cc6-9082-b4ed01b146b8",
+    "ownerId": "699549513924476939",
+    "itemName": "Ortak Kutu",
+    "itemType": "Kutu",
+    "rarity": "Common",
+    "quantity": 2
+  },
+  {
+    "id": "ed050d4c-9b0b-4461-aa4c-93c836d8f265",
+    "ownerId": "699549513924476939",
+    "itemName": "Parlak Tüy",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 11
+  },
+  {
+    "id": "f9e0e2e9-780e-47c0-9a9e-aa8312f4f39c",
+    "ownerId": "699549513924476939",
+    "itemName": "Kemik Tozu",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 21
+  },
+  {
+    "id": "d6b3ca1b-1f6e-48ef-890d-e81387f51e64",
+    "ownerId": "699549513924476939",
+    "itemName": "Yırtıcı Pençe Parçası",
+    "itemType": "Materyal",
+    "rarity": "Rare",
+    "quantity": 2
+  },
+  {
+    "id": "bb87e603-6923-4eae-a357-8cfcedf8ca2f",
+    "ownerId": "699549513924476939",
+    "itemName": "Sessizlik Teli",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 3
+  },
+  {
+    "id": "4a1fb516-0ef0-42c0-bb1c-81c22830e4e8",
+    "ownerId": "699549513924476939",
+    "itemName": "Kırık Av Zinciri",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 3
+  },
+  {
+    "id": "cbb91d93-23a1-4ce5-bf0a-9a9fa209346b",
+    "ownerId": "699549513924476939",
+    "itemName": "Av Gözü Kristali",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 2
+  },
+  {
+    "id": "f8912cde-14f7-4eee-9d0b-127a44ef924e",
+    "ownerId": "1043601444240105584",
+    "itemName": "kertenkele",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 1
+  },
+  {
+    "id": "46625ef7-f695-4986-8b2b-1b547792dfa0",
+    "ownerId": "1001862083035549756",
+    "itemName": "Kemik Tozu",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 9
+  },
+  {
+    "id": "7b34ef28-a3a0-402c-a20e-ca603848bcb0",
+    "ownerId": "1001862083035549756",
+    "itemName": "Av Gözü Kristali",
+    "itemType": "Materyal",
+    "rarity": "Uncommon",
+    "quantity": 2
+  },
+  {
+    "id": "c4f19a62-de24-41ed-8c54-3678fe93fd44",
+    "ownerId": "1001862083035549756",
+    "itemName": "Parlak Tüy",
+    "itemType": "Materyal",
+    "rarity": "Common",
+    "quantity": 2
+  },
+  {
+    "id": "4c14d409-92c5-4186-a75c-e16c507bb59f",
+    "ownerId": "362666788149788672",
+    "itemName": "fare",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 9
+  },
+  {
+    "id": "1e100be3-a439-4775-8529-a359e012820b",
+    "ownerId": "362666788149788672",
+    "itemName": "kertenkele",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 2
+  },
+  {
+    "id": "575e99e3-8bed-41ce-91ea-7cec2a1e2c5c",
+    "ownerId": "362666788149788672",
+    "itemName": "kurbaga",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 6
+  },
+  {
+    "id": "967ea0b8-147f-44cb-a499-cca655002ea8",
+    "ownerId": "362666788149788672",
+    "itemName": "serce",
+    "itemType": "Av",
+    "rarity": "Common",
+    "quantity": 1
+  },
+  {
+    "id": "9ee8d2bb-316f-4872-bf6e-c53d6c35f078",
+    "ownerId": "362666788149788672",
+    "itemName": "kostebek",
+    "itemType": "Av",
+    "rarity": "Uncommon",
+    "quantity": 1
+  },
+  {
+    "id": "f2e207f2-3501-4a28-a5b5-c41f52562684",
+    "ownerId": "1110219662509224006",
+    "itemName": "Nadir Kutu",
+    "itemType": "Kutu",
+    "rarity": "Rare",
+    "quantity": 1
+  },
+  {
+    "id": "49ea1e0c-7b34-469b-adba-9f02d160db81",
+    "ownerId": "1110219662509224006",
+    "itemName": "Karma Yem",
+    "itemType": "Consumable",
+    "rarity": "Common",
+    "quantity": 1
+  }
+]

@@ -39,7 +39,26 @@ export function buildHelpEmbed(prefix: string): EmbedBuilder {
 
   const ekonomiSection = [
     `\`${p} cash\` · \`${p} c\` — Mevcut bakiyeni gör`,
+    `\`${p} ver @kullanıcı <miktar>\` — Birine coin gönder`,
     `\`${p} lb\` — Liderboard sıralamalarını gör`,
+    `\`${p} quests\` · \`${p} q\` — Günlük görevleri gör ve ödül al`,
+    `\`${p} prestige <baykuş_id>\` — Baykuşu feda et, kalıcı bonus kazan`,
+  ].join('\n');
+
+  const eşyaSection = [
+    `\`${p} sk\` — 1 silah kutusu aç`,
+    `\`${p} sk all\` — tüm silah kutularını aç`,
+    `\`${p} ek\` — 1 eşya kutusu aç`,
+    `\`${p} ek all\` — tüm eşya kutularını aç`,
+    `\`${p} aç\` — kutu envanterini gör`,
+    `\`${p} craft\` — Crafting menüsünü aç, eşya üret`,
+    `\`${p} dismantle <eşya> [miktar]\` — Eşyayı parçala, materyal kazan`,
+    `\`${p} market\` — Global marketi görüntüle`,
+    `\`${p} market sat <eşya> <miktar> <fiyat>\` — Markete eşya koy`,
+    `\`${p} market al <ilan_id>\` — Marketten eşya satın al`,
+    `\`${p} buff\` — Aktif buff item'larını gör`,
+    `\`${p} buff <item adı>\` — Buff item aktifleştir`,
+    `\`${p} buffs\` — Tüm buff rehberini gör`,
   ].join('\n');
 
   const ipucuSection = [
@@ -47,6 +66,8 @@ export function buildHelpEmbed(prefix: string): EmbedBuilder {
     `• Upgrade başarı garantili değil; stat yükseldikçe zorlaşır`,
     `• PvP davetleri 60 saniye geçerli`,
     `• \`${p} upgrade\` yazınca bağımlılık sistemi gösterilir`,
+    `• Lootbox hunt, PvP ve encounter'dan otomatik düşer`,
+    `• Prestige için oyuncu Lv.30+ ve baykuş ort. stat 80+ gerekir`,
   ].join('\n');
 
   return new EmbedBuilder()
@@ -57,7 +78,8 @@ export function buildHelpEmbed(prefix: string): EmbedBuilder {
       { name: '🌿 Av & Baykuş', value: avSection, inline: false },
       { name: '⚔️ PvP', value: pvpSection, inline: false },
       { name: '🎲 Kumar', value: kumarSection, inline: false },
-      { name: '💰 Ekonomi', value: ekonomiSection, inline: false },
+      { name: '💰 Ekonomi & Görevler', value: ekonomiSection, inline: false },
+      { name: '🎒 Eşya & Market', value: eşyaSection, inline: false },
       { name: '💡 İpuçları', value: ipucuSection, inline: false },
     )
     .setFooter({ text: `Tüm komutlar ${p} <komut> formatında çalışır` });

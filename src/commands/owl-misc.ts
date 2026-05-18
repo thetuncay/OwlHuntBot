@@ -3,10 +3,10 @@
  */
 
 import { EmbedBuilder, PermissionFlagsBits, type Message } from 'discord.js';
-import { PREY, LOOTBOX_DEFS, BUFF_ITEMS, BUFF_ITEM_MAP } from '../config';
+import { PREY, LOOTBOX_DEFS, LOOTBOX_DEF_MAP, BUFF_ITEMS, BUFF_ITEM_MAP } from '../config';
 import { setGuildPrefix } from '../utils/prefix';
 import { failEmbed } from '../utils/embed';
-import { openLootbox, listLootboxInventory, getPityCounts } from '../systems/lootbox';
+import { openLootbox, openAllLootboxes, listLootboxInventory, getPityCounts } from '../systems/lootbox';
 import { activateBuff, listBuffInventory } from '../systems/items';
 import type Redis from 'ioredis';
 import type { CommandDefinition } from '../types';
@@ -218,7 +218,7 @@ export async function runPrefix(
   });
 }
 
-// ─── aç (lootbox açma) ────────────────────────────────────────────────────────
+// ─── aç (lootbox envanteri görüntüleme) ──────────────────────────────────────
 
 export async function runAcMessage(
   message: Message,
@@ -226,67 +226,136 @@ export async function runAcMessage(
   ctx: Parameters<CommandDefinition['execute']>[1],
   helpPrefix: string,
 ): Promise<void> {
-  const playerId = message.author.id;
+  const boxes = await listLootboxInventory(ctx.prisma, message.author.id);
+  const pity  = await getPityCounts(ctx.redis as unknown as Redis, message.author.id);
 
-  if (!args[0]) {
-    const boxes = await listLootboxInventory(ctx.prisma, playerId);
-    const pity  = await getPityCounts(ctx.redis as unknown as Redis, playerId);
-
-    if (boxes.length === 0) {
-      await message.reply(
-        `📦 **Envanterinde hiç lootbox yok.**\n` +
-        `> Hunt, PvP veya encounter'dan otomatik düşer.\n` +
-        `> Kullanım: \`${helpPrefix} aç <kutu adı>\`\n` +
-        `> Örnek: \`${helpPrefix} aç Ortak Kutu\``,
-      );
-      return;
-    }
-
-    const lines = boxes.map(({ def, quantity }) => {
-      const p = pity[def.id] ?? 0;
-      return `${def.emoji} **${def.name}** ×${quantity}  *(pity: ${p}/${def.pityThreshold})*`;
-    });
-
+  if (boxes.length === 0) {
     await message.reply(
-      `📦 **Lootbox Envanteri**\n\n${lines.join('\n')}\n\n` +
-      `> \`${helpPrefix} aç <kutu adı>\` ile aç — örnek: \`${helpPrefix} aç Ortak Kutu\``,
+      `📦 **Envanterinde hiç kutu yok.**\n` +
+      `> Hunt, PvP veya encounter'dan otomatik düşer.\n` +
+      `> \`${helpPrefix} sk\` — silah kutusu aç\n` +
+      `> \`${helpPrefix} ek\` — eşya kutusu aç`,
     );
     return;
   }
 
-  const boxName = args.join(' ').trim();
-  const def     = LOOTBOX_DEFS.find((l) => l.name.toLowerCase() === boxName.toLowerCase());
+  const lines = boxes.map(({ def, quantity }) => {
+    const p = pity[def.id] ?? 0;
+    return `${def.emoji} **${def.name}** ×${quantity}  *(pity: ${p}/${def.pityThreshold})*`;
+  });
 
-  if (!def) {
-    const names = LOOTBOX_DEFS.map((l) => `\`${l.name}\``).join(', ');
-    await message.reply(`❌ **Geçersiz kutu adı.** Mevcut kutular: ${names}`);
-    return;
-  }
+  await message.reply(
+    `📦 **Kutu Envanteri**\n\n${lines.join('\n')}\n\n` +
+    `> \`${helpPrefix} sk\` / \`${helpPrefix} sk all\` — silah kutusu aç\n` +
+    `> \`${helpPrefix} ek\` / \`${helpPrefix} ek all\` — eşya kutusu aç`,
+  );
+}
+
+// ─── sk (silah kutusu açma) ───────────────────────────────────────────────────
+
+export async function runSkMessage(
+  message: Message,
+  args: string[],
+  ctx: Parameters<CommandDefinition['execute']>[1],
+  helpPrefix: string,
+): Promise<void> {
+  const openAll = (args[0] ?? '').toLowerCase() === 'all';
+  await runCrateOpen(message, ctx, helpPrefix, 'wc', openAll);
+}
+
+// ─── ek (eşya kutusu açma) ────────────────────────────────────────────────────
+
+export async function runEkMessage(
+  message: Message,
+  args: string[],
+  ctx: Parameters<CommandDefinition['execute']>[1],
+  helpPrefix: string,
+): Promise<void> {
+  const openAll = (args[0] ?? '').toLowerCase() === 'all';
+  await runCrateOpen(message, ctx, helpPrefix, 'ec', openAll);
+}
+
+// ─── Ortak kutu açma mantığı ──────────────────────────────────────────────────
+
+async function runCrateOpen(
+  message: Message,
+  ctx: Parameters<CommandDefinition['execute']>[1],
+  helpPrefix: string,
+  lootboxId: string,
+  openAll: boolean,
+): Promise<void> {
+  const playerId = message.author.id;
+  const name     = message.member?.displayName ?? message.author.username;
 
   try {
-    const result = await openLootbox(ctx.prisma, ctx.redis as unknown as Redis, playerId, def.id);
+    if (openAll) {
+      const { opened, results } = await openAllLootboxes(
+        ctx.prisma,
+        ctx.redis as unknown as Redis,
+        playerId,
+        lootboxId,
+      );
 
-    const RARITY_COLOR: Record<string, number> = {
-      Legendary: 0xf1c40f, Epic: 0x9b59b6, Rare: 0x3498db, Common: 0x95a5a6,
-    };
-    const topRarity = result.items.reduce((best, item) => {
-      const order: Record<string, number> = { Legendary: 4, Epic: 3, Rare: 2, Common: 1 };
-      return (order[item.rarity] ?? 0) > (order[best] ?? 0) ? item.rarity : best;
-    }, 'Common');
+      // Tüm item'ları topla ve say
+      const tally = new Map<string, { emoji: string; rarity: string; count: number }>();
+      for (const r of results) {
+        for (const item of r.items) {
+          const existing = tally.get(item.buffItemId);
+          if (existing) {
+            existing.count++;
+          } else {
+            tally.set(item.buffItemId, { emoji: item.emoji, rarity: item.rarity, count: 1 });
+          }
+        }
+      }
 
-    const itemLines = result.items.map((item) => `${item.emoji} **${item.buffName}** *(${item.rarity})*`);
+      const def = LOOTBOX_DEF_MAP[lootboxId]!;
+      const pityCount = results.filter((r) => r.pityTriggered).length;
 
-    const embed = new EmbedBuilder()
-      .setColor(RARITY_COLOR[topRarity] ?? 0x5865f2)
-      .setTitle(`${result.lootboxName} Açıldı!`)
-      .setDescription(itemLines.join('\n') || '*Hiçbir şey çıkmadı.*')
-      .setFooter({
-        text: result.pityTriggered
-          ? '✨ Pity garantisi tetiklendi!'
-          : `${message.member?.displayName ?? message.author.username}`,
-      });
+      const RARITY_ORDER: Record<string, number> = { Legendary: 4, Epic: 3, Rare: 2, Common: 1 };
+      const sorted = [...tally.entries()].sort(
+        (a, b) => (RARITY_ORDER[b[1].rarity] ?? 0) - (RARITY_ORDER[a[1].rarity] ?? 0),
+      );
 
-    await message.reply({ embeds: [embed] });
+      const RARITY_DOT: Record<string, string> = {
+        Legendary: '🟡', Epic: '🟣', Rare: '🔵', Common: '⚪',
+      };
+
+      const lines = sorted.map(([, v]) =>
+        `${RARITY_DOT[v.rarity] ?? '⚪'} ${v.emoji} ×${v.count}`,
+      );
+
+      let out = `${def.emoji} | **${name}** opens **${opened}x ${def.name}**\n`;
+      out += lines.join('  ') || '*Hiçbir şey çıkmadı.*';
+      if (pityCount > 0) out += `\n✨ | Pity **${pityCount}** kez tetiklendi!`;
+
+      await message.reply(out);
+    } else {
+      const result = await openLootbox(
+        ctx.prisma,
+        ctx.redis as unknown as Redis,
+        playerId,
+        lootboxId,
+      );
+
+      const def  = LOOTBOX_DEF_MAP[lootboxId]!;
+      const item = result.items[0];
+
+      const RARITY_DOT: Record<string, string> = {
+        Legendary: '🟡', Epic: '🟣', Rare: '🔵', Common: '⚪',
+      };
+
+      let out = `${def.emoji} | **${name}** opens a **${def.name}**\n`;
+      if (item) {
+        const dot = RARITY_DOT[item.rarity] ?? '⚪';
+        out += `🎁 | and finds a ${dot} **${item.buffName}** *(${item.rarity})*`;
+      } else {
+        out += `🎁 | and finds... nothing.`;
+      }
+      if (result.pityTriggered) out += `\n✨ | Pity garantisi tetiklendi!`;
+
+      await message.reply(out);
+    }
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : 'Bir hata oluştu.';
     await message.reply(`❌ **Hata** | ${errMsg}`);
