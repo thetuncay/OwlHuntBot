@@ -170,6 +170,7 @@ export function buildOwlStatsEmbed(
       `👂 Kulak softcap: **${statEffect(owl.statKulak, prestige).toFixed(2)}**\n` +
       `🪽 Kanat softcap: **${statEffect(owl.statKanat, prestige).toFixed(2)}**\n` +
       `🌟 Prestige:      **+${prestige * 2} stat cap**\n` +
+      `🌟 Prestige XP:   **+${prestige * 5}%**\n` +
       `💞 Bond bonus:    **+${bondBonus(owl.bond).toFixed(2)} puan**`;
 
     embed.addFields({

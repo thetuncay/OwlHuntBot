@@ -187,6 +187,71 @@ describe('bar function property tests', () => {
   });
 
   /**
+   * Property 5: hpBar Çıktı Uzunluğu
+   * Validates: Requirements 3.6
+   *
+   * hpBar(current, target, 10) her zaman tam olarak 10 karakter uzunluğunda string döndürür.
+   * ∀ (current, target) where 0 ≤ current < target ∧ target > 0
+   */
+  it('Property 5: hpBar always returns a string of exactly 10 characters', () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 1, max: 1000 }).chain((target) =>
+          fc.tuple(fc.constant(target), fc.integer({ min: 0, max: target - 1 }))
+        ),
+        ([target, current]) => {
+          const result = hpBar(current, target, 10);
+          return [...result].length === 10;
+        }
+      )
+    );
+  });
+
+  /**
+   * Property 6: hpBar Dolu Segment Sayısı
+   * Validates: Requirements 3.7
+   *
+   * hpBar(current, target, 10) içindeki '█' sayısı Math.round((current / target) * 10) ile eşit olmalı.
+   * ∀ (current, target) where 0 ≤ current ≤ target ∧ target > 0
+   */
+  it('Property 6: hpBar filled segment count equals Math.round((current/target)*10)', () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 1, max: 1000 }).chain((target) =>
+          fc.tuple(fc.constant(target), fc.integer({ min: 0, max: target }))
+        ),
+        ([target, current]) => {
+          const result = hpBar(current, target, 10);
+          const filled = (result.match(/█/g) ?? []).length;
+          const expected = Math.round((current / target) * 10);
+          return filled === expected;
+        }
+      )
+    );
+  });
+
+  /**
+   * Property 7: hpBar Yalnızca Geçerli Karakterler
+   * Validates: Requirements 3.6
+   *
+   * hpBar çıktısı yalnızca '█' ve '░' karakterlerinden oluşur.
+   * ∀ (current, target) where 0 ≤ current ≤ target ∧ target > 0
+   */
+  it('Property 7: hpBar output consists only of █ and ░ characters', () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 1, max: 1000 }).chain((target) =>
+          fc.tuple(fc.constant(target), fc.integer({ min: 0, max: target }))
+        ),
+        ([target, current]) => {
+          const result = hpBar(current, target, 10);
+          return /^[█░]+$/.test(result);
+        }
+      )
+    );
+  });
+
+  /**
    * Property 4: toSuperscript Geçerlilik ve Sınır
    * Validates: Requirements 6.1, 6.3, 6.4, 6.5
    *
