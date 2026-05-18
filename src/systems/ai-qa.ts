@@ -74,7 +74,7 @@ function getClient(): GoogleGenerativeAI {
 export async function askGameQuestion(question: string): Promise<string> {
   const client = getClient();
   const model = client.getGenerativeModel({
-    model: 'gemini-2.0-flash',
+    model: 'gemini-1.5-flash-latest',
     systemInstruction: SYSTEM_PROMPT,
   });
 
