@@ -42,6 +42,7 @@ export function buildHelpEmbed(prefix: string): EmbedBuilder {
     `\`${p} ver @kullanıcı <miktar>\` — Birine coin gönder`,
     `\`${p} lb\` — Liderboard sıralamalarını gör`,
     `\`${p} quests\` · \`${p} q\` — Günlük görevleri gör ve ödül al`,
+    `\`${p} soru <soru>\` — Oyunla ilgili soru sor (AI destekli)`,
     `\`${p} prestige <baykuş_id>\` — Baykuşu feda et, kalıcı bonus kazan`,
   ].join('\n');
 

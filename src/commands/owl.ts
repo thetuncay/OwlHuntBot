@@ -33,6 +33,7 @@ import { runCraftMessage, runDismantleMessage, runCraftSlash, runDismantleSlash 
 import { runMarketMessage, runMarketSlash } from './owl-market';
 import { runPrestigeMessage, runPrestigeSlash } from './owl-prestige';
 import { runQuestsMessage, runQuestsSlash } from './owl-quests';
+import { runSoruMessage } from './owl-soru';
 import { ALIASES, TEXT_SUBCOMMANDS, findClosest, buildUnknownCommandEmbed } from './owl-utils';
 import { runPvpCoinFlip, runPvpSlot, runPvpBlackjack } from './pvp';
 
@@ -207,6 +208,7 @@ export async function handleOwlTextCommand(
     case 'market':    await runMarketMessage(message, args, ctx, helpPrefix); break;
     case 'prestige':  await runPrestigeMessage(message, args, ctx, helpPrefix); break;
     case 'quests':    await runQuestsMessage(message, args, ctx, helpPrefix); break;
+    case 'soru':      await runSoruMessage(message, args, ctx, helpPrefix);   break;
     default: {
       const suggestion = findClosest(sub, TEXT_SUBCOMMANDS);
       await message.reply({ embeds: [buildUnknownCommandEmbed(helpPrefix, rawSub, suggestion)] });
