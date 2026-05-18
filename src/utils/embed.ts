@@ -1,5 +1,5 @@
 import { EmbedBuilder } from 'discord.js';
-import { COLOR_FAIL, COLOR_INFO, COLOR_SUCCESS, COLOR_WARNING } from '../config';
+import { COLORS } from './theme';
 
 export interface QuickView {
   species: string;
@@ -27,7 +27,7 @@ export function applyQuickView(embed: EmbedBuilder, quickView: QuickView): Embed
  * Basarili islem embed'i uretir.
  */
 export function successEmbed(title: string, description: string, quickView?: QuickView): EmbedBuilder {
-  const embed = new EmbedBuilder().setColor(COLOR_SUCCESS).setTitle(title).setDescription(description);
+  const embed = new EmbedBuilder().setColor(COLORS.SUCCESS).setTitle(title).setDescription(description);
   return quickView ? applyQuickView(embed, quickView) : embed;
 }
 
@@ -35,7 +35,7 @@ export function successEmbed(title: string, description: string, quickView?: Qui
  * Basarisiz islem embed'i uretir.
  */
 export function failEmbed(title: string, description: string, quickView?: QuickView): EmbedBuilder {
-  const embed = new EmbedBuilder().setColor(COLOR_FAIL).setTitle(title).setDescription(description);
+  const embed = new EmbedBuilder().setColor(COLORS.DANGER).setTitle(title).setDescription(description);
   return quickView ? applyQuickView(embed, quickView) : embed;
 }
 
@@ -43,7 +43,7 @@ export function failEmbed(title: string, description: string, quickView?: QuickV
  * Bilgilendirme embed'i uretir.
  */
 export function infoEmbed(title: string, description: string, quickView?: QuickView): EmbedBuilder {
-  const embed = new EmbedBuilder().setColor(COLOR_INFO).setTitle(title).setDescription(description);
+  const embed = new EmbedBuilder().setColor(COLORS.PRIMARY).setTitle(title).setDescription(description);
   return quickView ? applyQuickView(embed, quickView) : embed;
 }
 
@@ -51,6 +51,6 @@ export function infoEmbed(title: string, description: string, quickView?: QuickV
  * Uyari embed'i uretir.
  */
 export function warningEmbed(title: string, description: string, quickView?: QuickView): EmbedBuilder {
-  const embed = new EmbedBuilder().setColor(COLOR_WARNING).setTitle(title).setDescription(description);
+  const embed = new EmbedBuilder().setColor(COLORS.WARNING).setTitle(title).setDescription(description);
   return quickView ? applyQuickView(embed, quickView) : embed;
 }

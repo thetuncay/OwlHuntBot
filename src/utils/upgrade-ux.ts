@@ -9,13 +9,7 @@ import { statEffect } from './math';
 import { UPGRADE_COST, UPGRADE_DEPENDENCIES } from '../config';
 import type { AllStats } from './upgrade-deps';
 import { checkUpgradeDep, getAllDepStatuses } from './upgrade-deps';
-
-// ─── Renkler ─────────────────────────────────────────────────────────────────
-const COLOR_PANEL   = 0x5865f2;
-const COLOR_SUCCESS = 0x2ecc71;
-const COLOR_FAIL    = 0xe74c3c;
-const COLOR_CANCEL  = 0x95a5a6;
-const COLOR_WARN    = 0xe67e22; // düşük şans
+import { COLORS, hpBar, chanceBar } from './theme';
 
 // ─── Stat meta ───────────────────────────────────────────────────────────────
 const STAT_META: Record<OwlStatKey, {
@@ -57,22 +51,6 @@ const STAT_META: Record<OwlStatKey, {
 };
 
 // ─── Yardımcılar ─────────────────────────────────────────────────────────────
-
-/** 10 segmentli progress bar. */
-function bar(value: number, max: number, length = 10): string {
-  const ratio  = max > 0 ? Math.min(value / max, 1) : 0;
-  const filled = Math.round(ratio * length);
-  const empty  = length - filled;
-  return `\`${'█'.repeat(filled)}${'░'.repeat(empty)}\``;
-}
-
-/** Şans barı — renk + bar + yüzde. */
-function chanceBar(chance: number): string {
-  const filled = Math.round(chance / 10);
-  const empty  = 10 - filled;
-  const dot    = chance >= 70 ? '🟢' : chance >= 40 ? '🟡' : '🔴';
-  return `${dot} \`${'█'.repeat(filled)}${'░'.repeat(empty)}\` **${chance.toFixed(1)}%**`;
-}
 
 /**
  * Bir stat seviyesinin oyun üzerindeki etkisini kısa metin olarak döndürür.
@@ -129,10 +107,10 @@ export function buildUpgradePanel(data: UpgradePanelData): EmbedBuilder {
 
   const isLowChance = data.chance < 40;
   // Bağımlılık engeli varsa turuncu, düşük şans varsa sarı, normal mavi
-  const color = depBlocked ? 0xe67e22 : isLowChance ? 0xf1c40f : COLOR_PANEL;
+  const color = depBlocked ? COLORS.WARNING : isLowChance ? COLORS.RARE : COLORS.UPGRADE;
 
   // ── Hedef stat bloğu ───────────────────────────────────────────────────────
-  const statBarVis = bar(Math.min(data.statValue, 100), 100, 10);
+  const statBarVis = `\`${hpBar(Math.min(data.statValue, 100), 100, 10)}\``;
   const delta      = effectDelta(data.stat, data.statValue);
 
   const targetBlock =
@@ -164,7 +142,7 @@ export function buildUpgradePanel(data: UpgradePanelData): EmbedBuilder {
     .map((s) => {
       const m       = STAT_META[s];
       const v       = data.allStats[s];
-      const b       = bar(Math.min(v, 100), 100, 6);
+      const b       = `\`${hpBar(Math.min(v, 100), 100, 6)}\``;
       const depInfo = UPGRADE_DEPENDENCIES[s];
       let depTag = '';
       if (depInfo?.dependsOn) {
@@ -247,10 +225,10 @@ export function buildUpgradeResult(opts: {
   const meta = STAT_META[opts.stat];
 
   if (opts.success) {
-    const statBarVis = bar(Math.min(opts.newValue, 100), 100, 10);
+    const statBarVis = `\`${hpBar(Math.min(opts.newValue, 100), 100, 10)}\``;
     const delta      = effectDelta(opts.stat, opts.oldValue);
     return new EmbedBuilder()
-      .setColor(COLOR_SUCCESS)
+      .setColor(COLORS.SUCCESS)
       .setTitle('✅ Geliştirme Başarılı!')
       .setDescription(
         `${meta.icon} **${meta.label}** yükseldi!\n\n` +
@@ -263,7 +241,7 @@ export function buildUpgradeResult(opts: {
 
   const downgraded = opts.newValue < opts.oldValue;
   return new EmbedBuilder()
-    .setColor(COLOR_FAIL)
+    .setColor(COLORS.DANGER)
     .setTitle(downgraded ? '💀 Geliştirme Başarısız — Gerileme!' : '❌ Geliştirme Başarısız')
     .setDescription(
       `${meta.icon} **${meta.label}** ${downgraded ? 'geriledi' : 'değişmedi'}.\n\n` +
@@ -296,7 +274,7 @@ export function buildDepBlockedEmbed(errorMessage: string): EmbedBuilder | null 
   const sugMeta = suggestion ? STAT_META[suggestion] : null;
 
   return new EmbedBuilder()
-    .setColor(0xe67e22)
+    .setColor(COLORS.WARNING)
     .setTitle('🔒 Geliştirme Engellendi')
     .setDescription(
       `Bu statı yükseltmek için önce bağımlı statı geliştirmen gerekiyor.\n\n` +
@@ -312,7 +290,7 @@ export function buildDepBlockedEmbed(errorMessage: string): EmbedBuilder | null 
 // ─── İptal embed ─────────────────────────────────────────────────────────────
 export function buildUpgradeCancel(): EmbedBuilder {
   return new EmbedBuilder()
-    .setColor(COLOR_CANCEL)
+    .setColor(COLORS.MUTED)
     .setTitle('🚫 İptal Edildi')
     .setDescription('> Geliştirme iptal edildi. Materyaller harcanmadı.');
 }
@@ -356,7 +334,7 @@ export function buildUpgradeOverview(helpPrefix: string): EmbedBuilder {
     '• ***Yırtıcı Pençe Parçası*** — Zorluk 5+ (nadir)';
 
   return new EmbedBuilder()
-    .setColor(COLOR_PANEL)
+    .setColor(COLORS.UPGRADE)
     .setTitle('⚡ Geliştirme Sistemi')
     .setDescription(
       '> Baykuşunun statlarını geliştirerek daha güçlü avlar yap ve nadir baykuşlar bul.\n' +

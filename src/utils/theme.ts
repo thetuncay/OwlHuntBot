@@ -86,7 +86,7 @@ export function hpBarColored(hp: number, hpMax: number, length = 8): string {
  * Slot barı — doluluk göstergesi
  */
 export function slotBar(used: number, total: number, length = 10): string {
-  const pct    = Math.min(used / total, 1);
+  const pct    = total > 0 ? Math.min(Math.max(used / total, 0), 1) : 0;
   const filled = Math.round(pct * length);
   const warn   = pct >= 0.9 ? ' ⚠️' : '';
   return `\`${'█'.repeat(filled)}${'░'.repeat(length - filled)}\` ${used}/${total}${warn}`;
@@ -132,6 +132,11 @@ export function okLine(msg: string): string {
 /** ⚠ Uyarı satırı */
 export function warnLine(msg: string): string {
   return `⚠ ${msg}`;
+}
+
+/** 🌙 | Pipe satırı (hunt çıktıları için) */
+export function pipeLine(msg: string): string {
+  return `🌙 | ${msg}`;
 }
 
 // ─── Charge göstergesi ────────────────────────────────────────────────────────

@@ -21,6 +21,15 @@ import {
   EmbedBuilder,
 } from 'discord.js';
 import { BUFF_ITEM_MAP } from '../config';
+import {
+  COLORS,
+  RARITY_BADGE,
+  RARITY_COLOR,
+  slotBar,
+  chargeBar,
+  chargeDot,
+  toSuperscript,
+} from './theme';
 
 // ─── Tipler ───────────────────────────────────────────────────────────────────
 
@@ -54,26 +63,13 @@ export interface InventoryRenderData {
 
 // ─── Sabitler ─────────────────────────────────────────────────────────────────
 
-const COLOR_INV      = 0x5865f2;  // Discord blurple
-const COLOR_BUFF     = 0x9b59b6;  // Mor — aktif buff
-const COLOR_EMPTY    = 0x95a5a6;  // Gri — boş envanter
-
-// Rarity sıralaması
+// Rarity sıralaması (görsel tema değil, sıralama yardımcısı)
 const RARITY_ORDER: Record<string, number> = {
   Legendary: 5,
   Epic:      4,
   Rare:      3,
   Uncommon:  2,
   Common:    1,
-};
-
-// Rarity renk/ikon
-const RARITY_BADGE: Record<string, string> = {
-  Legendary: '🟡',
-  Epic:      '🟣',
-  Rare:      '🔵',
-  Uncommon:  '🔹',
-  Common:    '',
 };
 
 // Item tipi → kategori başlığı + emoji
@@ -152,25 +148,6 @@ function sortByRarityThenQty(items: InventoryItem[]): InventoryItem[] {
   });
 }
 
-/** Slot doluluk barı */
-function slotBar(used: number, total: number): string {
-  const pct    = Math.min(used / total, 1);
-  const filled = Math.round(pct * 8);
-  const empty  = 8 - filled;
-  const bar    = `${'█'.repeat(filled)}${'░'.repeat(empty)}`;
-  const warn   = pct >= 0.9 ? ' ⚠️' : '';
-  return `\`[${bar}]\` ${used}/${total}${warn}`;
-}
-
-/** Charge barı — OwO tarzı inline gösterim */
-function chargeBar(cur: number, max: number): string {
-  const pct    = max > 0 ? cur / max : 0;
-  const filled = Math.round(pct * 8);
-  const empty  = 8 - filled;
-  const dot    = pct > 0.5 ? '🟢' : pct > 0.2 ? '🟡' : '🔴';
-  return `${dot} \`${cur}/${max}\``;
-}
-
 /** Tek item satırı — kategori görünümü için */
 function formatCategoryLine(item: InventoryItem): string {
   const emoji  = itemEmoji(item.itemName);
@@ -199,7 +176,8 @@ function buildTopSection(
   let buffField: { name: string; value: string; inline: boolean } | null = null;
   if (activeBuffs.length > 0) {
     const lines = activeBuffs.slice(0, 5).map((b) => {
-      const bar = chargeBar(b.chargeCur, b.chargeMax);
+      const dot = chargeDot(b.chargeCur, b.chargeMax);
+      const bar = `${dot} \`${b.chargeCur}/${b.chargeMax}\``;
       return `${b.buffName} ${bar}`;
     });
     if (activeBuffs.length > 5) lines.push(`*+ ${activeBuffs.length - 5} buff daha...*`);
@@ -341,7 +319,7 @@ export function buildInventoryOverviewEmbed(data: InventoryRenderData): EmbedBui
   const { username, items, activeBuffs, usedSlots, capacity } = data;
 
   const hasBuffs = activeBuffs.length > 0;
-  const color    = hasBuffs ? COLOR_BUFF : (items.length === 0 ? COLOR_EMPTY : COLOR_INV);
+  const color    = hasBuffs ? COLORS.BUFF : (items.length === 0 ? COLORS.MUTED : COLORS.INVENTORY);
 
   const embed = new EmbedBuilder()
     .setColor(color)
@@ -394,7 +372,7 @@ export function buildInventoryGridEmbed(data: InventoryRenderData): EmbedBuilder
   const { fields } = buildGridSection(items, page);
 
   return new EmbedBuilder()
-    .setColor(COLOR_INV)
+    .setColor(COLORS.INVENTORY)
     .setTitle(`🎒 ${username}'in Envanteri — Grid`)
     .setDescription('> Kompakt görünüm.')
     .addFields(...fields)
@@ -451,13 +429,7 @@ export function buildItemDetailEmbed(item: InventoryItem): EmbedBuilder {
     '';
 
   return new EmbedBuilder()
-    .setColor(
-      item.rarity === 'Legendary' ? 0xf1c40f :
-      item.rarity === 'Epic'      ? 0x9b59b6 :
-      item.rarity === 'Rare'      ? 0x3498db :
-      item.rarity === 'Uncommon'  ? 0x2ecc71 :
-      0x95a5a6,
-    )
+    .setColor(RARITY_COLOR[item.rarity] ?? COLORS.MUTED)
     .setTitle(`${badge}${emoji} ${item.itemName}`)
     .setDescription(description)
     .addFields(
@@ -552,14 +524,6 @@ export function buildInventoryEmbed(
 // ─── OwO TARZI DÜZ TEXT RENDERER ─────────────────────────────────────────────
 
 /**
- * Sayıyı superscript karakterlere çevirir (OwO'nun ⁰⁶ tarzı)
- */
-function toSuperscript(n: number): string {
-  const SUP = ['⁰','¹','²','³','⁴','⁵','⁶','⁷','⁸','⁹'];
-  return String(n).padStart(2, '0').split('').map((c) => SUP[parseInt(c)] ?? c).join('');
-}
-
-/**
  * OwO tarzı envanter — embed yok, düz text, grid layout.
  *
  * Format:
@@ -601,10 +565,8 @@ export function buildInventoryText(data: InventoryRenderData): string {
       const def    = BUFF_ITEM_MAP[b.buffItemId];
       const emoji  = def?.emoji ?? '✨';
       const name   = def?.name  ?? b.buffItemId;
-      const pct    = b.chargeMax > 0 ? b.chargeCur / b.chargeMax : 0;
-      const filled = Math.round(pct * 10);
-      const bar    = '▰'.repeat(filled) + '▱'.repeat(10 - filled);
-      const status = pct > 0.5 ? '🟢' : pct > 0.2 ? '🟡' : '🔴';
+      const bar    = chargeBar(b.chargeCur, b.chargeMax, 10);
+      const status = chargeDot(b.chargeCur, b.chargeMax);
       lines.push(`${emoji} **${name}**`);
       lines.push(`┗ ${status} \`${bar}\` **${b.chargeCur}**/${b.chargeMax}`);
     }
@@ -674,11 +636,7 @@ export function buildInventoryText(data: InventoryRenderData): string {
   const nonHuntItems = items.filter((i) => i.itemType !== 'Av');
   const usedDisplay  = nonHuntItems.length;
   // ── Slot bar ──
-  const pct    = Math.min(usedDisplay / capacity, 1);
-  const filled = Math.round(pct * 10);
-  const bar    = '█'.repeat(filled) + '░'.repeat(10 - filled);
-  const warn   = pct >= 0.9 ? ' !!!' : '';
-  lines.push(`Slot: [${bar}] ${usedDisplay}/${capacity}${warn}`);
+  lines.push(`Slot: ${slotBar(usedDisplay, capacity, 10)}`);
 
   return lines.join('\n');
 }

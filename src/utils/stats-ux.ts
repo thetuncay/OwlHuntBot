@@ -6,47 +6,13 @@
 import { EmbedBuilder } from 'discord.js';
 import { bondBonus, staminaMax, statEffect } from './math';
 import { HUNT_CRITICAL_RATE, HUNT_INJURY_RATE, OWL_SPECIES } from '../config';
-
-// ─── Renkler ─────────────────────────────────────────────────────────────────
-const COLOR_NORMAL  = 0x5865f2; // blurple
-const COLOR_WARNING = 0xe67e22; // turuncu — düşük HP
-const COLOR_ELITE   = 0xf1c40f; // altın — Elite/God Roll
-
-// ─── Kalite meta ─────────────────────────────────────────────────────────────
-const QUALITY_META: Record<string, { badge: string; color: number }> = {
-  'Trash':    { badge: '⬛ Trash',    color: COLOR_NORMAL  },
-  'Common':   { badge: '⬜ Common',   color: COLOR_NORMAL  },
-  'Good':     { badge: '🟩 Good',     color: COLOR_NORMAL  },
-  'Rare':     { badge: '🟦 Rare',     color: COLOR_NORMAL  },
-  'Elite':    { badge: '🟨 Elite',    color: COLOR_ELITE   },
-  'God Roll': { badge: '🌟 God Roll', color: COLOR_ELITE   },
-};
-
-// ─── Tier etiketi ─────────────────────────────────────────────────────────────
-const TIER_LABEL: Record<number, string> = {
-  1: 'T1 ◆◆◆◆◆◆◆◆',
-  2: 'T2 ◆◆◆◆◆◆◆◇',
-  3: 'T3 ◆◆◆◆◆◆◇◇',
-  4: 'T4 ◆◆◆◆◆◇◇◇',
-  5: 'T5 ◆◆◆◆◇◇◇◇',
-  6: 'T6 ◆◆◆◇◇◇◇◇',
-  7: 'T7 ◆◆◇◇◇◇◇◇',
-  8: 'T8 ◆◇◇◇◇◇◇◇',
-};
+import { COLORS, hpBar, QUALITY_BADGE, QUALITY_COLOR, TIER_LABEL } from './theme';
 
 // ─── Yardımcılar ─────────────────────────────────────────────────────────────
 
-/** 10 segmentli progress bar. */
-function bar(current: number, max: number, length = 10): string {
-  const ratio  = max > 0 ? Math.min(current / max, 1) : 0;
-  const filled = Math.round(ratio * length);
-  const empty  = length - filled;
-  return `\`${'█'.repeat(filled)}${'░'.repeat(empty)}\``;
-}
-
-/** Stat değerini 10 üzerinden görsel bar olarak gösterir (max 100 kabul). */
+/** Stat değerini 8 segmentlik görsel bar olarak gösterir (max 100 kabul). */
 function statBar(value: number): string {
-  return bar(Math.min(value, 100), 100, 8);
+  return `\`${hpBar(Math.min(value, 100), 100, 8)}\``;
 }
 
 /** En yüksek stat key'ini döndürür. */
@@ -88,8 +54,9 @@ export function buildOwlStatsEmbed(
   const isLowHp       = hpRatio < 0.3;
   const isRare        = owl.quality === 'Elite' || owl.quality === 'God Roll';
 
-  const qualityMeta = QUALITY_META[owl.quality] ?? QUALITY_META.Common!;
-  const embedColor  = isLowHp ? COLOR_WARNING : qualityMeta.color;
+  const qualityBadge = QUALITY_BADGE[owl.quality] ?? QUALITY_BADGE['Common']!;
+  const qualityColor = QUALITY_COLOR[owl.quality] ?? QUALITY_COLOR['Common']!;
+  const embedColor   = isLowHp ? COLORS.WARNING : qualityColor;
 
   // Derived stats
   const prestige = player.prestigeLevel || 0;
@@ -115,15 +82,15 @@ export function buildOwlStatsEmbed(
 
   const title = `🦉 ${owl.species}${rareBadge}${warnBadge}${mainBadge}`;
   const desc  =
-    `> ${qualityMeta.badge}  ·  ${tierLabel}  ·  Oyuncu Lv.**${player.level}**\n` +
+    `> ${qualityBadge} ${owl.quality}  ·  ${tierLabel}  ·  Oyuncu Lv.**${player.level}**\n` +
     (isLowHp ? '> ⚠️ **HP kritik seviyede! Avlanmadan önce iyileştir.**\n' : '');
 
   // ── HP / Stamina ─────────────────────────────────────────────────────────────
-  const hpBar   = bar(owl.hp, owl.hpMax);
-  const stamBar = bar(owl.staminaCur, staminaMaxVal);
+  const hpBarStr   = `\`${hpBar(owl.hp, owl.hpMax)}\``;
+  const stamBarStr = `\`${hpBar(owl.staminaCur, staminaMaxVal)}\``;
   const survival =
-    `❤️ HP     ${hpBar} **${owl.hp}** / ${owl.hpMax}\n` +
-    `⚡ Stamina ${stamBar} **${owl.staminaCur}** / ${staminaMaxVal}`;
+    `❤️ HP     ${hpBarStr} **${owl.hp}** / ${owl.hpMax}\n` +
+    `⚡ Stamina ${stamBarStr} **${owl.staminaCur}** / ${staminaMaxVal}`;
 
   // ── Combat stats ─────────────────────────────────────────────────────────────
   const gagaLine  = `🦷 Gaga  ${statBar(owl.statGaga)}  **${owl.statGaga}**${best === 'gaga'  ? ' ▲' : ''}`;
@@ -147,7 +114,7 @@ export function buildOwlStatsEmbed(
   const special =
     `🎯 Kritik Şansı  **${HUNT_CRITICAL_RATE}%**\n` +
     `🩹 Yaralanma     **${HUNT_INJURY_RATE}%**\n` +
-    `✨ Kalite         ${qualityMeta.badge}`;
+    `✨ Kalite         ${qualityBadge} ${owl.quality}`;
 
   // ── Footer ───────────────────────────────────────────────────────────────────
   const streakText = player.huntStreak != null && player.huntStreak > 0

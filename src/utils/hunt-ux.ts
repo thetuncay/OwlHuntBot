@@ -5,6 +5,7 @@
 
 import type { HuntRunResult } from '../types';
 import { PREY } from '../config';
+import { pipeLine } from './theme';
 
 // ─── Prey meta ────────────────────────────────────────────────────────────────
 const PREY_EMOJI: Record<string, string> = {
@@ -147,7 +148,7 @@ function buildFinalMessage(name: string, compressed: CompressedHunt): string {
     ? ` · Buff: ${compressed.activeBuffs.map((b) => `${b.emoji}\`[${b.chargeCur}/${b.chargeMax}]\``).join(' ')}`
     : '';
 
-  lines.push(`🌙 | **${name}** ${action}!${statusSuffix}${buffStr}`);
+  lines.push(pipeLine(`**${name}** ${action}!${statusSuffix}${buffStr}`));
 
   // ── LINE 2: Loot display ──────────────────────────────────────────────────
   if (compressed.isEmpty) {

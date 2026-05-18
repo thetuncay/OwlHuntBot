@@ -3,6 +3,8 @@
  * Backend logic'e dokunmaz. Sadece UX.
  */
 
+import { hpBarColored } from './theme';
+
 // ─── Tipler ───────────────────────────────────────────────────────────────────
 export interface PvpTurnEvent {
   turn: number;
@@ -38,14 +40,6 @@ export interface PvpBattleData {
 // ─── Yardımcılar ─────────────────────────────────────────────────────────────
 function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
-}
-
-function hpBar(hp: number, hpMax: number, len = 8): string {
-  const pct    = Math.max(0, Math.min(hp / hpMax, 1));
-  const filled = Math.round(pct * len);
-  const empty  = len - filled;
-  const color  = pct > 0.5 ? '🟩' : pct > 0.25 ? '🟨' : '🟥';
-  return `${color}\`${'█'.repeat(filled)}${'░'.repeat(empty)}\` **${hp}**`;
 }
 
 function pickRandom<T>(arr: T[]): T {
@@ -97,10 +91,10 @@ function buildBattleFrame(
     `⚔️ **Tur ${event.turn}**`,
     ``,
     `🦉 **${data.challengerName}**`,
-    hpBar(challengerHp, data.challengerHpMax),
+    hpBarColored(challengerHp, data.challengerHpMax),
     ``,
     `🦉 **${data.defenderName}**`,
-    hpBar(defenderHp, data.defenderHpMax),
+    hpBarColored(defenderHp, data.defenderHpMax),
     ``,
     `> **${attackerName}** ${actionLine}`,
   ].join('\n');
@@ -112,12 +106,12 @@ function buildVsScreen(data: PvpBattleData): string {
     `⚔️ **DÖVÜŞ BAŞLIYOR!**`,
     ``,
     `🦉 **${data.challengerName}**`,
-    hpBar(data.challengerHpMax, data.challengerHpMax),
+    hpBarColored(data.challengerHpMax, data.challengerHpMax),
     ``,
     `**VS**`,
     ``,
     `🦉 **${data.defenderName}**`,
-    hpBar(data.defenderHpMax, data.defenderHpMax),
+    hpBarColored(data.defenderHpMax, data.defenderHpMax),
   ].join('\n');
 }
 
@@ -278,12 +272,12 @@ export function buildSimVsScreen(
     `⚔️ **DÖVÜŞ BAŞLIYOR!**`,
     ``,
     `🦉 **${playerName}**`,
-    hpBar(playerHpMax, playerHpMax),
+    hpBarColored(playerHpMax, playerHpMax),
     ``,
     `**VS**`,
     ``,
     `🦉 **${result.opponent.name}**`,
-    hpBar(result.opponent.hpMax, result.opponent.hpMax),
+    hpBarColored(result.opponent.hpMax, result.opponent.hpMax),
     `> *${result.opponent.species}*`,
   ].join('\n');
 }
