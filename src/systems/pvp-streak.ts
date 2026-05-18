@@ -48,8 +48,8 @@ interface OwlPower {
 /**
  * Baykuşun savaş gücünü hesaplar (pvp.ts ile aynı formül).
  */
-function calcPower(owl: OwlPower): number {
-  return statEffect(owl.statGaga + owl.statPence + owl.statKanat);
+function calcPower(owl: OwlPower, prestigeLevel = 0): number {
+  return statEffect(owl.statGaga + owl.statPence + owl.statKanat, prestigeLevel);
 }
 
 /**
@@ -105,11 +105,11 @@ export async function updatePvpStreak(
   const [winner, loser, winnerOwl, loserOwl] = await Promise.all([
     prisma.player.findUnique({
       where: { id: winnerId },
-      select: { pvpStreak: true, pvpBestStreak: true },
+      select: { pvpStreak: true, pvpBestStreak: true, prestigeLevel: true },
     }),
     prisma.player.findUnique({
       where: { id: loserId },
-      select: { pvpStreak: true },
+      select: { pvpStreak: true, prestigeLevel: true },
     }),
     prisma.owl.findFirst({
       where: { ownerId: winnerId, isMain: true },
@@ -132,8 +132,8 @@ export async function updatePvpStreak(
   // ── Anti-abuse kontrolü ───────────────────────────────────────────────────
   let streakCounted = true;
   if (winnerOwl && loserOwl) {
-    const winnerPower = calcPower(winnerOwl);
-    const loserPower  = calcPower(loserOwl);
+    const winnerPower = calcPower(winnerOwl, winner.prestigeLevel || 0);
+    const loserPower  = calcPower(loserOwl, loser.prestigeLevel || 0);
     if (loserPower < winnerPower * PVP_STREAK_MIN_OPPONENT_RATIO) {
       streakCounted = false;
     }

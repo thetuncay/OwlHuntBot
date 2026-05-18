@@ -273,6 +273,7 @@ export async function runSimulatedPvP(
         level: true,
         pvpStreak: true,
         pvpBestStreak: true,
+        prestigeLevel: true,
       },
     }),
     prisma.owl.findFirst({
@@ -289,7 +290,10 @@ export async function runSimulatedPvP(
   }
 
   // Oyuncu gücü
-  const playerPower = statEffect(mainOwl.statGaga + mainOwl.statPence + mainOwl.statKanat);
+  const playerPower = statEffect(
+    mainOwl.statGaga + mainOwl.statPence + mainOwl.statKanat,
+    player?.prestigeLevel ?? 0
+  );
 
   // Sahte rakip üret
   const opponent = generateFakeOpponent(playerPower);

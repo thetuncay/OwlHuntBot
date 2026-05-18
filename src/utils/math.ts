@@ -1,4 +1,5 @@
 import {
+  PRESTIGE_STAT_CAP_BONUS_PER_LEVEL,
   BOND_BONUS_RATE,
   CATCH_MAX,
   CATCH_MIN,
@@ -43,8 +44,11 @@ export const clamp = (min: number, max: number, val: number): number =>
   Math.min(max, Math.max(min, val));
 
 /** Stat soft cap formulu: etki asla %70'i gecemez. */
-export const statEffect = (stat: number): number =>
-  (stat * STAT_SOFTCAP_NUM) / (stat + STAT_SOFTCAP_DEN);
+export const statEffect = (stat: number, prestigeLevel = 0): number => {
+  // Prestige seviyesine göre stat cap artışı
+  const bonus = prestigeLevel * PRESTIGE_STAT_CAP_BONUS_PER_LEVEL;
+  return ((stat + bonus) * STAT_SOFTCAP_NUM) / (stat + bonus + STAT_SOFTCAP_DEN);
+};
 
 /** Seviyeye gore hunt roll sayisi. */
 export const huntRolls = (level: number): number =>

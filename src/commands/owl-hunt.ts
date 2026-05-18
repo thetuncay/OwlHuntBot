@@ -7,8 +7,9 @@ import {
   ButtonBuilder,
   ButtonStyle,
   ComponentType,
+  EmbedBuilder,
 } from 'discord.js';
-import { HUNT_COOLDOWN_MS } from '../config';
+import { HUNT_COOLDOWN_MS, BIOMES } from '../config';
 import { getCooldownRemainingMs } from '../middleware/cooldown';
 import { rollHunt } from '../systems/hunt';
 import { commitTameResult } from '../systems/tame';
@@ -64,34 +65,73 @@ export async function runHunt(
     return;
   }
 
-  await interaction.deferReply();
+  const biomeEmbed = new EmbedBuilder()
+    .setTitle('🌍 Avlanılacak Biyomu Seç')
+    .setDescription('Her biyomun farklı risk ve ödül dengesi vardır.')
+    .setColor(0x3498db);
 
-  // Cache'den veya DB'den player + main owl çek (cache hit = 0 DB round-trip)
-  const bundle = await getPlayerBundle(ctx.redis, ctx.prisma, userId);
-  if (!bundle || !bundle.mainOwl) {
-    await interaction.editReply({ content: `❌ **Hata** | Main baykus bulunamadi.` });
-    return;
-  }
-  const main = bundle.mainOwl;
+  BIOMES.forEach(b => {
+    biomeEmbed.addFields({
+      name: `${b.emoji} ${b.name} (Min Lv. ${b.minLevel})`,
+      value: `${b.description}\n💰 Giriş: **${b.entryCost}** 💰`,
+      inline: false
+    });
+  });
 
-  const result = await rollHunt(ctx.prisma, ctx.redis, userId, main.id);
-  const compressed = compressHuntResult(result);
+  const biomeRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    BIOMES.map(b => (
+      new ButtonBuilder()
+        .setCustomId(`biome_select_slash:${b.id}`)
+        .setLabel(b.name)
+        .setEmoji(b.emoji)
+        .setStyle(ButtonStyle.Primary)
+    ))
+  );
 
-  const name = interaction.member && 'displayName' in interaction.member
-    ? (interaction.member as { displayName: string }).displayName
-    : interaction.user.username;
+  await interaction.reply({ embeds: [biomeEmbed], components: [biomeRow], flags: 64 });
 
-  await animateHuntInteraction({ editReply: interaction.editReply.bind(interaction) }, name, compressed);
+  const biomeCollector = interaction.channel?.createMessageComponentCollector({
+    componentType: ComponentType.Button,
+    time: 30000,
+    filter: (i) => i.user.id === userId && i.customId.startsWith('biome_select_slash:'),
+  });
 
-  if (compressed.encounterId) {
-    await sendEncounterMessage(
-      { followUp: interaction.followUp.bind(interaction) },
-      ctx,
-      userId,
-      compressed.encounterId,
-      main,
-    );
-  }
+  biomeCollector?.on('collect', async (i) => {
+    const biomeId = i.customId.split(':')[1] ?? 'b0';
+    await i.deferUpdate();
+    await interaction.editReply({ content: '🏹 Avlanma başlıyor...', embeds: [], components: [] });
+
+    // Cache'den veya DB'den player + main owl çek (cache hit = 0 DB round-trip)
+    const bundle = await getPlayerBundle(ctx.redis, ctx.prisma, userId);
+    if (!bundle || !bundle.mainOwl) {
+      await interaction.editReply({ content: `❌ **Hata** | Main baykus bulunamadi.` });
+      return;
+    }
+    const main = bundle.mainOwl;
+
+    try {
+      const result = await rollHunt(ctx.prisma, ctx.redis, userId, main.id, biomeId);
+      const compressed = compressHuntResult(result);
+
+      const name = interaction.member && 'displayName' in interaction.member
+        ? (interaction.member as { displayName: string }).displayName
+        : interaction.user.username;
+
+      await animateHuntInteraction({ editReply: interaction.editReply.bind(interaction) }, name, compressed);
+
+      if (compressed.encounterId) {
+        await sendEncounterMessage(
+          { followUp: interaction.followUp.bind(interaction) },
+          ctx,
+          userId,
+          compressed.encounterId,
+          main,
+        );
+      }
+    } catch (err: any) {
+      await interaction.editReply({ content: `❌ **Hata** | ${err.message}` });
+    }
+  });
 }
 
 // ─── Prefix: owl hunt ─────────────────────────────────────────────────────────
@@ -101,51 +141,98 @@ export async function runHuntMessage(
   ctx: Parameters<CommandDefinition['execute']>[1],
 ): Promise<void> {
   const userId = message.author.id;
-  const cooldownKey = `cooldown:hunt:${userId}`;
-  const remaining = await getCooldownRemainingMs(ctx.redis, cooldownKey, HUNT_COOLDOWN_MS);
 
-  if (remaining > 0) {
-    const secs = Math.ceil(remaining / 1000);
-    const sent = await message.reply(`⏰ Tekrar avlanmak icin **${secs}s** beklemelisin.`);
-    setTimeout(() => { sent.delete().catch(() => null); }, 3000);
-    return;
-  }
+  const biomeEmbed = new EmbedBuilder()
+    .setTitle('🌍 Avlanılacak Biyomu Seç')
+    .setDescription('Her biyomun farklı risk ve ödül dengesi vardır.')
+    .setColor(0x3498db);
 
-  // Cache'den veya DB'den player + main owl çek (cache hit = 0 DB round-trip)
-  const bundle = await getPlayerBundle(ctx.redis, ctx.prisma, userId);
-  if (!bundle || !bundle.mainOwl) {
-    await message.reply(`❌ **Hata** | Main baykus bulunamadi.`);
-    return;
-  }
-  const main = bundle.mainOwl;
+  BIOMES.forEach(b => {
+    biomeEmbed.addFields({
+      name: `${b.emoji} ${b.name} (Min Lv. ${b.minLevel})`,
+      value: `${b.description}\n💰 Giriş: **${b.entryCost}** 💰`,
+      inline: false
+    });
+  });
 
-  const result = await rollHunt(ctx.prisma, ctx.redis, userId, main.id);
-  const compressed = compressHuntResult(result);
-  const name = message.member?.displayName ?? message.author.username;
+  const biomeRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    BIOMES.map(b => (
+      new ButtonBuilder()
+        .setCustomId(`biome_select:${b.id}`)
+        .setLabel(b.name)
+        .setEmoji(b.emoji)
+        .setStyle(ButtonStyle.Primary)
+    ))
+  );
 
-  // Aktif hunt buff'larını çek — hunt satırında göster
-  // Fire-and-forget: buff listesi gösterim için, hunt sonucunu bekletmez
-  listActiveBuffs(ctx.prisma as any, userId).then((rawBuffs) => {
-    compressed.activeBuffs = rawBuffs
-      .filter((b) => b.chargeCur > 0 && b.category === 'hunt')
-      .map((b) => ({
-        emoji: BUFF_ITEM_MAP[b.buffItemId]?.emoji ?? '✨',
-        chargeCur: b.chargeCur,
-        chargeMax: b.chargeMax,
-      }));
-  }).catch(() => null);
+  const biomeMsg = await message.reply({ embeds: [biomeEmbed], components: [biomeRow] });
 
-  await animateHuntMessage(message, name, compressed);
+  const biomeCollector = biomeMsg.createMessageComponentCollector({
+    componentType: ComponentType.Button,
+    time: 30000,
+    filter: (i) => i.user.id === userId && i.customId.startsWith('biome_select:'),
+  });
 
-  if (compressed.encounterId) {
-    await sendEncounterMessage(
-      { reply: message.reply.bind(message) },
-      ctx,
-      userId,
-      compressed.encounterId,
-      main,
-    );
-  }
+  biomeCollector.on('collect', async (i) => {
+    const biomeId = i.customId.split(':')[1] ?? 'b0';
+    await i.deferUpdate();
+    await biomeMsg.delete().catch(() => null);
+
+    const cooldownKey = `cooldown:hunt:${userId}`;
+    const remaining = await getCooldownRemainingMs(ctx.redis, cooldownKey, HUNT_COOLDOWN_MS);
+
+    if (remaining > 0) {
+      const secs = Math.ceil(remaining / 1000);
+      const sent = await message.reply(`⏰ Tekrar avlanmak icin **${secs}s** beklemelisin.`);
+      setTimeout(() => { sent.delete().catch(() => null); }, 3000);
+      return;
+    }
+
+    // Cache'den veya DB'den player + main owl çek (cache hit = 0 DB round-trip)
+    const bundle = await getPlayerBundle(ctx.redis, ctx.prisma, userId);
+    if (!bundle || !bundle.mainOwl) {
+      await message.reply(`❌ **Hata** | Main baykus bulunamadi.`);
+      return;
+    }
+    const main = bundle.mainOwl;
+
+    try {
+      const result = await rollHunt(ctx.prisma, ctx.redis, userId, main.id, biomeId);
+      const compressed = compressHuntResult(result);
+      const name = message.member?.displayName ?? message.author.username;
+
+      // Aktif hunt buff'larını çek — hunt satırında göster
+      listActiveBuffs(ctx.prisma as any, userId).then((rawBuffs) => {
+        compressed.activeBuffs = rawBuffs
+          .filter((b) => b.chargeCur > 0 && b.category === 'hunt')
+          .map((b) => ({
+            emoji: BUFF_ITEM_MAP[b.buffItemId]?.emoji ?? '✨',
+            chargeCur: b.chargeCur,
+            chargeMax: b.chargeMax,
+          }));
+      }).catch(() => null);
+
+      await animateHuntMessage(message, name, compressed);
+
+      if (compressed.encounterId) {
+        await sendEncounterMessage(
+          { reply: message.reply.bind(message) },
+          ctx,
+          userId,
+          compressed.encounterId,
+          main,
+        );
+      }
+    } catch (err: any) {
+      await message.reply({ content: `❌ **Hata** | ${err.message}` });
+    }
+  });
+
+  biomeCollector.on('end', (_collected, reason) => {
+    if (reason === 'time') {
+      biomeMsg.edit({ content: '⏰ Seçim süresi doldu.', embeds: [], components: [] }).catch(() => null);
+    }
+  });
 }
 
 // ─── Encounter mesajı ve buton handler ───────────────────────────────────────

@@ -177,7 +177,7 @@ export async function getRankFromDB(
   if (!player) return -1;
 
   const scoreField = categoryScoreField(category);
-  const score      = player[scoreField as keyof typeof player] as number;
+  const score      = player[scoreField as keyof typeof player];
   const above      = await prisma.player.count({ where: { [scoreField]: { gt: score } } });
   return above + 1;
 }

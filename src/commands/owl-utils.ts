@@ -20,6 +20,7 @@ export const TEXT_SUBCOMMANDS = [
   'tame', 'owls', 'ver', 'give', 'duel',
   'cf', 'slot', 'bj',
   'aç', 'ac', 'buff', 'buffs', 'b', 'bs', 'gem', 'gems',
+  'craft', 'dismantle', 'market', 'prestige', 'quests',
   // kısaltmalar
   'h', 's', 'sm', 'z', 'd', 'c', 't', 'g',
   'p', 'sl', 'ow', 'y', 'pf',
@@ -43,6 +44,11 @@ export const ALIASES: Record<string, string> = {
   bs:   'buffs',
   gem:  'buff',
   gems: 'buffs',
+  parçala: 'dismantle',
+  m: 'market',
+  ascension: 'prestige',
+  q: 'quests',
+  görevler: 'quests',
   // Yeni
   p:    'vs',       // pvp → vs
   sl:   'sell',     // sell

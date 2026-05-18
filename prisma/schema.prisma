@@ -46,6 +46,14 @@ model Player {
   dailyTransferSent   Int       @default(0)
   lastTransferDate    DateTime?
 
+  // --- MARKET SİSTEMİ ---
+  dailyMarketListings   Int       @default(0)
+  lastMarketListingDate DateTime?
+
+  // --- PRESTIGE SİSTEMİ ---
+  prestigeLevel   Int @default(0)
+  prestigePoints  Int @default(0)
+
   owls            Owl[]
   inventory       InventoryItem[]
   pvpAsChallenger PvpSession[]   @relation("Challenger")
@@ -54,6 +62,8 @@ model Player {
   registrations   PlayerRegistration[]
   seasonArchives  SeasonArchive[]
   activeBuffs     PlayerBuff[]
+  marketListings  MarketListing[]
+  dailyQuests     DailyQuest[]
 
   // Liderboard sıralama index'leri — full table scan'i önler
   @@index([powerScore])
@@ -208,4 +218,37 @@ model PlayerRegistration {
 
   @@unique([userId, guildId])
   @@index([guildId])
+}
+
+model MarketListing {
+  id          String   @id @default(uuid()) @map("_id")
+  sellerId    String
+  itemName    String
+  itemType    String
+  rarity      String
+  quantity    Int
+  price       Int
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime
+
+  seller Player @relation(fields: [sellerId], references: [id])
+
+  @@index([itemName])
+  @@index([sellerId])
+}
+
+model DailyQuest {
+  id          String   @id @default(uuid()) @map("_id")
+  playerId    String
+  type        String // hunt, craft, tame, market
+  target      Int
+  current     Int      @default(0)
+  rewardCoins Int
+  rewardXp    Int
+  isClaimed   Boolean  @default(false)
+  resetAt     DateTime
+
+  player Player @relation(fields: [playerId], references: [id])
+
+  @@index([playerId])
 }

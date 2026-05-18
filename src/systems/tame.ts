@@ -34,6 +34,7 @@ import {
   ENCOUNTER_SCALE_MAX,
 } from '../config';
 import { rollEncounterLootboxDrop } from './drops';
+import { trackQuestProgress } from './daily-quests';
 
 type OwlQuality = 'Trash' | 'Common' | 'Good' | 'Rare' | 'Elite' | 'God Roll';
 
@@ -149,12 +150,14 @@ export async function createEncounter(
 
   // ── Hidden Scaling (Matchmaking) ─────────────────────────────────────────
   // Oyuncunun gucunu hesapla (soft cap formulu ile)
+  const playerFull = await prisma.player.findUnique({ where: { id: playerId }, select: { prestigeLevel: true } });
+  const pLvl = playerFull?.prestigeLevel ?? 0;
   const playerPower =
-    statEffect(mainOwl.statGaga)  +
-    statEffect(mainOwl.statGoz)   +
-    statEffect(mainOwl.statKulak) +
-    statEffect(mainOwl.statKanat) +
-    statEffect(mainOwl.statPence);
+    statEffect(mainOwl.statGaga, pLvl)  +
+    statEffect(mainOwl.statGoz, pLvl)   +
+    statEffect(mainOwl.statKulak, pLvl) +
+    statEffect(mainOwl.statKanat, pLvl) +
+    statEffect(mainOwl.statPence, pLvl);
 
   // Esigi asan guc icin gizli stat artisi hesapla
   // Oyuncuya hicbir sey gosterilmez — immersion bozulmaz
@@ -375,6 +378,7 @@ export async function attemptTame(
       });
       await prisma.encounter.update({ where: { id: encounterId }, data: { status: 'closed' } });
       await addXP(prisma, playerId, 100, 'tameSuccess');
+      trackQuestProgress(prisma, playerId, 'tame').catch(() => null);
 
       // Bond artışı: tame başarısında main baykuşun bond'u artar
       if (mainOwl.bond < BOND_MAX) {

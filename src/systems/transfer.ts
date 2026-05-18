@@ -129,7 +129,7 @@ export async function transferCoins(
       const today = new Date();
       const isNewDay =
         !sender.lastTransferDate ||
-        (sender.lastTransferDate as Date).toDateString() !== today.toDateString();
+        (sender.lastTransferDate).toDateString() !== today.toDateString();
 
       const currentDailySent = isNewDay ? 0 : (sender.dailyTransferSent ?? 0);
       if (currentDailySent + amount > TRANSFER_DAILY_LIMIT) {
