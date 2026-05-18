@@ -1,79 +1,60 @@
-# 🦉 BaykusBot - Gameplay Loop Handover Report (Kiro AI İçin)
+# 🦉 BaykusBot - Gameplay Loop Handover Report (Kiro AI İçin - GÜNCELLENDİ)
 
-Bu rapor, BaykusBot üzerinde yapılan kapsamlı "Gameplay Loop & Ekonomi" revizyonunun detaylarını, teknik altyapısını ve mevcut durumu özetler.
+Bu rapor, BaykusBot üzerinde tamamlanan kapsamlı "Gameplay Loop & Ekonomi" revizyonunun final durumunu özetler. Tüm sistemler entegre edilmiş, test edilmiş ve production-ready hale getirilmiştir.
 
 ---
 
 ## 1. TASARIM VİZYONU VE CORE LOOP
-Oyun, basit bir "avlan ve sat" modelinden, birbirine bağlı sistemlerin olduğu derin bir RPG döngüsüne dönüştürüldü:
+Oyun, birbirine bağlı sistemlerin olduğu derin bir RPG döngüsüne dönüştürüldü:
 **HUNT (Biomes) ➔ DISMANTLE ➔ CRAFT ➔ UPGRADE / BUFF ➔ PROGRESSION ➔ PRESTIGE ➔ GLOBAL SCALE**
 
 ---
 
-## 2. EKLENEN ANA SİSTEMLER
+## 2. TAMAMLANAN SİSTEMLER (PROD-READY)
 
 ### A) Biyom Sistemi (Strategic Hunting)
-- **Mekanik:** Oyuncu artık `owl hunt` yaptığında 3 farklı bölgeden birini seçer:
-    - **Kasaba Civarı (b0):** Ücretsiz, standart risk/ödül.
-    - **Derin Orman (b1):** 100 💰 giriş, %15 daha zor yakalama, x2 Nadir hayvan şansı, x1.3 Materyal drop.
-    - **Göl Kenarı (b2):** 50 💰 giriş, %15 daha kolay yakalama, %20 daha az nadir hayvan şansı.
-- **Teknik:** `rollHunt` fonksiyonu `biomeId` parametresi alacak şekilde güncellendi.
+- **Mekanik:** Oyuncu `owl hunt` yaptığında 3 bölgeden birini seçer:
+    - **Kasaba Civarı (b0):** Ücretsiz, standart.
+    - **Derin Orman (b1):** 100 💰, zor yakalama, x2 Nadir şansı, x1.3 Materyal.
+    - **Göl Kenarı (b2):** 50 💰, kolay yakalama, nadir şansı düşük.
+- **Entegrasyon:** Hem Slash hem Prefix komutlarında biyom seçim arayüzü tamdır.
 
 ### B) Crafting & Dismantle (Material Loop)
-- **Dismantle:** Avlanan hayvanlar artık satılmak yerine materyallere dönüştürülebiliyor (Örn: Fare ➔ Kemik Tozu).
-- **Crafting:** Toplanan materyaller ve coin ile yeni eşyalar üretiliyor:
-    - **Besleyici Karma Yem:** Stamina yeniler (Yeni bir sink).
-    - **Bileme Taşı:** Upgrade şansını artırır.
-    - **Yırtıcı İksiri:** Yakalama şansını artırır.
-- **Komutlar:** `owl craft`, `owl dismantle <esya> <miktar>`.
+- **Dismantle:** Avlanan hayvanlar materyale dönüşür (serce ➔ Parlak Tüy vb.).
+- **Crafting:** `owl craft` (Slash & Prefix) üzerinden buff ve consumable üretimi.
+- **Üretilenler:** Karma Yem (Stamina), Bileme Taşı (Upgrade Boost), Yırtıcı İksiri (Catch Boost).
 
 ### C) Global Marketplace (Abuse Controlled)
-- **Mekanik:** Oyuncular arası güvenli eşya ticareti.
-- **Güvenlik Katmanları:**
-    - **Level Gate:** En az Seviye 15 zorunluluğu.
-    - **Tax:** Her satıştan %10 vergi kesilir (Coin sink).
-    - **Daily Limit:** Günlük max 5 ilan verme sınırı.
-    - **Price Corridor:** 50 - 100,000 💰 arası fiyat sınırlaması.
-    - **Auto-Cleanup:** Süresi dolan (48sa) ilanlar otomatik silinir ve eşyalar satıcıya iade edilir.
-- **Komutlar:** `owl market`, `owl market sat`, `owl market al`.
+- **Güvenlik:** Lv.15 sınırı, %10 vergi, günlük limit (5), fiyat koridoru (50-100k).
+- **Listing ID:** Oyuncular UI'daki 8 karakterlik kısa ID'leri kullanarak satın alım yapabilir.
+- **Cleanup:** Süresi dolan ilanlar her 10 dakikada bir otomatik temizlenir ve eşyalar iade edilir.
 
 ### D) Ascension / Prestige System
-- **Mekanik:** Stat cap'ine (100) yaklaşan oyuncular baykuşlarını feda eder.
-- **Gereksinim:** Oyuncu Lv.30+ ve Baykuş ortalama statı 80+.
-- **Kazanımlar:**
-    - Seviye 1'e döner, baykuş Kukumav'a resetlenir.
-    - **Kalıcı Bonuslar:** Her prestige seviyesi başına +%5 Global XP ve +2 Efektif Stat Cap.
-- **Teknik:** `statEffect` formülü ve `addXP` fonksiyonu `prestigeLevel` çarpanıyla entegre edildi.
+- **Bonuslar:** Her seviye başına **+%5 Global XP** ve **+2 Efektif Stat Cap** (statEffect formülüne entegre).
+- **Entegrasyon:** Prestige bonusları PvP, Hunt, Tame ve Encounter-Fight sistemlerinde aktiftir.
 
 ### E) Daily Quests (Retention)
-- **Mekanik:** Her gün otomatik atanan 4 görev:
-    - 10 Hayvan Avla
-    - 3 Eşya Craft Et
-    - 1 Baykuş Evcilleştir
-    - 2 Market İlanı Koy
-- **Ödül:** Coin ve XP. `owl quests` ile takip edilir ve ödüller butonla toplanır.
+- **Görevler:** Hunt, Craft, Tame ve Market aksiyonları otomatik takip edilir.
+- **Ödül:** `owl quests` ile Coin ve XP toplanır.
 
 ---
 
-## 3. TEKNİK ALTYAPI VE GÜVENLİK
-- **Prisma Schema:** `MarketListing` ve `DailyQuest` modelleri eklendi. `Player` modeline prestige ve market sayaçları eklendi.
-- **Race Condition:** Tüm işlemler `withLock` (Redis) ve `Prisma.$transaction` ile atomik hale getirildi. Özellikle Market ve Craft sistemlerinde duplication exploit'leri imkansızdır.
-- **Logaritmik Scaling:** Prestige bonusları stat soft-cap formülüne yedirildi, böylece "runaway growth" (kontrolsüz güç artışı) engellendi.
-- **Production-Ready:** Hata yönetimleri (failed transactions) ve expired listing cleanup lojikleri kuruldu.
+## 3. TEKNİK MİMARİ VE GÜVENLİK
+- **Veri Tutarlılığı:** Tüm finansal ve envanter işlemleri `Prisma.$transaction` ve `withLock` (Redis) ile atomik hale getirilmiştir.
+- **Atlas M0 Uyumlu:** Transaction süreleri optimize edilmiş, ağır işlemler asenkron queue'lara (veya lock'lara) bölünmüştür.
+- **Performans:** Player-Cache sistemi `prestigeLevel` bilgisini içerecek şekilde güncellenmiştir.
 
 ---
 
 ## 4. ANALİZ DOKÜMANLARI (Mutlaka Okunmalı)
-Proje kökünde Kiro AI'nın inceleyebileceği yeni dosyalar:
-1.  **`SYSTEM_DESIGN.md`**: Genel mimari ve loop tasarımı.
-2.  **`MARKET_AUDIT.md`**: Market suistimal analizleri.
-3.  **`PACING_ANALYSIS.md`**: Oyuncu ilerleme hızı ve zorluk dengesi analizi.
-4.  **`simulate_economy.ts`**: Ekonomik dengeyi test eden simülasyon scripti.
+1.  **`SYSTEM_DESIGN.md`**: Genel mimari.
+2.  **`MARKET_AUDIT.md`**: Pazar yeri güvenlik analizi.
+3.  **`PACING_ANALYSIS.md`**: İlerleme hızı ve zorluk dengesi.
+4.  **`simulate_economy.ts`**: Ekonomi test scripti.
 
 ---
 
-## 5. ŞU ANKİ DURUM VE GELECEK
-- **Statü:** Core Loop (Hunt ➔ Craft ➔ Upgrade ➔ Prestige) tamamen çalışır ve entegre durumdadır.
-- **Kiro AI İçin Not:** Yeni eklenecek "Raid" veya "Boss" sistemleri, mevcut `prestigeLevel` ve `crafting` bufflarını parametre olarak almalıdır. Market sistemi için ileride "ortalama fiyat takibi" (price history) eklenmesi manipülasyonu tamamen bitirebilir.
+## 5. ŞU ANKİ DURUM
+Core loop tamamen kapandı. Oyuncu artık avlanıp, parçalayıp, üretip güçlenerek Prestige'e ulaşabilir. Tüm sistemler birbiriyle konuşuyor.
 
-**Her şey hazır, derlenmiş (build) ve lint kontrollerinden geçmiştir.**
+**Build durumu: Başarılı. Lint durumu: Stabil.**
