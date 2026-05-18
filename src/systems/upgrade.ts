@@ -8,7 +8,7 @@ import {
   UPGRADE_ITEM_BONUS,
 } from '../config';
 import type { OwlStatKey } from '../types';
-import { upgradeChance } from '../utils/math';
+import { upgradeChance, upgradeCoinCost, upgradeMaterialRequirement } from '../utils/math';
 import { withLock } from '../utils/lock';
 import { checkUpgradeDep, suggestNextUpgrade, type AllStats } from '../utils/upgrade-deps';
 import { getBuffEffects, drainBuffCharge } from './items';

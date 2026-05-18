@@ -40,7 +40,10 @@ export async function runStats(
     bond:       owl.bond,
     isMain:     owl.isMain,
   };
-  const playerData: PlayerStatsData = { level: player.level };
+  const playerData: PlayerStatsData = {
+    level: player.level,
+    prestigeLevel: player.prestigeLevel || 0
+  };
 
   await interaction.reply({ embeds: [buildOwlStatsEmbed(owlData, playerData, deep)], flags: 64 });
 }
@@ -77,7 +80,10 @@ export async function runStatsMessage(
     bond:       owl.bond,
     isMain:     owl.isMain,
   };
-  const playerData: PlayerStatsData = { level: player.level };
+  const playerData: PlayerStatsData = {
+    level: player.level,
+    prestigeLevel: player.prestigeLevel || 0
+  };
 
   await message.reply({ embeds: [buildOwlStatsEmbed(owlData, playerData, deep)] });
 }

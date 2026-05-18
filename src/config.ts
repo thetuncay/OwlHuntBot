@@ -88,8 +88,8 @@ export const OWL_PREY_POOL: Record<number, number> = {
 };
 
 // --- SWITCH SISTEMI ---
-export const SWITCH_BASE_COST = 500;
-export const SWITCH_TIER_MULTIPLIER = 200;
+export const SWITCH_BASE_COST = 1000;
+export const SWITCH_TIER_MULTIPLIER = 400;
 export const SWITCH_COOLDOWN_MS = 60 * 60 * 1000;
 export const SWITCH_HP_THRESHOLD = 0.3;
 export const SWITCH_PENALTY_DURATION = 10 * 60 * 1000;
@@ -602,6 +602,7 @@ export const UPGRADE_ITEM_BONUS: Record<string, number> = {
   'Orman Yankısı': 5,
   'Kırık Av Zinciri': 4,
   'Gölge Tüyü': 2,
+  'Bileme Taşı': 10,
 };
 
 export const TAME_ITEM_BONUS: Record<string, number> = {
@@ -611,16 +612,140 @@ export const TAME_ITEM_BONUS: Record<string, number> = {
   'Sessiz Yem': 6,
   'Alfa Feromon': 12,
   'Eski Tuy Parcasi': 0,
+  'Yırtıcı İksiri': 15, // Hunt catch chance bonus (if used as item, but usually it's a buff)
 };
 
 // --- MAINTENANCE ---
 export const MAINTENANCE_DAILY_ITEM = 'Cig Et';
 export const MAINTENANCE_DAILY_AMT = 1;
 export const MAINTENANCE_MISS_EFFECTIVENESS_LOSS = 5;
-export const REPAIR_BASE_COST = 250;
+export const REPAIR_BASE_COST = 500;
 export const REPAIR_EFFECTIVENESS_FULL = 100;
 export const AUTO_SINK_COIN_PER_ITEM = 3;
 export const AUTO_SINK_XP_PER_ITEM = 1;
+
+// ============================================================
+// CRAFTING & DISMANTLE SISTEMI
+// ============================================================
+
+export interface CraftingRecipe {
+  id: string;
+  name: string;
+  emoji: string;
+  description: string;
+  requiredMaterials: { itemName: string; quantity: number }[];
+  requiredCoins: number;
+  resultItem: { itemName: string; itemType: string; rarity: string; quantity: number };
+}
+
+export const CRAFTING_RECIPES: CraftingRecipe[] = [
+  {
+    id: 'c000',
+    name: 'Besleyici Karma Yem',
+    emoji: '🌾',
+    description: 'Baykuşun enerjisini yeniler (Stamina +50).',
+    requiredMaterials: [
+      { itemName: 'fare', quantity: 5 },
+      { itemName: 'serce', quantity: 2 },
+    ],
+    requiredCoins: 100,
+    resultItem: { itemName: 'Karma Yem', itemType: 'Consumable', rarity: 'Common', quantity: 1 },
+  },
+  {
+    id: 'c001',
+    name: 'Gelişmiş Gaga Bileme Taşı',
+    emoji: '🪨',
+    description: 'Gaga upgrade başarı şansını %10 artırır.',
+    requiredMaterials: [
+      { itemName: 'Kemik Tozu', quantity: 10 },
+      { itemName: 'Parlak Tüy', quantity: 5 },
+    ],
+    requiredCoins: 500,
+    resultItem: { itemName: 'Bileme Taşı', itemType: 'Buff', rarity: 'Uncommon', quantity: 1 },
+  },
+  {
+    id: 'c002',
+    name: 'Yırtıcı İksiri',
+    emoji: '🧪',
+    description: 'Hunt sırasında yakalama şansını %15 artırır.',
+    requiredMaterials: [
+      { itemName: 'fare', quantity: 20 },
+      { itemName: 'serce', quantity: 10 },
+    ],
+    requiredCoins: 1000,
+    resultItem: { itemName: 'Yırtıcı İksiri', itemType: 'Buff', rarity: 'Rare', quantity: 1 },
+  },
+];
+
+// ============================================================
+// BİYOM SİSTEMİ
+// ============================================================
+
+export interface BiomeDef {
+  id: string;
+  name: string;
+  emoji: string;
+  description: string;
+  entryCost: number;
+  minLevel: number;
+  catchModifier: number; // catchChance *= modifier
+  lootModifier: number;  // lootChance *= modifier
+  rareModifier: number;  // nadir hayvan çıkma şansı *= modifier
+}
+
+export const BIOMES: BiomeDef[] = [
+  {
+    id: 'b0',
+    name: 'Kasaba Civarı',
+    emoji: '🏘️',
+    description: 'Yeni başlayanlar için güvenli bölge. Düşük risk, standart ödül.',
+    entryCost: 0,
+    minLevel: 1,
+    catchModifier: 1.0,
+    lootModifier: 1.0,
+    rareModifier: 1.0,
+  },
+  {
+    id: 'b1',
+    name: 'Derin Orman',
+    emoji: '🌲',
+    description: 'Yüksek risk, yüksek nadir drop şansı. Hazırlıklı gelmelisin.',
+    entryCost: 100, // 200 -> 100
+    minLevel: 10,
+    catchModifier: 0.85, // %15 daha zor yakalama
+    lootModifier: 1.3,   // %30 daha fazla materyal
+    rareModifier: 2.0,   // Nadir hayvan şansı x2
+  },
+  {
+    id: 'b2',
+    name: 'Göl Kenarı',
+    emoji: '🌊',
+    description: 'Stabil kazanç arayanlar için. Yakalama şansı yüksektir.',
+    entryCost: 50, // 100 -> 50
+    minLevel: 5,
+    catchModifier: 1.15, // %15 daha kolay yakalama
+    lootModifier: 1.0,
+    rareModifier: 0.8,   // Nadir hayvan şansı %20 daha düşük
+  },
+];
+
+export const DISMANTLE_TABLE: Record<string, { itemName: string; min: number; max: number }[]> = {
+  fare:       [{ itemName: 'Kemik Tozu', min: 1, max: 1 }],
+  serce:      [{ itemName: 'Parlak Tüy', min: 1, max: 1 }],
+  kurbaga:    [{ itemName: 'Kemik Tozu', min: 1, max: 2 }],
+  kertenkele: [{ itemName: 'Kırık Av Zinciri', min: 1, max: 1 }],
+  hamster:    [{ itemName: 'Kemik Tozu', min: 2, max: 3 }],
+  kostebek:   [{ itemName: 'Av Gözü Kristali', min: 1, max: 1 }],
+  yarasa:     [{ itemName: 'Sessizlik Teli', min: 1, max: 2 }],
+  bildircin:  [{ itemName: 'Parlak Tüy', min: 3, max: 5 }],
+  guvercin:   [{ itemName: 'Parlak Tüy', min: 3, max: 5 }],
+  yilan:      [{ itemName: 'Yırtıcı Pençe Parçası', min: 1, max: 2 }],
+  sincap:     [{ itemName: 'Parlak Tüy', min: 5, max: 8 }],
+  tavsan:     [{ itemName: 'Yırtıcı Pençe Parçası', min: 2, max: 3 }],
+  gelincik:   [{ itemName: 'Orman Yankısı', min: 1, max: 1 }],
+  kirpi:      [{ itemName: 'Gölge Tüyü', min: 1, max: 1 }],
+};
+
 // --- EMBED RENKLERI ---
 export const COLOR_SUCCESS = 0x2ecc71;
 export const COLOR_FAIL = 0xe74c3c;
@@ -1133,6 +1258,29 @@ export const PVP_BUFF_DODGE_BONUS_MAX = 0.12;   // max +12% dodge
 // ============================================================
 // TRANSFER (PARA GÖNDERME) SİSTEMİ
 // ============================================================
+
+// --- MARKET SİSTEMİ ---
+export const MARKET_MIN_LEVEL = 15;
+export const MARKET_TAX_RATE = 0.10; // %10 vergi
+export const MARKET_LISTING_LIMIT_DAILY = 5;
+export const MARKET_LISTING_DURATION_MS = 48 * 60 * 60 * 1000; // 48 saat
+export const MARKET_MIN_PRICE = 50;
+export const MARKET_MAX_PRICE = 100000;
+
+// --- PRESTIGE SİSTEMİ ---
+export const PRESTIGE_MIN_STAT_AVG = 80; // Ortalama stat 80+ olmalı
+export const PRESTIGE_LEVEL_REQ = 30;
+export const PRESTIGE_XP_BONUS_PER_LEVEL = 0.05; // Her prestige seviyesi için +%5 XP
+export const PRESTIGE_STAT_CAP_BONUS_PER_LEVEL = 2; // Her prestige seviyesi için +2 stat cap
+
+// --- GÖREV SİSTEMİ ---
+export const DAILY_QUEST_TYPES = ['hunt', 'craft', 'tame', 'market'] as const;
+export const DAILY_QUEST_CONFIG = {
+  hunt:   { target: 10, rewardCoins: 500,  rewardXp: 200, label: '10 Hayvan Avla' },
+  craft:  { target: 3,  rewardCoins: 800,  rewardXp: 300, label: '3 Eşya Craft Et' },
+  tame:   { target: 1,  rewardCoins: 1200, rewardXp: 500, label: '1 Baykuş Evcilleştir' },
+  market: { target: 2,  rewardCoins: 400,  rewardXp: 150, label: 'Markete 2 İlan Koy' },
+};
 
 /** Gönderici için minimum oyuncu seviyesi */
 export const TRANSFER_MIN_LEVEL = 5;

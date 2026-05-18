@@ -111,7 +111,7 @@ export async function resolveEncounterFight(
     }),
     prisma.player.findUnique({
       where: { id: playerId },
-      select: { level: true },
+      select: { level: true, prestigeLevel: true },
     }),
     prisma.owl.findFirst({
       where: { ownerId: playerId, isMain: true },
@@ -131,11 +131,11 @@ export async function resolveEncounterFight(
 
   // Stat'ları soft cap formülüyle hesapla
   const playerPower =
-    statEffect(mainOwl.statGaga)  +
-    statEffect(mainOwl.statGoz)   +
-    statEffect(mainOwl.statKulak) +
-    statEffect(mainOwl.statKanat) +
-    statEffect(mainOwl.statPence);
+    statEffect(mainOwl.statGaga, player.prestigeLevel ?? 0)  +
+    statEffect(mainOwl.statGoz, player.prestigeLevel ?? 0)   +
+    statEffect(mainOwl.statKulak, player.prestigeLevel ?? 0) +
+    statEffect(mainOwl.statKanat, player.prestigeLevel ?? 0) +
+    statEffect(mainOwl.statPence, player.prestigeLevel ?? 0);
 
   // Düşman stat'larını encounter'dan oku
   const rawStats = encounter.owlStats as Record<string, number>;

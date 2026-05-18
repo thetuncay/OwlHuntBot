@@ -74,6 +74,7 @@ export interface OwlStatsData {
 export interface PlayerStatsData {
   level:       number;
   huntStreak?: number; // opsiyonel — varsa gösterilir
+  prestigeLevel?: number;
 }
 
 // ─── Ana builder ─────────────────────────────────────────────────────────────
@@ -91,9 +92,10 @@ export function buildOwlStatsEmbed(
   const embedColor  = isLowHp ? COLOR_WARNING : qualityMeta.color;
 
   // Derived stats
-  const power   = Math.round(statEffect(owl.statGaga) + statEffect(owl.statPence));
-  const sight   = Math.round(statEffect(owl.statGoz)  + statEffect(owl.statKulak));
-  const speed   = Math.round(statEffect(owl.statKanat));
+  const prestige = player.prestigeLevel || 0;
+  const power   = Math.round(statEffect(owl.statGaga, prestige) + statEffect(owl.statPence, prestige));
+  const sight   = Math.round(statEffect(owl.statGoz, prestige)  + statEffect(owl.statKulak, prestige));
+  const speed   = Math.round(statEffect(owl.statKanat, prestige));
   const bondPct = bondBonus(owl.bond).toFixed(1);
 
   // En yüksek stat tespiti
@@ -195,11 +197,12 @@ export function buildOwlStatsEmbed(
   // ── Deep mode ────────────────────────────────────────────────────────────────
   if (deep) {
     const breakdown =
-      `🦷 Gaga  softcap: **${statEffect(owl.statGaga).toFixed(2)}**\n` +
-      `🦅 Pence softcap: **${statEffect(owl.statPence).toFixed(2)}**\n` +
-      `👁️ Göz   softcap: **${statEffect(owl.statGoz).toFixed(2)}**\n` +
-      `👂 Kulak softcap: **${statEffect(owl.statKulak).toFixed(2)}**\n` +
-      `🪽 Kanat softcap: **${statEffect(owl.statKanat).toFixed(2)}**\n` +
+      `🦷 Gaga  softcap: **${statEffect(owl.statGaga, prestige).toFixed(2)}**\n` +
+      `🦅 Pence softcap: **${statEffect(owl.statPence, prestige).toFixed(2)}**\n` +
+      `👁️ Göz   softcap: **${statEffect(owl.statGoz, prestige).toFixed(2)}**\n` +
+      `👂 Kulak softcap: **${statEffect(owl.statKulak, prestige).toFixed(2)}**\n` +
+      `🪽 Kanat softcap: **${statEffect(owl.statKanat, prestige).toFixed(2)}**\n` +
+      `🌟 Prestige:      **+${prestige * 2} stat cap**\n` +
       `💞 Bond bonus:    **+${bondBonus(owl.bond).toFixed(2)} puan**`;
 
     embed.addFields({

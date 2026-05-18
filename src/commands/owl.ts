@@ -29,6 +29,10 @@ import { runUpgrade, runUpgradeMessage } from './owl-upgrade';
 import { runTame, runTameMessage } from './owl-tame';
 import { runTransfer, runTransferMessage } from './owl-transfer';
 import { runSellMessage, runZooMessage, runCashMessage, runPrefixMessage, runPrefix, runAcMessage, runBuffMessage, runBuffsMessage } from './owl-misc';
+import { runCraftMessage, runDismantleMessage, runCraftSlash, runDismantleSlash } from './owl-crafting';
+import { runMarketMessage, runMarketSlash } from './owl-market';
+import { runPrestigeMessage, runPrestigeSlash } from './owl-prestige';
+import { runQuestsMessage, runQuestsSlash } from './owl-quests';
 import { ALIASES, TEXT_SUBCOMMANDS, findClosest, buildUnknownCommandEmbed } from './owl-utils';
 import { runPvpCoinFlip, runPvpSlot, runPvpBlackjack } from './pvp';
 
@@ -79,7 +83,31 @@ const data = new SlashCommandBuilder()
     sub.setName('ver').setDescription('Bir oyuncuya coin gonder')
       .addUserOption((opt) => opt.setName('kullanici').setDescription('Alici oyuncu').setRequired(true))
       .addIntegerOption((opt) => opt.setName('miktar').setDescription('Gonderilecek coin miktari').setRequired(true).setMinValue(10)),
-  );
+  )
+  .addSubcommand((sub) => sub.setName('craft').setDescription('Eşya üret'))
+  .addSubcommand((sub) =>
+    sub.setName('dismantle').setDescription('Eşya parçala')
+      .addStringOption((opt) => opt.setName('esya').setDescription('Eşya adı').setRequired(true))
+      .addIntegerOption((opt) => opt.setName('miktar').setDescription('Miktar').setMinValue(1)),
+  )
+  .addSubcommand((sub) =>
+    sub.setName('market').setDescription('Market işlemleri')
+      .addStringOption((opt) =>
+        opt.setName('islem').setDescription('İşlem tipi').addChoices(
+          { name: 'listele', value: 'list' },
+          { name: 'sat', value: 'sell' },
+          { name: 'al', value: 'buy' },
+        ),
+      )
+      .addStringOption((opt) => opt.setName('param1').setDescription('Eşya adı veya İlan ID'))
+      .addIntegerOption((opt) => opt.setName('param2').setDescription('Miktar veya Fiyat'))
+      .addIntegerOption((opt) => opt.setName('param3').setDescription('Fiyat')),
+  )
+  .addSubcommand((sub) =>
+    sub.setName('prestige').setDescription('Ascension (Prestige) işlemleri')
+      .addStringOption((opt) => opt.setName('baykus').setDescription('Feda edilecek baykuş ID')),
+  )
+  .addSubcommand((sub) => sub.setName('quests').setDescription('Günlük görevleri görüntüle'));
 
 // ─── Slash execute ────────────────────────────────────────────────────────────
 
@@ -109,6 +137,11 @@ async function execute(
       case 'upgrade':   await runUpgrade(interaction, ctx);   break;
       case 'tame':      await runTame(interaction, ctx);      break;
       case 'ver':       await runTransfer(interaction, ctx);  break;
+      case 'craft':     await runCraftSlash(interaction, ctx); break;
+      case 'dismantle': await runDismantleSlash(interaction, ctx); break;
+      case 'market':    await runMarketSlash(interaction, ctx); break;
+      case 'prestige':  await runPrestigeSlash(interaction, ctx); break;
+      case 'quests':    await runQuestsSlash(interaction, ctx); break;
       default: throw new Error('Bilinmeyen alt komut.');
     }
   } catch (error) {
@@ -167,6 +200,11 @@ export async function handleOwlTextCommand(
     case 'aç':        await runAcMessage(message, args, ctx, helpPrefix);    break;
     case 'buff':      await runBuffMessage(message, args, ctx, helpPrefix);   break;
     case 'buffs':     await runBuffsMessage(message, args, helpPrefix);        break;
+    case 'craft':     await runCraftMessage(message, args, ctx, helpPrefix);   break;
+    case 'dismantle': await runDismantleMessage(message, args, ctx, helpPrefix); break;
+    case 'market':    await runMarketMessage(message, args, ctx, helpPrefix); break;
+    case 'prestige':  await runPrestigeMessage(message, args, ctx, helpPrefix); break;
+    case 'quests':    await runQuestsMessage(message, args, ctx, helpPrefix); break;
     default: {
       const suggestion = findClosest(sub, TEXT_SUBCOMMANDS);
       await message.reply({ embeds: [buildUnknownCommandEmbed(helpPrefix, rawSub, suggestion)] });

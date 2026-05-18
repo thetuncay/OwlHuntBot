@@ -1,6 +1,7 @@
 import type { PrismaClient } from '@prisma/client';
 import type { Redis } from 'ioredis';
 import {
+  BIOMES,
   HUNT_CRITICAL_RATE,
   HUNT_HIGH_TIER_THRESHOLD,
   HUNT_INJURY_RATE,
@@ -36,6 +37,7 @@ import { refreshPowerScore } from './leaderboard';
 import { createEncounter } from './tame';
 import { getBuffEffects, drainBuffCharge } from './items';
 import { rollHuntLootboxDrop } from './drops';
+import { trackQuestProgress } from './daily-quests';
 
 /**
  * Oyuncunun ana baykusu ile av turunu simule eder.
@@ -53,6 +55,7 @@ export async function rollHunt(
   redis: Redis,
   playerId: string,
   owlId: string,
+  biomeId = 'b0'
 ): Promise<HuntRunResult> {
   return withLock(playerId, 'hunt', async () => {
     // ── Paralel veri çekimi ───────────────────────────────────────────────────
@@ -92,6 +95,17 @@ export async function rollHunt(
 
     const player = resolvedBundle.player;
 
+    // Biyom giriş ücreti kontrolü
+    const foundBiome = BIOMES.find(b => b.id === biomeId) || BIOMES[0];
+    if (!foundBiome) throw new Error('Biyom bulunamadı.');
+    const safeBiome = foundBiome;
+    if (player.level < safeBiome.minLevel) {
+      throw new Error(`Bu biyoma girmek için en az **${safeBiome.minLevel}** seviye olmalısın.`);
+    }
+    if (player.coins < safeBiome.entryCost) {
+      throw new Error(`Bu biyoma girmek için **${safeBiome.entryCost}** 💰 gerekiyor.`);
+    }
+
     if (!owl || owl.ownerId !== playerId) throw new Error('Av icin gecersiz baykus.');
 
     const species = OWL_SPECIES.find((s) => s.name === owl.species);
@@ -122,10 +136,17 @@ export async function rollHunt(
       if (threshold === undefined) throw new Error('Baykus tier av havuzu tanimli degil.');
 
       const candidate = PREY.filter((p) => p.difficulty <= threshold);
-      const weighted = candidate.map((prey) => ({
-        value: prey,
-        weight: spawnScore(prey.difficulty, owl.statGoz, owl.statKulak),
-      }));
+      const weighted = candidate.map((prey) => {
+        let score = spawnScore(prey.difficulty, owl.statGoz, owl.statKulak);
+        // Biyom nadirlik çarpanı
+        if (prey.difficulty >= HUNT_HIGH_TIER_THRESHOLD) {
+          score *= safeBiome.rareModifier;
+        }
+        return {
+          value: prey,
+          weight: score,
+        };
+      });
       const picked = weightedRandom(weighted);
 
       if (picked.difficulty >= HUNT_HIGH_TIER_THRESHOLD) {
@@ -150,7 +171,7 @@ export async function rollHunt(
       // Gizli modifier'ları uygula
       // Buff catch bonus da eklenir (diminishing returns zaten uygulandı)
       const extraBonus = levelBonus + streakBonus + (isRarePrey ? pityBonus : 0) + buffEffects.catchBonus;
-      const finalChance = clamp(0.05, 0.95, baseChanceVal + extraBonus);
+      const finalChance = clamp(0.05, 0.95, (baseChanceVal + extraBonus) * safeBiome.catchModifier);
 
       const isSuccess = Math.random() < finalChance;
       const critical = isSuccess && rollPercent(HUNT_CRITICAL_RATE);
@@ -232,7 +253,7 @@ export async function rollHunt(
       // Item drop şansı (kritik avda 1.5x, buff loot_mult de uygulanır)
       for (const drop of HUNT_ITEM_DROPS) {
         if (c.difficulty < drop.minDifficulty) continue;
-        const dropChance = (c.critical ? drop.dropChance * 1.5 : drop.dropChance) * buffEffects.lootMult;
+        const dropChance = (c.critical ? drop.dropChance * 1.5 : drop.dropChance) * buffEffects.lootMult * safeBiome.lootModifier;
         if (Math.random() * 100 < dropChance) {
           inventoryJobs.push({
             type: 'upsertInventory',
@@ -282,6 +303,7 @@ export async function rollHunt(
       await prisma.player.update({
         where: { id: playerId },
         data: {
+          coins: { decrement: safeBiome.entryCost },
           huntComboStreak: newStreak,
           noRareStreak: newNoRareStreak,
           lastHunt: new Date(),
@@ -293,6 +315,7 @@ export async function rollHunt(
       await prisma.player.update({
         where: { id: playerId },
         data: {
+          coins: { decrement: safeBiome.entryCost },
           huntComboStreak: newStreak,
           noRareStreak: newNoRareStreak,
           lastHunt: new Date(),
@@ -334,6 +357,7 @@ export async function rollHunt(
     // Liderboard istatistikleri — queue'ya gönder (DB'ye direkt yazma yok)
     // recordHuntStats yerine enqueueDbWrite kullan — kritik path dışı
     if (catches.length > 0 || rareSuccesses > 0) {
+      trackQuestProgress(prisma, playerId, 'hunt', catches.length).catch(() => null);
       enqueueDbWriteBulk([{
         type: 'recordStats',
         playerId,

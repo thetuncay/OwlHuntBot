@@ -101,10 +101,12 @@ export async function simulatePvP(prisma: PrismaClient, sessionId: string): Prom
     const battleLog: string[] = [];
     const turnEvents: PvpTurnEvent[] = [];
 
-    // Buff etkilerini al (her oyuncu için ayrı)
-    const [challengerBuffs, defenderBuffs] = await Promise.all([
+    // Buff etkilerini ve oyuncu prestige seviyelerini al (her oyuncu için ayrı)
+    const [challengerBuffs, defenderBuffs, challenger, defender] = await Promise.all([
       getBuffEffects(prisma, session.challengerId, 'pvp'),
       getBuffEffects(prisma, session.defenderId, 'pvp'),
+      prisma.player.findUnique({ where: { id: session.challengerId }, select: { prestigeLevel: true } }),
+      prisma.player.findUnique({ where: { id: session.defenderId }, select: { prestigeLevel: true } }),
     ]);
 
     const left: BattleState = {
@@ -113,7 +115,8 @@ export async function simulatePvP(prisma: PrismaClient, sessionId: string): Prom
       stamina: challengerOwl.staminaCur,
       // effectiveness: 100=tam güç, düşükse power azalır
       // bond: max +%20 güç bonusu (bond 100 = ×1.20)
-      power: statEffect(challengerOwl.statGaga + challengerOwl.statPence + challengerOwl.statKanat)
+      // prestige: stat cap'i artırır
+      power: statEffect(challengerOwl.statGaga + challengerOwl.statPence + challengerOwl.statKanat, challenger?.prestigeLevel ?? 0)
         * Math.max(0.1, challengerOwl.effectiveness / 100)
         * (1 + challengerOwl.bond * 0.002), // bond 100 → ×1.20
       hpMax: challengerOwl.hpMax,
@@ -124,7 +127,7 @@ export async function simulatePvP(prisma: PrismaClient, sessionId: string): Prom
       playerId: session.defenderId,
       hp: defenderOwl.hp,
       stamina: defenderOwl.staminaCur,
-      power: statEffect(defenderOwl.statGaga + defenderOwl.statPence + defenderOwl.statKanat)
+      power: statEffect(defenderOwl.statGaga + defenderOwl.statPence + defenderOwl.statKanat, defender?.prestigeLevel ?? 0)
         * Math.max(0.1, defenderOwl.effectiveness / 100)
         * (1 + defenderOwl.bond * 0.002),
       hpMax: defenderOwl.hpMax,

@@ -2,6 +2,7 @@ import type { PrismaClient } from '@prisma/client';
 import type { XpApplyResult } from '../types';
 import { finalXP, xpRequired } from '../utils/math';
 import { enqueueDbWrite } from '../utils/db-queue';
+import { PRESTIGE_XP_BONUS_PER_LEVEL } from '../config';
 
 /**
  * Oyuncuya XP ekler, level-up durumunu hesaplar ve sonucu dondurur.
@@ -18,19 +19,21 @@ export async function addXP(
   playerId: string,
   amount: number,
   source: string,
-  existingPlayer?: { level: number; xp: number },
+  existingPlayer?: { level: number; xp: number; prestigeLevel?: number },
   skipDbWrite?: boolean,
 ): Promise<XpApplyResult> {
   // existingPlayer geçildiyse DB'ye gitme — round-trip tasarrufu
   const player = existingPlayer ?? await prisma.player.findUnique({
     where: { id: playerId },
-    select: { id: true, level: true, xp: true },
+    select: { id: true, level: true, xp: true, prestigeLevel: true },
   });
   if (!player) {
     throw new Error('Oyuncu bulunamadi.');
   }
 
-  const gainedXP = finalXP(amount, player.level);
+  // Prestige bonusu
+  const prestigeBonus = 1 + (player.prestigeLevel || 0) * PRESTIGE_XP_BONUS_PER_LEVEL;
+  const gainedXP = Math.round(finalXP(amount, player.level) * prestigeBonus);
   const nextXP   = player.xp + gainedXP;
   const required = xpRequired(player.level);
 
