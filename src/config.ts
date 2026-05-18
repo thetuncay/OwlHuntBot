@@ -724,7 +724,7 @@ export const BIOMES: BiomeDef[] = [
     name: 'Göl Kenarı',
     emoji: '🌊',
     description: 'Stabil kazanç arayanlar için. Yakalama şansı yüksektir.',
-    entryCost: 1500, // Tek seferlik giriş — 30dk ~6.500 coin kazanç, %15 giriş ücreti
+    entryCost: 1500                                                     , // Tek seferlik giriş — 30dk ~6.500 coin kazanç, %15 giriş ücreti
     minLevel: 5,
     catchModifier: 1.15, // %15 daha kolay yakalama
     lootModifier: 1.0,
