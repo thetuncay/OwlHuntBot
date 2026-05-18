@@ -17,6 +17,7 @@ import { handleTopTextCommand } from './commands/leaderboard';
 import { addXP } from './systems/xp';
 import type { LeaderboardCategory } from './systems/leaderboard';
 import { initDbQueue, closeDbQueue } from './utils/db-queue';
+import { cleanupExpiredListings } from './systems/market';
 
 const envSchema = z.object({
   DISCORD_TOKEN: z.string().min(1),
@@ -324,6 +325,23 @@ async function cleanupOrphanBotPlayers(): Promise<void> {
 setInterval(() => { void cleanupOrphanBotPlayers(); }, 24 * 60 * 60 * 1000);
 // Başlangıçta 30 saniye sonra çalıştır
 setTimeout(() => { void cleanupOrphanBotPlayers(); }, 30_000);
+
+// --- MARKET EXPIRED LISTING CLEANUP ---
+// Süresi dolan ilanları temizle ve eşyaları satıcılara iade et.
+// Her 10 dakikada bir çalışır — 48 saatlik TTL ile orantılı.
+async function runMarketCleanup(): Promise<void> {
+  try {
+    const count = await cleanupExpiredListings(prisma);
+    if (count > 0) {
+      console.info(`[Market] ${count} süresi dolmuş ilan temizlendi.`);
+    }
+  } catch (err) {
+    console.error('[Market] Cleanup hatası:', err);
+  }
+}
+setInterval(() => { void runMarketCleanup(); }, 10 * 60 * 1000);
+// Başlangıçta 60 saniye sonra çalıştır
+setTimeout(() => { void runMarketCleanup(); }, 60_000);
 
 async function shutdown() {
   console.info('Bot kapatiliyor...');

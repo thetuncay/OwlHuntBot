@@ -91,6 +91,7 @@ export async function createListing(
 
 /**
  * Marketteki bir ilanı satın alır.
+ * listingId tam UUID veya UI'da gösterilen kısaltılmış ID (ilk 8 karakter) olabilir.
  */
 export async function buyListing(
   prisma: PrismaClient,
@@ -99,9 +100,10 @@ export async function buyListing(
 ) {
   return withLock(buyerId, 'market_buy', async () => {
     return prisma.$transaction(async (tx) => {
-      const listing = await tx.marketListing.findUnique({
-        where: { id: listingId }
-      });
+      // Tam UUID veya kısaltılmış prefix ile ara
+      const listing = listingId.length === 36
+        ? await tx.marketListing.findUnique({ where: { id: listingId } })
+        : await tx.marketListing.findFirst({ where: { id: { startsWith: listingId } } });
 
       if (!listing) throw new Error('İlan bulunamadı veya süresi dolmuş.');
       if (listing.sellerId === buyerId) throw new Error('Kendi ilanını satın alamazsın.');

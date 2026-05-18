@@ -258,6 +258,8 @@ export async function commitTameResult(
         } as any,
       });
       await addXP(prisma, playerId, 100, 'tameSuccess');
+      // Quest tracking: encounter butonuyla gelen tame akışı buradan geçer
+      trackQuestProgress(prisma, playerId, 'tame').catch(() => null);
     }
 
     await prisma.encounter.update({

@@ -277,6 +277,7 @@ export async function rollHunt(
       addXP(prisma, playerId, totalXP, 'hunt', {
         level: player.level,
         xp: player.xp,
+        prestigeLevel: (player as any).prestigeLevel ?? 0,
       }, true),
       // Bond artışı: gerçek yakalama varsa main baykuşun bond'u artar (atomic cap)
       ...(realCatchCount > 0 ? [

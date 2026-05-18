@@ -49,20 +49,64 @@ export async function runCraftMessage(
 
 /**
  * Slash: /owl craft
+ * Butonlu interaktif crafting menüsü — oyuncu slash üzerinden de üretim yapabilir.
  */
 export async function runCraftSlash(interaction: ChatInputCommandInteraction, ctx: CommandContext) {
   const userId = interaction.user.id;
-  // Basitlik için slash komutu şimdilik listeyi gösterir ve oyuncuyu prefix komuta yönlendirir
-  // veya butonlu bir yapı kurulabilir. Şimdilik liste gösterelim.
+
   const embed = infoEmbed(
     '📜 Crafting Menüsü',
-    'Eşya üretmek için `owl craft <no>` prefix komutunu kullanabilirsin.\n\n' +
+    'Üretmek istediğin eşyayı seç:\n\n' +
     CRAFTING_RECIPES.map((r, i) => {
       const mats = r.requiredMaterials.map(m => `${m.itemName} x${m.quantity}`).join(', ');
       return `**${i + 1}. ${r.emoji} ${r.name}**\n└ ${r.description}\n└ Gereksinim: ${mats}, ${r.requiredCoins} 💰`;
     }).join('\n\n')
   );
-  await interaction.reply({ embeds: [embed], flags: 64 });
+
+  const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    CRAFTING_RECIPES.map((r, i) =>
+      new ButtonBuilder()
+        .setCustomId(`craft_slash:${r.id}`)
+        .setLabel(`${i + 1}. ${r.name}`)
+        .setEmoji(r.emoji)
+        .setStyle(ButtonStyle.Primary)
+    ).slice(0, 5) // Discord max 5 buton per row
+  );
+
+  await interaction.reply({ embeds: [embed], components: [row], flags: 64 });
+
+  const collector = interaction.channel?.createMessageComponentCollector({
+    componentType: ComponentType.Button,
+    time: 30_000,
+    filter: (i) => i.user.id === userId && i.customId.startsWith('craft_slash:'),
+  });
+
+  collector?.on('collect', async (i) => {
+    const recipeId = i.customId.split(':')[1];
+    if (!recipeId) return;
+    collector.stop();
+    await i.deferUpdate();
+    try {
+      const recipe = CRAFTING_RECIPES.find(r => r.id === recipeId);
+      if (!recipe) {
+        await interaction.editReply({ embeds: [failEmbed('Hata', 'Tarif bulunamadı.')], components: [] });
+        return;
+      }
+      await craftItem(ctx.prisma, userId, recipeId);
+      await interaction.editReply({
+        embeds: [successEmbed('Başarılı!', `**${recipe.emoji} ${recipe.name}** başarıyla üretildi ve envanterine eklendi.`)],
+        components: [],
+      });
+    } catch (err: any) {
+      await interaction.editReply({ embeds: [failEmbed('Hata', err.message)], components: [] });
+    }
+  });
+
+  collector?.on('end', (_, reason) => {
+    if (reason === 'time') {
+      interaction.editReply({ content: '⏰ Süre doldu.', embeds: [], components: [] }).catch(() => null);
+    }
+  });
 }
 
 /**
