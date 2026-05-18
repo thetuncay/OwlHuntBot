@@ -73,7 +73,7 @@ function buildBiomeSelectEmbed(): EmbedBuilder {
 
   for (const b of BIOMES) {
     const costStr = b.entryCost > 0
-      ? `💰 **Her hunt: ${b.entryCost} coin giriş ücreti**`
+      ? `💰 **Giriş ücreti: ${b.entryCost.toLocaleString()} coin** *(tek seferlik)*`
       : '💰 **Ücretsiz**';
 
     const modifiers: string[] = [];
@@ -112,7 +112,7 @@ function buildBiomeSelectRow(): ActionRowBuilder<ButtonBuilder> {
 
 function buildActiveBiomeEmbed(biomeId: string, remaining: string): EmbedBuilder {
   const b = BIOMES.find(x => x.id === biomeId) ?? BIOMES[0]!;
-  const costStr = b.entryCost > 0 ? `💰 Her hunt: **${b.entryCost} coin**` : '💰 **Ücretsiz**';
+  const costStr = b.entryCost > 0 ? `💰 Giriş ücreti: **${b.entryCost.toLocaleString()} coin** *(ödendi)*` : '💰 **Ücretsiz**';
 
   return new EmbedBuilder()
     .setTitle(`${b.emoji} Aktif Bölge: ${b.name}`)
