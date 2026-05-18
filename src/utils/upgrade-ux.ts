@@ -78,9 +78,9 @@ function chanceBar(chance: number): string {
  * Bir stat seviyesinin oyun üzerindeki etkisini kısa metin olarak döndürür.
  * Formüllere dokunmaz — sadece statEffect() sonucunu yorumlar.
  */
-function effectDelta(stat: OwlStatKey, oldVal: number): string {
-  const before = statEffect(oldVal);
-  const after  = statEffect(oldVal + 1);
+function effectDelta(stat: OwlStatKey, oldVal: number, prestigeLevel = 0): string {
+  const before = statEffect(oldVal, prestigeLevel);
+  const after  = statEffect(oldVal + 1, prestigeLevel);
   const delta  = (after - before).toFixed(2);
 
   switch (stat) {
@@ -103,6 +103,7 @@ export interface UpgradePanelData {
   owlName:     string;
   owlQuality:  string;
   playerLevel: number;
+  prestigeLevel?: number;
   stat:        OwlStatKey;
   statValue:   number;
   chance:      number;
@@ -133,7 +134,7 @@ export function buildUpgradePanel(data: UpgradePanelData): EmbedBuilder {
 
   // ── Hedef stat bloğu ───────────────────────────────────────────────────────
   const statBarVis = bar(Math.min(data.statValue, 100), 100, 10);
-  const delta      = effectDelta(data.stat, data.statValue);
+  const delta      = effectDelta(data.stat, data.statValue, data.prestigeLevel || 0);
 
   const targetBlock =
     `${meta.icon} **${meta.label}** — *${meta.desc}*\n` +
@@ -243,12 +244,13 @@ export function buildUpgradeResult(opts: {
   oldValue:  number;
   newValue:  number;
   chance:    number;
+  prestigeLevel?: number;
 }): EmbedBuilder {
   const meta = STAT_META[opts.stat];
 
   if (opts.success) {
     const statBarVis = bar(Math.min(opts.newValue, 100), 100, 10);
-    const delta      = effectDelta(opts.stat, opts.oldValue);
+    const delta      = effectDelta(opts.stat, opts.oldValue, opts.prestigeLevel || 0);
     return new EmbedBuilder()
       .setColor(COLOR_SUCCESS)
       .setTitle('✅ Geliştirme Başarılı!')

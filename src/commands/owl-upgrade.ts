@@ -65,10 +65,12 @@ export async function runUpgrade(
     return;
   }
 
-  const preview = await getUpgradePreview(ctx.prisma, interaction.user.id, main.id, stat, []);  const panelData: UpgradePanelData = {
+  const preview = await getUpgradePreview(ctx.prisma, interaction.user.id, main.id, stat, []);
+  const panelData: UpgradePanelData = {
     owlName:     main.species,
     owlQuality:  main.quality,
     playerLevel: player.level,
+    prestigeLevel: player.prestigeLevel || 0,
     stat,
     statValue:   preview.statValue,
     chance:      preview.chance,
@@ -122,6 +124,7 @@ export async function runUpgrade(
         embeds: [buildUpgradeResult({
           stat, success: result.success,
           oldValue: result.oldValue, newValue: result.newValue, chance: result.chance,
+          prestigeLevel: player.prestigeLevel || 0,
         })],
         components: [],
       }).catch(() => null);
@@ -193,6 +196,7 @@ export async function runUpgradeMessage(
     owlName:     main.species,
     owlQuality:  main.quality,
     playerLevel: player.level,
+    prestigeLevel: player.prestigeLevel || 0,
     stat,
     statValue:   preview.statValue,
     chance:      preview.chance,
@@ -244,6 +248,7 @@ export async function runUpgradeMessage(
         embeds: [buildUpgradeResult({
           stat, success: result.success,
           oldValue: result.oldValue, newValue: result.newValue, chance: result.chance,
+          prestigeLevel: player.prestigeLevel || 0,
         })],
         components: [],
       }).catch(() => null);
