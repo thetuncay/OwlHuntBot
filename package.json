@@ -26,6 +26,7 @@
     "deploy:commands:prod": "node dist/deploy-commands.js"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@prisma/client": "^6.6.0",
     "bullmq": "^5.76.5",
     "discord.js": "^14.18.0",
