@@ -1,5 +1,11 @@
 /**
  * owl-hunt.ts — /owl hunt komutu + encounter mesajı
+ *
+ * Biyom sistemi:
+ *   - Oyuncu bir kez biyom seçer, Redis'e kaydedilir (30 dk TTL)
+ *   - Sonraki hunt'larda seçim menüsü çıkmaz, direkt hunt atılır
+ *   - Aktif biyomda "Biyomdan Çık" butonu gösterilir
+ *   - 30 dakika sonra otomatik çıkış
  */
 
 import {
@@ -9,9 +15,15 @@ import {
   ComponentType,
   EmbedBuilder,
 } from 'discord.js';
-import { HUNT_COOLDOWN_MS, BIOMES } from '../config';
+import { HUNT_COOLDOWN_MS, BIOMES, BIOME_SESSION_TTL_MS } from '../config';
 import { getCooldownRemainingMs } from '../middleware/cooldown';
 import { rollHunt } from '../systems/hunt';
+import {
+  getBiomeSession,
+  setBiomeSession,
+  clearBiomeSession,
+  formatSessionRemaining,
+} from '../utils/biome-session';
 import { commitTameResult } from '../systems/tame';
 import {
   createTameSession,
@@ -47,6 +59,83 @@ import { parseStoredTraits } from '../systems/traits';
 import type { CommandDefinition } from '../types';
 import type { Message } from 'discord.js';
 
+// ─── Biyom seçim embed'i ─────────────────────────────────────────────────────
+
+function buildBiomeSelectEmbed(): EmbedBuilder {
+  const embed = new EmbedBuilder()
+    .setTitle('🗺️ Avlanma Bölgesi Seç')
+    .setDescription(
+      'Seçtiğin bölgede **30 dakika** kalırsın.\n' +
+      'Bu süre içinde istediğin kadar hunt atabilirsin.\n' +
+      'İstersen erken çıkabilirsin.\n\u200b'
+    )
+    .setColor(0x2c3e50);
+
+  for (const b of BIOMES) {
+    const costStr = b.entryCost > 0
+      ? `💰 **Her hunt: ${b.entryCost} coin giriş ücreti**`
+      : '💰 **Ücretsiz**';
+
+    const modifiers: string[] = [];
+    if (b.catchModifier > 1)       modifiers.push(`✅ Yakalama şansı **+${Math.round((b.catchModifier - 1) * 100)}%**`);
+    if (b.catchModifier < 1)       modifiers.push(`❌ Yakalama şansı **-${Math.round((1 - b.catchModifier) * 100)}%**`);
+    if (b.lootModifier > 1)        modifiers.push(`✅ Materyal drop **+${Math.round((b.lootModifier - 1) * 100)}%**`);
+    if (b.rareModifier > 1)        modifiers.push(`✅ Nadir hayvan şansı **x${b.rareModifier}**`);
+    if (b.rareModifier < 1)        modifiers.push(`❌ Nadir hayvan şansı **-${Math.round((1 - b.rareModifier) * 100)}%**`);
+    if (b.minLevel > 1)            modifiers.push(`🔒 Min. Seviye: **${b.minLevel}**`);
+
+    embed.addFields({
+      name: `${b.emoji} ${b.name}`,
+      value: [
+        b.description,
+        costStr,
+        modifiers.length > 0 ? modifiers.join('\n') : '📊 Standart ödüller',
+      ].join('\n'),
+      inline: false,
+    });
+  }
+
+  return embed;
+}
+
+function buildBiomeSelectRow(): ActionRowBuilder<ButtonBuilder> {
+  return new ActionRowBuilder<ButtonBuilder>().addComponents(
+    BIOMES.map(b =>
+      new ButtonBuilder()
+        .setCustomId(`biome_select:${b.id}`)
+        .setLabel(b.entryCost > 0 ? `${b.name} (${b.entryCost}💰/hunt)` : b.name)
+        .setEmoji(b.emoji)
+        .setStyle(b.entryCost === 0 ? ButtonStyle.Secondary : ButtonStyle.Primary)
+    )
+  );
+}
+
+function buildActiveBiomeEmbed(biomeId: string, remaining: string): EmbedBuilder {
+  const b = BIOMES.find(x => x.id === biomeId) ?? BIOMES[0]!;
+  const costStr = b.entryCost > 0 ? `💰 Her hunt: **${b.entryCost} coin**` : '💰 **Ücretsiz**';
+
+  return new EmbedBuilder()
+    .setTitle(`${b.emoji} Aktif Bölge: ${b.name}`)
+    .setDescription(
+      `${b.description}\n\n` +
+      `${costStr}\n` +
+      `⏱️ Kalan süre: **${remaining}**\n\n` +
+      `Hunt atmak için tekrar \`owl hunt\` yaz.\n` +
+      `Çıkmak için aşağıdaki butonu kullan.`
+    )
+    .setColor(0x27ae60);
+}
+
+function buildActiveBiomeRow(): ActionRowBuilder<ButtonBuilder> {
+  return new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder()
+      .setCustomId('biome_leave')
+      .setLabel('Bölgeden Çık')
+      .setEmoji('🚪')
+      .setStyle(ButtonStyle.Danger)
+  );
+}
+
 // ─── Slash: /owl hunt ─────────────────────────────────────────────────────────
 
 export async function runHunt(
@@ -54,84 +143,98 @@ export async function runHunt(
   ctx: Parameters<CommandDefinition['execute']>[1],
 ): Promise<void> {
   const userId = interaction.user.id;
+
+  // ── Aktif biyom oturumu var mı? ──────────────────────────────────────────
+  const session = await getBiomeSession(ctx.redis, userId);
+
+  if (!session) {
+    // Biyom seçim menüsü göster
+    await interaction.reply({
+      embeds: [buildBiomeSelectEmbed()],
+      components: [buildBiomeSelectRow()],
+      flags: 64,
+    });
+
+    const collector = interaction.channel?.createMessageComponentCollector({
+      componentType: ComponentType.Button,
+      time: 30_000,
+      filter: (i) => i.user.id === userId && i.customId.startsWith('biome_select:'),
+    });
+
+    collector?.on('collect', async (i) => {
+      collector.stop();
+      const biomeId = i.customId.split(':')[1] ?? 'b0';
+      const biome = BIOMES.find(b => b.id === biomeId);
+      if (!biome) return;
+
+      await setBiomeSession(ctx.redis, userId, biomeId);
+      await i.update({
+        embeds: [buildActiveBiomeEmbed(biomeId, formatSessionRemaining({ biomeId, enteredAt: Date.now(), expiresAt: Date.now() + BIOME_SESSION_TTL_MS }))],
+        components: [buildActiveBiomeRow()],
+      });
+
+      // Çıkış butonu collector'ı
+      const leaveCollector = interaction.channel?.createMessageComponentCollector({
+        componentType: ComponentType.Button,
+        time: BIOME_SESSION_TTL_MS,
+        filter: (li) => li.user.id === userId && li.customId === 'biome_leave',
+      });
+      leaveCollector?.on('collect', async (li) => {
+        leaveCollector.stop();
+        await clearBiomeSession(ctx.redis, userId);
+        await li.update({ content: `🚪 **${biome.name}** bölgesinden çıktın.`, embeds: [], components: [] });
+      });
+    });
+
+    collector?.on('end', (_, reason) => {
+      if (reason === 'time') {
+        interaction.editReply({ content: '⏰ Seçim süresi doldu.', embeds: [], components: [] }).catch(() => null);
+      }
+    });
+    return;
+  }
+
+  // ── Aktif biyom var — cooldown kontrolü ve hunt ───────────────────────────
   const cooldownKey = `cooldown:hunt:${userId}`;
   const remaining = await getCooldownRemainingMs(ctx.redis, cooldownKey, HUNT_COOLDOWN_MS);
-
   if (remaining > 0) {
     await interaction.reply({
-      content: `⏰ Tekrar avlanmak icin **${Math.ceil(remaining / 1000)}s** beklemelisin.`,
+      content: `⏰ Tekrar avlanmak için **${Math.ceil(remaining / 1000)}s** beklemelisin.`,
       flags: 64,
     });
     return;
   }
 
-  const biomeEmbed = new EmbedBuilder()
-    .setTitle('🌍 Avlanılacak Biyomu Seç')
-    .setDescription('Her biyomun farklı risk ve ödül dengesi vardır.')
-    .setColor(0x3498db);
+  const bundle = await getPlayerBundle(ctx.redis, ctx.prisma, userId);
+  if (!bundle || !bundle.mainOwl) {
+    await interaction.reply({ content: '❌ **Hata** | Main baykuş bulunamadı.', flags: 64 });
+    return;
+  }
 
-  BIOMES.forEach(b => {
-    biomeEmbed.addFields({
-      name: `${b.emoji} ${b.name} (Min Lv. ${b.minLevel})`,
-      value: `${b.description}\n💰 Giriş: **${b.entryCost}** 💰`,
-      inline: false
-    });
-  });
+  await interaction.deferReply({ flags: 64 });
 
-  const biomeRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
-    BIOMES.map(b => (
-      new ButtonBuilder()
-        .setCustomId(`biome_select_slash:${b.id}`)
-        .setLabel(b.name)
-        .setEmoji(b.emoji)
-        .setStyle(ButtonStyle.Primary)
-    ))
-  );
+  try {
+    const result = await rollHunt(ctx.prisma, ctx.redis, userId, bundle.mainOwl.id, session.biomeId);
+    const compressed = compressHuntResult(result);
+    const name = interaction.member && 'displayName' in interaction.member
+      ? (interaction.member as { displayName: string }).displayName
+      : interaction.user.username;
 
-  await interaction.reply({ embeds: [biomeEmbed], components: [biomeRow], flags: 64 });
+    await animateHuntInteraction({ editReply: interaction.editReply.bind(interaction) }, name, compressed);
 
-  const biomeCollector = interaction.channel?.createMessageComponentCollector({
-    componentType: ComponentType.Button,
-    time: 30000,
-    filter: (i) => i.user.id === userId && i.customId.startsWith('biome_select_slash:'),
-  });
-
-  biomeCollector?.on('collect', async (i) => {
-    const biomeId = i.customId.split(':')[1] ?? 'b0';
-    await i.deferUpdate();
-    await interaction.editReply({ content: '🏹 Avlanma başlıyor...', embeds: [], components: [] });
-
-    // Cache'den veya DB'den player + main owl çek (cache hit = 0 DB round-trip)
-    const bundle = await getPlayerBundle(ctx.redis, ctx.prisma, userId);
-    if (!bundle || !bundle.mainOwl) {
-      await interaction.editReply({ content: `❌ **Hata** | Main baykus bulunamadi.` });
-      return;
+    if (compressed.encounterId) {
+      await sendEncounterMessage(
+        { followUp: interaction.followUp.bind(interaction) },
+        ctx, userId, compressed.encounterId, bundle.mainOwl,
+      );
     }
-    const main = bundle.mainOwl;
-
-    try {
-      const result = await rollHunt(ctx.prisma, ctx.redis, userId, main.id, biomeId);
-      const compressed = compressHuntResult(result);
-
-      const name = interaction.member && 'displayName' in interaction.member
-        ? (interaction.member as { displayName: string }).displayName
-        : interaction.user.username;
-
-      await animateHuntInteraction({ editReply: interaction.editReply.bind(interaction) }, name, compressed);
-
-      if (compressed.encounterId) {
-        await sendEncounterMessage(
-          { followUp: interaction.followUp.bind(interaction) },
-          ctx,
-          userId,
-          compressed.encounterId,
-          main,
-        );
-      }
-    } catch (err: any) {
-      await interaction.editReply({ content: `❌ **Hata** | ${err.message}` });
+  } catch (err: any) {
+    // Biyom süresi dolmuşsa oturumu temizle
+    if (err.message?.includes('biyom') || err.message?.includes('coin')) {
+      await clearBiomeSession(ctx.redis, userId);
     }
-  });
+    await interaction.editReply({ content: `❌ **Hata** | ${err.message}` });
+  }
 }
 
 // ─── Prefix: owl hunt ─────────────────────────────────────────────────────────
@@ -142,97 +245,122 @@ export async function runHuntMessage(
 ): Promise<void> {
   const userId = message.author.id;
 
-  const biomeEmbed = new EmbedBuilder()
-    .setTitle('🌍 Avlanılacak Biyomu Seç')
-    .setDescription('Her biyomun farklı risk ve ödül dengesi vardır.')
-    .setColor(0x3498db);
+  // ── "owl hunt çık" komutu ─────────────────────────────────────────────────
+  const args = message.content.trim().split(/\s+/);
+  const lastArg = args[args.length - 1]?.toLowerCase();
+  if (lastArg === 'çık' || lastArg === 'cik' || lastArg === 'exit' || lastArg === 'leave') {
+    const existing = await getBiomeSession(ctx.redis, userId);
+    if (!existing) {
+      await message.reply('❌ Zaten aktif bir bölgede değilsin.');
+      return;
+    }
+    const biome = BIOMES.find(b => b.id === existing.biomeId);
+    await clearBiomeSession(ctx.redis, userId);
+    await message.reply(`🚪 **${biome?.name ?? 'Bölge'}**'den çıktın.`);
+    return;
+  }
 
-  BIOMES.forEach(b => {
-    biomeEmbed.addFields({
-      name: `${b.emoji} ${b.name} (Min Lv. ${b.minLevel})`,
-      value: `${b.description}\n💰 Giriş: **${b.entryCost}** 💰`,
-      inline: false
+  // ── Aktif biyom oturumu var mı? ──────────────────────────────────────────
+  const session = await getBiomeSession(ctx.redis, userId);
+
+  if (!session) {
+    // Biyom seçim menüsü göster
+    const biomeMsg = await message.reply({
+      embeds: [buildBiomeSelectEmbed()],
+      components: [buildBiomeSelectRow()],
     });
-  });
 
-  const biomeRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
-    BIOMES.map(b => (
-      new ButtonBuilder()
-        .setCustomId(`biome_select:${b.id}`)
-        .setLabel(b.name)
-        .setEmoji(b.emoji)
-        .setStyle(ButtonStyle.Primary)
-    ))
-  );
+    const collector = biomeMsg.createMessageComponentCollector({
+      componentType: ComponentType.Button,
+      time: 30_000,
+      filter: (i) => i.user.id === userId && i.customId.startsWith('biome_select:'),
+    });
 
-  const biomeMsg = await message.reply({ embeds: [biomeEmbed], components: [biomeRow] });
+    collector.on('collect', async (i) => {
+      collector.stop();
+      const biomeId = i.customId.split(':')[1] ?? 'b0';
+      const biome = BIOMES.find(b => b.id === biomeId);
+      if (!biome) return;
 
-  const biomeCollector = biomeMsg.createMessageComponentCollector({
-    componentType: ComponentType.Button,
-    time: 30000,
-    filter: (i) => i.user.id === userId && i.customId.startsWith('biome_select:'),
-  });
+      const newSession = await setBiomeSession(ctx.redis, userId, biomeId);
+      await i.update({
+        embeds: [buildActiveBiomeEmbed(biomeId, formatSessionRemaining(newSession))],
+        components: [buildActiveBiomeRow()],
+      });
 
-  biomeCollector.on('collect', async (i) => {
-    const biomeId = i.customId.split(':')[1] ?? 'b0';
-    await i.deferUpdate();
-    await biomeMsg.delete().catch(() => null);
+      // Çıkış butonu collector'ı (30 dk boyunca dinle)
+      const leaveCollector = biomeMsg.createMessageComponentCollector({
+        componentType: ComponentType.Button,
+        time: BIOME_SESSION_TTL_MS,
+        filter: (li) => li.user.id === userId && li.customId === 'biome_leave',
+      });
+      leaveCollector.on('collect', async (li) => {
+        leaveCollector.stop();
+        await clearBiomeSession(ctx.redis, userId);
+        await li.update({ content: `🚪 **${biome.name}** bölgesinden çıktın.`, embeds: [], components: [] });
+      });
+      leaveCollector.on('end', (_, reason) => {
+        if (reason === 'time') {
+          // 30 dk doldu, mesajı güncelle
+          biomeMsg.edit({ content: '⏰ Bölge süresi doldu, otomatik çıkış yapıldı.', embeds: [], components: [] }).catch(() => null);
+        }
+      });
+    });
 
-    const cooldownKey = `cooldown:hunt:${userId}`;
-    const remaining = await getCooldownRemainingMs(ctx.redis, cooldownKey, HUNT_COOLDOWN_MS);
-
-    if (remaining > 0) {
-      const secs = Math.ceil(remaining / 1000);
-      const sent = await message.reply(`⏰ Tekrar avlanmak icin **${secs}s** beklemelisin.`);
-      setTimeout(() => { sent.delete().catch(() => null); }, 3000);
-      return;
-    }
-
-    // Cache'den veya DB'den player + main owl çek (cache hit = 0 DB round-trip)
-    const bundle = await getPlayerBundle(ctx.redis, ctx.prisma, userId);
-    if (!bundle || !bundle.mainOwl) {
-      await message.reply(`❌ **Hata** | Main baykus bulunamadi.`);
-      return;
-    }
-    const main = bundle.mainOwl;
-
-    try {
-      const result = await rollHunt(ctx.prisma, ctx.redis, userId, main.id, biomeId);
-      const compressed = compressHuntResult(result);
-      const name = message.member?.displayName ?? message.author.username;
-
-      // Aktif hunt buff'larını çek — hunt satırında göster
-      listActiveBuffs(ctx.prisma as any, userId).then((rawBuffs) => {
-        compressed.activeBuffs = rawBuffs
-          .filter((b) => b.chargeCur > 0 && b.category === 'hunt')
-          .map((b) => ({
-            emoji: BUFF_ITEM_MAP[b.buffItemId]?.emoji ?? '✨',
-            chargeCur: b.chargeCur,
-            chargeMax: b.chargeMax,
-          }));
-      }).catch(() => null);
-
-      await animateHuntMessage(message, name, compressed);
-
-      if (compressed.encounterId) {
-        await sendEncounterMessage(
-          { reply: message.reply.bind(message) },
-          ctx,
-          userId,
-          compressed.encounterId,
-          main,
-        );
+    collector.on('end', (_, reason) => {
+      if (reason === 'time') {
+        biomeMsg.edit({ content: '⏰ Seçim süresi doldu.', embeds: [], components: [] }).catch(() => null);
       }
-    } catch (err: any) {
-      await message.reply({ content: `❌ **Hata** | ${err.message}` });
-    }
-  });
+    });
+    return;
+  }
 
-  biomeCollector.on('end', (_collected, reason) => {
-    if (reason === 'time') {
-      biomeMsg.edit({ content: '⏰ Seçim süresi doldu.', embeds: [], components: [] }).catch(() => null);
+  // ── Aktif biyom var — cooldown kontrolü ve hunt ───────────────────────────
+  const cooldownKey = `cooldown:hunt:${userId}`;
+  const remaining = await getCooldownRemainingMs(ctx.redis, cooldownKey, HUNT_COOLDOWN_MS);
+  if (remaining > 0) {
+    const secs = Math.ceil(remaining / 1000);
+    const sent = await message.reply(`⏰ Tekrar avlanmak için **${secs}s** beklemelisin.`);
+    setTimeout(() => sent.delete().catch(() => null), 4000);
+    return;
+  }
+
+  const bundle = await getPlayerBundle(ctx.redis, ctx.prisma, userId);
+  if (!bundle || !bundle.mainOwl) {
+    await message.reply('❌ **Hata** | Main baykuş bulunamadı.');
+    return;
+  }
+
+  try {
+    const result = await rollHunt(ctx.prisma, ctx.redis, userId, bundle.mainOwl.id, session.biomeId);
+    const compressed = compressHuntResult(result);
+    const name = message.member?.displayName ?? message.author.username;
+
+    // Aktif hunt buff'larını çek — hunt satırında göster
+    listActiveBuffs(ctx.prisma as any, userId).then((rawBuffs) => {
+      compressed.activeBuffs = rawBuffs
+        .filter((b) => b.chargeCur > 0 && b.category === 'hunt')
+        .map((b) => ({
+          emoji: BUFF_ITEM_MAP[b.buffItemId]?.emoji ?? '✨',
+          chargeCur: b.chargeCur,
+          chargeMax: b.chargeMax,
+        }));
+    }).catch(() => null);
+
+    await animateHuntMessage(message, name, compressed);
+
+    if (compressed.encounterId) {
+      await sendEncounterMessage(
+        { reply: message.reply.bind(message) },
+        ctx, userId, compressed.encounterId, bundle.mainOwl,
+      );
     }
-  });
+  } catch (err: any) {
+    if (err.message?.includes('biyom') || err.message?.includes('coin')) {
+      await clearBiomeSession(ctx.redis, userId);
+    }
+    await message.reply({ content: `❌ **Hata** | ${err.message}` });
+  }
 }
 
 // ─── Encounter mesajı ve buton handler ───────────────────────────────────────
