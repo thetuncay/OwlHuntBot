@@ -713,7 +713,7 @@ export const BIOMES: BiomeDef[] = [
     name: 'Derin Orman',
     emoji: '🌲',
     description: 'Yüksek risk, yüksek nadir drop şansı. Hazırlıklı gelmelisin.',
-    entryCost: 100, // 200 -> 100
+    entryCost: 2500, // Tek seferlik giriş — 30dk ~7.500 coin kazanç, %20 giriş ücreti
     minLevel: 10,
     catchModifier: 0.85, // %15 daha zor yakalama
     lootModifier: 1.3,   // %30 daha fazla materyal
@@ -724,7 +724,7 @@ export const BIOMES: BiomeDef[] = [
     name: 'Göl Kenarı',
     emoji: '🌊',
     description: 'Stabil kazanç arayanlar için. Yakalama şansı yüksektir.',
-    entryCost: 50, // 100 -> 50
+    entryCost: 1500, // Tek seferlik giriş — 30dk ~6.500 coin kazanç, %15 giriş ücreti
     minLevel: 5,
     catchModifier: 1.15, // %15 daha kolay yakalama
     lootModifier: 1.0,

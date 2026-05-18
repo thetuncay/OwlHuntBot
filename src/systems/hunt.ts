@@ -95,15 +95,12 @@ export async function rollHunt(
 
     const player = resolvedBundle.player;
 
-    // Biyom giriş ücreti kontrolü
+    // Biyom seviye kontrolü
     const foundBiome = BIOMES.find(b => b.id === biomeId) || BIOMES[0];
     if (!foundBiome) throw new Error('Biyom bulunamadı.');
     const safeBiome = foundBiome;
     if (player.level < safeBiome.minLevel) {
       throw new Error(`Bu biyoma girmek için en az **${safeBiome.minLevel}** seviye olmalısın.`);
-    }
-    if (player.coins < safeBiome.entryCost) {
-      throw new Error(`Bu biyoma girmek için **${safeBiome.entryCost}** 💰 gerekiyor.`);
     }
 
     if (!owl || owl.ownerId !== playerId) throw new Error('Av icin gecersiz baykus.');
@@ -304,7 +301,6 @@ export async function rollHunt(
       await prisma.player.update({
         where: { id: playerId },
         data: {
-          coins: { decrement: safeBiome.entryCost },
           huntComboStreak: newStreak,
           noRareStreak: newNoRareStreak,
           lastHunt: new Date(),
@@ -316,7 +312,6 @@ export async function rollHunt(
       await prisma.player.update({
         where: { id: playerId },
         data: {
-          coins: { decrement: safeBiome.entryCost },
           huntComboStreak: newStreak,
           noRareStreak: newNoRareStreak,
           lastHunt: new Date(),

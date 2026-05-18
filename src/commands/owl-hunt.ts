@@ -167,9 +167,28 @@ export async function runHunt(
       const biome = BIOMES.find(b => b.id === biomeId);
       if (!biome) return;
 
-      await setBiomeSession(ctx.redis, userId, biomeId);
+      // Tek seferlik giriş ücreti kontrolü ve kesimi
+      if (biome.entryCost > 0) {
+        const playerData = await ctx.prisma.player.findUnique({
+          where: { id: userId },
+          select: { coins: true },
+        });
+        if (!playerData || playerData.coins < biome.entryCost) {
+          await i.update({
+            content: `❌ **${biome.name}** bölgesine girmek için **${biome.entryCost.toLocaleString()} 💰** gerekiyor. Bakiyen yetersiz.`,
+            embeds: [], components: [],
+          });
+          return;
+        }
+        await ctx.prisma.player.update({
+          where: { id: userId },
+          data: { coins: { decrement: biome.entryCost } },
+        });
+      }
+
+      const newSession = await setBiomeSession(ctx.redis, userId, biomeId);
       await i.update({
-        embeds: [buildActiveBiomeEmbed(biomeId, formatSessionRemaining({ biomeId, enteredAt: Date.now(), expiresAt: Date.now() + BIOME_SESSION_TTL_MS }))],
+        embeds: [buildActiveBiomeEmbed(biomeId, formatSessionRemaining(newSession))],
         components: [buildActiveBiomeRow()],
       });
 
@@ -281,6 +300,25 @@ export async function runHuntMessage(
       const biomeId = i.customId.split(':')[1] ?? 'b0';
       const biome = BIOMES.find(b => b.id === biomeId);
       if (!biome) return;
+
+      // Tek seferlik giriş ücreti kontrolü ve kesimi
+      if (biome.entryCost > 0) {
+        const playerData = await ctx.prisma.player.findUnique({
+          where: { id: userId },
+          select: { coins: true },
+        });
+        if (!playerData || playerData.coins < biome.entryCost) {
+          await i.update({
+            content: `❌ **${biome.name}** bölgesine girmek için **${biome.entryCost.toLocaleString()} 💰** gerekiyor. Bakiyen yetersiz.`,
+            embeds: [], components: [],
+          });
+          return;
+        }
+        await ctx.prisma.player.update({
+          where: { id: userId },
+          data: { coins: { decrement: biome.entryCost } },
+        });
+      }
 
       const newSession = await setBiomeSession(ctx.redis, userId, biomeId);
       await i.update({
