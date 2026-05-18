@@ -1,20 +1,18 @@
 /**
- * ai-qa.ts — Google Gemini ile oyun içi soru-cevap sistemi
+ * ai-qa.ts — Groq API ile oyun içi soru-cevap sistemi
  *
- * Ücretsiz tier: dakikada 15 istek, günde 1.500 istek
- * Model: gemini-1.5-flash (hızlı ve ücretsiz)
+ * Ücretsiz tier: dakikada 30 istek, günde 14.400 istek
+ * Model: llama-3.3-70b-versatile (hızlı, Türkçe destekli)
  */
 
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import Groq from 'groq-sdk';
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY ?? '';
+const GROQ_API_KEY = process.env.GROQ_API_KEY ?? '';
 
-// Oyun bağlamı — Gemini bu bilgiyle soruları cevaplar
 const SYSTEM_PROMPT = `Sen OwlHuntBot adlı bir Discord RPG botunun yardımcı asistanısın.
 Sadece bu oyunla ilgili sorulara Türkçe cevap verirsin.
 Oyunla ilgisi olmayan sorulara "Sadece oyunla ilgili sorulara cevap verebilirim." dersin.
-Cevapların kısa, net ve Discord'a uygun olsun (maksimum 400 karakter).
-Markdown kullanabilirsin ama embed formatında tut.
+Cevapların kısa ve net olsun (maksimum 400 karakter). Emoji kullanabilirsin.
 
 OYUN BİLGİLERİ:
 
@@ -34,13 +32,14 @@ KOMUTLAR:
 - owl duel: Bot ile duel
 - owl cash: Bakiye gör
 - owl sk / owl ek: Lootbox aç
+- owl soru <soru>: Oyunla ilgili soru sor
 
 BİYOMLAR:
 - Kasaba Civarı: Ücretsiz, standart
 - Göl Kenarı: 1.500 coin, +%15 yakalama, Lv.5+
 - Derin Orman: 2.500 coin, +%30 materyal, nadir hayvan x2, Lv.10+
 
-STAT'LAR: Pence (yakalama), Gaga (PvP hasar), Göz (encounter), Kulak (tame), Kanat (yakalama)
+STAT'LAR: Pence (yakalama en önemli), Gaga (PvP hasar), Göz (encounter), Kulak (tame), Kanat (yakalama)
 UPGRADE SIRASI: Pence → Gaga & Kulak → Göz → Kanat
 
 PARA KAZANMA: Hunt+Sell (3.000-8.000/saat), Daily Quest (2.900/gün), Market satışı
@@ -53,34 +52,34 @@ Pity: 6-8 kutu açmadan Rare+ gelmezse garanti.
 
 DAILY QUEST: 10 av (500💰), 3 craft (800💰), 1 tame (1.200💰), 2 market ilanı (400💰)
 
-CRAFTING TARİFLERİ:
-1. Karma Yem: fare×5 + serce×2 + 100💰
-2. Bileme Taşı: Kemik Tozu×10 + Parlak Tüy×5 + 500💰 (+%10 upgrade şansı)
-3. Yırtıcı İksiri: fare×20 + serce×10 + 1.000💰 (+%15 tame/catch şansı)`;
+CRAFTING: 1-Karma Yem (fare×5+serce×2+100💰), 2-Bileme Taşı (KemikTozu×10+ParlakTüy×5+500💰), 3-Yırtıcı İksiri (fare×20+serce×10+1000💰)`;
 
-let genAI: GoogleGenerativeAI | null = null;
+let groqClient: Groq | null = null;
 
-function getClient(): GoogleGenerativeAI {
-  if (!genAI) {
-    if (!GEMINI_API_KEY) throw new Error('GEMINI_API_KEY tanımlı değil.');
-    genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+function getClient(): Groq {
+  if (!groqClient) {
+    if (!GROQ_API_KEY) throw new Error('GROQ_API_KEY tanımlı değil.');
+    groqClient = new Groq({ apiKey: GROQ_API_KEY });
   }
-  return genAI;
+  return groqClient;
 }
 
 /**
- * Oyuncu sorusunu Gemini'ye gönderir ve cevap döndürür.
+ * Oyuncu sorusunu Groq'a gönderir ve cevap döndürür.
  */
 export async function askGameQuestion(question: string): Promise<string> {
   const client = getClient();
-  const model = client.getGenerativeModel({
-    model: 'gemini-2.0-flash-lite',
-    systemInstruction: SYSTEM_PROMPT,
+
+  const completion = await client.chat.completions.create({
+    model: 'llama-3.3-70b-versatile',
+    messages: [
+      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'user', content: question },
+    ],
+    max_tokens: 300,
+    temperature: 0.7,
   });
 
-  const result = await model.generateContent(question);
-  const text = result.response.text().trim();
-
-  // 1024 karakterden uzunsa kes
+  const text = completion.choices[0]?.message?.content?.trim() ?? 'Cevap üretilemedi.';
   return text.length > 1024 ? text.slice(0, 1021) + '...' : text;
 }

@@ -23,6 +23,9 @@ importers:
       dotenv:
         specifier: ^16.5.0
         version: 16.6.1
+      groq-sdk:
+        specifier: ^1.2.0
+        version: 1.2.0
       ioredis:
         specifier: ^5.6.1
         version: 5.10.1
@@ -920,6 +923,10 @@ packages:
   globals@14.0.0:
     resolution: {integrity: sha512-oahGvuMGQlPw/ivIYBjVSrWAfWLBeku5tpPE2fOPLi+WHffIWbuh2tCjhyQhTBPMf5E9jDEH4FOmTYgYwbKwtQ==}
     engines: {node: '>=18'}
+
+  groq-sdk@1.2.0:
+    resolution: {integrity: sha512-pMhSYXWcjiqvbOeKdv2zjci1BYjGdp04a40hnmQmJpKJyB6oa+gRndAqE128gwR0NLgYO+Wt1fIF46KNHcplsw==}
+    hasBin: true
 
   has-flag@4.0.0:
     resolution: {integrity: sha512-EykJT/Q1KjTWctppgIAgfSO0tKVuZUjhgMr17kqTumMl6Afv3EISleU7qZUzoXDFTAHTDC4NOoG/ZxU3EvlMPQ==}
@@ -2251,6 +2258,8 @@ snapshots:
       is-glob: 4.0.3
 
   globals@14.0.0: {}
+
+  groq-sdk@1.2.0: {}
 
   has-flag@4.0.0: {}
 
