@@ -482,7 +482,7 @@ async function execute(
 
   // ── aiquota ────────────────────────────────────────────────────────────────
   if (sub === 'aiquota') {
-    const { getQuotaStats } = await import('../systems/ai-qa');
+    const { getQuotaStats } = await import('../systems/ai-qa.js');
     const stats = await getQuotaStats(ctx.redis);
     await interaction.reply({ content: stats, flags: 64 });
     return;

@@ -202,7 +202,7 @@ function getFallbackResponse(question: string): string {
   }
 
   // Varsayılan cevap
-  return FALLBACK_RESPONSES.default;
+  return FALLBACK_RESPONSES.default ?? '🤖 AI asistan şu an kullanılamıyor. `owl yardim` yazarak tüm komutları görebilirsin.';
 }
 
 interface ConversationMessage {
