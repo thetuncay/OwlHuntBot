@@ -25,7 +25,8 @@ export async function runPrestigeMessage(
       '**Bonuslar:**\n' +
       '• Her seviye için **+%5 XP**\n' +
       '• Her seviye için **+2 Etkili Stat Cap**\n\n' +
-      `**Kullanım:** \`${prefix} prestige <baykus_id>\`\n` +
+      `**Kullanım:** \`${prefix} prestige <baykus_id>\`\n\n` +
+      `💡 **Daha fazla bilgi:** \`${prefix} soru prestige ne zaman yapmalıyım?\`\n\n` +
       '*Dikkat: Baykuşunuz silinecek ve seviyeniz 1\'e sıfırlanacaktır!*'
     );
     await message.reply({ embeds: [embed] });
@@ -64,7 +65,8 @@ export async function runPrestigeSlash(interaction: ChatInputCommandInteraction,
       '**Bonuslar:**\n' +
       '• Her seviye için **+%5 XP**\n' +
       '• Her seviye için **+2 Etkili Stat Cap**\n\n' +
-      `**Kullanım:** \`/owl prestige baykus:<id>\`\n` +
+      `**Kullanım:** \`/owl prestige baykus:<id>\`\n\n` +
+      `💡 **Daha fazla bilgi:** Metin komutla \`owl soru prestige ne zaman yapmalıyım?\`\n\n` +
       '*Dikkat: Baykuşunuz silinecek ve seviyeniz 1\'e sıfırlanacaktır!*'
     );
     return interaction.reply({ embeds: [embed], flags: 64 });

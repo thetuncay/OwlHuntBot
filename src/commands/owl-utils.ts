@@ -213,17 +213,25 @@ export function buildUnknownCommandEmbed(
       .addFields(
         { name: `💡 ${suggestion}`, value: lines.join('\n'), inline: false },
         { name: '📚 Tüm Komutlar', value: `\`${prefix} yardim\` yazarak tam listeye ulaşabilirsin.`, inline: false },
+        { name: '🤖 AI Asistan', value: `Oyunla ilgili soru sorabilirsin:\n\`${prefix} soru ${rawInput} nedir?\``, inline: false },
       )
       .setFooter({ text: `Slash komutlar için /owl kullanabilirsin` });
   } else {
     embed
       .setTitle('❓ Komut Bulunamadı')
       .setDescription(`\`${prefix} ${rawInput}\` tanımlı bir komut değil.`)
-      .addFields({
-        name: '📚 Tüm Komutlar',
-        value: `\`${prefix} yardim\` yazarak komut listesine ulaşabilirsin.\nSlash komutlar için \`/owl\` kullanabilirsin.`,
-        inline: false,
-      })
+      .addFields(
+        {
+          name: '📚 Tüm Komutlar',
+          value: `\`${prefix} yardim\` yazarak komut listesine ulaşabilirsin.\nSlash komutlar için \`/owl\` kullanabilirsin.`,
+          inline: false,
+        },
+        {
+          name: '🤖 AI Asistan',
+          value: `Oyunla ilgili soru sorabilirsin:\n\`${prefix} soru ${rawInput} nedir?\``,
+          inline: false,
+        },
+      )
       .setFooter({ text: 'İpucu: Komut adını tam yazmaya çalış' });
   }
 

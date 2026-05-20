@@ -103,7 +103,9 @@ const data = new SlashCommandBuilder()
       { name: 'Elite',    value: 'Elite'    },
       { name: 'God Roll', value: 'God Roll' },
     ))
-    .addUserOption((o) => o.setName('kullanici').setDescription('Hedef oyuncu (boş = kendin)')));
+    .addUserOption((o) => o.setName('kullanici').setDescription('Hedef oyuncu (boş = kendin)')))
+  // ── AI ──────────────────────────────────────────────────────────────────────
+  .addSubcommand((s) => s.setName('aiquota').setDescription('AI API kullanım istatistiklerini göster'));
 
 async function execute(
   interaction: Parameters<CommandDefinition['execute']>[0],
@@ -475,6 +477,14 @@ async function execute(
   // ── testtame ───────────────────────────────────────────────────────────────
   if (sub === 'testtame') {
     await handleTestTame(interaction, ctx);
+    return;
+  }
+
+  // ── aiquota ────────────────────────────────────────────────────────────────
+  if (sub === 'aiquota') {
+    const { getQuotaStats } = await import('../systems/ai-qa');
+    const stats = await getQuotaStats(ctx.redis);
+    await interaction.reply({ content: stats, flags: 64 });
     return;
   }
 }

@@ -1,9 +1,16 @@
 /**
- * owl-soru.ts — Oyun içi soru-cevap komutu
+ * owl-soru.ts — AI destekli oyun içi soru-cevap komutu
  *
  * Kullanım:
  *   owl soru nasıl para kazanırım?
  *   owl soru upgrade sırası nedir?
+ *   owl soru en iyi biome hangisi?
+ *
+ * Özellikler:
+ *   - Groq API (llama-3.3-70b-versatile) ile güçlendirilmiş
+ *   - Detaylı oyun bilgisi (800+ karakter prompt)
+ *   - Gizli mekanikleri açıklamaz (pity, hidden scaling, vb.)
+ *   - Stratejik tavsiyeler ve yönlendirme
  *
  * Cooldown: 30 saniye (spam önlemi)
  * Limit: Soru max 200 karakter
@@ -28,9 +35,16 @@ export async function runSoruMessage(
   // Soru girilmemişse kullanım göster
   if (!soru) {
     await message.reply(
-      `❓ **Kullanım:** \`${helpPrefix} soru <sorunuz>\`\n` +
-      `> Örnek: \`${helpPrefix} soru nasıl para kazanırım?\`\n` +
-      `> Örnek: \`${helpPrefix} soru upgrade sırası nedir?\``,
+      `🤖 **AI Oyun Asistanı**\n\n` +
+      `Oyunla ilgili her şeyi sorabilirsin!\n\n` +
+      `**Kullanım:** \`${helpPrefix} soru <sorunuz>\`\n\n` +
+      `**Örnek sorular:**\n` +
+      `• \`${helpPrefix} soru nasıl para kazanırım?\`\n` +
+      `• \`${helpPrefix} soru upgrade sırası nedir?\`\n` +
+      `• \`${helpPrefix} soru en iyi biome hangisi?\`\n` +
+      `• \`${helpPrefix} soru prestige ne zaman yapmalıyım?\`\n` +
+      `• \`${helpPrefix} soru tame şansını nasıl artırırım?\`\n\n` +
+      `💡 Stratejik tavsiyeler, komut açıklamaları ve oyun mekaniği hakkında bilgi alabilirsin.`,
     );
     return;
   }
@@ -57,20 +71,26 @@ export async function runSoruMessage(
   }
 
   try {
-    const cevap = await askGameQuestion(soru);
+    const cevap = await askGameQuestion(soru, message.author.id, ctx.prisma, ctx.redis);
 
     const embed = new EmbedBuilder()
       .setColor(0x5865f2)
-      .setTitle('🦉 Oyun Asistanı')
+      .setTitle('🤖 AI Oyun Asistanı')
+      .setDescription(`**Soru:** ${soru}`)
       .addFields(
-        { name: '❓ Soru', value: soru, inline: false },
         { name: '💡 Cevap', value: cevap, inline: false },
       )
-      .setFooter({ text: `${message.member?.displayName ?? message.author.username} · ${helpPrefix} soru <soru>` });
+      .setFooter({ 
+        text: `${message.member?.displayName ?? message.author.username} · Daha fazla soru için: ${helpPrefix} soru <soru>` 
+      })
+      .setTimestamp();
 
     await message.reply({ embeds: [embed] });
+
+    // Cooldown'u başarılı cevaptan sonra ayarla
+    await ctx.redis.set(cooldownKey, '1', 'EX', Math.ceil(SORU_COOLDOWN_MS / 1000));
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : 'Bir hata oluştu.';
-    await message.reply(`❌ **Hata** | ${errMsg}`);
+    await message.reply(`❌ **Hata** | ${errMsg}\n\n💡 Lütfen sorunuzu daha açık bir şekilde sorun veya daha sonra tekrar deneyin.`);
   }
 }

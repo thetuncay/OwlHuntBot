@@ -95,6 +95,8 @@ function buildBiomeSelectEmbed(): EmbedBuilder {
     });
   }
 
+  embed.setFooter({ text: '💡 Biyomlar hakkında soru sorabilirsin: owl soru en iyi biome hangisi?' });
+
   return embed;
 }
 

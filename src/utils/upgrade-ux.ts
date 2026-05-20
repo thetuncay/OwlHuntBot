@@ -356,6 +356,11 @@ export function buildUpgradeOverview(helpPrefix: string): EmbedBuilder {
         value: dropNote,
         inline: false,
       },
+      {
+        name: '🤖 Daha Fazla Bilgi',
+        value: `Upgrade sistemi hakkında soru sorabilirsin:\n\`${helpPrefix} soru upgrade sırası nedir?\`\n\`${helpPrefix} soru hangi statı geliştirmeliyim?\``,
+        inline: false,
+      },
     )
     .setFooter({
       text: '💡 Pence temel stattır — önce onu geliştir. Bağımlılık Lv.5\'ten itibaren aktif olur.',

@@ -22,7 +22,13 @@ export async function runMarketMessage(
     const price = parseInt(args[3] ?? '0');
 
     if (!itemName || !price) {
-      await message.reply({ embeds: [failEmbed('Hata', `Kullanım: \`${prefix} market sat <eşya> <miktar> <fiyat>\``)] });
+      await message.reply({
+        embeds: [failEmbed(
+          'Hata',
+          `Kullanım: \`${prefix} market sat <eşya> <miktar> <fiyat>\`\n\n` +
+          `💡 Market hakkında soru sorabilirsin:\n\`${prefix} soru market nasıl kullanılır?\``
+        )]
+      });
       return;
     }
 
@@ -77,7 +83,7 @@ export async function runMarketMessage(
       });
     });
 
-    embed.setFooter({ text: `Satın almak için: ${prefix} market al <id>` });
+    embed.setFooter({ text: `Satın almak için: ${prefix} market al <id>  ·  Soru: ${prefix} soru market nasıl kullanılır?` });
 
     await message.reply({ embeds: [embed] });
   } catch (err: any) {

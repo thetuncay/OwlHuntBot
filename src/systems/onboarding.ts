@@ -153,7 +153,21 @@ export async function handleRegistrationButton(
   });
 
   await interaction.update({
-    content: '✅ **Kaydin tamamlandi!** 🎉\n\nArtik oyuna baslayabilirsin. Dene: `owl hunt` 🦉',
+    content: [
+      '✅ **Kaydin tamamlandi!** 🎉',
+      '',
+      '🦉 **Ilk Adimlar:**',
+      '• `owl hunt` — Ilk avini yap',
+      '• `owl stats` — Baykusunu incele',
+      '• `owl yardim` — Tum komutlari gor',
+      '',
+      '💡 **Yeni misin?** Oyunla ilgili her seyi sorabilirsin:',
+      '> `owl soru nasil para kazanirim?`',
+      '> `owl soru upgrade sirasi nedir?`',
+      '> `owl soru en iyi biome hangisi?`',
+      '',
+      'Basarilar! 🎮',
+    ].join('\n'),
     components: [],
   });
 }
