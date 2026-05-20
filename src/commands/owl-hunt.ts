@@ -179,6 +179,15 @@ export async function runHunt(
       const biome = BIOMES.find(b => b.id === biomeId);
       if (!biome) return;
 
+      // ÖNEMLİ: Seviye kontrolü ÖNCE yapılmalı (coin kesilmeden)
+      if (playerLevel < biome.minLevel) {
+        await i.update({
+          content: `❌ **${biome.name}** bölgesine girmek için en az **Lv.${biome.minLevel}** olmalısın. Senin seviye: **Lv.${playerLevel}**`,
+          embeds: [], components: [],
+        });
+        return;
+      }
+
       // Tek seferlik giriş ücreti kontrolü ve kesimi
       if (biome.entryCost > 0) {
         const playerData = await ctx.prisma.player.findUnique({
@@ -318,6 +327,15 @@ export async function runHuntMessage(
       const biomeId = i.customId.split(':')[1] ?? 'b0';
       const biome = BIOMES.find(b => b.id === biomeId);
       if (!biome) return;
+
+      // ÖNEMLİ: Seviye kontrolü ÖNCE yapılmalı (coin kesilmeden)
+      if (playerLevel < biome.minLevel) {
+        await i.update({
+          content: `❌ **${biome.name}** bölgesine girmek için en az **Lv.${biome.minLevel}** olmalısın. Senin seviye: **Lv.${playerLevel}**`,
+          embeds: [], components: [],
+        });
+        return;
+      }
 
       // Tek seferlik giriş ücreti kontrolü ve kesimi
       if (biome.entryCost > 0) {

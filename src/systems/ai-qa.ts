@@ -344,7 +344,9 @@ function buildPlayerContextPrompt(context: PlayerContext | null): string {
   return parts.join('\n');
 }
 
-const GROQ_API_KEY = process.env.GROQ_API_KEY ?? '';
+// ═══════════════════════════════════════════════════════════════
+// SYSTEM PROMPT
+// ═══════════════════════════════════════════════════════════════
 
 const SYSTEM_PROMPT = `Sen OwlHuntBot adlı bir Discord RPG botunun uzman yardımcı asistanısın.
 Sadece bu oyunla ilgili sorulara Türkçe cevap verirsin.
