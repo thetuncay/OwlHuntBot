@@ -98,15 +98,19 @@ function buildBiomeSelectEmbed(): EmbedBuilder {
   return embed;
 }
 
-function buildBiomeSelectRow(): ActionRowBuilder<ButtonBuilder> {
+function buildBiomeSelectRow(playerLevel: number): ActionRowBuilder<ButtonBuilder> {
   return new ActionRowBuilder<ButtonBuilder>().addComponents(
-    BIOMES.map(b =>
-      new ButtonBuilder()
+    BIOMES.map(b => {
+      const locked = playerLevel < b.minLevel;
+      return new ButtonBuilder()
         .setCustomId(`biome_select:${b.id}`)
-        .setLabel(b.entryCost > 0 ? `${b.name} (${b.entryCost}💰/hunt)` : b.name)
-        .setEmoji(b.emoji)
-        .setStyle(b.entryCost === 0 ? ButtonStyle.Secondary : ButtonStyle.Primary)
-    )
+        .setLabel(locked
+          ? `🔒 ${b.name} (Lv.${b.minLevel}+)`
+          : b.entryCost > 0 ? `${b.name} (${b.entryCost}💰)` : b.name)
+        .setEmoji(locked ? '🔒' : b.emoji)
+        .setStyle(locked ? ButtonStyle.Secondary : b.entryCost === 0 ? ButtonStyle.Secondary : ButtonStyle.Primary)
+        .setDisabled(locked);
+    })
   );
 }
 
@@ -148,10 +152,16 @@ export async function runHunt(
   const session = await getBiomeSession(ctx.redis, userId);
 
   if (!session) {
+    // Oyuncu seviyesini çek — kilitli biyomları göstermek için
+    const playerLevel = (await ctx.prisma.player.findUnique({
+      where: { id: userId },
+      select: { level: true },
+    }))?.level ?? 1;
+
     // Biyom seçim menüsü göster
     await interaction.reply({
       embeds: [buildBiomeSelectEmbed()],
-      components: [buildBiomeSelectRow()],
+      components: [buildBiomeSelectRow(playerLevel)],
       flags: 64,
     });
 
@@ -283,10 +293,16 @@ export async function runHuntMessage(
   const session = await getBiomeSession(ctx.redis, userId);
 
   if (!session) {
+    // Oyuncu seviyesini çek — kilitli biyomları göstermek için
+    const playerLevel = (await ctx.prisma.player.findUnique({
+      where: { id: userId },
+      select: { level: true },
+    }))?.level ?? 1;
+
     // Biyom seçim menüsü göster
     const biomeMsg = await message.reply({
       embeds: [buildBiomeSelectEmbed()],
-      components: [buildBiomeSelectRow()],
+      components: [buildBiomeSelectRow(playerLevel)],
     });
 
     const collector = biomeMsg.createMessageComponentCollector({
