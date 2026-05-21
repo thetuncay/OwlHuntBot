@@ -52,9 +52,10 @@ export async function addXP(
   const didLevelUp = currentLevel > oldLevel;
 
   if (!didLevelUp) {
-    // Level-up yok
+    // Level-up yok — caller zaten senkron yazma yapacak (hunt.ts gibi)
+    // skipDbWrite=true ise queue'ya YAZMA — double-write rollback'i önler
     if (skipDbWrite) {
-      enqueueDbWrite({ type: 'updatePlayer', playerId, data: { xp: remainingXP } });
+      // Sadece hesaplanan değerleri döndür; caller kendi update'inde xp'yi yazar
       return {
         gainedXP,
         currentXP:    remainingXP,
