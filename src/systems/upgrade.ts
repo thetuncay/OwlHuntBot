@@ -134,7 +134,7 @@ export async function attemptUpgrade(
   stat: OwlStatKey,
   itemNames: string[],
 ): Promise<UpgradeResult> {
-  return withLock(playerId, 'upgrade', async () => {
+  return withLock(playerId, 'financial', async () => {
     if (itemNames.length > ITEM_MAX_PER_ATTEMPT) {
       throw new Error(`Tek denemede en fazla ${ITEM_MAX_PER_ATTEMPT} farklı item kullanılabilir.`);
     }

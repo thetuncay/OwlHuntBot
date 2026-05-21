@@ -36,7 +36,7 @@ async function settleGamble(
   winMessage: string,
   loseMessage: string,
 ): Promise<GambleResult> {
-  return withLock(playerId, 'gamble', async () => {
+  return withLock(playerId, 'financial', async () => {
     const player = await prisma.player.findUnique({ where: { id: playerId } });
     if (!player) throw new Error('Oyuncu bulunamadi.');
     if (player.coins < bet) throw new Error('Yetersiz bakiye.');
@@ -73,7 +73,7 @@ export async function coinFlip(prisma: PrismaClient, playerId: string, bet: numb
 }
 
 export async function slot(prisma: PrismaClient, playerId: string, bet: number): Promise<GambleResult> {
-  return withLock(playerId, 'gamble', async () => {
+  return withLock(playerId, 'financial', async () => {
     const player = await prisma.player.findUnique({ where: { id: playerId } });
     if (!player) throw new Error('Oyuncu bulunamadi.');
     if (player.coins < bet) throw new Error('Yetersiz bakiye.');
@@ -141,7 +141,7 @@ export async function settleBlackjack(
   bet: number,
   outcome: 'win' | 'lose' | 'tie',
 ): Promise<GambleResult> {
-  return withLock(playerId, 'gamble', async () => {
+  return withLock(playerId, 'financial', async () => {
     const player = await prisma.player.findUnique({ where: { id: playerId } });
     if (!player) throw new Error('Oyuncu bulunamadi.');
     if (player.coins < bet) throw new Error('Yetersiz bakiye.');
@@ -164,7 +164,7 @@ export async function settleBlackjack(
 }
 
 export async function blackjack(prisma: PrismaClient, playerId: string, bet: number): Promise<GambleResult> {
-  return withLock(playerId, 'gamble', async () => {
+  return withLock(playerId, 'financial', async () => {
     const player = await prisma.player.findUnique({ where: { id: playerId } });
     if (!player) throw new Error('Oyuncu bulunamadi.');
     if (player.coins < bet) throw new Error('Yetersiz bakiye.');

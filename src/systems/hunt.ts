@@ -59,7 +59,7 @@ export async function rollHunt(
   owlId: string,
   biomeId = 'b0'
 ): Promise<HuntRunResult> {
-  return withLock(playerId, 'hunt', async () => {
+  return withLock(playerId, 'financial', async () => {
     // ── Paralel veri çekimi ───────────────────────────────────────────────────
     // Player bundle (cache-first) + Owl fetch + BuffEffects aynı anda başlar.
     // Atlas M0'da her round-trip ~50-200ms — paralel yapı korunur.

@@ -37,6 +37,7 @@ import {
   UPGRADE_MIN,
   XP_LEVEL_FORMULA,
   XP_SCALE_RATE,
+  XP_SCALE_MAX_MULT,
 } from '../config';
 
 /** Degeri [min, max] araligina sikistirir. */
@@ -59,7 +60,7 @@ export const xpRequired = (level: number): number => XP_LEVEL_FORMULA(level);
 
 /** XP olcekleme carpani uygulanmis final XP. */
 export const finalXP = (baseXP: number, level: number): number =>
-  Math.round(baseXP * (1 + level * XP_SCALE_RATE));
+  Math.round(baseXP * Math.min(1 + level * XP_SCALE_RATE, XP_SCALE_MAX_MULT));
 
 /** Main switch coin maliyeti. */
 export const switchCost = (totalTier: number): number =>

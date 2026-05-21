@@ -31,6 +31,7 @@ import {
   updateTameSession,
   deleteTameSession,
   resolveTurn,
+  addUsedLine,
 } from '../systems/tame-session';
 import { generateNarrative, generateEnding } from '../utils/tame-narrative';
 import type { TameAction } from '../utils/tame-narrative';
@@ -540,7 +541,9 @@ export async function sendEncounterMessage(
           escapeRisk: state.escapeRisk,
           usedLines: state.usedLines,
         });
-        state.usedLines = [...state.usedLines, narrative.reaction, narrative.hint].filter(Boolean).slice(-10);
+        for (const line of [narrative.reaction, narrative.hint].filter(Boolean)) {
+          addUsedLine(state, line);
+        }
         await updateTameSession(ctx.redis, state);
 
         await bi.update({
@@ -590,8 +593,9 @@ export async function sendEncounterMessage(
             turn: current.turn, progress: current.progress,
             escapeRisk: current.escapeRisk, usedLines: current.usedLines,
           });
-          current.usedLines = [...current.usedLines, tNarrative.reaction, tNarrative.continuation, tNarrative.hint]
-            .filter(Boolean).slice(-10);
+          for (const line of [tNarrative.reaction, tNarrative.continuation, tNarrative.hint].filter(Boolean)) {
+            addUsedLine(current, line);
+          }
 
           const isOver = turnResult.escaped || turnResult.tamed || current.turn > current.maxTurns;
           if (isOver) {

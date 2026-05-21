@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    # AOF persistence: survives restart with ≤ 1 second data loss
+    # Fixes A3: pity counters and cooldown keys are no longer lost on Redis restart
+    command: redis-server --appendonly yes --appendfsync everysec
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis-data:/data
+
+volumes:
+  redis-data:

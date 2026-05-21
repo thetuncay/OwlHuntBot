@@ -107,7 +107,7 @@ export async function transferCoins(
   }
 
   // ── DB işlemleri (lock altında) ──────────────────────────────────────────
-  return withLock(senderId, 'transfer', async () => {
+  return withLock(senderId, 'financial', async () => {
     const result = await prisma.$transaction(async (tx) => {
       // Gönderici kontrolü
       const sender = await tx.player.findUnique({ where: { id: senderId } });

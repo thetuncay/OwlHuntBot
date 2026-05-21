@@ -29,6 +29,7 @@
 
 import { Queue, Worker, type Job } from 'bullmq';
 import type { PrismaClient } from '@prisma/client';
+import { redis } from './redis.js';
 
 const QUEUE_NAME = 'db-writes';
 const REDIS_URL = process.env.REDIS_URL ?? 'redis://localhost:6379';
@@ -89,11 +90,20 @@ export interface RecordStatsJob {
   rareFinds: number;
 }
 
+export interface RecordPityJob {
+  type: 'recordPity';
+  playerId: string;
+  lootboxId: string;
+  increment: number;  // +1 per open, or 0 to reset
+  reset: boolean;     // true = set counter to 0 (on pity trigger)
+}
+
 export type DbWriteJob =
   | UpdatePlayerJob
   | UpdateOwlJob
   | UpsertInventoryJob
-  | RecordStatsJob;
+  | RecordStatsJob
+  | RecordPityJob;
 
 // ── Queue instance ────────────────────────────────────────────────────────────
 
@@ -186,7 +196,21 @@ async function processJob(job: Job<DbWriteJob>): Promise<void> {
           totalRareFinds: { increment: data.rareFinds },
         },
       });
+      if (data.rareFinds > 0) {
+        const { refreshPowerScore } = await import('../systems/leaderboard.js');
+        await refreshPowerScore(prismaRef, data.playerId);
+      }
       break;
+
+    case 'recordPity': {
+      const pityKey = `pity:${data.playerId}:${data.lootboxId}`;
+      if (data.reset) {
+        await redis.del(pityKey);
+      } else {
+        await redis.incrby(pityKey, data.increment);
+      }
+      break;
+    }
 
     default:
       console.warn('[Queue] Bilinmeyen job tipi:', (data as any).type);

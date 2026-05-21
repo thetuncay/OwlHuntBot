@@ -119,7 +119,8 @@ export const XP_PVP_WIN = 50;
 export const XP_PVP_LOSE = 15;
 export const XP_TAME = 100;
 export const XP_RARE_BONUS = 50;
-export const XP_SCALE_RATE = 0.03;
+export const XP_SCALE_RATE = 0.01;
+export const XP_SCALE_MAX_MULT = 1.30;
 export const XP_COMBO_3 = 10;
 export const XP_COMBO_5 = 25;
 export const XP_RISK_BONUS_RATE = 0.5;
@@ -516,6 +517,7 @@ export const RARITY_TRAIT_WEIGHT_MULT: Record<string, number> = {
 export const RARITY_RARE_WEIGHT_THRESHOLD = 12;
 
 // --- TAME ---
+export const TAME_USED_LINES_MAX = 50; // Maximum entries in usedLines[] anti-repetition array
 export const TAME_GOZ_RATE = 0.25;
 export const TAME_KULAK_RATE = 0.2;
 export const TAME_MIN = 2;
@@ -892,6 +894,9 @@ export const SIM_PVP_LOSE_XP    = 10;   // Kaybetme XP (sıfır değil)
 
 // Cooldown: aynı oyuncu kaç ms'de bir bot duel yapabilir
 export const SIM_PVP_COOLDOWN_MS = HUNT_COOLDOWN_MS;  // Hunt ile aynı
+
+// Günlük bot duel coin kazanç üst sınırı — aşıldığında coin ödülü 0'a düşer, XP etkilenmez
+export const DUEL_DAILY_COIN_CAP = 500;
 
 // Sahte oyuncu isimleri havuzu
 export const SIM_PVP_FAKE_NAMES: string[] = [

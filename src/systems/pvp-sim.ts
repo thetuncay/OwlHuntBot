@@ -5,7 +5,9 @@
 // ============================================================
 
 import type { PrismaClient } from '@prisma/client';
+import type Redis from 'ioredis';
 import {
+  DUEL_DAILY_COIN_CAP,
   OWL_SPECIES,
   PVP_EXECUTE_POWER_MULT,
   PVP_EXECUTE_HP_THRESH,
@@ -260,10 +262,12 @@ function simulateBattle(
  * - Savaşı bellekte simüle eder
  * - SADECE oyuncunun verisini günceller (XP, coin, streak)
  * - Gerçek PvP tablosuna hiçbir şey yazmaz
+ * - Günlük coin kazanç üst sınırını (DUEL_DAILY_COIN_CAP) uygular; XP etkilenmez
  */
 export async function runSimulatedPvP(
   prisma: PrismaClient,
   playerId: string,
+  redis: Redis,
 ): Promise<SimPvpResult> {
   // Oyuncunun main baykuşunu çek
   const [player, mainOwl] = await Promise.all([
@@ -334,6 +338,19 @@ export async function runSimulatedPvP(
     coinsGained = 0;
   }
 
+  // ── Günlük coin üst sınırı (A2 fix) ──────────────────────────────────────
+  // XP etkilenmez — sadece coin ödülü sınırlanır.
+  let cappedCoins = coinsGained;
+  if (playerWon && coinsGained > 0) {
+    const dailyKey = `duel:daily:${playerId}:${new Date().toISOString().slice(0, 10)}`;
+    const dailyEarned = parseInt(await redis.get(dailyKey) ?? '0', 10);
+    cappedCoins = Math.max(0, Math.min(coinsGained, DUEL_DAILY_COIN_CAP - dailyEarned));
+    if (cappedCoins > 0) {
+      await redis.incrby(dailyKey, cappedCoins);
+      await redis.expire(dailyKey, 25 * 60 * 60); // 25 saatlik TTL
+    }
+  }
+
   // ── DB güncelle (SADECE oyuncu) ───────────────────────────────────────────
   await prisma.player.update({
     where: { id: playerId },
@@ -342,7 +359,7 @@ export async function runSimulatedPvP(
       pvpBestStreak: newBest,
       pvpCount:      { increment: 1 },
       ...(playerWon
-        ? { pvpStreakLoss: 0, coins: { increment: coinsGained } }
+        ? { pvpStreakLoss: 0, coins: { increment: cappedCoins } }
         : { pvpStreakLoss: { increment: 1 } }),
     },
   });
@@ -353,7 +370,7 @@ export async function runSimulatedPvP(
   // Liderboard — sadece kazanınca
   if (playerWon) {
     recordPvpWin(prisma, playerId).catch(() => null);
-    recordCoinsEarned(prisma, playerId, coinsGained).catch(() => null);
+    recordCoinsEarned(prisma, playerId, cappedCoins).catch(() => null);
   }
   refreshPowerScore(prisma, playerId).catch(() => null);
 
@@ -362,7 +379,7 @@ export async function runSimulatedPvP(
     turns,
     events,
     xpGained,
-    coinsGained,
+    coinsGained: cappedCoins,
     streak: {
       newStreak,
       oldStreak,

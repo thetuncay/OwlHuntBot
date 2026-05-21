@@ -3,7 +3,7 @@
 import type Redis from 'ioredis';
 import type { OwlPersonality, TameAction } from '../utils/tame-narrative';
 import { rollPersonality, ACTION_MODIFIERS, ESCAPE_MODIFIERS } from '../utils/tame-narrative';
-import { TAME_BASE_CHANCE, QUALITY_TAME_ADJ } from '../config';
+import { TAME_BASE_CHANCE, QUALITY_TAME_ADJ, TAME_USED_LINES_MAX } from '../config';
 import { tameChance } from '../utils/math';
 
 // ─── SESSION STATE ────────────────────────────────────────────────────────────
@@ -83,6 +83,18 @@ export async function getTameSession(redis: Redis, playerId: string): Promise<Ta
 
 export async function updateTameSession(redis: Redis, state: TameSessionState): Promise<void> {
   await redis.set(SESSION_KEY(state.playerId), JSON.stringify(state), 'EX', SESSION_TTL);
+}
+
+/**
+ * Append a line to the session's usedLines[] anti-repetition array.
+ * Evicts the oldest entry when the array exceeds TAME_USED_LINES_MAX.
+ * Call this before updateTameSession to keep the array bounded.
+ */
+export function addUsedLine(state: TameSessionState, newLine: string): void {
+  state.usedLines.push(newLine);
+  if (state.usedLines.length > TAME_USED_LINES_MAX) {
+    state.usedLines.shift(); // evict oldest entry
+  }
 }
 
 export async function deleteTameSession(redis: Redis, playerId: string): Promise<void> {

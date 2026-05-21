@@ -26,6 +26,7 @@ import {
   type LootboxDef,
 } from '../config';
 import type { LootboxOpenResult } from '../types';
+import { enqueueDbWrite } from '../utils/db-queue.js';
 import { withLock } from '../utils/lock';
 
 // ── YARDIMCI FONKSİYONLAR ────────────────────────────────────────────────────
@@ -67,16 +68,6 @@ function pityKey(playerId: string, lootboxId: string): string {
 async function getPityCount(redis: Redis, playerId: string, lootboxId: string): Promise<number> {
   const val = await redis.get(pityKey(playerId, lootboxId));
   return val ? parseInt(val, 10) : 0;
-}
-
-async function incrementPity(redis: Redis, playerId: string, lootboxId: string): Promise<void> {
-  const key = pityKey(playerId, lootboxId);
-  await redis.incr(key);
-  await redis.expire(key, 30 * 24 * 60 * 60);
-}
-
-async function resetPity(redis: Redis, playerId: string, lootboxId: string): Promise<void> {
-  await redis.del(pityKey(playerId, lootboxId));
 }
 
 // ── TEK KUTU AÇMA (İÇ) ───────────────────────────────────────────────────────
@@ -163,11 +154,11 @@ async function _openLootboxUnsafe(
     }
   });
 
-  // Pity güncelle
+  // Pity güncelle (arka planda — BullMQ kuyruğuna ekle)
   if (gotRarePlus || pityTriggered) {
-    await resetPity(redis, playerId, lootboxId);
+    enqueueDbWrite({ type: 'recordPity', playerId, lootboxId, increment: 0, reset: true });
   } else {
-    await incrementPity(redis, playerId, lootboxId);
+    enqueueDbWrite({ type: 'recordPity', playerId, lootboxId, increment: 1, reset: false });
   }
 
   return {
@@ -190,7 +181,7 @@ export async function openLootbox(
   playerId: string,
   lootboxId: string,
 ): Promise<LootboxOpenResult> {
-  return withLock(playerId, 'lootbox', () =>
+  return withLock(playerId, 'financial', () =>
     _openLootboxUnsafe(prisma, redis, playerId, lootboxId),
   );
 }
@@ -216,7 +207,7 @@ export async function openAllLootboxes(
   if (!def) throw new Error(`Bilinmeyen kutu: ${lootboxId}`);
 
   // Outer lock: count stale-read + concurrent açma sorununu önler
-  return withLock(playerId, 'lootbox', async () => {
+  return withLock(playerId, 'financial', async () => {
     const inv = await prisma.inventoryItem.findUnique({
       where: { ownerId_itemName: { ownerId: playerId, itemName: def.name } },
     });

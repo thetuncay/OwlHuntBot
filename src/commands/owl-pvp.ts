@@ -177,7 +177,7 @@ export async function runDuel(
 
   await interaction.deferReply();
 
-  const result = await runSimulatedPvP(ctx.prisma, userId);
+  const result = await runSimulatedPvP(ctx.prisma, userId, ctx.redis);
   const playerName = interaction.member && 'displayName' in interaction.member
     ? (interaction.member as { displayName: string }).displayName
     : interaction.user.username;
@@ -341,7 +341,7 @@ export async function runDuelMessage(
   }
 
   const sent = await message.reply(`⚔️ **Rakip aranıyor...**`);
-  const result = await runSimulatedPvP(ctx.prisma, userId);
+  const result = await runSimulatedPvP(ctx.prisma, userId, ctx.redis);
   const playerName = message.member?.displayName ?? message.author.username;
 
   await animateSimPvPMessage(sent, userId, playerName, mainOwl.hpMax, result);
