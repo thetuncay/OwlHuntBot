@@ -239,27 +239,38 @@ export async function commitTameResult(
 
       const baseHp = OWL_BASE_HP[encounter.owlTier] ?? 100;
       const baseStamina = OWL_BASE_STAMINA[encounter.owlTier] ?? 100;
-      await prisma.owl.create({
-        data: {
-          ownerId:    playerId,
-          species:    encounter.owlSpecies,
-          tier:       encounter.owlTier,
-          quality:    encounter.owlQuality,
-          hp:         baseHp,
-          hpMax:      baseHp,
-          staminaCur: baseStamina,
-          statGaga:   stats?.gaga   ?? 1,
-          statGoz:    stats?.goz    ?? 1,
-          statKulak:  stats?.kulak  ?? 1,
-          statKanat:  stats?.kanat  ?? 1,
-          statPence:  stats?.pence  ?? 1,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          traits:     traits as any,
-        } as any,
+
+      // Atomik: owl create + encounter close tek transaction'da
+      // Crash sonrası retry double-owl oluşturmaz
+      await prisma.$transaction(async (tx) => {
+        await tx.owl.create({
+          data: {
+            ownerId:    playerId,
+            species:    encounter.owlSpecies,
+            tier:       encounter.owlTier,
+            quality:    encounter.owlQuality,
+            hp:         baseHp,
+            hpMax:      baseHp,
+            staminaCur: baseStamina,
+            statGaga:   stats?.gaga   ?? 1,
+            statGoz:    stats?.goz    ?? 1,
+            statKulak:  stats?.kulak  ?? 1,
+            statKanat:  stats?.kanat  ?? 1,
+            statPence:  stats?.pence  ?? 1,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            traits:     traits as any,
+          } as any,
+        });
+        await tx.encounter.update({
+          where: { id: encounterId },
+          data: { status: 'closed' },
+        });
       });
+
       await addXP(prisma, playerId, 100, 'tameSuccess');
       // Quest tracking: encounter butonuyla gelen tame akışı buradan geçer
       trackQuestProgress(prisma, playerId, 'tame', 1).catch(() => null);
+      return;
     }
 
     await prisma.encounter.update({
@@ -313,22 +324,24 @@ export async function attemptTame(
     const mainOwl = await prisma.owl.findFirst({ where: { ownerId: playerId, isMain: true } });
     if (!mainOwl) throw new Error('Main baykus bulunamadi.');
 
-    // Item kontrolü ve tüketimi
+    // Item kontrolü ve tüketimi — tek transaction'da (verify + consume atomik)
     const itemBonus = itemNames.reduce(
       (sum, itemName) => sum + (TAME_ITEM_BONUS[itemName] ?? TAME_ITEM_BONUS_PER_ITEM), 0,
     );
-    for (const name of itemNames) {
-      const item = await prisma.inventoryItem.findUnique({
-        where: { ownerId_itemName: { ownerId: playerId, itemName: name } },
-      });
-      if (!item || item.quantity < 1) throw new Error(`Gerekli item bulunamadi: ${name}`);
-    }
-    for (const name of itemNames) {
-      await prisma.inventoryItem.update({
-        where: { ownerId_itemName: { ownerId: playerId, itemName: name } },
-        data: { quantity: { decrement: 1 } },
-      });
-    }
+    await prisma.$transaction(async (tx) => {
+      for (const name of itemNames) {
+        const item = await tx.inventoryItem.findUnique({
+          where: { ownerId_itemName: { ownerId: playerId, itemName: name } },
+        });
+        if (!item || item.quantity < 1) throw new Error(`Gerekli item bulunamadi: ${name}`);
+      }
+      for (const name of itemNames) {
+        await tx.inventoryItem.update({
+          where: { ownerId_itemName: { ownerId: playerId, itemName: name } },
+          data: { quantity: { decrement: 1 } },
+        });
+      }
+    });
 
     // Şans hesapla
     const baseChance = TAME_BASE_CHANCE[encounter.owlTier];
@@ -352,12 +365,12 @@ export async function attemptTame(
     const chance = rawChance * mainOwlTraitEffects.tameChance;
     const won = Math.random() * 100 < chance;
 
-    // Deneme sayısını güncelle
+    // Başarısız — attempt sayacını güncelle
     await prisma.encounter.update({
       where: { id: encounterId },
       data: {
         tameAttempts: { increment: 1 },
-        failStreak: won ? 0 : { increment: 1 },
+        failStreak: { increment: 1 },
       },
     });
 
@@ -367,25 +380,34 @@ export async function attemptTame(
       const stats = encounter.owlStats as { gaga: number; goz: number; kulak: number; kanat: number; pence: number } | null;
       const tameBaseHp = OWL_BASE_HP[encounter.owlTier] ?? 100;
       const tameBaseStamina = OWL_BASE_STAMINA[encounter.owlTier] ?? 100;
-      await prisma.owl.create({
-        data: {
-          ownerId:    playerId,
-          species:    encounter.owlSpecies,
-          tier:       encounter.owlTier,
-          quality:    encounter.owlQuality,
-          hp:         tameBaseHp,
-          hpMax:      tameBaseHp,
-          staminaCur: tameBaseStamina,
-          statGaga:   stats?.gaga   ?? 1,
-          statGoz:    stats?.goz    ?? 1,
-          statKulak:  stats?.kulak  ?? 1,
-          statKanat:  stats?.kanat  ?? 1,
-          statPence:  stats?.pence  ?? 1,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          traits: traits as any,
-        } as any,
+
+      // Atomik: attempt sayacı + owl create + encounter close tek transaction'da
+      // Crash sonrası attempt yanmaz, double-owl oluşmaz
+      await prisma.$transaction(async (tx) => {
+        await tx.encounter.update({
+          where: { id: encounterId },
+          data: { tameAttempts: { increment: 1 }, failStreak: 0, status: 'closed' },
+        });
+        await tx.owl.create({
+          data: {
+            ownerId:    playerId,
+            species:    encounter.owlSpecies,
+            tier:       encounter.owlTier,
+            quality:    encounter.owlQuality,
+            hp:         tameBaseHp,
+            hpMax:      tameBaseHp,
+            staminaCur: tameBaseStamina,
+            statGaga:   stats?.gaga   ?? 1,
+            statGoz:    stats?.goz    ?? 1,
+            statKulak:  stats?.kulak  ?? 1,
+            statKanat:  stats?.kanat  ?? 1,
+            statPence:  stats?.pence  ?? 1,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            traits: traits as any,
+          } as any,
+        });
       });
-      await prisma.encounter.update({ where: { id: encounterId }, data: { status: 'closed' } });
+
       await addXP(prisma, playerId, 100, 'tameSuccess');
       trackQuestProgress(prisma, playerId, 'tame', 1).catch(() => null);
 
@@ -460,7 +482,7 @@ export async function attemptTame(
     if (branchRoll <= TAME_FAIL_ESCAPE_RATE + TAME_FAIL_ATTACK_RATE + TAME_FAIL_INJURE_RATE) {
       await prisma.owl.update({
         where: { id: mainOwl.id },
-        data: { hp: { decrement: 5 } },
+        data: { hp: Math.max(0, mainOwl.hp - 5) }, // HP 0'ın altına düşmez
       });
       return 'Tame basarisiz: baykusun yaralandi.';
     }
