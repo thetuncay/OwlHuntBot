@@ -188,24 +188,8 @@ export async function runHunt(
         return;
       }
 
-      // Tek seferlik giriş ücreti kontrolü ve kesimi
-      if (biome.entryCost > 0) {
-        const playerData = await ctx.prisma.player.findUnique({
-          where: { id: userId },
-          select: { coins: true },
-        });
-        if (!playerData || playerData.coins < biome.entryCost) {
-          await i.update({
-            content: `❌ **${biome.name}** bölgesine girmek için **${biome.entryCost.toLocaleString()} 💰** gerekiyor. Bakiyen yetersiz.`,
-            embeds: [], components: [],
-          });
-          return;
-        }
-        await ctx.prisma.player.update({
-          where: { id: userId },
-          data: { coins: { decrement: biome.entryCost } },
-        });
-      }
+      // Giriş ücreti rollHunt içinde hunt lock altında atomik kesilir.
+      // Burada coin kesmiyoruz — double-charge ve race condition önlenir.
 
       const newSession = await setBiomeSession(ctx.redis, userId, biomeId);
       await i.update({
@@ -337,24 +321,8 @@ export async function runHuntMessage(
         return;
       }
 
-      // Tek seferlik giriş ücreti kontrolü ve kesimi
-      if (biome.entryCost > 0) {
-        const playerData = await ctx.prisma.player.findUnique({
-          where: { id: userId },
-          select: { coins: true },
-        });
-        if (!playerData || playerData.coins < biome.entryCost) {
-          await i.update({
-            content: `❌ **${biome.name}** bölgesine girmek için **${biome.entryCost.toLocaleString()} 💰** gerekiyor. Bakiyen yetersiz.`,
-            embeds: [], components: [],
-          });
-          return;
-        }
-        await ctx.prisma.player.update({
-          where: { id: userId },
-          data: { coins: { decrement: biome.entryCost } },
-        });
-      }
+      // Giriş ücreti rollHunt içinde hunt lock altında atomik kesilir.
+      // Burada coin kesmiyoruz — double-charge ve race condition önlenir.
 
       const newSession = await setBiomeSession(ctx.redis, userId, biomeId);
       await i.update({

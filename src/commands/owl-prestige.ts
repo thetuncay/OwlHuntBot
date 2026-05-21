@@ -1,4 +1,4 @@
-import { EmbedBuilder, type Message, type ChatInputCommandInteraction } from 'discord.js';
+import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, type Message, type ChatInputCommandInteraction } from 'discord.js';
 import { performAscension } from '../systems/prestige';
 import { successEmbed, failEmbed, infoEmbed } from '../utils/embed';
 import type { CommandContext } from '../types';
@@ -34,14 +34,64 @@ export async function runPrestigeMessage(
   }
 
   try {
-    const { newPrestigeLevel } = await performAscension(ctx.prisma, userId, owlId);
-    await message.reply({
-      embeds: [successEmbed(
-        '🌟 ASCENSION TAMAMLANDI!',
-        `Baykuşunu feda ettin ve yüceldin.\n\n` +
-        `Yeni Prestige Seviyesi: **${newPrestigeLevel}**\n` +
-        `Hesabın resetlendi, artık daha hızlı güçleneceksin!`
-      )]
+    // Onay adımı — geri alınamaz işlem öncesi 30 saniye bekleme
+    const owl = await ctx.prisma.owl.findUnique({
+      where: { id: owlId },
+      select: { species: true, tier: true, statGaga: true, statGoz: true, statKulak: true, statKanat: true, statPence: true },
+    });
+    if (!owl || (await ctx.prisma.owl.findUnique({ where: { id: owlId } }))?.ownerId !== userId) {
+      await message.reply({ embeds: [failEmbed('Hata', 'Baykuş bulunamadı veya sana ait değil.')] });
+      return;
+    }
+    const avgStat = Math.round((owl.statGaga + owl.statGoz + owl.statKulak + owl.statKanat + owl.statPence) / 5);
+
+    const confirmMsg = await message.reply({
+      embeds: [new EmbedBuilder()
+        .setColor(0xe74c3c)
+        .setTitle('⚠️ ASCENSION ONAYI — GERİ ALINAMAZ!')
+        .setDescription(
+          `**${owl.species}** (Tier ${owl.tier}) baykuşunu feda etmek üzeresin.\n\n` +
+          `📊 Ortalama Stat: **${avgStat}**\n\n` +
+          `**Kaybedeceklerin:**\n• Bu baykuş kalıcı olarak silinecek\n• Oyuncu seviyeniz 1'e sıfırlanacak\n\n` +
+          `**Kazanacakların:**\n• Kalıcı +%5 XP bonusu\n• Kalıcı +2 stat cap\n\n` +
+          `Devam etmek için **30 saniye** içinde ✅ butonuna bas.`
+        )],
+      components: [new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder().setCustomId(`prestige_confirm:${owlId}`).setLabel('✅ Evet, Feda Et').setStyle(ButtonStyle.Danger),
+        new ButtonBuilder().setCustomId('prestige_cancel').setLabel('❌ İptal').setStyle(ButtonStyle.Secondary),
+      )],
+    });
+
+    const collector = confirmMsg.createMessageComponentCollector({
+      componentType: ComponentType.Button,
+      time: 30_000,
+      filter: (i) => i.user.id === userId,
+    });
+
+    collector.on('collect', async (i) => {
+      collector.stop();
+      if (i.customId === 'prestige_cancel') {
+        await i.update({ content: '❌ Ascension iptal edildi.', embeds: [], components: [] });
+        return;
+      }
+      await i.update({ content: '⏳ İşleniyor...', embeds: [], components: [] });
+      try {
+        const { newPrestigeLevel } = await performAscension(ctx.prisma, userId, owlId);
+        await i.editReply({
+          content: '',
+          embeds: [successEmbed('🌟 ASCENSION TAMAMLANDI!',
+            `Baykuşunu feda ettin ve yüceldin.\n\nYeni Prestige Seviyesi: **${newPrestigeLevel}**\nHesabın resetlendi, artık daha hızlı güçleneceksin!`
+          )],
+        });
+      } catch (err: any) {
+        await i.editReply({ content: '', embeds: [failEmbed('Hata', err.message)] });
+      }
+    });
+
+    collector.on('end', (_, reason) => {
+      if (reason === 'time') {
+        confirmMsg.edit({ content: '⏰ Süre doldu, ascension iptal edildi.', embeds: [], components: [] }).catch(() => null);
+      }
     });
   } catch (err: any) {
     await message.reply({ embeds: [failEmbed('Hata', err.message)] });
@@ -75,14 +125,65 @@ export async function runPrestigeSlash(interaction: ChatInputCommandInteraction,
   await interaction.deferReply({ flags: 64 });
 
   try {
-    const { newPrestigeLevel } = await performAscension(ctx.prisma, userId, owlId);
+    // Onay adımı — geri alınamaz işlem öncesi 30 saniye bekleme
+    const owl = await ctx.prisma.owl.findUnique({
+      where: { id: owlId },
+      select: { ownerId: true, species: true, tier: true, statGaga: true, statGoz: true, statKulak: true, statKanat: true, statPence: true },
+    });
+    if (!owl || owl.ownerId !== userId) {
+      await interaction.editReply({ embeds: [failEmbed('Hata', 'Baykuş bulunamadı veya sana ait değil.')] });
+      return;
+    }
+    const avgStat = Math.round((owl.statGaga + owl.statGoz + owl.statKulak + owl.statKanat + owl.statPence) / 5);
+
     await interaction.editReply({
-      embeds: [successEmbed(
-        '🌟 ASCENSION TAMAMLANDI!',
-        `Baykuşunu feda ettin ve yüceldin.\n\n` +
-        `Yeni Prestige Seviyesi: **${newPrestigeLevel}**\n` +
-        `Hesabın resetlendi, artık daha hızlı güçleneceksin!`
-      )]
+      embeds: [new EmbedBuilder()
+        .setColor(0xe74c3c)
+        .setTitle('⚠️ ASCENSION ONAYI — GERİ ALINAMAZ!')
+        .setDescription(
+          `**${owl.species}** (Tier ${owl.tier}) baykuşunu feda etmek üzeresin.\n\n` +
+          `📊 Ortalama Stat: **${avgStat}**\n\n` +
+          `**Kaybedeceklerin:**\n• Bu baykuş kalıcı olarak silinecek\n• Oyuncu seviyeniz 1'e sıfırlanacak\n\n` +
+          `**Kazanacakların:**\n• Kalıcı +%5 XP bonusu\n• Kalıcı +2 stat cap\n\n` +
+          `Devam etmek için **30 saniye** içinde ✅ butonuna bas.`
+        )],
+      components: [new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder().setCustomId(`prestige_confirm:${owlId}`).setLabel('✅ Evet, Feda Et').setStyle(ButtonStyle.Danger),
+        new ButtonBuilder().setCustomId('prestige_cancel').setLabel('❌ İptal').setStyle(ButtonStyle.Secondary),
+      )],
+    });
+
+    const reply = await interaction.fetchReply();
+    const collector = reply.createMessageComponentCollector({
+      componentType: ComponentType.Button,
+      time: 30_000,
+      filter: (i) => i.user.id === userId,
+    });
+
+    collector.on('collect', async (i) => {
+      collector.stop();
+      if (i.customId === 'prestige_cancel') {
+        await i.update({ content: '❌ Ascension iptal edildi.', embeds: [], components: [] });
+        return;
+      }
+      await i.update({ content: '⏳ İşleniyor...', embeds: [], components: [] });
+      try {
+        const { newPrestigeLevel } = await performAscension(ctx.prisma, userId, owlId);
+        await i.editReply({
+          content: '',
+          embeds: [successEmbed('🌟 ASCENSION TAMAMLANDI!',
+            `Baykuşunu feda ettin ve yüceldin.\n\nYeni Prestige Seviyesi: **${newPrestigeLevel}**\nHesabın resetlendi, artık daha hızlı güçleneceksin!`
+          )],
+        });
+      } catch (err: any) {
+        await i.editReply({ content: '', embeds: [failEmbed('Hata', err.message)] });
+      }
+    });
+
+    collector.on('end', (_, reason) => {
+      if (reason === 'time') {
+        interaction.editReply({ content: '⏰ Süre doldu, ascension iptal edildi.', embeds: [], components: [] }).catch(() => null);
+      }
     });
   } catch (err: any) {
     await interaction.editReply({ embeds: [failEmbed('Hata', err.message)] });

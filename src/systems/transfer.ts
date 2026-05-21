@@ -149,10 +149,16 @@ export async function transferCoins(
         throw new Error('Alıcı oyuncu bulunamadı. Önce kayıt olması gerekiyor.');
       }
 
-      // Alıcı günlük alım limiti — tek seferde alınabilecek max
-      if (received > TRANSFER_DAILY_RECEIVE_LIMIT) {
+      // Alıcı kümülatif günlük alım limiti
+      const receiverIsNewDay =
+        !receiver.lastTransferDate ||
+        (receiver.lastTransferDate).toDateString() !== today.toDateString();
+      const receiverDailyReceived = receiverIsNewDay ? 0 : (receiver.dailyTransferSent ?? 0);
+      if (receiverDailyReceived + received > TRANSFER_DAILY_RECEIVE_LIMIT) {
+        const remaining = Math.max(0, TRANSFER_DAILY_RECEIVE_LIMIT - receiverDailyReceived);
         throw new Error(
-          `Tek transferde maksimum **${TRANSFER_DAILY_RECEIVE_LIMIT}** 💰 alınabilir.`,
+          `Alıcının günlük alım limitine ulaşıldı. ` +
+          `Kalan: **${remaining}** 💰 / ${TRANSFER_DAILY_RECEIVE_LIMIT} 💰`,
         );
       }
 

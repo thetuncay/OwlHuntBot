@@ -17,9 +17,12 @@ export async function runMarketMessage(
 
   if (sub === 'sat') {
     // owl market sat <eşya> <miktar> <fiyat>
-    const itemName = args[1];
+    const rawItemName = args[1];
     const qty = parseInt(args[2] ?? '1') || 1;
     const price = parseInt(args[3] ?? '0');
+
+    // Input validation
+    const itemName = rawItemName?.trim().replace(/[^\w\s\u00C0-\u024F\u0100-\u017E]/g, '').slice(0, 100);
 
     if (!itemName || !price) {
       await message.reply({
