@@ -2,6 +2,8 @@
 
 TypeScript tabanli, production odakli RPG/Economy Discord bot altyapisi.
 
+<!-- audit-test: security & architecture review -->
+
 ## Teknoloji
 
 - TypeScript 5 (strict mode)
