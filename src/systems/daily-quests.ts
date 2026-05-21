@@ -1,6 +1,7 @@
 import type { PrismaClient } from '@prisma/client';
 import { DAILY_QUEST_TYPES, DAILY_QUEST_CONFIG } from '../config';
 import { addXP } from './xp';
+import { withLock } from '../utils/lock';
 
 /**
  * Oyuncu için günlük görevleri oluşturur (eğer yoksa).
@@ -57,25 +58,28 @@ export async function claimQuestReward(
   playerId: string,
   questId: string
 ) {
-  return prisma.$transaction(async (tx) => {
-    const quest = await tx.dailyQuest.findUnique({ where: { id: questId } });
+  // withLock: çift tıklama / concurrent claim'i önler
+  return withLock(playerId, 'quest_claim', async () => {
+    return prisma.$transaction(async (tx) => {
+      const quest = await tx.dailyQuest.findUnique({ where: { id: questId } });
 
-    if (!quest || quest.playerId !== playerId) throw new Error('Görev bulunamadı.');
-    if (quest.isClaimed) throw new Error('Ödül zaten alınmış.');
-    if (quest.current < quest.target) throw new Error('Görev henüz tamamlanmamış.');
+      if (!quest || quest.playerId !== playerId) throw new Error('Görev bulunamadı.');
+      if (quest.isClaimed) throw new Error('Ödül zaten alınmış.');
+      if (quest.current < quest.target) throw new Error('Görev henüz tamamlanmamış.');
 
-    await tx.dailyQuest.update({
-      where: { id: questId },
-      data: { isClaimed: true }
+      await tx.dailyQuest.update({
+        where: { id: questId },
+        data: { isClaimed: true }
+      });
+
+      await tx.player.update({
+        where: { id: playerId },
+        data: { coins: { increment: quest.rewardCoins } }
+      });
+
+      const xpResult = await addXP(tx as any, playerId, quest.rewardXp, 'dailyQuest');
+
+      return { coins: quest.rewardCoins, xp: quest.rewardXp, levelUp: xpResult.levelUp };
     });
-
-    await tx.player.update({
-      where: { id: playerId },
-      data: { coins: { increment: quest.rewardCoins } }
-    });
-
-    const xpResult = await addXP(tx as any, playerId, quest.rewardXp, 'dailyQuest');
-
-    return { coins: quest.rewardCoins, xp: quest.rewardXp, levelUp: xpResult.levelUp };
   });
 }
