@@ -411,10 +411,18 @@ export async function settleCoinFlip(
   const winnerGain = netPot - bet; // Net kazanç (bahis zaten cepte, rakibin bahsi - house cut)
   const loserLoss = bet;
 
-  // Atomik coin güncellemesi — her iki oyuncu için iç içe lock
-  await withLock(challengerId, 'pvp_gamble', async () => {
-    await withLock(defenderId, 'pvp_gamble', async () => {
+  // Atomik coin güncellemesi — deterministik kilit sıralaması (deadlock önleme)
+  const sortedIds = [challengerId, defenderId].sort();
+  const firstId = sortedIds[0]!;
+  const secondId = sortedIds[1]!;
+  await withLock(firstId, 'pvp_gamble', async () => {
+    await withLock(secondId, 'pvp_gamble', async () => {
       await prisma.$transaction(async (tx) => {
+        // Bakiye kontrolü — race condition: validateInvite'tan bu yana coin harcanmış olabilir
+        const loser = await tx.player.findUnique({ where: { id: loserId }, select: { coins: true } });
+        if (!loser || loser.coins < bet) {
+          throw new Error('Yetersiz bakiye (race condition). Oyun iptal edildi.');
+        }
         // Kazanan: rakibin bahsini alır, house cut düşülür
         await tx.player.update({
           where: { id: winnerId },
@@ -531,11 +539,19 @@ export async function settleSlotRace(
     defenderSymbols[1] === defenderSymbols[2] &&
     challengerSymbols[0] === defenderSymbols[0];
 
-  // Atomik coin güncellemesi
-  await withLock(challengerId, 'pvp_gamble', async () => {
-    await withLock(defenderId, 'pvp_gamble', async () => {
+  // Atomik coin güncellemesi — deterministik kilit sıralaması (deadlock önleme)
+  const sortedIdsSlot = [challengerId, defenderId].sort();
+  const firstIdSlot = sortedIdsSlot[0]!;
+  const secondIdSlot = sortedIdsSlot[1]!;
+  await withLock(firstIdSlot, 'pvp_gamble', async () => {
+    await withLock(secondIdSlot, 'pvp_gamble', async () => {
       await prisma.$transaction(async (tx) => {
         if (!isPush) {
+          // Bakiye kontrolü — race condition önleme
+          const loserData = await tx.player.findUnique({ where: { id: loserId! }, select: { coins: true } });
+          if (!loserData || loserData.coins < bet) {
+            throw new Error('Yetersiz bakiye (race condition). Oyun iptal edildi.');
+          }
           await tx.player.update({
             where: { id: winnerId! },
             data: { coins: { increment: bet - houseCut }, totalPvpWins: { increment: 1 } },
@@ -747,13 +763,21 @@ export async function settleBlackjackPro(
   const winnerGain = winnerId ? Math.floor(bet * (payoutMult - 1)) - houseCut : 0;
   const loserLoss = loserId ? bet : 0;
 
-  // Atomik coin güncellemesi
-  await withLock(challengerId, 'pvp_gamble', async () => {
-    await withLock(defenderId, 'pvp_gamble', async () => {
+  // Atomik coin güncellemesi — deterministik kilit sıralaması (deadlock önleme)
+  const sortedIdsBj = [challengerId, defenderId].sort();
+  const firstIdBj = sortedIdsBj[0]!;
+  const secondIdBj = sortedIdsBj[1]!;
+  await withLock(firstIdBj, 'pvp_gamble', async () => {
+    await withLock(secondIdBj, 'pvp_gamble', async () => {
       await prisma.$transaction(async (tx) => {
         if (outcome === 'push') {
           // Beraberlik: bahisler iade edilir (zaten cepte, işlem yok)
         } else {
+          // Bakiye kontrolü — race condition önleme
+          const loserData = await tx.player.findUnique({ where: { id: loserId! }, select: { coins: true } });
+          if (!loserData || loserData.coins < bet) {
+            throw new Error('Yetersiz bakiye (race condition). Oyun iptal edildi.');
+          }
           await tx.player.update({
             where: { id: winnerId! },
             data: {

@@ -108,7 +108,7 @@ export async function transferCoins(
 
   // ── DB işlemleri (lock altında) ──────────────────────────────────────────
   return withLock(senderId, 'transfer', async () => {
-    return prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
       // Gönderici kontrolü
       const sender = await tx.player.findUnique({ where: { id: senderId } });
       if (!sender) throw new Error('Oyuncu bulunamadı.');
@@ -149,10 +149,16 @@ export async function transferCoins(
         throw new Error('Alıcı oyuncu bulunamadı. Önce kayıt olması gerekiyor.');
       }
 
-      // Alıcı günlük alım limiti — tek seferde alınabilecek max
-      if (received > TRANSFER_DAILY_RECEIVE_LIMIT) {
+      // Alıcı kümülatif günlük alım limiti
+      const receiverIsNewDay =
+        !receiver.lastTransferDate ||
+        (receiver.lastTransferDate).toDateString() !== today.toDateString();
+      const receiverDailyReceived = receiverIsNewDay ? 0 : (receiver.dailyTransferReceived ?? 0);
+      if (receiverDailyReceived + received > TRANSFER_DAILY_RECEIVE_LIMIT) {
+        const remaining = Math.max(0, TRANSFER_DAILY_RECEIVE_LIMIT - receiverDailyReceived);
         throw new Error(
-          `Tek transferde maksimum **${TRANSFER_DAILY_RECEIVE_LIMIT}** 💰 alınabilir.`,
+          `Alıcının günlük alım limitine ulaşıldı. ` +
+          `Kalan: **${remaining}** 💰 / ${TRANSFER_DAILY_RECEIVE_LIMIT} 💰`,
         );
       }
 
@@ -166,16 +172,18 @@ export async function transferCoins(
         },
       });
 
-      // Alıcı: vergi düşülmüş miktarı ekle
+      // Alıcı: vergi düşülmüş miktarı ekle + günlük alım sayacı güncelle
       await tx.player.update({
         where: { id: receiverId },
-        data: { coins: { increment: received } },
+        data: {
+          coins:                { increment: received },
+          dailyTransferReceived: receiverIsNewDay ? received : { increment: received },
+          lastTransferDate:     today,
+        },
       });
 
       // Vergi yakılır — hiçbir yere eklenmez (ekonomi sink)
 
-      // Cooldown set et (transaction dışında — başarı garantili olduktan sonra)
-      // Not: transaction commit sonrası çalışır
       const newSenderCoins = sender.coins - amount;
       const newDailySent   = currentDailySent + amount;
 
@@ -189,8 +197,8 @@ export async function transferCoins(
         dailyLimit:  TRANSFER_DAILY_LIMIT,
       } satisfies TransferResult;
     });
-  }).then(async (result) => {
-    // Transaction başarılı → cooldown set et
+
+    // Cooldown lock body içinde set edilir — crash window ortadan kalkar
     await setTransferCooldown(redis, senderId);
     return result;
   });

@@ -78,14 +78,14 @@ export async function simulatePvP(prisma: PrismaClient, sessionId: string): Prom
     throw new Error('PvP oturumu bulunamadi.');
   }
 
-  const challengerLock = await acquireLock(session.challengerId, 'pvp');
-  if (!challengerLock) {
+  const challengerToken = await acquireLock(session.challengerId, 'pvp');
+  if (!challengerToken) {
     throw new Error('Challenger su an baska bir PvP isleminde.');
   }
 
-  const defenderLock = await acquireLock(session.defenderId, 'pvp');
-  if (!defenderLock) {
-    await releaseLock(session.challengerId, 'pvp');
+  const defenderToken = await acquireLock(session.defenderId, 'pvp');
+  if (!defenderToken) {
+    await releaseLock(session.challengerId, 'pvp', challengerToken);
     throw new Error('Defender su an baska bir PvP isleminde.');
   }
 
@@ -214,22 +214,39 @@ export async function simulatePvP(prisma: PrismaClient, sessionId: string): Prom
       );
     });
 
-    // Streak sistemi — anti-abuse kontrolü dahil
-    const streakResult = await updatePvpStreak(prisma, winner.playerId, loser.playerId);
+  // Streak sistemi — anti-abuse kontrolü dahil
+  const streakResult = await updatePvpStreak(prisma, winner.playerId, loser.playerId);
 
-    // XP — streak bonusu uygulanmış
-    const winnerXP = applyStreakXpBonus(XP_PVP_WIN, streakResult.xpBonusPct);
-    await Promise.all([
-      addXP(prisma, winner.playerId, winnerXP, 'pvpWin'),
-      addXP(prisma, loser.playerId, XP_PVP_LOSE, 'pvpLose'),
-    ]);
+  // XP + Bond + Streak coins — transaction içinde atomik yaz
+  const winnerXP = applyStreakXpBonus(XP_PVP_WIN, streakResult.xpBonusPct);
+  const totalCoinGain = 100 + streakResult.bonusCoins;
 
-    // Bond artışı: kazanan baykuşun bond'u artar
-    const winnerOwl = winner.playerId === session.challengerId ? challengerOwl : defenderOwl;
-    if (winnerOwl.bond < BOND_MAX) {
-      const newBond = Math.min(BOND_MAX, winnerOwl.bond + BOND_GAIN_PER_PVP_WIN);
-      await prisma.owl.update({ where: { id: winnerOwl.id }, data: { bond: newBond } });
+  await prisma.$transaction(async (tx) => {
+    // Streak bonus coin varsa kazanana ekle
+    if (streakResult.bonusCoins > 0) {
+      await tx.player.update({
+        where: { id: winner.playerId },
+        data: { coins: { increment: streakResult.bonusCoins } },
+      });
     }
+    // XP güncelle
+    await tx.player.update({
+      where: { id: winner.playerId },
+      data: { xp: { increment: winnerXP } },
+    });
+    await tx.player.update({
+      where: { id: loser.playerId },
+      data: { xp: { increment: XP_PVP_LOSE } },
+    });
+    // Bond artışı
+    const winnerOwlForBond = winner.playerId === session.challengerId ? challengerOwl : defenderOwl;
+    if (winnerOwlForBond.bond < BOND_MAX) {
+      await tx.owl.update({
+        where: { id: winnerOwlForBond.id },
+        data: { bond: Math.min(BOND_MAX, winnerOwlForBond.bond + BOND_GAIN_PER_PVP_WIN) },
+      });
+    }
+  });
 
     // Effectiveness uyarısı: %50 altına düştüyse result'a ekle
     const winnerOwlUpdated = await prisma.owl.findFirst({
@@ -247,7 +264,6 @@ export async function simulatePvP(prisma: PrismaClient, sessionId: string): Prom
     // Liderboard istatistikleri
     await recordPvpWin(prisma, winner.playerId);
     // PvP kazancini ekonomi sayacina ekle (100 coin + streak bonus coin)
-    const totalCoinGain = 100 + streakResult.bonusCoins;
     recordCoinsEarned(prisma, winner.playerId, totalCoinGain).catch(() => null);
     // Power score'lari async guncelle
     refreshPowerScore(prisma, winner.playerId).catch(() => null);
@@ -276,8 +292,8 @@ export async function simulatePvP(prisma: PrismaClient, sessionId: string): Prom
       effectivenessWarning: effectivenessWarning ?? false,
     };
   } finally {
-    await releaseLock(session.challengerId, 'pvp');
-    await releaseLock(session.defenderId, 'pvp');
+    await releaseLock(session.challengerId, 'pvp', challengerToken);
+    await releaseLock(session.defenderId, 'pvp', defenderToken);
   }
 }
 

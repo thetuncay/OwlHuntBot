@@ -1,7 +1,6 @@
 import type { PrismaClient } from '@prisma/client';
 import type { XpApplyResult } from '../types';
 import { finalXP, xpRequired } from '../utils/math';
-import { enqueueDbWrite } from '../utils/db-queue';
 import { PRESTIGE_XP_BONUS_PER_LEVEL } from '../config';
 
 /**
@@ -52,9 +51,10 @@ export async function addXP(
   const didLevelUp = currentLevel > oldLevel;
 
   if (!didLevelUp) {
-    // Level-up yok
+    // Level-up yok — caller zaten senkron yazma yapacak (hunt.ts gibi)
+    // skipDbWrite=true ise queue'ya YAZMA — double-write rollback'i önler
     if (skipDbWrite) {
-      enqueueDbWrite({ type: 'updatePlayer', playerId, data: { xp: remainingXP } });
+      // Sadece hesaplanan değerleri döndür; caller kendi update'inde xp'yi yazar
       return {
         gainedXP,
         currentXP:    remainingXP,
