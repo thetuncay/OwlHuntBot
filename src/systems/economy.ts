@@ -101,6 +101,8 @@ export async function autoSink(
   qty: number,
 ): Promise<void> {
   await withLock(playerId, 'autosink', async () => {
+    let sinkQty = 0;
+
     await prisma.$transaction(async (tx) => {
       const item = await tx.inventoryItem.findUnique({
         where: {
@@ -114,7 +116,7 @@ export async function autoSink(
         return;
       }
 
-      const sinkQty = Math.min(qty, item.quantity);
+      sinkQty = Math.min(qty, item.quantity);
       if (sinkQty <= 0) {
         return;
       }
@@ -131,6 +133,8 @@ export async function autoSink(
       });
     });
 
-    await addXP(prisma, playerId, qty * AUTO_SINK_XP_PER_ITEM, 'autoSink');
+    if (sinkQty > 0) {
+      await addXP(prisma, playerId, sinkQty * AUTO_SINK_XP_PER_ITEM, 'autoSink');
+    }
   });
 }
