@@ -55,17 +55,28 @@ async function tryClaimDailyDrop(
   const today    = new Date();
   const todayStr = today.toDateString();
 
-  const lastDateStr  = cachedPlayer.lastLootboxDropDate;
-  const isNewDay     = !lastDateStr || new Date(lastDateStr).toDateString() !== todayStr;
-  const currentCount = isNewDay ? 0 : (cachedPlayer.dailyLootboxDrops ?? 0);
+  // Atomik Redis sayacı — stale cache bypass'ını önler
+  const capKey = `daily:lootbox:${playerId}:${todayStr}`;
+  const count  = await redis.incr(capKey);
+  if (count === 1) {
+    // İlk artırma: gece yarısına kadar TTL ayarla
+    const midnight = new Date();
+    midnight.setHours(24, 0, 0, 0);
+    const ttlSec = Math.floor((midnight.getTime() - Date.now()) / 1000);
+    await redis.expire(capKey, ttlSec);
+  }
+  if (count > DAILY_DROP_CAP) {
+    // Limit aşıldı — sayacı geri al
+    await redis.decr(capKey);
+    return false;
+  }
 
-  if (currentCount >= DAILY_DROP_CAP) return false;
-
+  // DB'yi fire-and-forget ile güncelle (UI için gerekli değil)
   enqueueDbWrite({
     type:     'updatePlayer',
     playerId,
     data: {
-      dailyLootboxDrops:   isNewDay ? 1 : currentCount + 1,
+      dailyLootboxDrops:   count,
       lastLootboxDropDate: today,
     },
   });
