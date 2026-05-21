@@ -79,7 +79,106 @@ async function resetPity(redis: Redis, playerId: string, lootboxId: string): Pro
   await redis.del(pityKey(playerId, lootboxId));
 }
 
-// ── TEK KUTU AÇMA ─────────────────────────────────────────────────────────────
+// ── TEK KUTU AÇMA (İÇ) ───────────────────────────────────────────────────────
+
+/**
+ * Lock olmadan tek kutu açar — withLock zaten alınmış olmalı.
+ * openLootbox ve openAllLootboxes tarafından kullanılır.
+ */
+async function _openLootboxUnsafe(
+  prisma: PrismaClient,
+  redis: Redis,
+  playerId: string,
+  lootboxId: string,
+): Promise<LootboxOpenResult> {
+  const def = LOOTBOX_DEF_MAP[lootboxId];
+  if (!def) throw new Error(`Bilinmeyen kutu: ${lootboxId}`);
+
+  // Envanterde var mı?
+  const inv = await prisma.inventoryItem.findUnique({
+    where: { ownerId_itemName: { ownerId: playerId, itemName: def.name } },
+  });
+  if (!inv || inv.quantity < 1) {
+    throw new Error(`Envanterinde **${def.emoji} ${def.name}** yok.`);
+  }
+
+  // Pity kontrolü
+  const pityCount     = await getPityCount(redis, playerId, lootboxId);
+  const pityTriggered = pityCount >= def.pityThreshold;
+
+  // Rarity seç
+  let rarity: BuffItemRarity;
+  if (pityTriggered) {
+    const pityWeights = def.weights.filter((w) => {
+      const order: BuffItemRarity[] = ['Common', 'Rare', 'Epic', 'Legendary'];
+      return order.indexOf(w.rarity) >= order.indexOf('Rare') && w.weight > 0;
+    });
+    rarity = pityWeights.length > 0 ? rollRarity(pityWeights) : 'Rare';
+  } else {
+    rarity = rollRarity(def.weights);
+  }
+
+  const gotRarePlus = rarity === 'Rare' || rarity === 'Epic' || rarity === 'Legendary';
+
+  // Item seç (kutunun kategorisine göre)
+  const item = pickBuffItem(rarity, def.categories);
+  const droppedItems: LootboxOpenResult['items'] = [];
+
+  if (item) {
+    droppedItems.push({
+      buffItemId: item.id,
+      buffName:   `${item.emoji} ${item.name}`,
+      rarity:     item.rarity,
+      emoji:      item.emoji,
+    });
+  }
+
+  // DB: kutuyu tüket + item'ı envantere ekle
+  await prisma.$transaction(async (tx) => {
+    if (inv.quantity === 1) {
+      await tx.inventoryItem.delete({
+        where: { ownerId_itemName: { ownerId: playerId, itemName: def.name } },
+      });
+    } else {
+      await tx.inventoryItem.update({
+        where: { ownerId_itemName: { ownerId: playerId, itemName: def.name } },
+        data: { quantity: { decrement: 1 } },
+      });
+    }
+
+    for (const dropped of droppedItems) {
+      const buffDef = BUFF_ITEMS.find((b) => b.id === dropped.buffItemId);
+      if (!buffDef) continue;
+      await tx.inventoryItem.upsert({
+        where: { ownerId_itemName: { ownerId: playerId, itemName: buffDef.name } },
+        create: {
+          ownerId:  playerId,
+          itemName: buffDef.name,
+          itemType: 'Buff',
+          rarity:   buffDef.rarity,
+          quantity: 1,
+        },
+        update: { quantity: { increment: 1 } },
+      });
+    }
+  });
+
+  // Pity güncelle
+  if (gotRarePlus || pityTriggered) {
+    await resetPity(redis, playerId, lootboxId);
+  } else {
+    await incrementPity(redis, playerId, lootboxId);
+  }
+
+  return {
+    lootboxId,
+    lootboxName:   `${def.emoji} ${def.name}`,
+    items:         droppedItems,
+    pityTriggered,
+  };
+}
+
+// ── TEK KUTU AÇMA (PUBLIC) ────────────────────────────────────────────────────
 
 /**
  * Oyuncunun envanterindeki bir kutuyu açar.
@@ -91,93 +190,9 @@ export async function openLootbox(
   playerId: string,
   lootboxId: string,
 ): Promise<LootboxOpenResult> {
-  return withLock(playerId, 'lootbox', async () => {
-    const def = LOOTBOX_DEF_MAP[lootboxId];
-    if (!def) throw new Error(`Bilinmeyen kutu: ${lootboxId}`);
-
-    // Envanterde var mı?
-    const inv = await prisma.inventoryItem.findUnique({
-      where: { ownerId_itemName: { ownerId: playerId, itemName: def.name } },
-    });
-    if (!inv || inv.quantity < 1) {
-      throw new Error(`Envanterinde **${def.emoji} ${def.name}** yok.`);
-    }
-
-    // Pity kontrolü
-    const pityCount    = await getPityCount(redis, playerId, lootboxId);
-    const pityTriggered = pityCount >= def.pityThreshold;
-
-    // Rarity seç
-    let rarity: BuffItemRarity;
-    if (pityTriggered) {
-      const pityWeights = def.weights.filter((w) => {
-        const order: BuffItemRarity[] = ['Common', 'Rare', 'Epic', 'Legendary'];
-        return order.indexOf(w.rarity) >= order.indexOf('Rare') && w.weight > 0;
-      });
-      rarity = pityWeights.length > 0 ? rollRarity(pityWeights) : 'Rare';
-    } else {
-      rarity = rollRarity(def.weights);
-    }
-
-    const gotRarePlus = rarity === 'Rare' || rarity === 'Epic' || rarity === 'Legendary';
-
-    // Item seç (kutunun kategorisine göre)
-    const item = pickBuffItem(rarity, def.categories);
-    const droppedItems: LootboxOpenResult['items'] = [];
-
-    if (item) {
-      droppedItems.push({
-        buffItemId: item.id,
-        buffName:   `${item.emoji} ${item.name}`,
-        rarity:     item.rarity,
-        emoji:      item.emoji,
-      });
-    }
-
-    // DB: kutuyu tüket + item'ı envantere ekle
-    await prisma.$transaction(async (tx) => {
-      if (inv.quantity === 1) {
-        await tx.inventoryItem.delete({
-          where: { ownerId_itemName: { ownerId: playerId, itemName: def.name } },
-        });
-      } else {
-        await tx.inventoryItem.update({
-          where: { ownerId_itemName: { ownerId: playerId, itemName: def.name } },
-          data: { quantity: { decrement: 1 } },
-        });
-      }
-
-      for (const dropped of droppedItems) {
-        const buffDef = BUFF_ITEMS.find((b) => b.id === dropped.buffItemId);
-        if (!buffDef) continue;
-        await tx.inventoryItem.upsert({
-          where: { ownerId_itemName: { ownerId: playerId, itemName: buffDef.name } },
-          create: {
-            ownerId:  playerId,
-            itemName: buffDef.name,
-            itemType: 'Buff',
-            rarity:   buffDef.rarity,
-            quantity: 1,
-          },
-          update: { quantity: { increment: 1 } },
-        });
-      }
-    });
-
-    // Pity güncelle
-    if (gotRarePlus || pityTriggered) {
-      await resetPity(redis, playerId, lootboxId);
-    } else {
-      await incrementPity(redis, playerId, lootboxId);
-    }
-
-    return {
-      lootboxId,
-      lootboxName:   `${def.emoji} ${def.name}`,
-      items:         droppedItems,
-      pityTriggered,
-    };
-  });
+  return withLock(playerId, 'lootbox', () =>
+    _openLootboxUnsafe(prisma, redis, playerId, lootboxId),
+  );
 }
 
 // ── TOPLU KUTU AÇMA ───────────────────────────────────────────────────────────
@@ -200,22 +215,25 @@ export async function openAllLootboxes(
   const def = LOOTBOX_DEF_MAP[lootboxId];
   if (!def) throw new Error(`Bilinmeyen kutu: ${lootboxId}`);
 
-  const inv = await prisma.inventoryItem.findUnique({
-    where: { ownerId_itemName: { ownerId: playerId, itemName: def.name } },
+  // Outer lock: count stale-read + concurrent açma sorununu önler
+  return withLock(playerId, 'lootbox', async () => {
+    const inv = await prisma.inventoryItem.findUnique({
+      where: { ownerId_itemName: { ownerId: playerId, itemName: def.name } },
+    });
+    if (!inv || inv.quantity < 1) {
+      throw new Error(`Envanterinde **${def.emoji} ${def.name}** yok.`);
+    }
+
+    const count = inv.quantity;
+    const results: LootboxOpenResult[] = [];
+
+    for (let i = 0; i < count; i++) {
+      // _openLootboxUnsafe: lock almadan açar — outer lock zaten alınmış
+      results.push(await _openLootboxUnsafe(prisma, redis, playerId, lootboxId));
+    }
+
+    return { opened: count, results };
   });
-  if (!inv || inv.quantity < 1) {
-    throw new Error(`Envanterinde **${def.emoji} ${def.name}** yok.`);
-  }
-
-  const count = inv.quantity;
-  const results: LootboxOpenResult[] = [];
-
-  for (let i = 0; i < count; i++) {
-    const result = await openLootbox(prisma, redis, playerId, lootboxId);
-    results.push(result);
-  }
-
-  return { opened: count, results };
 }
 
 // ── ENVANTER SORGULAMA ────────────────────────────────────────────────────────

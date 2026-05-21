@@ -366,7 +366,7 @@ export async function rollHunt(
 
     // Lootbox drop — arka planda hesapla
     // bundle.player gerçek cache verisi olduğundan tempCachedPlayer'a gerek yok.
-    const lootboxDropsPromise = rollHuntLootboxDrop(prisma, redis, playerId, player.level, hasCritical, player)
+    const lootboxDropsPromise = rollHuntLootboxDrop(prisma, redis, playerId, player.level, hasCritical)
       .catch(() => [] as LootboxDrop[]);
 
     // Encounter — player ve owl snapshot'larını geçerek ekstra DB sorgusunu önle.

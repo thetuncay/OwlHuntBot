@@ -43,8 +43,9 @@ model Player {
   lastLootboxDropDate DateTime?
 
   // --- TRANSFER SİSTEMİ ---
-  dailyTransferSent   Int       @default(0)
-  lastTransferDate    DateTime?
+  dailyTransferSent     Int       @default(0)
+  dailyTransferReceived Int       @default(0)
+  lastTransferDate      DateTime?
 
   // --- MARKET SİSTEMİ ---
   dailyMarketListings   Int       @default(0)

@@ -36,10 +36,9 @@ async function checkApiQuota(redis: Redis): Promise<{ allowed: boolean; reason?:
   const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
   const currentMinute = Math.floor(now / 60000); // Dakika bazlı key
 
-  // Günlük limit kontrolü
+  // Günlük limit — atomik INCR ile kontrol
   const dailyKey = `ai:quota:daily:${today}`;
   const dailyCount = parseInt((await redis.get(dailyKey)) ?? '0');
-  
   if (dailyCount >= GROQ_DAILY_LIMIT) {
     return {
       allowed: false,
@@ -47,11 +46,12 @@ async function checkApiQuota(redis: Redis): Promise<{ allowed: boolean; reason?:
     };
   }
 
-  // Dakikalık limit kontrolü
+  // Dakikalık limit — atomik INCR + compare (race condition önleme)
   const minuteKey = `ai:quota:minute:${currentMinute}`;
-  const minuteCount = parseInt((await redis.get(minuteKey)) ?? '0');
-  
-  if (minuteCount >= GROQ_MINUTE_LIMIT) {
+  const minuteCount = await redis.incr(minuteKey);
+  if (minuteCount === 1) await redis.expire(minuteKey, 60); // İlk artırmada TTL ayarla
+  if (minuteCount > GROQ_MINUTE_LIMIT) {
+    await redis.decr(minuteKey); // Geri al — limit aşıldı
     return {
       allowed: false,
       reason: 'AI asistan şu an çok yoğun. Lütfen 1 dakika sonra tekrar deneyin.',
@@ -64,22 +64,17 @@ async function checkApiQuota(redis: Redis): Promise<{ allowed: boolean; reason?:
 async function incrementApiQuota(redis: Redis): Promise<void> {
   const now = Date.now();
   const today = new Date().toISOString().split('T')[0];
-  const currentMinute = Math.floor(now / 60000);
 
   // Günlük sayacı artır (gece yarısına kadar geçerli)
+  // Dakikalık sayaç checkApiQuota'da zaten artırıldı
   const dailyKey = `ai:quota:daily:${today}`;
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
   tomorrow.setHours(0, 0, 0, 0);
   const ttlSeconds = Math.floor((tomorrow.getTime() - now) / 1000);
-  
-  await redis.incr(dailyKey);
-  await redis.expire(dailyKey, ttlSeconds);
 
-  // Dakikalık sayacı artır (60 saniye geçerli)
-  const minuteKey = `ai:quota:minute:${currentMinute}`;
-  await redis.incr(minuteKey);
-  await redis.expire(minuteKey, 60);
+  const dailyCount = await redis.incr(dailyKey);
+  if (dailyCount === 1) await redis.expire(dailyKey, ttlSeconds);
 }
 
 async function getApiQuotaStats(redis: Redis): Promise<{ daily: number; minute: number }> {
@@ -308,7 +303,9 @@ function buildPlayerContextPrompt(context: PlayerContext | null): string {
   const parts: string[] = ['\n\n═══ OYUNCU PROFİLİ ═══'];
   
   parts.push(`Seviye: ${context.level}`);
-  parts.push(`Coin: ${context.coins.toLocaleString()}💰`);
+  // Coin miktarı yerine bucket kullan — hassas finansal veri dış API'ye gönderilmez
+  const coinBucket = context.coins < 1000 ? 'az (< 1.000)' : context.coins < 10000 ? 'orta (1k-10k)' : context.coins < 50000 ? 'yüksek (10k-50k)' : 'çok yüksek (50k+)';
+  parts.push(`Coin Durumu: ${coinBucket}`);
   parts.push(`Baykuş: ${context.mainOwlSpecies} (Tier ${context.mainOwlTier})`);
   parts.push(`Ortalama Stat: ${context.avgStat}`);
   
