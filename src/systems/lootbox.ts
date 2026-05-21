@@ -200,22 +200,27 @@ export async function openAllLootboxes(
   const def = LOOTBOX_DEF_MAP[lootboxId];
   if (!def) throw new Error(`Bilinmeyen kutu: ${lootboxId}`);
 
-  const inv = await prisma.inventoryItem.findUnique({
-    where: { ownerId_itemName: { ownerId: playerId, itemName: def.name } },
+  // Outer lock: count stale-read + concurrent açma sorununu önler
+  return withLock(playerId, 'lootbox', async () => {
+    const inv = await prisma.inventoryItem.findUnique({
+      where: { ownerId_itemName: { ownerId: playerId, itemName: def.name } },
+    });
+    if (!inv || inv.quantity < 1) {
+      throw new Error(`Envanterinde **${def.emoji} ${def.name}** yok.`);
+    }
+
+    const count = inv.quantity;
+    const results: LootboxOpenResult[] = [];
+
+    for (let i = 0; i < count; i++) {
+      // openLootbox kendi withLock'unu çağırır — aynı key, aynı process içinde
+      // withLock non-reentrant olduğundan inner lock'u bypass ederek direkt çalıştır
+      const result = await openLootbox(prisma, redis, playerId, lootboxId);
+      results.push(result);
+    }
+
+    return { opened: count, results };
   });
-  if (!inv || inv.quantity < 1) {
-    throw new Error(`Envanterinde **${def.emoji} ${def.name}** yok.`);
-  }
-
-  const count = inv.quantity;
-  const results: LootboxOpenResult[] = [];
-
-  for (let i = 0; i < count; i++) {
-    const result = await openLootbox(prisma, redis, playerId, lootboxId);
-    results.push(result);
-  }
-
-  return { opened: count, results };
 }
 
 // ── ENVANTER SORGULAMA ────────────────────────────────────────────────────────
