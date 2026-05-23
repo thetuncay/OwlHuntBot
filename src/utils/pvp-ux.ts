@@ -116,7 +116,7 @@ function buildVsScreen(data: PvpBattleData): string {
 }
 
 // ─── Sonuç ekranı ─────────────────────────────────────────────────────────────
-function buildResultScreen(data: PvpBattleData): string {
+export function buildResultScreen(data: PvpBattleData): string {
   const winnerName = data.winnerId === data.challengerId ? data.challengerName : data.defenderName;
   const loserName  = data.loserId  === data.challengerId ? data.challengerName : data.defenderName;
   const s = data.streak;

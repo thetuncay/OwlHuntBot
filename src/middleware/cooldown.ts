@@ -65,3 +65,33 @@ export async function setCooldown(
     // Redis down → sessizce geç
   }
 }
+
+/**
+ * Birden fazla Redis anahtarını tek bir pipeline round-trip'te kontrol eder.
+ * Her anahtar için GET ve PTTL komutlarını pipeline'a ekler, exec() ile çalıştırır.
+ * exec() null dönerse veya hata oluşursa güvenli varsayılan döner.
+ * Requirements: 7.1, 7.2, 7.3
+ */
+export async function checkKeysPipelined(
+  redis: Redis,
+  keys: string[],
+): Promise<Array<{ value: string | null; ttlMs: number }>> {
+  try {
+    const pipeline = redis.pipeline();
+    for (const key of keys) {
+      pipeline.get(key);
+      pipeline.pttl(key);
+    }
+    const results = await pipeline.exec();
+    if (!results) return keys.map(() => ({ value: null, ttlMs: 0 }));
+    return keys.map((_, i) => {
+      const valueEntry = results[i * 2];
+      const ttlEntry = results[i * 2 + 1];
+      const value = (valueEntry && !valueEntry[0]) ? (valueEntry[1] as string | null) : null;
+      const ttlMs = (ttlEntry && !ttlEntry[0]) ? Math.max(0, ttlEntry[1] as number) : 0;
+      return { value, ttlMs };
+    });
+  } catch {
+    return keys.map(() => ({ value: null, ttlMs: 0 }));
+  }
+}

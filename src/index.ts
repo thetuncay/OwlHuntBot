@@ -29,7 +29,15 @@ const envSchema = z.object({
 });
 
 const env = envSchema.parse(process.env);
-const prisma = new PrismaClient();
+
+function appendPoolParams(url: string): string {
+  const separator = url.includes('?') ? '&' : '?';
+  return `${url}${separator}maxPoolSize=10&connectTimeoutMS=10000`;
+}
+
+const prisma = new PrismaClient({
+  datasources: { db: { url: appendPoolParams(process.env.DATABASE_URL!) } },
+});
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
   // RAM optimizasyonu: discord.js varsayılan olarak tüm mesajları, üyeleri ve

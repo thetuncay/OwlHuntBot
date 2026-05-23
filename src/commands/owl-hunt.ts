@@ -43,7 +43,7 @@ import {
   buildTameFinalRow,
   calcFinalTameChance,
 } from '../utils/tame-ux';
-import { animateHuntInteraction, animateHuntMessage, compressHuntResult } from '../utils/hunt-ux';
+import { animateHuntInteraction, animateHuntMessage, buildFinalMessage, compressHuntResult } from '../utils/hunt-ux';
 import { listActiveBuffs } from '../systems/items';
 import { BUFF_ITEM_MAP } from '../config';
 import { getPlayerBundle } from '../utils/player-cache';
@@ -245,7 +245,8 @@ export async function runHunt(
       ? (interaction.member as { displayName: string }).displayName
       : interaction.user.username;
 
-    await animateHuntInteraction({ editReply: interaction.editReply.bind(interaction) }, name, compressed);
+    await interaction.editReply({ content: buildFinalMessage(name, compressed) });
+    animateHuntInteraction({ editReply: interaction.editReply.bind(interaction) }, name, compressed).catch(() => {});
 
     if (compressed.encounterId) {
       await sendEncounterMessage(
@@ -390,7 +391,8 @@ export async function runHuntMessage(
         }));
     }).catch(() => null);
 
-    await animateHuntMessage(message, name, compressed);
+    await message.reply(buildFinalMessage(name, compressed));
+    animateHuntMessage(message, name, compressed).catch(() => {});
 
     if (compressed.encounterId) {
       await sendEncounterMessage(

@@ -33,13 +33,55 @@ import { withLock } from '../utils/lock';
 import { invalidatePlayerCache, getPlayerBundle, setCachedPlayerBundle, type CachedPlayerBundle } from '../utils/player-cache';
 import { enqueueDbWriteBulk, type UpsertInventoryJob } from '../utils/db-queue';
 import { addXP } from './xp';
-import { refreshPowerScore } from './leaderboard';
 import { createEncounter } from './tame';
 import { getBuffEffects, drainBuffCharge } from './items';
 import { rollHuntLootboxDrop } from './drops';
 import { trackQuestProgress } from './daily-quests';
 import { getBiomeSession, setBiomeSession } from '../utils/biome-session';
 import { parseStoredTraits, resolveTraits, calcTraitEffects } from './traits';
+
+/**
+ * Envanter job'larını tek bir MongoDB bulkWrite komutuyla uygular.
+ * N ayrı upsert yerine tek round-trip — Req 2.1, 2.2, 2.3, 2.4.
+ *
+ * @param prisma  - PrismaClient instance
+ * @param playerId - Oyuncunun ID'si (ownerId olarak kullanılır)
+ * @param jobs    - UpsertInventoryJob dizisi; boşsa çağrı atlanır
+ */
+export function buildAndExecuteBulkWrite(
+  prisma: PrismaClient,
+  playerId: string,
+  jobs: UpsertInventoryJob[],
+): Promise<void> {
+  if (jobs.length === 0) return Promise.resolve();
+
+  // DATABASE_URL'den DB adını çıkar: son "/" ile "?" arasındaki segment
+  const dbUrl = process.env.DATABASE_URL ?? '';
+  const dbName = dbUrl.split('/').pop()?.split('?')[0] ?? 'baykusbot';
+
+  return (prisma.$runCommandRaw({
+    bulkWrite: 1,
+    nsInfo: [{ ns: `${dbName}.InventoryItem` }],
+    ops: jobs.map((job) => ({
+      update: {
+        filter: { ownerId: job.playerId, itemName: job.itemName },
+        updateMods: {
+          $inc: { quantity: job.quantity },
+          $setOnInsert: {
+            ownerId: job.playerId,
+            itemName: job.itemName,
+            itemType: job.itemType,
+            rarity: job.rarity,
+          },
+        },
+        upsert: true,
+        multi: false,
+      },
+    })),
+  }) as Promise<unknown>).then(() => undefined).catch((err: Error) => {
+    console.error('[Hunt] BulkWrite failed:', err.message);
+  });
+}
 
 /**
  * Oyuncunun ana baykusu ile av turunu simule eder.
@@ -355,8 +397,9 @@ export async function rollHunt(
       });
     }
 
-    // Envanter job'larını queue'ya gönder — kullanıcı beklemez
-    enqueueDbWriteBulk(inventoryJobs);
+    // Envanter job'larını tek bulkWrite ile yaz — kullanıcı beklemez (Req 2)
+    buildAndExecuteBulkWrite(prisma, playerId, inventoryJobs)
+      .catch((err: Error) => console.error('[Hunt] BulkWrite failed:', err.message));
 
     // ── Arka Plan İşlemleri (fire-and-forget) ────────────────────────────────
     // Bu işlemler kullanıcı cevabını BEKLETMEZ — arka planda çalışır.
@@ -397,9 +440,6 @@ export async function rollHunt(
       }]);
     }
     drainBuffCharge(prisma, playerId, 'hunt').catch(() => null);
-    if (xpResult.levelUp) {
-      refreshPowerScore(prisma, playerId).catch(() => null);
-    }
 
     // Player cache'i invalidate et — veri değişti, sonraki komut taze çeksin
     invalidatePlayerCache(redis, playerId).catch(() => null);

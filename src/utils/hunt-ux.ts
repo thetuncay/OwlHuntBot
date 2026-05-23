@@ -133,7 +133,7 @@ const ANIMATION_FRAMES: [string, string, string][] = [
 const FINISHING = ['🌲 Av tamamlanıyor...', '🏃 Son hamle...', '✨ Neredeyse...', '🎯 Şimdi!!'];
 
 // ─── Final mesaj builder ──────────────────────────────────────────────────────
-function buildFinalMessage(name: string, compressed: CompressedHunt): string {
+export function buildFinalMessage(name: string, compressed: CompressedHunt): string {
   const lines: string[] = [];
 
   // ── LINE 1: Status / Buffs ────────────────────────────────────────────────

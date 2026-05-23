@@ -10,7 +10,7 @@ import {
   type Message,
 } from 'discord.js';
 import { SIM_PVP_COOLDOWN_MS } from '../config';
-import { getCooldownRemainingMs } from '../middleware/cooldown';
+import { getCooldownRemainingMs, checkKeysPipelined } from '../middleware/cooldown';
 import { simulatePvP, startPvP } from '../systems/pvp';
 import { runSimulatedPvP } from '../systems/pvp-sim';
 import {
@@ -18,6 +18,7 @@ import {
   animatePvPMessage,
   animateSimPvPInteraction,
   animateSimPvPMessage,
+  buildResultScreen,
 } from '../utils/pvp-ux';
 import type { PvpBattleData } from '../utils/pvp-ux';
 import { failEmbed } from '../utils/embed';
@@ -41,7 +42,8 @@ export async function runVs(
 
   const pvpLockKey = `pvp:active:${interaction.user.id}`;
 
-  const challengerActive = await ctx.redis.get(pvpLockKey);
+  const [challengerEntry, defenderEntry] = await checkKeysPipelined(ctx.redis, [pvpLockKey, `pvp:active:${defender.id}`]);
+  const challengerActive = challengerEntry?.value ?? null;
   if (challengerActive) {
     await interaction.reply({ content: `⚔️ Zaten aktif bir PvP'n var.`, flags: 64 });
     return;
@@ -49,7 +51,7 @@ export async function runVs(
 
   // Defender'ın lock'unu kontrol et ama ALMA — sadece kabul ettiğinde alınacak
   const defenderLockKey = `pvp:active:${defender.id}`;
-  const defenderActive  = await ctx.redis.get(defenderLockKey);
+  const defenderActive  = defenderEntry?.value ?? null;
   if (defenderActive) {
     await interaction.reply({ content: `⚔️ Rakip şu an başka bir PvP'de.`, flags: 64 });
     return;
@@ -126,7 +128,8 @@ export async function runVs(
         streak:          result.streak,
       };
 
-      await animatePvPInteraction(interaction, battleData);
+      await interaction.editReply({ content: buildResultScreen(battleData) });
+      animatePvPInteraction(interaction, battleData).catch(() => {});
     } catch (error) {
       const errMsg = error instanceof Error ? error.message : 'Bir hata oluştu.';
       await interaction.editReply({ content: `❌ ${errMsg}` }).catch(() => null);
@@ -294,7 +297,8 @@ export async function runVsMessage(
         streak:          result.streak,
       };
 
-      await animatePvPMessage(sent, battleData);
+      await sent.edit({ content: buildResultScreen(battleData), components: [] });
+      animatePvPMessage(sent, battleData).catch(() => {});
     } catch (error) {
       const errMsg = error instanceof Error ? error.message : 'Bir hata oluştu.';
       await sent.edit({ content: `❌ ${errMsg}`, components: [] }).catch(() => null);
