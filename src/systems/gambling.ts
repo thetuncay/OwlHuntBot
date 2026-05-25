@@ -16,6 +16,7 @@ import { finalWinChance } from '../utils/math';
 import { withLock } from '../utils/lock';
 import { weightedRandom } from '../utils/rng';
 import { recordCoinsEarned } from './leaderboard';
+import { writeAudit } from '../utils/audit';
 
 // Atlas M0 uyumlu: $transaction kullanmaz, withLock yeterli.
 
@@ -59,6 +60,20 @@ async function settleGamble(
       recordCoinsEarned(prisma, playerId, gain).catch(() => null);
     }
 
+    // Audit: gamble sonucu (fire-and-forget)
+    writeAudit(prisma, playerId, 'gamble', {
+      coins: player.coins,
+      gambleStreakWins: player.gambleStreakWins,
+      gambleStreakLosses: player.gambleStreakLosses,
+    }, {
+      coins: updated.coins,
+      gambleStreakWins: updated.gambleStreakWins,
+      gambleStreakLosses: updated.gambleStreakLosses,
+      bet,
+      win,
+      gain,
+    }).catch(console.error);
+
     return {
       win,
       deltaCoins: gain,
@@ -99,6 +114,21 @@ export async function slot(prisma: PrismaClient, playerId: string, bet: number):
     if (win && gain > 0) {
       recordCoinsEarned(prisma, playerId, gain).catch(() => null);
     }
+
+    // Audit: slot sonucu (fire-and-forget)
+    writeAudit(prisma, playerId, 'gamble', {
+      coins: player.coins,
+      gambleStreakWins: player.gambleStreakWins,
+      gambleStreakLosses: player.gambleStreakLosses,
+    }, {
+      coins: updated.coins,
+      gambleStreakWins: updated.gambleStreakWins,
+      gambleStreakLosses: updated.gambleStreakLosses,
+      bet,
+      win,
+      gain,
+      slotResult: roll.name,
+    }).catch(console.error);
 
     return {
       win,
@@ -159,6 +189,21 @@ export async function settleBlackjack(
       },
     });
 
+    // Audit: blackjack settle sonucu (fire-and-forget)
+    writeAudit(prisma, playerId, 'gamble', {
+      coins: player.coins,
+      gambleStreakWins: player.gambleStreakWins,
+      gambleStreakLosses: player.gambleStreakLosses,
+    }, {
+      coins: updated.coins,
+      gambleStreakWins: updated.gambleStreakWins,
+      gambleStreakLosses: updated.gambleStreakLosses,
+      bet,
+      win: outcome === 'win',
+      gain,
+      game: 'blackjack',
+    }).catch(console.error);
+
     return { win: outcome === 'win', deltaCoins: gain, finalCoins: updated.coins, message: outcome };
   });
 }
@@ -203,6 +248,23 @@ export async function blackjack(prisma: PrismaClient, playerId: string, bet: num
     if (win && gain > 0) {
       recordCoinsEarned(prisma, playerId, gain).catch(() => null);
     }
+
+    // Audit: blackjack auto-resolve sonucu (fire-and-forget)
+    writeAudit(prisma, playerId, 'gamble', {
+      coins: player.coins,
+      gambleStreakWins: player.gambleStreakWins,
+      gambleStreakLosses: player.gambleStreakLosses,
+    }, {
+      coins: updated.coins,
+      gambleStreakWins: updated.gambleStreakWins,
+      gambleStreakLosses: updated.gambleStreakLosses,
+      bet,
+      win,
+      gain,
+      game: 'blackjack-auto',
+      playerScore,
+      dealerScore,
+    }).catch(console.error);
 
     return {
       win,

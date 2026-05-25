@@ -39,48 +39,56 @@ import { rollHuntLootboxDrop } from './drops';
 import { trackQuestProgress } from './daily-quests';
 import { getBiomeSession, setBiomeSession } from '../utils/biome-session';
 import { parseStoredTraits, resolveTraits, calcTraitEffects } from './traits';
+import { writeAudit } from '../utils/audit';
 
 /**
- * Envanter job'larını tek bir MongoDB bulkWrite komutuyla uygular.
- * N ayrı upsert yerine tek round-trip — Req 2.1, 2.2, 2.3, 2.4.
+ * Envanter job'larını PostgreSQL uyumlu upsert işlemleriyle uygular.
+ * Aynı (playerId, itemName) çiftleri önce toplanır, ardından her biri için
+ * tek bir upsert çalıştırılır — Req 15.1, 15.2.
  *
- * @param prisma  - PrismaClient instance
+ * @param prisma   - PrismaClient instance
  * @param playerId - Oyuncunun ID'si (ownerId olarak kullanılır)
- * @param jobs    - UpsertInventoryJob dizisi; boşsa çağrı atlanır
+ * @param jobs     - UpsertInventoryJob dizisi; boşsa çağrı atlanır
  */
-export function buildAndExecuteBulkWrite(
+export async function buildAndExecuteBulkWrite(
   prisma: PrismaClient,
   playerId: string,
   jobs: UpsertInventoryJob[],
 ): Promise<void> {
-  if (jobs.length === 0) return Promise.resolve();
+  if (jobs.length === 0) return;
 
-  // DATABASE_URL'den DB adını çıkar: son "/" ile "?" arasındaki segment
-  const dbUrl = process.env.DATABASE_URL ?? '';
-  const dbName = dbUrl.split('/').pop()?.split('?')[0] ?? 'baykusbot';
+  // Aynı (playerId, itemName) çiftlerini birleştirerek toplam miktarı hesapla
+  const aggregated = new Map<string, UpsertInventoryJob & { totalQty: number }>();
+  for (const job of jobs) {
+    const key = `${job.playerId}:${job.itemName}`;
+    const existing = aggregated.get(key);
+    if (existing) {
+      existing.totalQty += job.quantity;
+    } else {
+      aggregated.set(key, { ...job, totalQty: job.quantity });
+    }
+  }
 
-  return (prisma.$runCommandRaw({
-    bulkWrite: 1,
-    nsInfo: [{ ns: `${dbName}.InventoryItem` }],
-    ops: jobs.map((job) => ({
-      update: {
-        filter: { ownerId: job.playerId, itemName: job.itemName },
-        updateMods: {
-          $inc: { quantity: job.quantity },
-          $setOnInsert: {
-            ownerId: job.playerId,
-            itemName: job.itemName,
-            itemType: job.itemType,
-            rarity: job.rarity,
-          },
+  const entries = [...aggregated.values()];
+
+  // Her item için: yoksa oluştur, varsa miktarı artır (upsert)
+  await Promise.all(
+    entries.map((job) =>
+      prisma.inventoryItem.upsert({
+        where: { ownerId_itemName: { ownerId: job.playerId, itemName: job.itemName } },
+        create: {
+          ownerId: job.playerId,
+          itemName: job.itemName,
+          itemType: job.itemType,
+          rarity: job.rarity,
+          quantity: job.totalQty,
         },
-        upsert: true,
-        multi: false,
-      },
-    })),
-  }) as Promise<unknown>).then(() => undefined).catch((err: Error) => {
-    console.error('[Hunt] BulkWrite failed:', err.message);
-  });
+        update: {
+          quantity: { increment: job.totalQty },
+        },
+      })
+    )
+  );
 }
 
 /**
@@ -376,30 +384,48 @@ export async function rollHunt(
     // Birleşik player yazma: streak + xp/level tek round-trip'te
     // totalXP: { increment: totalXP } — Gereksinim 7: artımlı güncelleme
     // (addXP skipDbWrite:true ile çağrıldığından totalXP'yi burada yazıyoruz)
-    if (xpResult.levelUp) {
-      await prisma.player.update({
+
+    // Audit: hunt öncesi oyuncu durumu
+    const auditBefore: Record<string, unknown> = {
+      coins: player.coins,
+      xp: player.xp,
+      level: player.level,
+      huntComboStreak: player.huntComboStreak,
+      noRareStreak: player.noRareStreak,
+    };
+
+    // Birleşik player yazma: streak + xp/level + totalXP tek transaction'da
+    // Transaction hatası durumunda tüm değişiklikler geri alınır — Req 15.1, 15.2, 15.3, 15.4
+    await prisma.$transaction([
+      prisma.player.update({
         where: { id: playerId },
         data: {
           huntComboStreak: newStreak,
           noRareStreak: newNoRareStreak,
           lastHunt: new Date(),
-          level: xpResult.levelUp.newLevel,
-          xp: xpResult.levelUp.remainingXP,
+          ...(xpResult.levelUp
+            ? {
+                level: xpResult.levelUp.newLevel,
+                xp: xpResult.levelUp.remainingXP,
+              }
+            : {
+                xp: xpResult.currentXP,
+              }),
           totalXP: { increment: xpResult.gainedXP },
         },
-      });
-    } else {
-      await prisma.player.update({
-        where: { id: playerId },
-        data: {
-          huntComboStreak: newStreak,
-          noRareStreak: newNoRareStreak,
-          lastHunt: new Date(),
-          xp: xpResult.currentXP,
-          totalXP: { increment: xpResult.gainedXP },
-        },
-      });
-    }
+      }),
+    ]);
+
+    // Audit: hunt sonrası oyuncu durumu (fire-and-forget)
+    const auditAfter: Record<string, unknown> = {
+      coins: player.coins,
+      xp: xpResult.levelUp ? xpResult.levelUp.remainingXP : xpResult.currentXP,
+      level: xpResult.levelUp ? xpResult.levelUp.newLevel : player.level,
+      huntComboStreak: newStreak,
+      noRareStreak: newNoRareStreak,
+      gainedXP: xpResult.gainedXP,
+    };
+    writeAudit(prisma, playerId, 'hunt', auditBefore, auditAfter).catch(console.error);
 
     // Envanter job'larını tek bulkWrite ile yaz — kullanıcı beklemez (Req 2)
     buildAndExecuteBulkWrite(prisma, playerId, inventoryJobs)

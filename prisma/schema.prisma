@@ -3,12 +3,12 @@ generator client {
 }
 
 datasource db {
-  provider = "mongodb"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model Player {
-  id                 String   @id @map("_id")
+  id                 String   @id @default(uuid())
   coins              Int      @default(0)
   level              Int      @default(1)
   xp                 Int      @default(0)
@@ -78,7 +78,7 @@ model Player {
 
 // Aktif buff kayitlari — oyuncunun kullandigı geçici buff'lar
 model PlayerBuff {
-  id          String   @id @default(uuid()) @map("_id")
+  id          String   @id @default(uuid())
   playerId    String
   buffItemId  String
   category    String
@@ -98,7 +98,7 @@ model PlayerBuff {
 
 // Sezon kayitlari — her sezon sonunda anlık snapshot
 model SeasonArchive {
-  id             String   @id @default(uuid()) @map("_id")
+  id             String   @id @default(uuid())
   playerId       String
   seasonId       String   // "2026-W16" veya "2026-04" formatinda
   seasonType     String   // "weekly" | "monthly"
@@ -118,7 +118,7 @@ model SeasonArchive {
 
 // Aktif sezon bilgisi (tek kayit, upsert ile guncellenir)
 model Season {
-  id         String   @id @map("_id")   // "current" sabit ID
+  id         String   @id @default(uuid())
   seasonId   String                      // "2026-W16"
   seasonType String                      // "weekly" | "monthly"
   startedAt  DateTime @default(now())
@@ -126,7 +126,7 @@ model Season {
 }
 
 model Owl {
-  id            String   @id @default(uuid()) @map("_id")
+  id            String   @id @default(uuid())
   ownerId       String
   species       String
   tier          Int
@@ -154,7 +154,7 @@ model Owl {
 }
 
 model InventoryItem {
-  id       String @id @default(uuid()) @map("_id")
+  id       String @id @default(uuid())
   ownerId  String
   itemName String
   itemType String
@@ -169,7 +169,7 @@ model InventoryItem {
 }
 
 model PvpSession {
-  id           String   @id @default(uuid()) @map("_id")
+  id           String   @id @default(uuid())
   challengerId String
   defenderId   String
   status       String   @default("pending")
@@ -187,7 +187,7 @@ model PvpSession {
 }
 
 model Encounter {
-  id           String   @id @default(uuid()) @map("_id")
+  id           String   @id @default(uuid())
   playerId     String
   owlSpecies   String
   owlTier      Int
@@ -207,7 +207,7 @@ model Encounter {
 }
 
 model PlayerRegistration {
-  id          String   @id @default(uuid()) @map("_id")
+  id          String   @id @default(uuid())
   userId      String
   username    String
   displayName String?
@@ -224,7 +224,7 @@ model PlayerRegistration {
 }
 
 model MarketListing {
-  id          String   @id @default(uuid()) @map("_id")
+  id          String   @id @default(uuid())
   sellerId    String
   itemName    String
   itemType    String
@@ -241,7 +241,7 @@ model MarketListing {
 }
 
 model DailyQuest {
-  id          String   @id @default(uuid()) @map("_id")
+  id          String   @id @default(uuid())
   playerId    String
   type        String // hunt, craft, tame, market
   target      Int
@@ -254,4 +254,15 @@ model DailyQuest {
   player Player @relation(fields: [playerId], references: [id])
 
   @@index([playerId])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  playerId  String
+  action    String
+  before    Json
+  after     Json
+  createdAt DateTime @default(now())
+
+  @@index([playerId, createdAt])
 }

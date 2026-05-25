@@ -1,9 +1,7 @@
-import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
 import { Client, Collection, Events, GatewayIntentBits, Options, Sweepers } from 'discord.js';
-import { access, readdir } from 'node:fs/promises';
+import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import { pathToFileURL } from 'node:url';
 import { z } from 'zod';
 import type { CommandDefinition } from './types';
 import { redis, assertRedisConnection } from './utils/redis';
@@ -18,6 +16,8 @@ import { addXP } from './systems/xp';
 import { initDbQueue, closeDbQueue } from './utils/db-queue';
 import { cleanupExpiredListings } from './systems/market';
 import { dailyMaintenance } from './systems/economy';
+import { cleanupOldAuditLogs } from './utils/audit';
+import { isShard0 } from './utils/shard';
 
 const envSchema = z.object({
   DISCORD_TOKEN: z.string().min(1),
@@ -74,21 +74,12 @@ const commandMap = new Collection<string, CommandDefinition>();
  * src/commands altindaki komutlari dinamik yukler.
  */
 async function loadCommands(): Promise<void> {
-  const distDir = join(process.cwd(), 'dist', 'commands');
-  const srcDir = join(process.cwd(), 'src', 'commands');
-  let commandsDir: string;
-  try {
-    await access(distDir);
-    commandsDir = distDir;
-  } catch {
-    commandsDir = srcDir;
-  }
+  const commandsDir = join(import.meta.dir, 'commands');
   const files = await readdir(commandsDir);
   const commandFiles = files.filter((name) => (name.endsWith('.ts') || name.endsWith('.js')) && !name.endsWith('.d.ts'));
 
   for (const fileName of commandFiles) {
-    const moduleUrl = pathToFileURL(join(commandsDir, fileName)).href;
-    const mod = (await import(moduleUrl)) as { default?: CommandDefinition | { default?: CommandDefinition } };
+    const mod = (await import(join(commandsDir, fileName))) as { default?: CommandDefinition | { default?: CommandDefinition } };
     // CJS interop: TypeScript CJS çıktısında asıl export mod.default.default'ta olabilir
     const raw = mod.default as any;
     const cmd: CommandDefinition | undefined = raw?.data ? raw : raw?.default?.data ? raw.default : undefined;
@@ -245,6 +236,9 @@ async function bootstrap(): Promise<void> {
  * Her saat basinda calisir.
  */
 async function checkSeasonRollover(): Promise<void> {
+  // Sezon rollover yalnızca shard 0'da çalışır — çift yazma önlenir
+  if (!isShard0()) return;
+
   try {
     const season = await prisma.season.findUnique({ where: { id: 'current' } });
     const now = new Date();
@@ -252,6 +246,11 @@ async function checkSeasonRollover(): Promise<void> {
     if (!season || now >= season.endsAt) {
       const archivedId = await archiveAndResetSeason(prisma, redis);
       console.info(`[Season] Sezon tamamlandi ve arsivlendi: ${archivedId}`);
+
+      // Eski audit loglarını temizle
+      cleanupOldAuditLogs(prisma)
+        .then((count) => console.info(`[Season] ${count} eski AuditLog kaydı silindi.`))
+        .catch((err) => console.error('[Season] AuditLog temizleme hatasi:', err));
 
       // Rolleri senkronize et
       await syncAllRoles(client, env.GUILD_ID, prisma, redis);

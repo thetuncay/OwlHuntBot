@@ -3,7 +3,7 @@ import Redis from 'ioredis';
 const redisUrl = process.env.REDIS_URL ?? 'redis://localhost:6379';
 
 export const redis = new Redis(redisUrl, {
-  maxRetriesPerRequest: 1,
+  maxRetriesPerRequest: 3,
   enableReadyCheck: true,
   // Bağlantı koptuğunda agresif yeniden bağlanmayı önle
   // Backoff: 50ms → 2000ms arası üstel artış

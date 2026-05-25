@@ -188,10 +188,11 @@ export async function recordHuntStats(
     select: { totalHunts: true, powerScore: true },
   });
   if (redis) {
-    await Promise.all([
-      updateLeaderboardScore(redis, 'hunt', playerId, updated.totalHunts),
-      updateLeaderboardScore(redis, 'power', playerId, updated.powerScore),
-    ]);
+    // Pipeline: batch lb:hunt and lb:power ZADD into a single round-trip
+    const pipeline = redis.pipeline();
+    pipeline.zadd(`lb:hunt`, updated.totalHunts, playerId);
+    pipeline.zadd(`lb:power`, updated.powerScore, playerId);
+    await pipeline.exec();
   }
 }
 

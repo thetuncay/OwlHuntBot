@@ -391,8 +391,7 @@ export async function runHuntMessage(
         }));
     }).catch(() => null);
 
-    await message.reply(buildFinalMessage(name, compressed));
-    animateHuntMessage(message, name, compressed).catch(() => {});
+    await animateHuntMessage(message, name, compressed);
 
     if (compressed.encounterId) {
       await sendEncounterMessage(

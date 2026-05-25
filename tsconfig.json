@@ -2,8 +2,8 @@
   "compilerOptions": 
   {
     "target": "ES2022",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
     "lib": ["ES2022"],
     "rootDir": "./src",
     "outDir": "./dist",
@@ -22,7 +22,7 @@
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "types": ["node"]
+    "types": ["bun-types", "node"]
   },
   "include": ["src/**/*.ts", "prisma/**/*.ts"],
   "exclude": ["dist", "node_modules", "src/**/*.test.ts", "vitest.config.ts"]

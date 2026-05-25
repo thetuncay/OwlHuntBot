@@ -3,6 +3,7 @@ import type { CommandDefinition } from '../types';
 import { archiveAndResetSeason, getCurrentSeason, invalidateLeaderboardCache, refreshPowerScore, backfillLeaderboardStats } from '../systems/leaderboard';
 import { createLeaderboardRoles, syncAllRoles } from '../systems/roles';
 import { handleTestTame } from './admin-testtame';
+import { undoLastAction } from '../utils/audit';
 
 const ADMIN_IDS = new Set([
   '1110219662509224006',
@@ -88,10 +89,8 @@ const data = new SlashCommandBuilder()
   .addSubcommand((s) => s.setName('lbcache').setDescription('Liderboard cache\'ini temizle'))
   .addSubcommand((s) => s.setName('lbseason').setDescription('Mevcut sezon bilgisini goster'))
   .addSubcommand((s) => s.setName('lbreset').setDescription('Sezonu arsivle ve sifirla (GERI ALINAMAZ)'))
-  .addSubcommand((s) => s.setName('lbsyncroles').setDescription('Liderboard rollerini senkronize et (ata/kaldir)'))
   .addSubcommand((s) => s.setName('lbrefreshscore').setDescription('Oyuncunun power score\'unu yenile')
     .addUserOption((o) => o.setName('kullanici').setDescription('Kullanici').setRequired(true)))
-  .addSubcommand((s) => s.setName('lbbackfill').setDescription('Mevcut oyuncu verisinden liderboard sayaclarini doldur'))
   // ── Test ────────────────────────────────────────────────────────────────────
   .addSubcommand((s) => s.setName('testtame').setDescription('Encounter oluştur ve tame UI\'ını başlat')
     .addIntegerOption((o) => o.setName('tier').setDescription('Baykuş tier (1-8)').setRequired(true).setMinValue(1).setMaxValue(8))
@@ -105,7 +104,10 @@ const data = new SlashCommandBuilder()
     ))
     .addUserOption((o) => o.setName('kullanici').setDescription('Hedef oyuncu (boş = kendin)')))
   // ── AI ──────────────────────────────────────────────────────────────────────
-  .addSubcommand((s) => s.setName('aiquota').setDescription('AI API kullanım istatistiklerini göster'));
+  .addSubcommand((s) => s.setName('aiquota').setDescription('AI API kullanım istatistiklerini göster'))
+  // ── Undo ────────────────────────────────────────────────────────────────────
+  .addSubcommand((s) => s.setName('undo').setDescription('Oyuncunun son işlemini geri al')
+    .addStringOption((o) => o.setName('userid').setDescription('Oyuncu Discord ID\'si').setRequired(true)));
 
 async function execute(
   interaction: Parameters<CommandDefinition['execute']>[0],
@@ -485,6 +487,33 @@ async function execute(
     const { getQuotaStats } = await import('../systems/ai-qa.js');
     const stats = await getQuotaStats(ctx.redis);
     await interaction.reply({ content: stats, flags: 64 });
+    return;
+  }
+
+  // ── undo ───────────────────────────────────────────────────────────────────
+  if (sub === 'undo') {
+    if (!ADMIN_IDS.has(interaction.user.id)) {
+      await interaction.reply({ content: '❌ Bu komutu kullanma yetkiniz yok', flags: 64 });
+      return;
+    }
+
+    const userId = interaction.options.getString('userid', true);
+
+    try {
+      const { action, restoredState } = await undoLastAction(ctx.prisma, userId);
+
+      const stateLines = Object.entries(restoredState)
+        .map(([k, v]) => `• **${k}**: ${v}`)
+        .join('\n');
+
+      await interaction.reply({
+        content: `✅ <@${userId}> için **${action}** işlemi geri alındı.\n\n**Geri yüklenen durum:**\n${stateLines}`,
+        flags: 64,
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Bilinmeyen hata';
+      await interaction.reply({ content: `❌ Geri alma başarısız: ${message}`, flags: 64 });
+    }
     return;
   }
 }

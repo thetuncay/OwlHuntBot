@@ -196,22 +196,23 @@ async function processJob(job: Job<DbWriteJob>): Promise<void> {
           totalRareFinds: { increment: data.rareFinds },
         },
       });
-      const { refreshPowerScore, updateLeaderboardScore } = await import('../systems/leaderboard.js');
+      const { refreshPowerScore } = await import('../systems/leaderboard.js');
       // Always update lb:hunt with new totalHunts
       const updatedPlayer = await prismaRef.player.findUnique({
         where: { id: data.playerId },
         select: { totalHunts: true, powerScore: true },
       });
       if (updatedPlayer) {
-        await updateLeaderboardScore(redis, 'hunt', data.playerId, updatedPlayer.totalHunts);
+        let powerScore = updatedPlayer.powerScore;
         if (data.rareFinds > 0) {
           // refreshPowerScore updates DB and returns new score
-          const newPowerScore = await refreshPowerScore(prismaRef, data.playerId);
-          await updateLeaderboardScore(redis, 'power', data.playerId, newPowerScore);
-        } else {
-          // No rare finds, just sync current powerScore
-          await updateLeaderboardScore(redis, 'power', data.playerId, updatedPlayer.powerScore);
+          powerScore = await refreshPowerScore(prismaRef, data.playerId);
         }
+        // Pipeline: batch lb:hunt and lb:power ZADD into a single round-trip
+        const pipeline = redis.pipeline();
+        pipeline.zadd(`lb:hunt`, updatedPlayer.totalHunts, data.playerId);
+        pipeline.zadd(`lb:power`, powerScore, data.playerId);
+        await pipeline.exec();
       }
       break;
     }
