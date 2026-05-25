@@ -211,6 +211,7 @@ export async function runOwls(
       const hpWarn  = owl.hp / owl.hpMax < 0.3 ? ' ⚠️' : '';
       return (
         `${qEmoji} **${owl.species}**${mainTag}\n` +
+        `> \`ID: ${owl.id}\`\n` +
         `> Tier ${owl.tier} · ${owl.quality} · HP ${owl.hp}/${owl.hpMax}${hpWarn} · Güç ${statSum}\n` +
         `> Gaga:${owl.statGaga} Göz:${owl.statGoz} Kulak:${owl.statKulak} Kanat:${owl.statKanat} Pençe:${owl.statPence}`
       );
@@ -333,6 +334,7 @@ export async function runOwlsMessage(
       const hpWarn  = owl.hp / owl.hpMax < 0.3 ? ' ⚠️' : '';
       return (
         `${qEmoji} **${owl.species}**${mainTag}\n` +
+        `> \`ID: ${owl.id}\`\n` +
         `> Tier ${owl.tier} · ${owl.quality} · HP ${owl.hp}/${owl.hpMax}${hpWarn} · Güç ${statSum}\n` +
         `> Gaga:${owl.statGaga} Göz:${owl.statGoz} Kulak:${owl.statKulak} Kanat:${owl.statKanat} Pençe:${owl.statPence}`
       );
