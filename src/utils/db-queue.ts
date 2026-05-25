@@ -188,7 +188,7 @@ async function processJob(job: Job<DbWriteJob>): Promise<void> {
       });
       break;
 
-    case 'recordStats':
+    case 'recordStats': {
       await prismaRef.player.update({
         where: { id: data.playerId },
         data: {
@@ -196,11 +196,25 @@ async function processJob(job: Job<DbWriteJob>): Promise<void> {
           totalRareFinds: { increment: data.rareFinds },
         },
       });
-      if (data.rareFinds > 0) {
-        const { refreshPowerScore } = await import('../systems/leaderboard.js');
-        await refreshPowerScore(prismaRef, data.playerId);
+      const { refreshPowerScore, updateLeaderboardScore } = await import('../systems/leaderboard.js');
+      // Always update lb:hunt with new totalHunts
+      const updatedPlayer = await prismaRef.player.findUnique({
+        where: { id: data.playerId },
+        select: { totalHunts: true, powerScore: true },
+      });
+      if (updatedPlayer) {
+        await updateLeaderboardScore(redis, 'hunt', data.playerId, updatedPlayer.totalHunts);
+        if (data.rareFinds > 0) {
+          // refreshPowerScore updates DB and returns new score
+          const newPowerScore = await refreshPowerScore(prismaRef, data.playerId);
+          await updateLeaderboardScore(redis, 'power', data.playerId, newPowerScore);
+        } else {
+          // No rare finds, just sync current powerScore
+          await updateLeaderboardScore(redis, 'power', data.playerId, updatedPlayer.powerScore);
+        }
       }
       break;
+    }
 
     case 'recordPity': {
       const pityKey = `pity:${data.playerId}:${data.lootboxId}`;

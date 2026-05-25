@@ -233,7 +233,7 @@ async function runDealerTurn(opts: {
 
   const result = await settleBlackjack(ctx.prisma, userId, bet, settleOutcome);
   if (settleOutcome === 'win' && result.deltaCoins > 0) {
-    recordCoinsEarned(ctx.prisma, userId, result.deltaCoins).catch(() => null);
+    recordCoinsEarned(ctx.prisma, userId, result.deltaCoins, ctx.redis).catch(() => null);
   }
 
   await edit(
@@ -289,8 +289,9 @@ async function execute(
     // ── Anında Blackjack ──────────────────────────────────────────────────────
     if (isBlackjack(playerHand)) {
       const result = await settleBlackjack(ctx.prisma, interaction.user.id, bet, 'win');
-      if (result.deltaCoins > 0) recordCoinsEarned(ctx.prisma, interaction.user.id, result.deltaCoins).catch(() => null);
-      await interaction.reply({
+      if (result.deltaCoins > 0) recordCoinsEarned(ctx.prisma, interaction.user.id, result.deltaCoins, ctx.redis).catch(() => null);
+      await interaction.deferReply({ flags: 64 });
+      await interaction.editReply({
         content: buildScreen({
           username, bet, playerHand, dealerHand,
           hideDealer: false, phase: 'ended',
@@ -301,11 +302,12 @@ async function execute(
     }
 
     // ── İlk mesaj ─────────────────────────────────────────────────────────────
-    await interaction.reply({
+    await interaction.deferReply({ flags: 64 });
+    await interaction.editReply({
       content: buildScreen({
         username, bet, playerHand, dealerHand,
         hideDealer: true, phase: 'playing',
-        note: `> 💭 *Hit mi Stand mı? (60s)*`,
+        note: `> 💭 *Hit mi Stand mı? (45s)*`,
       }),
       components: [buildRow()],
     });
@@ -322,7 +324,7 @@ async function execute(
 
     const collector = msg.createMessageComponentCollector({
       componentType: ComponentType.Button,
-      time: 60_000,
+      time: 45_000,
       filter: (i) => i.user.id === interaction.user.id,
     });
 
@@ -443,7 +445,7 @@ export async function handleBjTextCommand(
   // Anında Blackjack
   if (isBlackjack(playerHand)) {
     const result = await settleBlackjack(ctx.prisma, userId, bet, 'win');
-    if (result.deltaCoins > 0) recordCoinsEarned(ctx.prisma, userId, result.deltaCoins).catch(() => null);
+    if (result.deltaCoins > 0) recordCoinsEarned(ctx.prisma, userId, result.deltaCoins, ctx.redis).catch(() => null);
     await message.reply(
       buildScreen({
         username, bet, playerHand, dealerHand,

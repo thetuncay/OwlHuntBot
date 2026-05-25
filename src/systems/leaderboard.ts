@@ -17,6 +17,7 @@ import {
 } from '../config';
 import { fetchFromDB, getRankFromDB, getContextFromDB } from './leaderboard-queries';
 import { currentSeasonId, seasonCacheKey } from './leaderboard-season';
+import { xpRequired } from '../utils/math.js';
 
 // ─── Re-export (dış bağımlılıklar için) ──────────────────────────────────────
 export { currentSeasonId, seasonEndDate } from './leaderboard-season';
@@ -53,6 +54,50 @@ export interface RankChangeResult {
   newRank: number;
   delta: number;
   category: LeaderboardCategory;
+}
+
+// ─── Redis Sorted Set yardımcıları ────────────────────────────────────────────
+
+/**
+ * Redis Sorted Set'e skor yazar.
+ * Key format: lb:{category}
+ */
+export async function updateLeaderboardScore(
+  redis: Redis,
+  category: LeaderboardCategory,
+  playerId: string,
+  score: number,
+): Promise<void> {
+  await redis.zadd(`lb:${category}`, score, playerId);
+}
+
+/**
+ * Redis Sorted Set'ten rank okur.
+ * Miss durumunda MongoDB'den seed'ler.
+ * Returns 1-indexed rank, or -1 if not found.
+ */
+export async function getRankFromSortedSet(
+  redis: Redis,
+  prisma: PrismaClient,
+  category: LeaderboardCategory,
+  playerId: string,
+): Promise<number> {
+  const rank = await redis.zrevrank(`lb:${category}`, playerId);
+  if (rank !== null) return rank + 1;
+
+  // Miss: seed from DB
+  const entries = await fetchFromDB(prisma, category);
+  if (entries.length > 0) {
+    const pipeline = redis.pipeline();
+    for (const entry of entries) {
+      pipeline.zadd(`lb:${category}`, entry.score, entry.playerId);
+    }
+    await pipeline.exec();
+  }
+
+  // Retry after seed
+  const rankAfterSeed = await redis.zrevrank(`lb:${category}`, playerId);
+  return rankAfterSeed !== null ? rankAfterSeed + 1 : -1;
 }
 
 // ─── Güç skoru formülü ────────────────────────────────────────────────────────
@@ -95,7 +140,7 @@ export async function getLeaderboard(
       const end   = Math.min(entries.length, idx + 3);
       viewerContext = entries.slice(start, end);
     } else {
-      viewerRank = await getRankFromDB(prisma, category, viewerId);
+      viewerRank = await getRankFromSortedSet(redis, prisma, category, viewerId);
       if (viewerRank > 0) {
         viewerContext = await getContextFromDB(prisma, category, viewerId, viewerRank);
       }
@@ -117,17 +162,11 @@ export async function getLeaderboard(
 export async function refreshPowerScore(prisma: PrismaClient, playerId: string): Promise<number> {
   const player = await prisma.player.findUnique({
     where:  { id: playerId },
-    select: { level: true, xp: true, totalRareFinds: true },
+    select: { level: true, totalXP: true, totalRareFinds: true },
   });
   if (!player) return 0;
 
-  const { xpRequired } = await import('../utils/math.js');
-  let totalXP = player.xp;
-  for (let l = 1; l < player.level; l++) {
-    totalXP += xpRequired(l);
-  }
-
-  const score = calcPowerScore(player.level, totalXP, player.totalRareFinds);
+  const score = calcPowerScore(player.level, player.totalXP, player.totalRareFinds);
   await prisma.player.update({ where: { id: playerId }, data: { powerScore: score } });
   return score;
 }
@@ -137,34 +176,51 @@ export async function recordHuntStats(
   playerId: string,
   successCount: number,
   rareCount: number,
+  redis?: Redis,
 ): Promise<void> {
   if (successCount <= 0 && rareCount <= 0) return;
-  await prisma.player.update({
+  const updated = await prisma.player.update({
     where: { id: playerId },
     data: {
       totalHunts:     { increment: successCount },
       totalRareFinds: { increment: rareCount },
     },
+    select: { totalHunts: true, powerScore: true },
   });
+  if (redis) {
+    await Promise.all([
+      updateLeaderboardScore(redis, 'hunt', playerId, updated.totalHunts),
+      updateLeaderboardScore(redis, 'power', playerId, updated.powerScore),
+    ]);
+  }
 }
 
-export async function recordPvpWin(prisma: PrismaClient, winnerId: string): Promise<void> {
-  await prisma.player.update({
+export async function recordPvpWin(prisma: PrismaClient, winnerId: string, redis?: Redis): Promise<void> {
+  const updated = await prisma.player.update({
     where: { id: winnerId },
     data:  { totalPvpWins: { increment: 1 } },
+    select: { totalPvpWins: true },
   });
+  if (redis) {
+    await updateLeaderboardScore(redis, 'arena', winnerId, updated.totalPvpWins);
+  }
 }
 
 export async function recordCoinsEarned(
   prisma: PrismaClient,
   playerId: string,
   amount: number,
+  redis?: Redis,
 ): Promise<void> {
   if (amount <= 0) return;
-  await prisma.player.update({
+  const updated = await prisma.player.update({
     where: { id: playerId },
     data:  { totalCoinsEarned: { increment: amount } },
+    select: { totalCoinsEarned: true },
   });
+  if (redis) {
+    await updateLeaderboardScore(redis, 'wealth', playerId, updated.totalCoinsEarned);
+  }
 }
 
 // ─── Rank değişim takibi ──────────────────────────────────────────────────────
@@ -197,13 +253,11 @@ export async function invalidateLeaderboardCache(redis: Redis): Promise<void> {
 export async function backfillLeaderboardStats(
   prisma: PrismaClient,
 ): Promise<{ updated: number }> {
-  const { xpRequired } = await import('../utils/math.js');
-
   const players = await prisma.player.findMany({
     select: {
       id: true, level: true, xp: true, coins: true, pvpCount: true,
       totalHunts: true, totalRareFinds: true, totalPvpWins: true,
-      totalCoinsEarned: true, powerScore: true,
+      totalCoinsEarned: true, powerScore: true, totalXP: true,
     },
   });
 
@@ -217,10 +271,15 @@ export async function backfillLeaderboardStats(
     if (p.totalHunts === 0 && p.level > 1)          patch.totalHunts      = (p.level - 1) * 8;
     if (p.totalRareFinds === 0 && p.level > 1)      patch.totalRareFinds  = Math.floor((p.level - 1) * 0.5);
 
+    if (p.totalXP === 0) {
+      let computedTotalXP = p.xp;
+      for (let l = 1; l < p.level; l++) computedTotalXP += xpRequired(l);
+      patch.totalXP = computedTotalXP;
+    }
+
     if (p.powerScore === 0) {
-      let totalXP = p.xp;
-      for (let l = 1; l < p.level; l++) totalXP += xpRequired(l);
-      patch.powerScore = calcPowerScore(p.level, totalXP, patch.totalRareFinds ?? p.totalRareFinds);
+      const totalXPForScore = patch.totalXP ?? p.totalXP;
+      patch.powerScore = calcPowerScore(p.level, totalXPForScore, patch.totalRareFinds ?? p.totalRareFinds);
     }
 
     if (Object.keys(patch).length > 0) {

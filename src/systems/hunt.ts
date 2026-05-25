@@ -374,6 +374,8 @@ export async function rollHunt(
     ]);
 
     // Birleşik player yazma: streak + xp/level tek round-trip'te
+    // totalXP: { increment: totalXP } — Gereksinim 7: artımlı güncelleme
+    // (addXP skipDbWrite:true ile çağrıldığından totalXP'yi burada yazıyoruz)
     if (xpResult.levelUp) {
       await prisma.player.update({
         where: { id: playerId },
@@ -383,6 +385,7 @@ export async function rollHunt(
           lastHunt: new Date(),
           level: xpResult.levelUp.newLevel,
           xp: xpResult.levelUp.remainingXP,
+          totalXP: { increment: xpResult.gainedXP },
         },
       });
     } else {
@@ -393,6 +396,7 @@ export async function rollHunt(
           noRareStreak: newNoRareStreak,
           lastHunt: new Date(),
           xp: xpResult.currentXP,
+          totalXP: { increment: xpResult.gainedXP },
         },
       });
     }

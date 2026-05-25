@@ -369,8 +369,8 @@ export async function runSimulatedPvP(
 
   // Liderboard — sadece kazanınca
   if (playerWon) {
-    recordPvpWin(prisma, playerId).catch(() => null);
-    recordCoinsEarned(prisma, playerId, cappedCoins).catch(() => null);
+    recordPvpWin(prisma, playerId, redis).catch(() => null);
+    recordCoinsEarned(prisma, playerId, cappedCoins, redis).catch(() => null);
   }
   refreshPowerScore(prisma, playerId).catch(() => null);
 

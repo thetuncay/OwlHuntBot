@@ -173,14 +173,33 @@ export async function attemptUpgrade(
         throw new Error(`Yetersiz bakiye: **${coinCost.toLocaleString('tr-TR')}** 💰 gerekli.`);
       }
 
-      for (const cost of requiredCosts) {
-        const inv = await tx.inventoryItem.findUnique({
-          where: { ownerId_itemName: { ownerId: playerId, itemName: cost.itemName } },
-        });
+      // Zorunlu malzeme kontrolü: paralel findUnique
+      const requiredInvChecks = await Promise.all(
+        requiredCosts.map((cost) =>
+          (tx.inventoryItem.findUnique({
+            where: { ownerId_itemName: { ownerId: playerId, itemName: cost.itemName } },
+          }) as Promise<{ quantity: number } | null>).then((inv) => ({ cost, inv })),
+        ),
+      );
+      for (const { cost, inv } of requiredInvChecks) {
         if (!inv || inv.quantity < matRequirement) {
           throw new Error(
             `Yetersiz malzeme: **${cost.itemName}** (gerekli: ${matRequirement}, sahip: ${inv?.quantity ?? 0})`,
           );
+        }
+      }
+
+      // ── Ek item bonusları kontrolü ────────────────────────────────────────
+      const bonusInvChecks = await Promise.all(
+        itemNames.map((itemName) =>
+          (tx.inventoryItem.findUnique({
+            where: { ownerId_itemName: { ownerId: playerId, itemName } },
+          }) as Promise<{ quantity: number } | null>).then((inv) => ({ itemName, inv })),
+        ),
+      );
+      for (const { itemName, inv } of bonusInvChecks) {
+        if (!inv || inv.quantity < 1) {
+          throw new Error(`Gerekli kaynak eksik: ${itemName}`);
         }
       }
 
@@ -190,25 +209,24 @@ export async function attemptUpgrade(
         data: { coins: { decrement: coinCost } },
       });
 
-      for (const cost of requiredCosts) {
-        await tx.inventoryItem.update({
-          where: { ownerId_itemName: { ownerId: playerId, itemName: cost.itemName } },
+      // Zorunlu malzeme tüketimi: tek updateMany
+      if (requiredCosts.length > 0) {
+        await tx.inventoryItem.updateMany({
+          where: {
+            ownerId: playerId,
+            itemName: { in: requiredCosts.map((c) => c.itemName) },
+          },
           data: { quantity: { decrement: matRequirement } },
         });
       }
 
-      // ── Ek item bonusları ─────────────────────────────────────────────────
-      for (const itemName of itemNames) {
-        const inv = await tx.inventoryItem.findUnique({
-          where: { ownerId_itemName: { ownerId: playerId, itemName } },
-        });
-        if (!inv || inv.quantity < 1) {
-          throw new Error(`Gerekli kaynak eksik: ${itemName}`);
-        }
-      }
-      for (const itemName of itemNames) {
-        await tx.inventoryItem.update({
-          where: { ownerId_itemName: { ownerId: playerId, itemName } },
+      // ── Ek item bonusları tüketimi: tek updateMany ────────────────────────
+      if (itemNames.length > 0) {
+        await tx.inventoryItem.updateMany({
+          where: {
+            ownerId: playerId,
+            itemName: { in: itemNames },
+          },
           data: { quantity: { decrement: 1 } },
         });
       }

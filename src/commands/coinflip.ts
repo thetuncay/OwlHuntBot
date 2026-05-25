@@ -42,17 +42,20 @@ async function execute(
 
     const bet = interaction.options.getInteger('bet', true);
     const choice = interaction.options.getString('secim', true);
-    
+
+    // Ephemeral deferred reply — yalnızca komutu kullanan kişiye görünür
+    await interaction.deferReply({ flags: 64 });
+
     // Sonucu ÖNCE belirle
     const result = await coinFlip(ctx.prisma, interaction.user.id, bet);
-    await interaction.reply({
+    await interaction.editReply({
       content: `${interaction.user.username} spent 💎 ${bet} and chose **${choice}**\nThe coin spins...`,
     });
-    
-    // Animasyon: flip efekti
-    const flipFrames = ['🪙', '🔄', '🪙', '🔄', '🪙'];
+
+    // Animasyon: 3 frame × 150ms = 450ms
+    const flipFrames = ['🪙', '🔄', '🪙'];
     for (const frame of flipFrames) {
-      await sleep(200);
+      await sleep(150);
       await interaction.editReply({
         content: `${interaction.user.username} spent 💎 ${bet} and chose **${choice}**\nThe coin spins... ${frame}`,
       });

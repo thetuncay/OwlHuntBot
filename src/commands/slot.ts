@@ -52,8 +52,9 @@ async function execute(
     // Sonucu ÖNCE belirle
     const result = await slot(ctx.prisma, interaction.user.id, bet);
     
-    // İlk mesaj: spinning
-    await interaction.reply({ content: `${interaction.user.username} bet 💎 ${bet}\n\n${renderSlot(['❓', '❓', '❓'])}` });
+    // İlk mesaj: spinning (ephemeral)
+    await interaction.deferReply({ flags: 64 });
+    await interaction.editReply({ content: `${interaction.user.username} bet 💎 ${bet}\n\n${renderSlot(['❓', '❓', '❓'])}` });
     
     // Animasyon: 5 spin
     for (let i = 0; i < 5; i++) {

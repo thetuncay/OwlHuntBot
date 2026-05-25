@@ -18,7 +18,7 @@ import { buildLeaderboardEmbed, buildCategoryRow } from '../utils/leaderboard-ux
 import { ensureRegisteredForInteraction, ensureRegisteredForMessage } from '../systems/onboarding';
 
 // Buton collector suresi (ms)
-const COLLECTOR_TTL = 90_000;
+const COLLECTOR_TTL = 30_000;
 
 // ── Slash Komutu ──────────────────────────────────────────────────────────────
 

@@ -54,7 +54,8 @@ export async function addXP(
     // Level-up yok — caller zaten senkron yazma yapacak (hunt.ts gibi)
     // skipDbWrite=true ise queue'ya YAZMA — double-write rollback'i önler
     if (skipDbWrite) {
-      // Sadece hesaplanan değerleri döndür; caller kendi update'inde xp'yi yazar
+      // Sadece hesaplanan değerleri döndür; caller kendi update'inde xp ve
+      // totalXP'yi yazmalıdır: { xp: currentXP, totalXP: { increment: gainedXP } }
       return {
         gainedXP,
         currentXP:    remainingXP,
@@ -64,7 +65,7 @@ export async function addXP(
 
     const updated = await prisma.player.update({
       where: { id: playerId },
-      data:  { xp: remainingXP },
+      data:  { xp: remainingXP, totalXP: { increment: gainedXP } },
       select: { level: true, xp: true },
     });
     return {
@@ -77,7 +78,7 @@ export async function addXP(
   // Level-up var — senkron yazma (level değişimi kritik, queue'ya bırakılmaz)
   const updated = await prisma.player.update({
     where: { id: playerId },
-    data:  { level: currentLevel, xp: remainingXP },
+    data:  { level: currentLevel, xp: remainingXP, totalXP: { increment: gainedXP } },
     select: { level: true, xp: true },
   });
 

@@ -32,7 +32,7 @@ const env = envSchema.parse(process.env);
 
 function appendPoolParams(url: string): string {
   const separator = url.includes('?') ? '&' : '?';
-  return `${url}${separator}maxPoolSize=10&connectTimeoutMS=10000`;
+  return `${url}${separator}maxPoolSize=20&pool_timeout=10&connectTimeoutMS=10000`;
 }
 
 const prisma = new PrismaClient({

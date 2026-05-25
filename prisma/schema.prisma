@@ -31,6 +31,7 @@ model Player {
   totalPvpWins     Int      @default(0)
   totalCoinsEarned Int      @default(0)
   powerScore       Int      @default(0)
+  totalXP          Int      @default(0)
 
   // --- PVP STREAK ---
   pvpBestStreak    Int      @default(0)
@@ -72,6 +73,7 @@ model Player {
   @@index([totalRareFinds])
   @@index([totalPvpWins])
   @@index([totalCoinsEarned])
+  @@index([totalXP])
 }
 
 // Aktif buff kayitlari — oyuncunun kullandigı geçici buff'lar

@@ -48,10 +48,18 @@ export async function ensureRegisteredForInteraction(
   ctx: CommandContext,
 ): Promise<boolean> {
   if (!interaction.inGuild() || !interaction.guildId) return false;
-  if (await hasMainOwl(ctx, interaction.user.id)) return true;
+  const userId = interaction.user.id;
+  const cacheKey = `reg:${userId}`;
+  const cached = await ctx.redis.get(cacheKey);
+  if (cached !== null) return true;
+  const registered = await hasMainOwl(ctx, userId);
+  if (registered) {
+    await ctx.redis.set(cacheKey, '1', 'EX', 60);
+    return true;
+  }
   await interaction.reply({
     content: termsText(),
-    components: [registrationRow(interaction.user.id, interaction.guildId)],
+    components: [registrationRow(userId, interaction.guildId)],
     flags: 64,
   });
   return false;
@@ -62,10 +70,18 @@ export async function ensureRegisteredForMessage(
   ctx: CommandContext,
 ): Promise<boolean> {
   if (!message.guildId) return false;
-  if (await hasMainOwl(ctx, message.author.id)) return true;
+  const userId = message.author.id;
+  const cacheKey = `reg:${userId}`;
+  const cached = await ctx.redis.get(cacheKey);
+  if (cached !== null) return true;
+  const registered = await hasMainOwl(ctx, userId);
+  if (registered) {
+    await ctx.redis.set(cacheKey, '1', 'EX', 60);
+    return true;
+  }
   await message.reply({
     content: `${termsText()}\n\n✅ Onaydan sonra tekrar komut kullanabilirsin.`,
-    components: [registrationRow(message.author.id, message.guildId)],
+    components: [registrationRow(userId, message.guildId)],
   });
   return false;
 }
@@ -170,4 +186,6 @@ export async function handleRegistrationButton(
     ].join('\n'),
     components: [],
   });
+
+  await ctx.redis.set(`reg:${interaction.user.id}`, '1', 'EX', 60);
 }

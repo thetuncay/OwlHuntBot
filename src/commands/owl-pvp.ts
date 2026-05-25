@@ -178,7 +178,7 @@ export async function runDuel(
     return;
   }
 
-  await interaction.deferReply();
+  await interaction.deferReply({ flags: 64 });
 
   const result = await runSimulatedPvP(ctx.prisma, userId, ctx.redis);
   const playerName = interaction.member && 'displayName' in interaction.member

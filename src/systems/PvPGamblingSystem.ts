@@ -464,7 +464,7 @@ export async function settleCoinFlip(
   await Promise.all([
     incrementPairCount(redis, challengerId, defenderId),
     applyPostGameCooldown(redis, challengerId, defenderId),
-    recordCoinsEarned(prisma, winnerId, winnerGain).catch(() => null),
+    recordCoinsEarned(prisma, winnerId, winnerGain, redis).catch(() => null),
   ]);
 
   // Oturumu temizle
@@ -595,7 +595,7 @@ export async function settleSlotRace(
   await Promise.all([
     incrementPairCount(redis, challengerId, defenderId),
     applyPostGameCooldown(redis, challengerId, defenderId),
-    ...(winnerId ? [recordCoinsEarned(prisma, winnerId, winnerGain).catch(() => null)] : []),
+    ...(winnerId ? [recordCoinsEarned(prisma, winnerId, winnerGain, redis).catch(() => null)] : []),
   ]);
 
   await deleteSession(redis, sessionId);
@@ -809,7 +809,7 @@ export async function settleBlackjackPro(
   if (winnerId && loserId) {
     rebate = await updateLossStreak(redis, winnerId, loserId, loserLoss);
     if (rebate) await applyRebate(prisma, rebate);
-    await recordCoinsEarned(prisma, winnerId, winnerGain).catch(() => null);
+    await recordCoinsEarned(prisma, winnerId, winnerGain, redis).catch(() => null);
   }
 
   await Promise.all([

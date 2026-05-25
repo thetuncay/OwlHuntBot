@@ -55,6 +55,7 @@ vi.mock('../systems/leaderboard', () => ({
   recordHuntStats: vi.fn(async () => undefined),
   recordPvpWin: vi.fn(async () => undefined),
   recordCoinsEarned: vi.fn(async () => undefined),
+  updateLeaderboardScore: vi.fn(async () => undefined),
 }));
 
 // ─── Mock Redis ───────────────────────────────────────────────────────────────
@@ -69,6 +70,7 @@ vi.mock('../utils/redis', () => ({
     incr: vi.fn(async () => 1),
     incrby: vi.fn(async () => 1),
     expire: vi.fn(async () => 1),
+    zadd: vi.fn(async () => 1),
   },
 }));
 
@@ -85,6 +87,11 @@ function buildPrismaMock() {
         id: 'player-p2-test',
         totalHunts: 1,
         totalRareFinds: 1,
+      })),
+      findUnique: vi.fn(async () => ({
+        id: 'player-p2-test',
+        totalHunts: 1,
+        powerScore: 42,
       })),
     },
   };
