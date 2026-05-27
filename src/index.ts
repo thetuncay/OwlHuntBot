@@ -96,7 +96,7 @@ async function bootstrap(): Promise<void> {
   await assertRedisConnection();
   console.info('Redis connected');
   await prisma.$connect();
-  console.info('MongoDB connected');
+  console.info('PostgreSQL connected');
 
   // DB write queue başlat — kullanıcı cevapları DB yazmasını beklemez
   initDbQueue(prisma);
