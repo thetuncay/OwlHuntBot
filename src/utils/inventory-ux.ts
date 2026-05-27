@@ -20,7 +20,7 @@ import {
   ButtonStyle,
   EmbedBuilder,
 } from 'discord.js';
-import { BUFF_ITEM_MAP } from '../config';
+import { BUFF_ITEM_MAP, BUFF_ITEMS as BUFF_ITEMS_REF } from '../config';
 import {
   COLORS,
   RARITY_BADGE,
@@ -604,13 +604,22 @@ export function buildInventoryText(data: InventoryRenderData): string {
 
     lines.push(header);
 
-    if (cat === 'Materyal') {
-      // Materyaller: her satırda bir item, isim görünür
+    if (cat === 'Materyal' || cat === 'Buff') {
+      // Materyaller ve Buff'lar: her satırda bir item, isim + miktar görünür
       for (const item of catItems) {
         const emoji = itemEmoji(item.itemName);
-        const id    = String(globalIdx++).padStart(3, '0');
-        const sup   = toSuperscript(Math.min(item.quantity, 99));
-        lines.push(`  \`${id}\` ${emoji} **${item.itemName}** ×${item.quantity}`);
+        if (cat === 'Buff') {
+          // Buff için ne işe yaradığını da göster
+          const buffDef = BUFF_ITEMS_REF.find((b: any) => b.name === item.itemName);
+          const buffId  = buffDef ? buffDef.id : null; // b001, b002 vb.
+          const effectHint = buffDef ? ` *(${buffDef.category} · ${buffDef.chargeMax} charge)*` : '';
+          const idStr = buffId ? `\`${buffId}\`` : `\`${String(globalIdx).padStart(3, '0')}\``;
+          globalIdx++;
+          lines.push(`  ${idStr} ${emoji} **${item.itemName}** ×${item.quantity}${effectHint}`);
+        } else {
+          const id = String(globalIdx++).padStart(3, '0');
+          lines.push(`  \`${id}\` ${emoji} **${item.itemName}** ×${item.quantity}`);
+        }
       }
     } else {
       // Diğer kategoriler: 4'lü grid

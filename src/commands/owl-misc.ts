@@ -385,10 +385,24 @@ export async function runBuffMessage(
       return;
     }
 
-    const lines = buffItems.map(({ def, quantity }) =>
-      `${def.emoji} **${def.name}** ×${quantity} — *${def.category} · ${def.chargeMax} charge*\n` +
-      `> \`${helpPrefix} b ${def.id}\` ile aktifleştir`,
-    );
+    const lines = buffItems.map(({ def, quantity }) => {
+      // Buff'ın ne işe yaradığını kısa göster
+      const effectMap: Record<string, string> = {
+        catch_bonus:      `🎯 Yakalama +${Math.round(def.effectValue * 100)}%`,
+        loot_mult:        `📦 Drop +${Math.round((def.effectValue - 1) * 100)}%`,
+        rare_drop_bonus:  `🔮 Nadir drop +${Math.round(def.effectValue * 100)}%`,
+        upgrade_bonus:    `⚡ Upgrade şansı +${def.effectValue} puan`,
+        downgrade_shield: `🛡️ Downgrade riski -%${Math.round((1 - def.effectValue) * 100)}`,
+        pvp_damage_mult:  `⚔️ PvP hasar +${Math.round((def.effectValue - 1) * 100)}%`,
+        pvp_dodge_bonus:  `🌀 PvP dodge +${Math.round(def.effectValue * 100)}%`,
+      };
+      const effect = effectMap[def.effectType] ?? def.description;
+      return (
+        `${def.emoji} **${def.name}** ×${quantity} — *${def.rarity}*\n` +
+        `┗ ${effect} · ${def.chargeMax} charge\n` +
+        `┗ \`${helpPrefix} b ${def.id}\` ile aktifleştir`
+      );
+    });
 
     await message.reply(
       `✨ **Buff Item Envanteri**\n\n${lines.join('\n')}\n\n` +
