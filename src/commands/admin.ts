@@ -101,7 +101,80 @@ const data = new SlashCommandBuilder()
   .addSubcommand((s) => s.setName('aiquota').setDescription('AI API kullanım istatistiklerini göster'))
   // ── Undo ────────────────────────────────────────────────────────────────────
   .addSubcommand((s) => s.setName('undo').setDescription('Oyuncunun son işlemini geri al')
-    .addStringOption((o) => o.setName('userid').setDescription('Oyuncu Discord ID\'si').setRequired(true)));
+    .addStringOption((o) => o.setName('userid').setDescription('Oyuncu Discord ID\'si').setRequired(true)))
+  // ── Silme ────────────────────────────────────────────────────────────────────
+  .addSubcommand((s) => s.setName('delete').setDescription('Oyuncuyu tamamen sil (GERİ ALINAMAZ)')
+    .addUserOption((o) => o.setName('kullanici').setDescription('Silinecek oyuncu').setRequired(true)))
+  // ── Buff Yönetimi ─────────────────────────────────────────────────────────────
+  .addSubcommand((s) => s.setName('givebuff').setDescription('Oyuncuya aktif buff tak')
+    .addUserOption((o) => o.setName('kullanici').setDescription('Oyuncu').setRequired(true))
+    .addStringOption((o) => o.setName('buffid').setDescription('Buff ID (b001-b012)').setRequired(true)))
+  .addSubcommand((s) => s.setName('clearbuffs').setDescription('Oyuncunun tüm aktif buff\'larını temizle')
+    .addUserOption((o) => o.setName('kullanici').setDescription('Oyuncu').setRequired(true)))
+  .addSubcommand((s) => s.setName('listbuffs').setDescription('Oyuncunun aktif buff\'larını listele')
+    .addUserOption((o) => o.setName('kullanici').setDescription('Oyuncu').setRequired(true)))
+  // ── Baykuş Yönetimi ───────────────────────────────────────────────────────────
+  .addSubcommand((s) => s.setName('giveowl').setDescription('Oyuncuya yeni baykuş ver')
+    .addUserOption((o) => o.setName('kullanici').setDescription('Oyuncu').setRequired(true))
+    .addIntegerOption((o) => o.setName('tier').setDescription('Tier (1-8)').setRequired(true).setMinValue(1).setMaxValue(8))
+    .addStringOption((o) => o.setName('kalite').setDescription('Kalite').setRequired(true).addChoices(
+      { name: 'Trash', value: 'Trash' }, { name: 'Common', value: 'Common' },
+      { name: 'Good', value: 'Good' }, { name: 'Rare', value: 'Rare' },
+      { name: 'Elite', value: 'Elite' }, { name: 'God Roll', value: 'God Roll' },
+    )))
+  .addSubcommand((s) => s.setName('setquality').setDescription('Main baykuşun kalitesini değiştir')
+    .addUserOption((o) => o.setName('kullanici').setDescription('Oyuncu').setRequired(true))
+    .addStringOption((o) => o.setName('kalite').setDescription('Kalite').setRequired(true).addChoices(
+      { name: 'Trash', value: 'Trash' }, { name: 'Common', value: 'Common' },
+      { name: 'Good', value: 'Good' }, { name: 'Rare', value: 'Rare' },
+      { name: 'Elite', value: 'Elite' }, { name: 'God Roll', value: 'God Roll' },
+    )))
+  .addSubcommand((s) => s.setName('seteffectiveness').setDescription('Main baykuşun effectiveness değerini ayarla')
+    .addUserOption((o) => o.setName('kullanici').setDescription('Oyuncu').setRequired(true))
+    .addIntegerOption((o) => o.setName('deger').setDescription('Değer (0-100)').setRequired(true).setMinValue(0).setMaxValue(100)))
+  .addSubcommand((s) => s.setName('setpassivemode').setDescription('Main baykuşun pasif modunu ayarla')
+    .addUserOption((o) => o.setName('kullanici').setDescription('Oyuncu').setRequired(true))
+    .addStringOption((o) => o.setName('mod').setDescription('Mod').setRequired(true).addChoices(
+      { name: 'idle', value: 'idle' },
+      { name: 'training', value: 'training' },
+    )))
+  // ── Envanter Genişletme ───────────────────────────────────────────────────────
+  .addSubcommand((s) => s.setName('givebuffitem').setDescription('Oyuncunun envanterine buff item ekle')
+    .addUserOption((o) => o.setName('kullanici').setDescription('Oyuncu').setRequired(true))
+    .addStringOption((o) => o.setName('buffid').setDescription('Buff ID (b001-b012)').setRequired(true))
+    .addIntegerOption((o) => o.setName('miktar').setDescription('Miktar').setRequired(false).setMinValue(1).setMaxValue(99)))
+  .addSubcommand((s) => s.setName('givelootbox').setDescription('Oyuncuya lootbox ver')
+    .addUserOption((o) => o.setName('kullanici').setDescription('Oyuncu').setRequired(true))
+    .addStringOption((o) => o.setName('tip').setDescription('Kutu tipi').setRequired(true).addChoices(
+      { name: 'Silah Kutusu', value: 'Silah Kutusu' },
+      { name: 'Eşya Kutusu', value: 'Eşya Kutusu' },
+    ))
+    .addIntegerOption((o) => o.setName('miktar').setDescription('Miktar').setRequired(false).setMinValue(1).setMaxValue(99)))
+  .addSubcommand((s) => s.setName('inventory').setDescription('Oyuncunun envanterini görüntüle')
+    .addUserOption((o) => o.setName('kullanici').setDescription('Oyuncu').setRequired(true)))
+  // ── Ekonomi ───────────────────────────────────────────────────────────────────
+  .addSubcommand((s) => s.setName('economy').setDescription('Genel ekonomi istatistikleri'))
+  .addSubcommand((s) => s.setName('transfercoins').setDescription('İki oyuncu arasında coin aktar')
+    .addUserOption((o) => o.setName('gonderen').setDescription('Gönderen oyuncu').setRequired(true))
+    .addUserOption((o) => o.setName('alan').setDescription('Alan oyuncu').setRequired(true))
+    .addIntegerOption((o) => o.setName('miktar').setDescription('Coin miktarı').setRequired(true).setMinValue(1)))
+  .addSubcommand((s) => s.setName('setprestige').setDescription('Oyuncunun prestige seviyesini ayarla')
+    .addUserOption((o) => o.setName('kullanici').setDescription('Oyuncu').setRequired(true))
+    .addIntegerOption((o) => o.setName('seviye').setDescription('Prestige seviyesi').setRequired(true).setMinValue(0)))
+  // ── Sistem ────────────────────────────────────────────────────────────────────
+  .addSubcommand((s) => s.setName('playerlist').setDescription('Kayıtlı oyuncuları listele')
+    .addIntegerOption((o) => o.setName('sayfa').setDescription('Sayfa numarası').setRequired(false).setMinValue(1)))
+  .addSubcommand((s) => s.setName('buffstats').setDescription('Buff kullanım istatistikleri'))
+  .addSubcommand((s) => s.setName('ban').setDescription('Oyuncuyu bota erişimden engelle')
+    .addUserOption((o) => o.setName('kullanici').setDescription('Oyuncu').setRequired(true))
+    .addStringOption((o) => o.setName('sebep').setDescription('Engelleme sebebi').setRequired(false)))
+  .addSubcommand((s) => s.setName('unban').setDescription('Oyuncunun engelini kaldır')
+    .addUserOption((o) => o.setName('kullanici').setDescription('Oyuncu').setRequired(true)))
+  .addSubcommand((s) => s.setName('banlist').setDescription('Engellenen oyuncuları listele'))
+  .addSubcommand((s) => s.setName('maintenance').setDescription('Bakım modunu aç/kapat'))
+  .addSubcommand((s) => s.setName('queststats').setDescription('Günlük görev istatistikleri'))
+  .addSubcommand((s) => s.setName('pvpstats').setDescription('PvP istatistikleri'))
+  .addSubcommand((s) => s.setName('marketstats').setDescription('Market istatistikleri'));
 
 async function execute(
   interaction: Parameters<CommandDefinition['execute']>[0],
@@ -508,6 +581,532 @@ async function execute(
       const message = err instanceof Error ? err.message : 'Bilinmeyen hata';
       await interaction.reply({ content: `❌ Geri alma başarısız: ${message}`, flags: 64 });
     }
+    return;
+  }
+
+  // ── delete ─────────────────────────────────────────────────────────────────
+  if (sub === 'delete') {
+    const user = interaction.options.getUser('kullanici', true);
+
+    const player = await ctx.prisma.player.findUnique({ where: { id: user.id } });
+    if (!player) {
+      await interaction.reply({ content: `❌ <@${user.id}> kayıtlı değil.`, flags: 64 });
+      return;
+    }
+
+    await interaction.deferReply({ flags: 64 });
+
+    try {
+      // Foreign key bağımlılık sırasına göre sil
+      await ctx.prisma.$transaction([
+        ctx.prisma.auditLog.deleteMany({ where: { playerId: user.id } }),
+        ctx.prisma.dailyQuest.deleteMany({ where: { playerId: user.id } }),
+        ctx.prisma.playerBuff.deleteMany({ where: { playerId: user.id } }),
+        ctx.prisma.encounter.deleteMany({ where: { playerId: user.id } }),
+        ctx.prisma.pvpSession.deleteMany({
+          where: { OR: [{ challengerId: user.id }, { defenderId: user.id }] },
+        }),
+        ctx.prisma.marketListing.deleteMany({ where: { sellerId: user.id } }),
+        ctx.prisma.seasonArchive.deleteMany({ where: { playerId: user.id } }),
+        ctx.prisma.playerRegistration.deleteMany({ where: { userId: user.id } }),
+        ctx.prisma.inventoryItem.deleteMany({ where: { ownerId: user.id } }),
+        ctx.prisma.owl.deleteMany({ where: { ownerId: user.id } }),
+        ctx.prisma.player.delete({ where: { id: user.id } }),
+      ]);
+
+      // Redis cache temizle
+      await Promise.allSettled([
+        ctx.redis.del(`player:${user.id}`),
+        ctx.redis.del(`cooldown:hunt:${user.id}`),
+        ctx.redis.del(`cooldown:upgrade:${user.id}`),
+        ctx.redis.del(`biome:${user.id}`),
+        ctx.redis.del(`upgrade:panel:${user.id}`),
+      ]);
+
+      await interaction.editReply({
+        content: `✅ <@${user.id}> (**${user.username}**) tamamen silindi.\n🗑️ Tüm veriler (oyuncu, baykuş, envanter, buff, PvP, encounter) kaldırıldı.`,
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Bilinmeyen hata';
+      await interaction.editReply({ content: `❌ Silme başarısız: ${message}` });
+    }
+    return;
+  }
+
+  // ── giveowl ────────────────────────────────────────────────────────────────
+  if (sub === 'giveowl') {
+    const user    = interaction.options.getUser('kullanici', true);
+    const tier    = interaction.options.getInteger('tier', true);
+    const quality = interaction.options.getString('kalite', true);
+
+    const { OWL_SPECIES, OWL_BASE_HP, OWL_BASE_STAMINA } = await import('../config.js');
+    const species = OWL_SPECIES.find((s: any) => s.tier === tier);
+    if (!species) { await interaction.reply({ content: `❌ Geçersiz tier.`, flags: 64 }); return; }
+
+    const player = await ctx.prisma.player.findUnique({ where: { id: user.id } });
+    if (!player) { await interaction.reply({ content: `❌ <@${user.id}> kayıtlı değil.`, flags: 64 }); return; }
+
+    const hp = OWL_BASE_HP[tier] ?? 100;
+    const stamina = OWL_BASE_STAMINA[tier] ?? 100;
+
+    await ctx.prisma.owl.create({
+      data: {
+        ownerId: user.id, species: species.name, tier, quality,
+        hp, hpMax: hp, staminaCur: stamina,
+        statGaga: 5, statGoz: 5, statKulak: 5, statKanat: 5, statPence: 5,
+        isMain: false, effectiveness: 100,
+      },
+    });
+
+    await interaction.reply({
+      content: `✅ <@${user.id}> oyuncusuna **Tier ${tier} ${species.name}** (${quality}) baykuşu verildi.`,
+      flags: 64,
+    });
+    return;
+  }
+
+  // ── setquality ─────────────────────────────────────────────────────────────
+  if (sub === 'setquality') {
+    const user    = interaction.options.getUser('kullanici', true);
+    const quality = interaction.options.getString('kalite', true);
+    const owl = await ctx.prisma.owl.findFirst({ where: { ownerId: user.id, isMain: true } });
+    if (!owl) { await interaction.reply({ content: `❌ <@${user.id}> main baykuşu yok.`, flags: 64 }); return; }
+
+    await ctx.prisma.owl.update({ where: { id: owl.id }, data: { quality } });
+    await interaction.reply({ content: `✅ <@${user.id}> baykuşunun kalitesi **${quality}** olarak ayarlandı.`, flags: 64 });
+    return;
+  }
+
+  // ── seteffectiveness ───────────────────────────────────────────────────────
+  if (sub === 'seteffectiveness') {
+    const user  = interaction.options.getUser('kullanici', true);
+    const value = interaction.options.getInteger('deger', true);
+    const owl = await ctx.prisma.owl.findFirst({ where: { ownerId: user.id, isMain: true } });
+    if (!owl) { await interaction.reply({ content: `❌ <@${user.id}> main baykuşu yok.`, flags: 64 }); return; }
+
+    await ctx.prisma.owl.update({ where: { id: owl.id }, data: { effectiveness: value } });
+    await interaction.reply({ content: `✅ <@${user.id}> baykuşunun effectiveness değeri **${value}** olarak ayarlandı.`, flags: 64 });
+    return;
+  }
+
+  // ── setpassivemode ─────────────────────────────────────────────────────────
+  if (sub === 'setpassivemode') {
+    const user = interaction.options.getUser('kullanici', true);
+    const mod  = interaction.options.getString('mod', true);
+    const owl = await ctx.prisma.owl.findFirst({ where: { ownerId: user.id, isMain: true } });
+    if (!owl) { await interaction.reply({ content: `❌ <@${user.id}> main baykuşu yok.`, flags: 64 }); return; }
+
+    await ctx.prisma.owl.update({ where: { id: owl.id }, data: { passiveMode: mod } });
+    await interaction.reply({ content: `✅ <@${user.id}> baykuşunun pasif modu **${mod}** olarak ayarlandı.`, flags: 64 });
+    return;
+  }
+
+  // ── givebuffitem ───────────────────────────────────────────────────────────
+  if (sub === 'givebuffitem') {
+    const user     = interaction.options.getUser('kullanici', true);
+    const buffId   = interaction.options.getString('buffid', true);
+    const quantity = interaction.options.getInteger('miktar') ?? 1;
+
+    const { BUFF_ITEM_MAP } = await import('../config.js');
+    const def = BUFF_ITEM_MAP[buffId];
+    if (!def) { await interaction.reply({ content: `❌ Geçersiz buff ID: \`${buffId}\``, flags: 64 }); return; }
+
+    const player = await ctx.prisma.player.findUnique({ where: { id: user.id } });
+    if (!player) { await interaction.reply({ content: `❌ <@${user.id}> kayıtlı değil.`, flags: 64 }); return; }
+
+    await (ctx.prisma as any).inventoryItem.upsert({
+      where:  { ownerId_itemName: { ownerId: user.id, itemName: def.name } },
+      create: { ownerId: user.id, itemName: def.name, itemType: 'Buff', rarity: def.rarity, quantity },
+      update: { quantity: { increment: quantity } },
+    });
+
+    await interaction.reply({ content: `✅ <@${user.id}> envanterine **${quantity}x ${def.emoji} ${def.name}** eklendi.`, flags: 64 });
+    return;
+  }
+
+  // ── givelootbox ────────────────────────────────────────────────────────────
+  if (sub === 'givelootbox') {
+    const user     = interaction.options.getUser('kullanici', true);
+    const boxName  = interaction.options.getString('tip', true);
+    const quantity = interaction.options.getInteger('miktar') ?? 1;
+
+    const player = await ctx.prisma.player.findUnique({ where: { id: user.id } });
+    if (!player) { await interaction.reply({ content: `❌ <@${user.id}> kayıtlı değil.`, flags: 64 }); return; }
+
+    await (ctx.prisma as any).inventoryItem.upsert({
+      where:  { ownerId_itemName: { ownerId: user.id, itemName: boxName } },
+      create: { ownerId: user.id, itemName: boxName, itemType: 'Lootbox', rarity: 'Rare', quantity },
+      update: { quantity: { increment: quantity } },
+    });
+
+    await interaction.reply({ content: `✅ <@${user.id}> envanterine **${quantity}x ${boxName}** eklendi.`, flags: 64 });
+    return;
+  }
+
+  // ── inventory ──────────────────────────────────────────────────────────────
+  if (sub === 'inventory') {
+    const user  = interaction.options.getUser('kullanici', true);
+    const items = await ctx.prisma.inventoryItem.findMany({
+      where: { ownerId: user.id },
+      orderBy: [{ itemType: 'asc' }, { itemName: 'asc' }],
+    });
+
+    if (items.length === 0) {
+      await interaction.reply({ content: `ℹ️ <@${user.id}> envanteri boş.`, flags: 64 });
+      return;
+    }
+
+    const grouped = new Map<string, typeof items>();
+    for (const item of items) {
+      const list = grouped.get(item.itemType) ?? [];
+      list.push(item);
+      grouped.set(item.itemType, list);
+    }
+
+    const lines: string[] = [`📦 **<@${user.id}> Envanteri** (${items.length} çeşit)\n`];
+    for (const [type, list] of grouped) {
+      lines.push(`**${type}**`);
+      for (const item of list) lines.push(`  • ${item.itemName} ×${item.quantity} *(${item.rarity})*`);
+    }
+
+    await interaction.reply({ content: lines.join('\n').slice(0, 1990), flags: 64 });
+    return;
+  }
+
+  // ── economy ────────────────────────────────────────────────────────────────
+  if (sub === 'economy') {
+    await interaction.deferReply({ flags: 64 });
+
+    const [playerCount, totalCoinsRaw, richest, mostActive] = await Promise.all([
+      ctx.prisma.player.count(),
+      ctx.prisma.player.aggregate({ _sum: { coins: true } }),
+      ctx.prisma.player.findMany({ orderBy: { coins: 'desc' }, take: 5, select: { id: true, coins: true, level: true } }),
+      ctx.prisma.player.findMany({ orderBy: { totalHunts: 'desc' }, take: 5, select: { id: true, totalHunts: true, totalCoinsEarned: true } }),
+    ]);
+
+    const totalCoins = totalCoinsRaw._sum.coins ?? 0;
+    const avgCoins   = playerCount > 0 ? Math.round(totalCoins / playerCount) : 0;
+
+    let t = `💰 **Ekonomi İstatistikleri**\n\n`;
+    t += `👥 Toplam oyuncu: **${playerCount}**\n`;
+    t += `💰 Toplam coin (dolaşımda): **${totalCoins.toLocaleString('tr-TR')}**\n`;
+    t += `📊 Oyuncu başına ortalama: **${avgCoins.toLocaleString('tr-TR')}**\n\n`;
+    t += `🏆 **En Zengin 5 Oyuncu**\n`;
+    richest.forEach((p: any, i: number) => {
+      t += `${i + 1}. <@${p.id}> — **${p.coins.toLocaleString('tr-TR')}** 💰 (Lv.${p.level})\n`;
+    });
+    t += `\n🔥 **En Aktif 5 Oyuncu**\n`;
+    mostActive.forEach((p: any, i: number) => {
+      t += `${i + 1}. <@${p.id}> — **${p.totalHunts}** hunt | **${p.totalCoinsEarned.toLocaleString('tr-TR')}** toplam kazanç\n`;
+    });
+
+    await interaction.editReply({ content: t });
+    return;
+  }
+
+  // ── transfercoins ──────────────────────────────────────────────────────────
+  if (sub === 'transfercoins') {
+    const from   = interaction.options.getUser('gonderen', true);
+    const to     = interaction.options.getUser('alan', true);
+    const amount = interaction.options.getInteger('miktar', true);
+
+    const [fromPlayer, toPlayer] = await Promise.all([
+      ctx.prisma.player.findUnique({ where: { id: from.id } }),
+      ctx.prisma.player.findUnique({ where: { id: to.id } }),
+    ]);
+
+    if (!fromPlayer) { await interaction.reply({ content: `❌ <@${from.id}> kayıtlı değil.`, flags: 64 }); return; }
+    if (!toPlayer)   { await interaction.reply({ content: `❌ <@${to.id}> kayıtlı değil.`, flags: 64 }); return; }
+    if (fromPlayer.coins < amount) {
+      await interaction.reply({ content: `❌ <@${from.id}> yeterli coini yok. (Sahip: ${fromPlayer.coins})`, flags: 64 });
+      return;
+    }
+
+    await ctx.prisma.$transaction([
+      ctx.prisma.player.update({ where: { id: from.id }, data: { coins: { decrement: amount } } }),
+      ctx.prisma.player.update({ where: { id: to.id },   data: { coins: { increment: amount } } }),
+    ]);
+
+    await interaction.reply({
+      content: `✅ <@${from.id}> → <@${to.id}> arası **${amount.toLocaleString('tr-TR')} coin** aktarıldı.`,
+      flags: 64,
+    });
+    return;
+  }
+
+  // ── setprestige ────────────────────────────────────────────────────────────
+  if (sub === 'setprestige') {
+    const user  = interaction.options.getUser('kullanici', true);
+    const level = interaction.options.getInteger('seviye', true);
+
+    const player = await ctx.prisma.player.findUnique({ where: { id: user.id } });
+    if (!player) { await interaction.reply({ content: `❌ <@${user.id}> kayıtlı değil.`, flags: 64 }); return; }
+
+    await ctx.prisma.player.update({ where: { id: user.id }, data: { prestigeLevel: level } });
+    await interaction.reply({ content: `✅ <@${user.id}> prestige seviyesi **${level}** olarak ayarlandı. ⭐`, flags: 64 });
+    return;
+  }
+
+  if (sub === 'givebuff') {
+    const user = interaction.options.getUser('kullanici', true);
+    const buffId = interaction.options.getString('buffid', true);
+
+    const { BUFF_ITEM_MAP } = await import('../config.js');
+    const def = BUFF_ITEM_MAP[buffId];
+    if (!def) {
+      await interaction.reply({ content: `❌ Geçersiz buff ID: \`${buffId}\`. Geçerli ID'ler: b001–b012`, flags: 64 });
+      return;
+    }
+
+    const player = await ctx.prisma.player.findUnique({ where: { id: user.id } });
+    if (!player) { await interaction.reply({ content: `❌ <@${user.id}> kayıtlı değil.`, flags: 64 }); return; }
+
+    await (ctx.prisma as any).playerBuff.create({
+      data: {
+        playerId:    user.id,
+        buffItemId:  def.id,
+        category:    def.category,
+        effectType:  def.effectType,
+        effectValue: def.effectValue,
+        chargeMax:   def.chargeMax,
+        chargeCur:   def.chargeMax,
+      },
+    });
+
+    await interaction.reply({
+      content: `✅ <@${user.id}> oyuncusuna **${def.emoji} ${def.name}** buff'ı takıldı. (${def.chargeMax} charge)`,
+      flags: 64,
+    });
+    return;
+  }
+
+  // ── clearbuffs ─────────────────────────────────────────────────────────────
+  if (sub === 'clearbuffs') {
+    const user = interaction.options.getUser('kullanici', true);
+    const { count } = await (ctx.prisma as any).playerBuff.deleteMany({ where: { playerId: user.id } });
+    await interaction.reply({
+      content: `✅ <@${user.id}> oyuncusunun **${count}** buff kaydı silindi.`,
+      flags: 64,
+    });
+    return;
+  }
+
+  // ── listbuffs ──────────────────────────────────────────────────────────────
+  if (sub === 'listbuffs') {
+    const user = interaction.options.getUser('kullanici', true);
+    const { BUFF_ITEM_MAP } = await import('../config.js');
+
+    const buffs = await (ctx.prisma as any).playerBuff.findMany({
+      where: { playerId: user.id },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    if (buffs.length === 0) {
+      await interaction.reply({ content: `ℹ️ <@${user.id}> oyuncusunun aktif buff'ı yok.`, flags: 64 });
+      return;
+    }
+
+    const lines = buffs.map((b: any) => {
+      const def = BUFF_ITEM_MAP[b.buffItemId];
+      const emoji = def?.emoji ?? '✨';
+      const name  = def?.name  ?? b.buffItemId;
+      const status = b.chargeCur > 0 ? `🟢 ${b.chargeCur}/${b.chargeMax}` : `🔴 tükenmiş`;
+      return `• ${emoji} **${name}** — ${status} | kategori: ${b.category}`;
+    }).join('\n');
+
+    await interaction.reply({
+      content: `🔋 **<@${user.id}> Buff Listesi** (${buffs.length} kayıt)\n\n${lines}`,
+      flags: 64,
+    });
+    return;
+  }
+
+  // ── playerlist ─────────────────────────────────────────────────────────────
+  if (sub === 'playerlist') {
+    const page     = (interaction.options.getInteger('sayfa') ?? 1) - 1;
+    const pageSize = 15;
+    const [players, total] = await Promise.all([
+      ctx.prisma.player.findMany({
+        orderBy: { level: 'desc' },
+        skip: page * pageSize,
+        take: pageSize,
+        select: { id: true, level: true, coins: true, totalHunts: true, createdAt: true },
+      }),
+      ctx.prisma.player.count(),
+    ]);
+
+    const totalPages = Math.ceil(total / pageSize);
+    const lines = players.map((p: any, i: number) =>
+      `${page * pageSize + i + 1}. <@${p.id}> — Lv.**${p.level}** | 💰${p.coins.toLocaleString('tr-TR')} | 🏹${p.totalHunts} hunt`
+    ).join('\n');
+
+    await interaction.reply({
+      content: `👥 **Oyuncu Listesi** (Sayfa ${page + 1}/${totalPages}, Toplam: ${total})\n\n${lines}`,
+      flags: 64,
+    });
+    return;
+  }
+
+  // ── buffstats ──────────────────────────────────────────────────────────────
+  if (sub === 'buffstats') {
+    await interaction.deferReply({ flags: 64 });
+    const { BUFF_ITEMS } = await import('../config.js');
+
+    const allBuffs = await (ctx.prisma as any).playerBuff.groupBy({
+      by: ['buffItemId'],
+      _count: { buffItemId: true },
+      _sum: { chargeCur: true, chargeMax: true },
+    });
+
+    const activeBuffs = await (ctx.prisma as any).playerBuff.count({ where: { chargeCur: { gt: 0 } } });
+    const totalBuffs  = await (ctx.prisma as any).playerBuff.count();
+
+    const lines = allBuffs.map((b: any) => {
+      const def = BUFF_ITEMS.find((x: any) => x.id === b.buffItemId);
+      const name = def ? `${def.emoji} ${def.name}` : b.buffItemId;
+      return `• ${name} — **${b._count.buffItemId}** kullanım`;
+    }).sort((a: string, b: string) => a.localeCompare(b));
+
+    let t = `📊 **Buff İstatistikleri**\n\n`;
+    t += `🟢 Aktif buff: **${activeBuffs}** | Toplam kayıt: **${totalBuffs}**\n\n`;
+    t += lines.join('\n');
+
+    await interaction.editReply({ content: t });
+    return;
+  }
+
+  // ── ban ────────────────────────────────────────────────────────────────────
+  if (sub === 'ban') {
+    const user   = interaction.options.getUser('kullanici', true);
+    const sebep  = interaction.options.getString('sebep') ?? 'Sebep belirtilmedi';
+    const banKey = `ban:${user.id}`;
+
+    await ctx.redis.set(banKey, sebep);
+    await interaction.reply({
+      content: `🔨 <@${user.id}> bota erişimden engellendi.\n📝 Sebep: **${sebep}**`,
+      flags: 64,
+    });
+    return;
+  }
+
+  // ── unban ──────────────────────────────────────────────────────────────────
+  if (sub === 'unban') {
+    const user   = interaction.options.getUser('kullanici', true);
+    const banKey = `ban:${user.id}`;
+    const exists = await ctx.redis.get(banKey);
+
+    if (!exists) {
+      await interaction.reply({ content: `ℹ️ <@${user.id}> zaten engelli değil.`, flags: 64 });
+      return;
+    }
+
+    await ctx.redis.del(banKey);
+    await interaction.reply({ content: `✅ <@${user.id}> engellemesi kaldırıldı.`, flags: 64 });
+    return;
+  }
+
+  // ── banlist ────────────────────────────────────────────────────────────────
+  if (sub === 'banlist') {
+    const keys = await ctx.redis.keys('ban:*');
+    if (keys.length === 0) {
+      await interaction.reply({ content: `ℹ️ Engellenen oyuncu yok.`, flags: 64 });
+      return;
+    }
+
+    const entries = await Promise.all(
+      keys.map(async (k) => {
+        const userId = k.replace('ban:', '');
+        const sebep  = await ctx.redis.get(k);
+        return `• <@${userId}> — ${sebep ?? 'Sebep yok'}`;
+      })
+    );
+
+    await interaction.reply({
+      content: `🔨 **Engellenen Oyuncular** (${keys.length})\n\n${entries.join('\n')}`,
+      flags: 64,
+    });
+    return;
+  }
+
+  // ── maintenance ────────────────────────────────────────────────────────────
+  if (sub === 'maintenance') {
+    const key     = 'system:maintenance';
+    const current = await ctx.redis.get(key);
+
+    if (current) {
+      await ctx.redis.del(key);
+      await interaction.reply({ content: `✅ Bakım modu **kapatıldı**. Bot normal çalışmaya devam ediyor.`, flags: 64 });
+    } else {
+      await ctx.redis.set(key, '1');
+      await interaction.reply({ content: `🔧 Bakım modu **açıldı**. Oyuncular komut kullanamaz.`, flags: 64 });
+    }
+    return;
+  }
+
+  // ── queststats ─────────────────────────────────────────────────────────────
+  if (sub === 'queststats') {
+    await interaction.deferReply({ flags: 64 });
+
+    const [total, claimed, byType] = await Promise.all([
+      ctx.prisma.dailyQuest.count(),
+      ctx.prisma.dailyQuest.count({ where: { isClaimed: true } }),
+      ctx.prisma.dailyQuest.groupBy({ by: ['type'], _count: { type: true } }),
+    ]);
+
+    const typeLines = byType.map((t: any) => `  • ${t.type}: **${t._count.type}**`).join('\n');
+    let text = `📋 **Günlük Görev İstatistikleri**\n\n`;
+    text += `Toplam görev: **${total}** | Tamamlanan: **${claimed}** (%${total > 0 ? Math.round(claimed / total * 100) : 0})\n\n`;
+    text += `**Tipe Göre Dağılım:**\n${typeLines}`;
+
+    await interaction.editReply({ content: text });
+    return;
+  }
+
+  // ── pvpstats ───────────────────────────────────────────────────────────────
+  if (sub === 'pvpstats') {
+    await interaction.deferReply({ flags: 64 });
+
+    const [total, finished, topWinners] = await Promise.all([
+      ctx.prisma.pvpSession.count(),
+      ctx.prisma.pvpSession.count({ where: { status: 'finished' } }),
+      ctx.prisma.player.findMany({ orderBy: { totalPvpWins: 'desc' }, take: 5, select: { id: true, totalPvpWins: true, pvpBestStreak: true } }),
+    ]);
+
+    let text = `⚔️ **PvP İstatistikleri**\n\n`;
+    text += `Toplam maç: **${total}** | Tamamlanan: **${finished}**\n\n`;
+    text += `🏆 **En Çok Kazanan 5 Oyuncu**\n`;
+    topWinners.forEach((p: any, i: number) => {
+      text += `${i + 1}. <@${p.id}> — **${p.totalPvpWins}** galibiyet | En iyi streak: **${p.pvpBestStreak}**\n`;
+    });
+
+    await interaction.editReply({ content: text });
+    return;
+  }
+
+  // ── marketstats ────────────────────────────────────────────────────────────
+  if (sub === 'marketstats') {
+    await interaction.deferReply({ flags: 64 });
+
+    const [total, byItem] = await Promise.all([
+      ctx.prisma.marketListing.count(),
+      ctx.prisma.marketListing.groupBy({
+        by: ['itemName'],
+        _count: { itemName: true },
+        _sum: { quantity: true },
+        orderBy: { _count: { itemName: 'desc' } },
+        take: 10,
+      }),
+    ]);
+
+    const itemLines = byItem.map((i: any) =>
+      `  • **${i.itemName}** — ${i._count.itemName} ilan, ${i._sum.quantity ?? 0} adet`
+    ).join('\n');
+
+    let text = `🏪 **Market İstatistikleri**\n\n`;
+    text += `Aktif ilan: **${total}**\n\n`;
+    text += `**En Çok İlan Edilen 10 Item:**\n${itemLines}`;
+
+    await interaction.editReply({ content: text });
     return;
   }
 }
