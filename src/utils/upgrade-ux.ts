@@ -6,7 +6,7 @@
 import { EmbedBuilder } from 'discord.js';
 import type { OwlStatKey } from '../types';
 import { statEffect } from './math';
-import { UPGRADE_COST, UPGRADE_DEPENDENCIES } from '../config';
+import { UPGRADE_COST, UPGRADE_DEPENDENCIES, UPGRADE_DEP_MIN_LEVEL } from '../config';
 import type { AllStats } from './upgrade-deps';
 import { checkUpgradeDep, getAllDepStatuses } from './upgrade-deps';
 import { COLORS, hpBar, chanceBar } from './theme';
@@ -299,8 +299,12 @@ export function buildUpgradeCancel(): EmbedBuilder {
 
 const STAT_ORDER: OwlStatKey[] = ['gaga', 'pence', 'goz', 'kulak', 'kanat'];
 
-export function buildUpgradeOverview(helpPrefix: string): EmbedBuilder {
-  // Her stat için tek satır: ikon + ad + açıklama + materyal + bağımlılık
+export interface UpgradeOverviewOwlStats {
+  gaga: number; pence: number; goz: number; kulak: number; kanat: number;
+}
+
+export function buildUpgradeOverview(helpPrefix: string, owlStats?: UpgradeOverviewOwlStats): EmbedBuilder {
+  // Her stat için tek satır: ikon + ad + açıklama + materyal + bağımlılık + mevcut seviye
   const statBlocks = STAT_ORDER.map((s) => {
     const m     = STAT_META[s];
     const costs = UPGRADE_COST[s] ?? [];
@@ -309,10 +313,27 @@ export function buildUpgradeOverview(helpPrefix: string): EmbedBuilder {
     const depText = dep?.dependsOn
       ? `🔗 *${STAT_META[dep.dependsOn].label} ≥ hedef×${dep.ratio}*`
       : '🔓 *Bağımsız (başlangıç statı)*';
+
+    // Oyuncu stat bilgisi varsa mevcut seviye + bağımlılık durumu göster
+    let statLine = '';
+    if (owlStats) {
+      const currentVal = owlStats[s];
+      const nextTarget = currentVal + 1;
+      let depStatus = '';
+      if (dep?.dependsOn) {
+        const depVal = owlStats[dep.dependsOn];
+        const required = Math.floor(nextTarget * dep.ratio);
+        if (nextTarget >= UPGRADE_DEP_MIN_LEVEL) {
+          depStatus = depVal >= required ? ' ✅' : ` ❌ *(${dep.dependsOn} Lv.${required} gerekli, şu an: ${depVal})*`;
+        }
+      }
+      statLine = `\n📊 Mevcut: Lv.**${currentVal}** → Lv.**${nextTarget}**${depStatus}`;
+    }
+
     return (
       `${m.icon} **${m.label}** — *${m.desc}*\n` +
       `\`${helpPrefix} upgrade ${s}\`  ·  🛠️ ${mat}\n` +
-      `${depText}`
+      `${depText}${statLine}`
     );
   }).join('\n\n');
 

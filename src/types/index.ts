@@ -24,6 +24,16 @@ export interface LevelUpResult {
   oldLevel: number;
   newLevel: number;
   remainingXP: number;
+  /** Level-up ödülü (coin + lootbox + item) */
+  reward?: {
+    coins: number;
+    lootboxName?: string;
+    lootboxEmoji?: string;
+    lootbox2Name?: string;
+    lootbox2Emoji?: string;
+    itemName?: string;
+    message?: string;
+  };
 }
 
 export interface XpApplyResult {
@@ -110,6 +120,8 @@ export interface BuffUseResult {
   chargeCur:   number;
   chargeMax:   number;
   depleted:    boolean;   // true = charge bitti, buff pasifleşti (silinmedi)
+  /** Buff'ın ne işe yaradığının kısa açıklaması */
+  effectDescription: string;
 }
 
 /** Lootbox açma sonucu */

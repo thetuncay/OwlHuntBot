@@ -51,7 +51,7 @@ export interface CompressedHunt {
   totalXP: number;
   totalValue: number;
   hasCritical: boolean;
-  levelUp: { oldLevel: number; newLevel: number } | null;
+  levelUp: { oldLevel: number; newLevel: number; reward?: { coins: number; lootboxName?: string; lootboxEmoji?: string; lootbox2Name?: string; lootbox2Emoji?: string; itemName?: string; message?: string } } | null;
   isEmpty: boolean;
   encounterId?: string;
   /** Aktif buff'lar — hunt satırında gösterilir */
@@ -102,7 +102,9 @@ export function compressHuntResult(result: HuntRunResult): CompressedHunt {
     totalXP: result.totalXP,
     totalValue,
     hasCritical,
-    levelUp: result.levelUp ?? null,
+    levelUp: result.levelUp
+      ? { oldLevel: result.levelUp.oldLevel, newLevel: result.levelUp.newLevel, reward: result.levelUp.reward }
+      : null,
     isEmpty,
     encounterId: result.encounterId,
   };
@@ -180,7 +182,18 @@ export function buildFinalMessage(name: string, compressed: CompressedHunt): str
 
   if (compressed.levelUp) {
     const { oldLevel: o, newLevel: n } = compressed.levelUp;
-    summary += `\n🎊 | **SEVİYE ATLADI!** ${o} ➜ **${n}** ✨`;
+    const reward = compressed.levelUp.reward;
+    let rewardLine = '';
+    if (reward) {
+      const parts: string[] = [];
+      if (reward.coins > 0)    parts.push(`💰 **+${reward.coins.toLocaleString()} coin**`);
+      if (reward.lootboxName)  parts.push(`${reward.lootboxEmoji ?? '📦'} **${reward.lootboxName}**`);
+      if (reward.lootbox2Name) parts.push(`${reward.lootbox2Emoji ?? '📦'} **${reward.lootbox2Name}**`);
+      if (reward.itemName)     parts.push(`🎁 **${reward.itemName}**`);
+      if (parts.length > 0)   rewardLine = `\n🎁 | Ödül: ${parts.join(' · ')}`;
+      if (reward.message)      rewardLine += `\n✨ | ${reward.message}`;
+    }
+    summary += `\n🎊 | **SEVİYE ATLADI!** ${o} ➜ **${n}** ✨${rewardLine}`;
   }
 
   lines.push(summary);

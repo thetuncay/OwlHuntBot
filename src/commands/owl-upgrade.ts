@@ -17,6 +17,7 @@ import {
   buildUpgradeCancel,
   buildUpgradeOverview,
   buildDepBlockedEmbed,
+  type UpgradeOverviewOwlStats,
 } from '../utils/upgrade-ux';
 import type { UpgradePanelData } from '../utils/upgrade-ux';
 import { failEmbed } from '../utils/embed';
@@ -157,7 +158,13 @@ export async function runUpgradeMessage(
   const stat = (args[0] ?? '').toLowerCase() as OwlStatKey;
 
   if (!stat || !UPGRADE_STATS.includes(stat)) {
-    await message.reply({ embeds: [buildUpgradeOverview(helpPrefix)] });
+    // Oyuncu stat bilgisini çek — overview'da mevcut seviyeleri göster
+    const overviewBundle = await getPlayerBundle(ctx.redis, ctx.prisma, message.author.id);
+    const overviewOwl = overviewBundle?.mainOwl;
+    const owlStats: UpgradeOverviewOwlStats | undefined = overviewOwl
+      ? { gaga: overviewOwl.statGaga, pence: overviewOwl.statPence, goz: overviewOwl.statGoz, kulak: overviewOwl.statKulak, kanat: overviewOwl.statKanat }
+      : undefined;
+    await message.reply({ embeds: [buildUpgradeOverview(helpPrefix, owlStats)] });
     return;
   }
 

@@ -1,7 +1,7 @@
 import type { PrismaClient } from '@prisma/client';
 import type { XpApplyResult } from '../types';
 import { finalXP, xpRequired } from '../utils/math';
-import { PRESTIGE_XP_BONUS_PER_LEVEL } from '../config';
+import { PRESTIGE_XP_BONUS_PER_LEVEL, getLevelUpReward } from '../config';
 
 /**
  * Oyuncuya XP ekler, level-up durumunu hesaplar ve sonucu dondurur.
@@ -82,6 +82,53 @@ export async function addXP(
     select: { level: true, xp: true },
   });
 
+  // Level-up ödülü ver
+  let rewardSummary: { coins: number; lootboxName?: string; lootboxEmoji?: string; lootbox2Name?: string; lootbox2Emoji?: string; itemName?: string; message?: string } | undefined;
+  for (let lvl = oldLevel + 1; lvl <= currentLevel; lvl++) {
+    const reward = getLevelUpReward(lvl);
+    // Coin ödülü
+    if (reward.coins > 0) {
+      await prisma.player.update({
+        where: { id: playerId },
+        data:  { coins: { increment: reward.coins } },
+      });
+    }
+    // Item ödülü
+    if (reward.item) {
+      await (prisma as any).inventoryItem.upsert({
+        where:  { ownerId_itemName: { ownerId: playerId, itemName: reward.item.itemName } },
+        create: { ownerId: playerId, ...reward.item },
+        update: { quantity: { increment: reward.item.quantity } },
+      });
+    }
+    // Lootbox ödülü
+    if (reward.lootbox) {
+      await (prisma as any).inventoryItem.upsert({
+        where:  { ownerId_itemName: { ownerId: playerId, itemName: reward.lootbox.name } },
+        create: { ownerId: playerId, itemName: reward.lootbox.name, itemType: 'Lootbox', rarity: 'Rare', quantity: reward.lootbox.quantity },
+        update: { quantity: { increment: reward.lootbox.quantity } },
+      });
+    }
+    // İkinci lootbox (Lv.4 gibi iki farklı kutu)
+    if (reward.lootbox2) {
+      await (prisma as any).inventoryItem.upsert({
+        where:  { ownerId_itemName: { ownerId: playerId, itemName: reward.lootbox2.name } },
+        create: { ownerId: playerId, itemName: reward.lootbox2.name, itemType: 'Lootbox', rarity: 'Rare', quantity: reward.lootbox2.quantity },
+        update: { quantity: { increment: reward.lootbox2.quantity } },
+      });
+    }
+    // Son seviyenin ödülünü özetle (birden fazla level atlandıysa son seviyeyi göster)
+    rewardSummary = {
+      coins:        reward.coins,
+      lootboxName:  reward.lootbox?.name,
+      lootboxEmoji: reward.lootbox?.emoji,
+      lootbox2Name:  reward.lootbox2?.name,
+      lootbox2Emoji: reward.lootbox2?.emoji,
+      itemName:     reward.item?.itemName,
+      message:      reward.message,
+    };
+  }
+
   console.info(`[XP] ${playerId} kaynak=${source} +${gainedXP} XP (Lv ${oldLevel} -> ${currentLevel})`);
   return {
     gainedXP,
@@ -91,6 +138,7 @@ export async function addXP(
       oldLevel,
       newLevel:    currentLevel,
       remainingXP: updated.xp,
+      reward:      rewardSummary,
     },
   };
 }

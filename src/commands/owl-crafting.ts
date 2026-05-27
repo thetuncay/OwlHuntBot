@@ -16,14 +16,31 @@ export async function runCraftMessage(
   const userId = message.author.id;
 
   if (args.length === 0) {
-    // Tarif listesini göster
+    // Tarif listesini göster — envanter ile karşılaştırmalı
+    const userId = message.author.id;
+    const invItems = await ctx.prisma.inventoryItem.findMany({ where: { ownerId: userId } });
+    const invMap = new Map(invItems.map(i => [i.itemName, i.quantity]));
+
+    const recipeLines = CRAFTING_RECIPES.map((r, i) => {
+      const matLines = r.requiredMaterials.map(m => {
+        const have = invMap.get(m.itemName) ?? 0;
+        const ok = have >= m.quantity;
+        return `  ${ok ? '✅' : '❌'} ${m.itemName}: **${have}/${m.quantity}**`;
+      });
+      const coinOk = (invMap.get('coin') ?? Infinity) >= r.requiredCoins;
+      const canCraft = r.requiredMaterials.every(m => (invMap.get(m.itemName) ?? 0) >= m.quantity);
+      const craftTag = canCraft ? ' ✨ *Üretilebilir!*' : '';
+      return (
+        `**${i + 1}. ${r.emoji} ${r.name}**${craftTag}\n` +
+        `└ ${r.description}\n` +
+        matLines.join('\n') + '\n' +
+        `  💰 Coin: **${r.requiredCoins}**`
+      );
+    }).join('\n\n');
+
     const embed = infoEmbed(
       '📜 Crafting Menüsü',
-      'Üretmek istediğin eşyanın numarasını yaz: `' + prefix + ' craft <no>`\n\n' +
-      CRAFTING_RECIPES.map((r, i) => {
-        const mats = r.requiredMaterials.map(m => `${m.itemName} x${m.quantity}`).join(', ');
-        return `**${i + 1}. ${r.emoji} ${r.name}**\n└ ${r.description}\n└ Gereksinim: ${mats}, ${r.requiredCoins} 💰`;
-      }).join('\n\n')
+      `Üretmek istediğin eşyanın numarasını yaz: \`${prefix} craft <no>\`\n\n` + recipeLines
     );
     await message.reply({ embeds: [embed] });
     return;
@@ -54,13 +71,28 @@ export async function runCraftMessage(
 export async function runCraftSlash(interaction: ChatInputCommandInteraction, ctx: CommandContext) {
   const userId = interaction.user.id;
 
+  const invItems = await ctx.prisma.inventoryItem.findMany({ where: { ownerId: userId } });
+  const invMap = new Map(invItems.map((i: any) => [i.itemName, i.quantity]));
+
+  const recipeLines = CRAFTING_RECIPES.map((r, i) => {
+    const matLines = r.requiredMaterials.map(m => {
+      const have = invMap.get(m.itemName) ?? 0;
+      const ok = have >= m.quantity;
+      return `  ${ok ? '✅' : '❌'} ${m.itemName}: **${have}/${m.quantity}**`;
+    });
+    const canCraft = r.requiredMaterials.every(m => (invMap.get(m.itemName) ?? 0) >= m.quantity);
+    const craftTag = canCraft ? ' ✨ *Üretilebilir!*' : '';
+    return (
+      `**${i + 1}. ${r.emoji} ${r.name}**${craftTag}\n` +
+      `└ ${r.description}\n` +
+      matLines.join('\n') + '\n' +
+      `  💰 Coin: **${r.requiredCoins}**`
+    );
+  }).join('\n\n');
+
   const embed = infoEmbed(
     '📜 Crafting Menüsü',
-    'Üretmek istediğin eşyayı seç:\n\n' +
-    CRAFTING_RECIPES.map((r, i) => {
-      const mats = r.requiredMaterials.map(m => `${m.itemName} x${m.quantity}`).join(', ');
-      return `**${i + 1}. ${r.emoji} ${r.name}**\n└ ${r.description}\n└ Gereksinim: ${mats}, ${r.requiredCoins} 💰`;
-    }).join('\n\n')
+    'Üretmek istediğin eşyayı seç:\n\n' + recipeLines
   );
 
   const row = new ActionRowBuilder<ButtonBuilder>().addComponents(

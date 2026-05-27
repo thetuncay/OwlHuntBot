@@ -380,8 +380,9 @@ export async function runHuntMessage(
     const compressed = compressHuntResult(result);
     const name = message.member?.displayName ?? message.author.username;
 
-    // Aktif hunt buff'larını çek — hunt satırında göster
-    listActiveBuffs(ctx.prisma as any, userId).then((rawBuffs) => {
+    // Aktif hunt buff'larını çek — hunt mesajında göster (senkron, animasyondan önce)
+    try {
+      const rawBuffs = await listActiveBuffs(ctx.prisma as any, userId);
       compressed.activeBuffs = rawBuffs
         .filter((b) => b.chargeCur > 0 && b.category === 'hunt')
         .map((b) => ({
@@ -389,7 +390,7 @@ export async function runHuntMessage(
           chargeCur: b.chargeCur,
           chargeMax: b.chargeMax,
         }));
-    }).catch(() => null);
+    } catch { /* buff hatası hunt'u engellemesin */ }
 
     await animateHuntMessage(message, name, compressed);
 

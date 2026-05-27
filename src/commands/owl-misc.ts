@@ -426,15 +426,15 @@ export async function runBuffMessage(
       .setColor(0x9b59b6)
       .setTitle(`${def.emoji} ${result.buffName} Aktifleştirildi!`)
       .setDescription(
-        `> Buff aktif! **${result.chargeMax}** charge ile başladı.\n` +
-        `> Her ${def.category === 'hunt' ? 'av' : def.category === 'pvp' ? 'PvP' : 'upgrade'} işleminde 1 charge tüketilir.`,
+        `> ${result.effectDescription}\n\n` +
+        `> 🔋 Charge: **${result.chargeCur}/${result.chargeMax}**`,
       )
       .addFields(
-        { name: '⚡ Kategori', value: def.category, inline: true },
+        { name: '⚡ Kategori', value: def.category === 'hunt' ? '🏹 Av' : def.category === 'pvp' ? '⚔️ PvP' : '🔨 Upgrade', inline: true },
         { name: '🔋 Charge', value: `${result.chargeCur}/${result.chargeMax}`, inline: true },
-        { name: '📊 Etki', value: `${def.effectType}: +${def.effectValue}`, inline: true },
+        { name: '⚠️ Tradeoff', value: def.tradeoff, inline: false },
       )
-      .setFooter({ text: 'Charge bitince buff pasifleşir — item silinmez.' });
+      .setFooter({ text: 'Charge bitince buff pasifleşir — item silinmez. Max 3 aynı türden buff.' });
 
     await message.reply({ embeds: [embed] });
   } catch (err) {

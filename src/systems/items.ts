@@ -50,6 +50,30 @@ interface BuffRow {
 // ── BUFF AKTİFLEŞTİRME ───────────────────────────────────────────────────────
 
 /**
+ * Buff'ın ne işe yaradığını oyuncuya gösterilecek kısa metin olarak döndürür.
+ */
+function buildEffectDescription(def: (typeof BUFF_ITEMS)[number]): string {
+  switch (def.effectType) {
+    case 'catch_bonus':
+      return `🎯 Yakalama şansı **+${Math.round(def.effectValue * 100)}%** artar (${def.chargeMax} hunt)`;
+    case 'loot_mult':
+      return `📦 Item drop şansı **+${Math.round((def.effectValue - 1) * 100)}%** artar (${def.chargeMax} hunt)`;
+    case 'rare_drop_bonus':
+      return `🔮 Nadir av drop şansı **+${Math.round(def.effectValue * 100)}%** artar (${def.chargeMax} hunt)`;
+    case 'upgrade_bonus':
+      return `⚡ Upgrade başarı şansı **+${def.effectValue} puan** artar (${def.chargeMax} upgrade)`;
+    case 'downgrade_shield':
+      return `🛡️ Başarısız upgrade'de stat düşme şansı **%${Math.round((1 - def.effectValue) * 100)} azalır** (${def.chargeMax} upgrade)`;
+    case 'pvp_damage_mult':
+      return `⚔️ PvP hasarı **+${Math.round((def.effectValue - 1) * 100)}%** artar (${def.chargeMax} dövüş)`;
+    case 'pvp_dodge_bonus':
+      return `🌀 PvP dodge şansı **+${Math.round(def.effectValue * 100)}%** artar (${def.chargeMax} dövüş)`;
+    default:
+      return def.description;
+  }
+}
+
+/**
  * Envanterdeki bir buff item'ını aktifleştirir.
  * Item envanterden düşülür, PlayerBuff tablosuna chargeMax ile eklenir.
  *
@@ -118,6 +142,7 @@ export async function activateBuff(
         chargeCur:  def.chargeMax,
         chargeMax:  def.chargeMax,
         depleted:   false,
+        effectDescription: buildEffectDescription(def),
       };
     });
   });

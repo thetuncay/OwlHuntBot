@@ -154,6 +154,114 @@ export const HUNT_PITY_MAX_BONUS  = 0.25; // max +25% nadir şans
 export const HUNT_STREAK_BONUS_RATE = 0.05; // her streak için +5% catch chance
 export const HUNT_STREAK_MAX_BONUS  = 0.20; // max +20%
 
+// ============================================================
+// LEVEL UP ÖDÜL SİSTEMİ
+// ============================================================
+// Her seviye atlandığında oyuncuya coin + özel item verilir.
+// Milestone seviyelerde (5, 10, 15...) ekstra ödüller aktif olur.
+// ============================================================
+
+export interface LevelUpReward {
+  coins: number;
+  /** Envantere eklenecek lootbox (opsiyonel) */
+  lootbox?: { id: string; name: string; emoji: string; quantity: number };
+  /** İkinci lootbox — Lv.4 gibi iki farklı kutu verildiğinde (opsiyonel) */
+  lootbox2?: { id: string; name: string; emoji: string; quantity: number };
+  /** Envantere eklenecek buff item (opsiyonel) */
+  item?: { itemName: string; itemType: string; rarity: string; quantity: number };
+  /** Özel mesaj (opsiyonel) */
+  message?: string;
+}
+
+/**
+ * Seviyeye göre ödül hesaplar.
+ * Milestone seviyelerde (5'in katları) ekstra ödül verilir.
+ *
+ * Coin kalibrasyonu:
+ *   Aktif oyuncu günde ~3000-8000 coin kazanır (hunt + sell).
+ *   Normal seviye ödülü ~1 günlük kazanç, milestone ~3-5 günlük.
+ *   Lv.10 büyük milestone ~1 haftalık kazanç hissi verir.
+ *
+ * Erken seviye (1-4): Lootbox ağırlıklı — yeni oyuncuyu sisteme çek.
+ */
+export function getLevelUpReward(newLevel: number): LevelUpReward {
+  // Temel coin: her seviye için belirgin şekilde artan miktar
+  const baseCoins = 1000 + newLevel * 200;
+
+  // ── Erken seviye özel ödülleri (1-4) ──────────────────────────────────────
+  if (newLevel === 1) {
+    return {
+      coins: 1500,
+      lootbox: { id: 'ek', name: 'Eşya Kutusu', emoji: '📦', quantity: 3 },
+      item: { itemName: 'Keskin Nişan', itemType: 'Buff', rarity: 'Common', quantity: 1 },
+      message: '🎉 Hoş geldin! **3 Eşya Kutusu** + **Keskin Nişan** kazandın — aç ve güçlen!',
+    };
+  }
+  if (newLevel === 2) {
+    return {
+      coins: 2000,
+      lootbox: { id: 'ek', name: 'Eşya Kutusu', emoji: '📦', quantity: 2 },
+      item: { itemName: 'Keskin Nişan', itemType: 'Buff', rarity: 'Common', quantity: 1 },
+      message: '🎯 **2 Eşya Kutusu** + **Keskin Nişan** kazandın!',
+    };
+  }
+  if (newLevel === 3) {
+    return {
+      coins: 2500,
+      lootbox: { id: 'wc', name: 'Silah Kutusu', emoji: '⚔️', quantity: 2 },
+      item: { itemName: 'Av Kokusu', itemType: 'Buff', rarity: 'Common', quantity: 1 },
+      message: '🌿 **2 Silah Kutusu** + **Av Kokusu** kazandın!',
+    };
+  }
+  if (newLevel === 4) {
+    return {
+      coins: 3000,
+      lootbox: { id: 'ek', name: 'Eşya Kutusu', emoji: '📦', quantity: 2 },
+      lootbox2: { id: 'wc', name: 'Silah Kutusu', emoji: '⚔️', quantity: 1 },
+      message: '💪 **2 Eşya Kutusu** + **1 Silah Kutusu** kazandın!',
+    };
+  }
+
+  // ── Büyük milestone (10'un katları: 10, 20, 30...) ────────────────────────
+  if (newLevel % 10 === 0) {
+    return {
+      coins: baseCoins * 5,
+      lootbox: { id: 'ek', name: 'Eşya Kutusu', emoji: '📦', quantity: 2 },
+      item: {
+        itemName: newLevel >= 30 ? 'Efsane Av Ruhu' : newLevel >= 20 ? 'Usta Eli' : 'Nadir İz',
+        itemType: 'Buff',
+        rarity:   newLevel >= 30 ? 'Legendary' : newLevel >= 20 ? 'Epic' : 'Rare',
+        quantity: 1,
+      },
+      message: newLevel >= 30
+        ? '🏆 Efsanevi seviye! **Efsane Av Ruhu** + **2 Eşya Kutusu** kazandın!'
+        : newLevel >= 20
+        ? '⚡ Büyük milestone! **Usta Eli** + **2 Eşya Kutusu** kazandın!'
+        : '🔮 Büyük milestone! **Nadir İz** + **2 Eşya Kutusu** kazandın!',
+    };
+  }
+
+  // ── Küçük milestone (5'in katları: 5, 15, 25, 35...) ─────────────────────
+  if (newLevel % 5 === 0) {
+    return {
+      coins: baseCoins * 3,
+      lootbox: { id: 'wc', name: 'Silah Kutusu', emoji: '⚔️', quantity: 1 },
+      item: {
+        itemName: newLevel >= 15 ? 'Berrak Zihin' : 'Keskin Nişan',
+        itemType: 'Buff',
+        rarity:   'Common',
+        quantity: 1,
+      },
+      message: newLevel >= 15
+        ? '💡 Milestone! **Berrak Zihin** + **1 Silah Kutusu** kazandın!'
+        : '🎯 Milestone! **Keskin Nişan** + **1 Silah Kutusu** kazandın!',
+    };
+  }
+
+  // ── Normal seviye — sadece coin ───────────────────────────────────────────
+  return { coins: baseCoins };
+}
+
 // Catch chance stat katkı sabitleri — 0-1 araliginda etki
 // Pence=50 → +0.125, Göz=50 → +0.075, Kanat=50 → +0.10
 // (Onceden /100 ile bolunuyordu, bu onlari neredeyse sifira indiriyordu)
