@@ -97,13 +97,13 @@ export async function activateBuff(
         throw new Error(`Envanterinde **${def.emoji} ${def.name}** yok.`);
       }
 
-      // Aynı effectType'tan kaç aktif (chargeCur > 0) buff var?
+      // Toplam kaç aktif (chargeCur > 0) buff var?
       const existingCount = await tx.playerBuff.count({
-        where: { playerId, effectType: def.effectType, chargeCur: { gt: 0 } },
+        where: { playerId, chargeCur: { gt: 0 } },
       });
       if (existingCount >= 3) {
         throw new Error(
-          `Aynı türden en fazla 3 aktif buff olabilir. ` +
+          `En fazla **3 aktif buff** takılabilir. ` +
           `Mevcut buff'larından birinin charge'ı bitmesini bekle.`,
         );
       }
