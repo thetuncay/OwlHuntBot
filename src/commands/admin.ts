@@ -12,169 +12,163 @@ const ADMIN_IDS = new Set([
 const data = new SlashCommandBuilder()
   .setName('admin')
   .setDescription('Admin komutlari')
-  // ── Oyuncu ──────────────────────────────────────────────────────────────────
-  .addSubcommand((s) => s.setName('stats').setDescription('Oyuncu detaylı bilgi')
-    .addUserOption((o) => o.setName('kullanici').setDescription('Kullanici').setRequired(true)))
-  .addSubcommand((s) => s.setName('resetplayer').setDescription('Oyuncuyu sıfırla (level/xp/coin/streak)')
-    .addUserOption((o) => o.setName('kullanici').setDescription('Kullanici').setRequired(true)))
-  .addSubcommand((s) => s.setName('setlevel').setDescription('Seviye ayarla')
-    .addUserOption((o) => o.setName('kullanici').setDescription('Kullanici').setRequired(true))
-    .addIntegerOption((o) => o.setName('seviye').setDescription('Yeni seviye').setRequired(true).setMinValue(1)))
-  .addSubcommand((s) => s.setName('setcoins').setDescription('Coin miktarını direkt ayarla')
-    .addUserOption((o) => o.setName('kullanici').setDescription('Kullanici').setRequired(true))
-    .addIntegerOption((o) => o.setName('miktar').setDescription('Coin miktari').setRequired(true).setMinValue(0)))
-  .addSubcommand((s) => s.setName('addcoins').setDescription('Coin ekle')
-    .addUserOption((o) => o.setName('kullanici').setDescription('Kullanici').setRequired(true))
-    .addIntegerOption((o) => o.setName('miktar').setDescription('Miktar').setRequired(true)))
-  .addSubcommand((s) => s.setName('addxp').setDescription('XP ekle')
-    .addUserOption((o) => o.setName('kullanici').setDescription('Kullanici').setRequired(true))
-    .addIntegerOption((o) => o.setName('miktar').setDescription('Miktar').setRequired(true)))
-  // ── Baykuş ──────────────────────────────────────────────────────────────────
-  .addSubcommand((s) => s.setName('healowl').setDescription('Main baykuşu tam HP yap')
-    .addUserOption((o) => o.setName('kullanici').setDescription('Kullanici').setRequired(true)))
-  .addSubcommand((s) => s.setName('setstat').setDescription('Baykuş statını ayarla')
-    .addUserOption((o) => o.setName('kullanici').setDescription('Kullanici').setRequired(true))
-    .addStringOption((o) => o.setName('stat').setDescription('Stat').setRequired(true)
-      .addChoices(
-        { name: 'gaga', value: 'statGaga' },
-        { name: 'goz', value: 'statGoz' },
-        { name: 'kulak', value: 'statKulak' },
-        { name: 'kanat', value: 'statKanat' },
+  // ── player grubu ─────────────────────────────────────────────────────────
+  .addSubcommandGroup((g) => g.setName('player').setDescription('Oyuncu yönetimi')
+    .addSubcommand((s) => s.setName('stats').setDescription('Oyuncu detaylı bilgi')
+      .addUserOption((o) => o.setName('kullanici').setDescription('Kullanici').setRequired(true)))
+    .addSubcommand((s) => s.setName('reset').setDescription('Oyuncuyu sıfırla (level/xp/coin/streak)')
+      .addUserOption((o) => o.setName('kullanici').setDescription('Kullanici').setRequired(true)))
+    .addSubcommand((s) => s.setName('setlevel').setDescription('Seviye ayarla')
+      .addUserOption((o) => o.setName('kullanici').setDescription('Kullanici').setRequired(true))
+      .addIntegerOption((o) => o.setName('seviye').setDescription('Yeni seviye').setRequired(true).setMinValue(1)))
+    .addSubcommand((s) => s.setName('setcoins').setDescription('Coin miktarını direkt ayarla')
+      .addUserOption((o) => o.setName('kullanici').setDescription('Kullanici').setRequired(true))
+      .addIntegerOption((o) => o.setName('miktar').setDescription('Coin miktari').setRequired(true).setMinValue(0)))
+    .addSubcommand((s) => s.setName('addcoins').setDescription('Coin ekle')
+      .addUserOption((o) => o.setName('kullanici').setDescription('Kullanici').setRequired(true))
+      .addIntegerOption((o) => o.setName('miktar').setDescription('Miktar').setRequired(true)))
+    .addSubcommand((s) => s.setName('addxp').setDescription('XP ekle')
+      .addUserOption((o) => o.setName('kullanici').setDescription('Kullanici').setRequired(true))
+      .addIntegerOption((o) => o.setName('miktar').setDescription('Miktar').setRequired(true)))
+    .addSubcommand((s) => s.setName('setprestige').setDescription('Prestige seviyesini ayarla')
+      .addUserOption((o) => o.setName('kullanici').setDescription('Kullanici').setRequired(true))
+      .addIntegerOption((o) => o.setName('seviye').setDescription('Prestige seviyesi').setRequired(true).setMinValue(0)))
+    .addSubcommand((s) => s.setName('transfercoins').setDescription('İki oyuncu arasında coin aktar')
+      .addUserOption((o) => o.setName('gonderen').setDescription('Gönderen oyuncu').setRequired(true))
+      .addUserOption((o) => o.setName('alan').setDescription('Alan oyuncu').setRequired(true))
+      .addIntegerOption((o) => o.setName('miktar').setDescription('Coin miktarı').setRequired(true).setMinValue(1)))
+    .addSubcommand((s) => s.setName('delete').setDescription('Oyuncuyu tamamen sil (GERİ ALINAMAZ)')
+      .addUserOption((o) => o.setName('kullanici').setDescription('Silinecek oyuncu').setRequired(true)))
+    .addSubcommand((s) => s.setName('undo').setDescription('Oyuncunun son işlemini geri al')
+      .addStringOption((o) => o.setName('userid').setDescription('Oyuncu Discord ID\'si').setRequired(true)))
+    .addSubcommand((s) => s.setName('ban').setDescription('Oyuncuyu bota erişimden engelle')
+      .addUserOption((o) => o.setName('kullanici').setDescription('Oyuncu').setRequired(true))
+      .addStringOption((o) => o.setName('sebep').setDescription('Engelleme sebebi').setRequired(false)))
+    .addSubcommand((s) => s.setName('unban').setDescription('Oyuncunun engelini kaldır')
+      .addUserOption((o) => o.setName('kullanici').setDescription('Oyuncu').setRequired(true)))
+    .addSubcommand((s) => s.setName('banlist').setDescription('Engellenen oyuncuları listele'))
+    .addSubcommand((s) => s.setName('list').setDescription('Kayıtlı oyuncuları listele')
+      .addIntegerOption((o) => o.setName('sayfa').setDescription('Sayfa numarası').setRequired(false).setMinValue(1)))
+  )
+  // ── owl grubu ─────────────────────────────────────────────────────────────
+  .addSubcommandGroup((g) => g.setName('owl').setDescription('Baykuş yönetimi')
+    .addSubcommand((s) => s.setName('heal').setDescription('Main baykuşu tam HP yap')
+      .addUserOption((o) => o.setName('kullanici').setDescription('Kullanici').setRequired(true)))
+    .addSubcommand((s) => s.setName('setstat').setDescription('Baykuş statını ayarla')
+      .addUserOption((o) => o.setName('kullanici').setDescription('Kullanici').setRequired(true))
+      .addStringOption((o) => o.setName('stat').setDescription('Stat').setRequired(true).addChoices(
+        { name: 'gaga', value: 'statGaga' }, { name: 'goz', value: 'statGoz' },
+        { name: 'kulak', value: 'statKulak' }, { name: 'kanat', value: 'statKanat' },
         { name: 'pence', value: 'statPence' },
       ))
-    .addIntegerOption((o) => o.setName('deger').setDescription('Yeni değer').setRequired(true).setMinValue(1)))
-  .addSubcommand((s) => s.setName('resetowl').setDescription('Main baykuşun statlarını sıfırla')
-    .addUserOption((o) => o.setName('kullanici').setDescription('Kullanici').setRequired(true)))
-  // ── Envanter ────────────────────────────────────────────────────────────────
-  .addSubcommand((s) => s.setName('additem').setDescription('Item ekle')
-    .addUserOption((o) => o.setName('kullanici').setDescription('Kullanici').setRequired(true))
-    .addStringOption((o) => o.setName('item').setDescription('Item adi').setRequired(true))
-    .addIntegerOption((o) => o.setName('miktar').setDescription('Miktar').setRequired(true).setMinValue(1))
-    .addStringOption((o) => o.setName('tip').setDescription('Item tipi').addChoices(
-      { name: 'Materyal', value: 'Materyal' },
-      { name: 'Av', value: 'Av' },
-    )))
-  .addSubcommand((s) => s.setName('removeitem').setDescription('Envanterden item sil')
-    .addUserOption((o) => o.setName('kullanici').setDescription('Kullanici').setRequired(true))
-    .addStringOption((o) => o.setName('item').setDescription('Item adi').setRequired(true)))
-  .addSubcommand((s) => s.setName('clearinventory').setDescription('Envanteri tamamen temizle')
-    .addUserOption((o) => o.setName('kullanici').setDescription('Kullanici').setRequired(true)))
-  // ── Cooldown ────────────────────────────────────────────────────────────────
-  .addSubcommand((s) => s.setName('clearcooldown').setDescription('Hunt cooldown temizle')
-    .addUserOption((o) => o.setName('kullanici').setDescription('Kullanici').setRequired(true)))
-  .addSubcommand((s) => s.setName('clearallcooldowns').setDescription('TÜM hunt cooldownları temizle'))
-  .addSubcommand((s) => s.setName('clearupgradecooldown').setDescription('Upgrade cooldown temizle')
-    .addUserOption((o) => o.setName('kullanici').setDescription('Kullanici').setRequired(true)))
-  // ── Sunucu ──────────────────────────────────────────────────────────────────
-  .addSubcommand((s) => s.setName('serverinfo').setDescription('Sunucu istatistikleri'))
-  .addSubcommand((s) => s.setName('broadcast').setDescription('Tüm kayıtlı oyunculara embed duyuru gönder')
-    .addStringOption((o) => o.setName('baslik').setDescription('Embed başlığı').setRequired(true))
-    .addStringOption((o) => o.setName('mesaj').setDescription('Mesaj gövdesi — liste için her satırı \\n ile ayır').setRequired(true))
-    .addStringOption((o) => o.setName('footer').setDescription('Alt bilgi metni (opsiyonel)').setRequired(false))
-    .addStringOption((o) => o.setName('renk').setDescription('Embed rengi').setRequired(false).addChoices(
-      { name: '🔵 Mavi (Bilgi)',     value: 'blue'   },
-      { name: '🟢 Yeşil (Başarı)',   value: 'green'  },
-      { name: '🟡 Sarı (Uyarı)',     value: 'yellow' },
-      { name: '🔴 Kırmızı (Kritik)', value: 'red'    },
-      { name: '🟣 Mor (Özel)',       value: 'purple' },
-    )))
-  // ── Liderboard ──────────────────────────────────────────────────────────────
-  .addSubcommand((s) => s.setName('siralama').setDescription('Liderboard rollerini sunucuda otomatik olustur'))
-  .addSubcommand((s) => s.setName('lbcache').setDescription('Liderboard cache\'ini temizle'))
-  .addSubcommand((s) => s.setName('lbseason').setDescription('Mevcut sezon bilgisini goster'))
-  .addSubcommand((s) => s.setName('lbreset').setDescription('Sezonu arsivle ve sifirla (GERI ALINAMAZ)'))
-  .addSubcommand((s) => s.setName('lbrefreshscore').setDescription('Oyuncunun power score\'unu yenile')
-    .addUserOption((o) => o.setName('kullanici').setDescription('Kullanici').setRequired(true)))
-  // ── Test ────────────────────────────────────────────────────────────────────
-  .addSubcommand((s) => s.setName('testtame').setDescription('Encounter oluştur ve tame UI\'ını başlat')
-    .addIntegerOption((o) => o.setName('tier').setDescription('Baykuş tier (1-8)').setRequired(true).setMinValue(1).setMaxValue(8))
-    .addStringOption((o) => o.setName('kalite').setDescription('Kalite (varsayılan: Common)').addChoices(
-      { name: 'Trash',    value: 'Trash'    },
-      { name: 'Common',   value: 'Common'   },
-      { name: 'Good',     value: 'Good'     },
-      { name: 'Rare',     value: 'Rare'     },
-      { name: 'Elite',    value: 'Elite'    },
-      { name: 'God Roll', value: 'God Roll' },
-    ))
-    .addUserOption((o) => o.setName('kullanici').setDescription('Hedef oyuncu (boş = kendin)')))
-  // ── AI ──────────────────────────────────────────────────────────────────────
-  .addSubcommand((s) => s.setName('aiquota').setDescription('AI API kullanım istatistiklerini göster'))
-  // ── Undo ────────────────────────────────────────────────────────────────────
-  .addSubcommand((s) => s.setName('undo').setDescription('Oyuncunun son işlemini geri al')
-    .addStringOption((o) => o.setName('userid').setDescription('Oyuncu Discord ID\'si').setRequired(true)))
-  // ── Silme ────────────────────────────────────────────────────────────────────
-  .addSubcommand((s) => s.setName('delete').setDescription('Oyuncuyu tamamen sil (GERİ ALINAMAZ)')
-    .addUserOption((o) => o.setName('kullanici').setDescription('Silinecek oyuncu').setRequired(true)))
-  // ── Buff Yönetimi ─────────────────────────────────────────────────────────────
-  .addSubcommand((s) => s.setName('givebuff').setDescription('Oyuncuya aktif buff tak')
-    .addUserOption((o) => o.setName('kullanici').setDescription('Oyuncu').setRequired(true))
-    .addStringOption((o) => o.setName('buffid').setDescription('Buff ID (b001-b012)').setRequired(true)))
-  .addSubcommand((s) => s.setName('clearbuffs').setDescription('Oyuncunun tüm aktif buff\'larını temizle')
-    .addUserOption((o) => o.setName('kullanici').setDescription('Oyuncu').setRequired(true)))
-  .addSubcommand((s) => s.setName('listbuffs').setDescription('Oyuncunun aktif buff\'larını listele')
-    .addUserOption((o) => o.setName('kullanici').setDescription('Oyuncu').setRequired(true)))
-  // ── Baykuş Yönetimi ───────────────────────────────────────────────────────────
-  .addSubcommand((s) => s.setName('giveowl').setDescription('Oyuncuya yeni baykuş ver')
-    .addUserOption((o) => o.setName('kullanici').setDescription('Oyuncu').setRequired(true))
-    .addIntegerOption((o) => o.setName('tier').setDescription('Tier (1-8)').setRequired(true).setMinValue(1).setMaxValue(8))
-    .addStringOption((o) => o.setName('kalite').setDescription('Kalite').setRequired(true).addChoices(
-      { name: 'Trash', value: 'Trash' }, { name: 'Common', value: 'Common' },
-      { name: 'Good', value: 'Good' }, { name: 'Rare', value: 'Rare' },
-      { name: 'Elite', value: 'Elite' }, { name: 'God Roll', value: 'God Roll' },
-    )))
-  .addSubcommand((s) => s.setName('setquality').setDescription('Main baykuşun kalitesini değiştir')
-    .addUserOption((o) => o.setName('kullanici').setDescription('Oyuncu').setRequired(true))
-    .addStringOption((o) => o.setName('kalite').setDescription('Kalite').setRequired(true).addChoices(
-      { name: 'Trash', value: 'Trash' }, { name: 'Common', value: 'Common' },
-      { name: 'Good', value: 'Good' }, { name: 'Rare', value: 'Rare' },
-      { name: 'Elite', value: 'Elite' }, { name: 'God Roll', value: 'God Roll' },
-    )))
-  .addSubcommand((s) => s.setName('seteffectiveness').setDescription('Main baykuşun effectiveness değerini ayarla')
-    .addUserOption((o) => o.setName('kullanici').setDescription('Oyuncu').setRequired(true))
-    .addIntegerOption((o) => o.setName('deger').setDescription('Değer (0-100)').setRequired(true).setMinValue(0).setMaxValue(100)))
-  .addSubcommand((s) => s.setName('setpassivemode').setDescription('Main baykuşun pasif modunu ayarla')
-    .addUserOption((o) => o.setName('kullanici').setDescription('Oyuncu').setRequired(true))
-    .addStringOption((o) => o.setName('mod').setDescription('Mod').setRequired(true).addChoices(
-      { name: 'idle', value: 'idle' },
-      { name: 'training', value: 'training' },
-    )))
-  // ── Envanter Genişletme ───────────────────────────────────────────────────────
-  .addSubcommand((s) => s.setName('givebuffitem').setDescription('Oyuncunun envanterine buff item ekle')
-    .addUserOption((o) => o.setName('kullanici').setDescription('Oyuncu').setRequired(true))
-    .addStringOption((o) => o.setName('buffid').setDescription('Buff ID (b001-b012)').setRequired(true))
-    .addIntegerOption((o) => o.setName('miktar').setDescription('Miktar').setRequired(false).setMinValue(1).setMaxValue(99)))
-  .addSubcommand((s) => s.setName('givelootbox').setDescription('Oyuncuya lootbox ver')
-    .addUserOption((o) => o.setName('kullanici').setDescription('Oyuncu').setRequired(true))
-    .addStringOption((o) => o.setName('tip').setDescription('Kutu tipi').setRequired(true).addChoices(
-      { name: 'Silah Kutusu', value: 'Silah Kutusu' },
-      { name: 'Eşya Kutusu', value: 'Eşya Kutusu' },
-    ))
-    .addIntegerOption((o) => o.setName('miktar').setDescription('Miktar').setRequired(false).setMinValue(1).setMaxValue(99)))
-  .addSubcommand((s) => s.setName('inventory').setDescription('Oyuncunun envanterini görüntüle')
-    .addUserOption((o) => o.setName('kullanici').setDescription('Oyuncu').setRequired(true)))
-  // ── Ekonomi ───────────────────────────────────────────────────────────────────
-  .addSubcommand((s) => s.setName('economy').setDescription('Genel ekonomi istatistikleri'))
-  .addSubcommand((s) => s.setName('transfercoins').setDescription('İki oyuncu arasında coin aktar')
-    .addUserOption((o) => o.setName('gonderen').setDescription('Gönderen oyuncu').setRequired(true))
-    .addUserOption((o) => o.setName('alan').setDescription('Alan oyuncu').setRequired(true))
-    .addIntegerOption((o) => o.setName('miktar').setDescription('Coin miktarı').setRequired(true).setMinValue(1)))
-  .addSubcommand((s) => s.setName('setprestige').setDescription('Oyuncunun prestige seviyesini ayarla')
-    .addUserOption((o) => o.setName('kullanici').setDescription('Oyuncu').setRequired(true))
-    .addIntegerOption((o) => o.setName('seviye').setDescription('Prestige seviyesi').setRequired(true).setMinValue(0)))
-  // ── Sistem ────────────────────────────────────────────────────────────────────
-  .addSubcommand((s) => s.setName('playerlist').setDescription('Kayıtlı oyuncuları listele')
-    .addIntegerOption((o) => o.setName('sayfa').setDescription('Sayfa numarası').setRequired(false).setMinValue(1)))
-  .addSubcommand((s) => s.setName('buffstats').setDescription('Buff kullanım istatistikleri'))
-  .addSubcommand((s) => s.setName('ban').setDescription('Oyuncuyu bota erişimden engelle')
-    .addUserOption((o) => o.setName('kullanici').setDescription('Oyuncu').setRequired(true))
-    .addStringOption((o) => o.setName('sebep').setDescription('Engelleme sebebi').setRequired(false)))
-  .addSubcommand((s) => s.setName('unban').setDescription('Oyuncunun engelini kaldır')
-    .addUserOption((o) => o.setName('kullanici').setDescription('Oyuncu').setRequired(true)))
-  .addSubcommand((s) => s.setName('banlist').setDescription('Engellenen oyuncuları listele'))
-  .addSubcommand((s) => s.setName('maintenance').setDescription('Bakım modunu aç/kapat'))
-  .addSubcommand((s) => s.setName('queststats').setDescription('Günlük görev istatistikleri'))
-  .addSubcommand((s) => s.setName('pvpstats').setDescription('PvP istatistikleri'))
-  .addSubcommand((s) => s.setName('marketstats').setDescription('Market istatistikleri'));
+      .addIntegerOption((o) => o.setName('deger').setDescription('Yeni değer').setRequired(true).setMinValue(1)))
+    .addSubcommand((s) => s.setName('reset').setDescription('Main baykuşun statlarını sıfırla')
+      .addUserOption((o) => o.setName('kullanici').setDescription('Kullanici').setRequired(true)))
+    .addSubcommand((s) => s.setName('give').setDescription('Oyuncuya yeni baykuş ver')
+      .addUserOption((o) => o.setName('kullanici').setDescription('Oyuncu').setRequired(true))
+      .addIntegerOption((o) => o.setName('tier').setDescription('Tier (1-8)').setRequired(true).setMinValue(1).setMaxValue(8))
+      .addStringOption((o) => o.setName('kalite').setDescription('Kalite').setRequired(true).addChoices(
+        { name: 'Trash', value: 'Trash' }, { name: 'Common', value: 'Common' },
+        { name: 'Good', value: 'Good' }, { name: 'Rare', value: 'Rare' },
+        { name: 'Elite', value: 'Elite' }, { name: 'God Roll', value: 'God Roll' },
+      )))
+    .addSubcommand((s) => s.setName('setquality').setDescription('Main baykuşun kalitesini değiştir')
+      .addUserOption((o) => o.setName('kullanici').setDescription('Oyuncu').setRequired(true))
+      .addStringOption((o) => o.setName('kalite').setDescription('Kalite').setRequired(true).addChoices(
+        { name: 'Trash', value: 'Trash' }, { name: 'Common', value: 'Common' },
+        { name: 'Good', value: 'Good' }, { name: 'Rare', value: 'Rare' },
+        { name: 'Elite', value: 'Elite' }, { name: 'God Roll', value: 'God Roll' },
+      )))
+    .addSubcommand((s) => s.setName('seteffectiveness').setDescription('Effectiveness değerini ayarla')
+      .addUserOption((o) => o.setName('kullanici').setDescription('Oyuncu').setRequired(true))
+      .addIntegerOption((o) => o.setName('deger').setDescription('Değer (0-100)').setRequired(true).setMinValue(0).setMaxValue(100)))
+    .addSubcommand((s) => s.setName('setpassivemode').setDescription('Pasif modunu ayarla')
+      .addUserOption((o) => o.setName('kullanici').setDescription('Oyuncu').setRequired(true))
+      .addStringOption((o) => o.setName('mod').setDescription('Mod').setRequired(true).addChoices(
+        { name: 'idle', value: 'idle' }, { name: 'training', value: 'training' },
+      )))
+  )
+  // ── inv grubu ─────────────────────────────────────────────────────────────
+  .addSubcommandGroup((g) => g.setName('inv').setDescription('Envanter yönetimi')
+    .addSubcommand((s) => s.setName('add').setDescription('Item ekle')
+      .addUserOption((o) => o.setName('kullanici').setDescription('Kullanici').setRequired(true))
+      .addStringOption((o) => o.setName('item').setDescription('Item adi').setRequired(true))
+      .addIntegerOption((o) => o.setName('miktar').setDescription('Miktar').setRequired(true).setMinValue(1))
+      .addStringOption((o) => o.setName('tip').setDescription('Item tipi').addChoices(
+        { name: 'Materyal', value: 'Materyal' }, { name: 'Av', value: 'Av' },
+      )))
+    .addSubcommand((s) => s.setName('remove').setDescription('Envanterden item sil')
+      .addUserOption((o) => o.setName('kullanici').setDescription('Kullanici').setRequired(true))
+      .addStringOption((o) => o.setName('item').setDescription('Item adi').setRequired(true)))
+    .addSubcommand((s) => s.setName('clear').setDescription('Envanteri tamamen temizle')
+      .addUserOption((o) => o.setName('kullanici').setDescription('Kullanici').setRequired(true)))
+    .addSubcommand((s) => s.setName('view').setDescription('Oyuncunun envanterini görüntüle')
+      .addUserOption((o) => o.setName('kullanici').setDescription('Oyuncu').setRequired(true)))
+    .addSubcommand((s) => s.setName('givebuff').setDescription('Envantere buff item ekle')
+      .addUserOption((o) => o.setName('kullanici').setDescription('Oyuncu').setRequired(true))
+      .addStringOption((o) => o.setName('buffid').setDescription('Buff ID (b001-b012)').setRequired(true))
+      .addIntegerOption((o) => o.setName('miktar').setDescription('Miktar').setRequired(false).setMinValue(1).setMaxValue(99)))
+    .addSubcommand((s) => s.setName('givelootbox').setDescription('Lootbox ver')
+      .addUserOption((o) => o.setName('kullanici').setDescription('Oyuncu').setRequired(true))
+      .addStringOption((o) => o.setName('tip').setDescription('Kutu tipi').setRequired(true).addChoices(
+        { name: 'Silah Kutusu', value: 'Silah Kutusu' },
+        { name: 'Eşya Kutusu', value: 'Eşya Kutusu' },
+      ))
+      .addIntegerOption((o) => o.setName('miktar').setDescription('Miktar').setRequired(false).setMinValue(1).setMaxValue(99)))
+    .addSubcommand((s) => s.setName('givebuffactive').setDescription('Oyuncuya aktif buff tak')
+      .addUserOption((o) => o.setName('kullanici').setDescription('Oyuncu').setRequired(true))
+      .addStringOption((o) => o.setName('buffid').setDescription('Buff ID (b001-b012)').setRequired(true)))
+    .addSubcommand((s) => s.setName('clearbuffs').setDescription('Tüm aktif buff\'ları temizle')
+      .addUserOption((o) => o.setName('kullanici').setDescription('Oyuncu').setRequired(true)))
+    .addSubcommand((s) => s.setName('listbuffs').setDescription('Aktif buff\'ları listele')
+      .addUserOption((o) => o.setName('kullanici').setDescription('Oyuncu').setRequired(true)))
+  )
+  // ── sys grubu ─────────────────────────────────────────────────────────────
+  .addSubcommandGroup((g) => g.setName('sys').setDescription('Sistem yönetimi')
+    .addSubcommand((s) => s.setName('info').setDescription('Sunucu istatistikleri'))
+    .addSubcommand((s) => s.setName('maintenance').setDescription('Bakım modunu aç/kapat'))
+    .addSubcommand((s) => s.setName('broadcast').setDescription('Tüm oyunculara duyuru gönder')
+      .addStringOption((o) => o.setName('baslik').setDescription('Embed başlığı').setRequired(true))
+      .addStringOption((o) => o.setName('mesaj').setDescription('Mesaj gövdesi').setRequired(true))
+      .addStringOption((o) => o.setName('footer').setDescription('Alt bilgi').setRequired(false))
+      .addStringOption((o) => o.setName('renk').setDescription('Renk').setRequired(false).addChoices(
+        { name: '🔵 Mavi', value: 'blue' }, { name: '🟢 Yeşil', value: 'green' },
+        { name: '🟡 Sarı', value: 'yellow' }, { name: '🔴 Kırmızı', value: 'red' },
+        { name: '🟣 Mor', value: 'purple' },
+      )))
+    .addSubcommand((s) => s.setName('clearcooldown').setDescription('Hunt cooldown temizle')
+      .addUserOption((o) => o.setName('kullanici').setDescription('Kullanici').setRequired(true)))
+    .addSubcommand((s) => s.setName('clearallcooldowns').setDescription('TÜM hunt cooldownları temizle'))
+    .addSubcommand((s) => s.setName('clearupgradecooldown').setDescription('Upgrade cooldown temizle')
+      .addUserOption((o) => o.setName('kullanici').setDescription('Kullanici').setRequired(true)))
+    .addSubcommand((s) => s.setName('aiquota').setDescription('AI API kullanım istatistikleri'))
+    .addSubcommand((s) => s.setName('testtame').setDescription('Encounter oluştur ve tame UI başlat')
+      .addIntegerOption((o) => o.setName('tier').setDescription('Baykuş tier (1-8)').setRequired(true).setMinValue(1).setMaxValue(8))
+      .addStringOption((o) => o.setName('kalite').setDescription('Kalite').addChoices(
+        { name: 'Trash', value: 'Trash' }, { name: 'Common', value: 'Common' },
+        { name: 'Good', value: 'Good' }, { name: 'Rare', value: 'Rare' },
+        { name: 'Elite', value: 'Elite' }, { name: 'God Roll', value: 'God Roll' },
+      ))
+      .addUserOption((o) => o.setName('kullanici').setDescription('Hedef oyuncu (boş = kendin)')))
+  )
+  // ── lb grubu ──────────────────────────────────────────────────────────────
+  .addSubcommandGroup((g) => g.setName('lb').setDescription('Liderboard yönetimi')
+    .addSubcommand((s) => s.setName('siralama').setDescription('Liderboard rollerini oluştur'))
+    .addSubcommand((s) => s.setName('cache').setDescription('Liderboard cache\'ini temizle'))
+    .addSubcommand((s) => s.setName('season').setDescription('Mevcut sezon bilgisi'))
+    .addSubcommand((s) => s.setName('reset').setDescription('Sezonu arşivle ve sıfırla (GERİ ALINAMAZ)'))
+    .addSubcommand((s) => s.setName('refreshscore').setDescription('Oyuncunun power score\'unu yenile')
+      .addUserOption((o) => o.setName('kullanici').setDescription('Kullanici').setRequired(true)))
+    .addSubcommand((s) => s.setName('backfill').setDescription('Tüm oyuncuların liderboard verisini yenile'))
+  )
+  // ── stats grubu ───────────────────────────────────────────────────────────
+  .addSubcommandGroup((g) => g.setName('stats').setDescription('İstatistikler')
+    .addSubcommand((s) => s.setName('economy').setDescription('Ekonomi istatistikleri'))
+    .addSubcommand((s) => s.setName('buffs').setDescription('Buff kullanım istatistikleri'))
+    .addSubcommand((s) => s.setName('pvp').setDescription('PvP istatistikleri'))
+    .addSubcommand((s) => s.setName('market').setDescription('Market istatistikleri'))
+    .addSubcommand((s) => s.setName('quests').setDescription('Günlük görev istatistikleri'))
+  );
 
 async function execute(
   interaction: Parameters<CommandDefinition['execute']>[0],
@@ -186,9 +180,10 @@ async function execute(
   }
 
   const sub = interaction.options.getSubcommand(true);
+  const grp = interaction.options.getSubcommandGroup(false) ?? '';
 
-  // ── stats ──────────────────────────────────────────────────────────────────
-  if (sub === 'stats') {
+  // ── player/stats ───────────────────────────────────────────────────────────
+  if (grp === 'player' && sub === 'stats') {
     const user = interaction.options.getUser('kullanici', true);
     const player = await ctx.prisma.player.findUnique({ where: { id: user.id } });
     if (!player) { await interaction.reply({ content: `❌ <@${user.id}> kayıtlı değil.`, flags: 64 }); return; }
@@ -208,8 +203,8 @@ async function execute(
     return;
   }
 
-  // ── resetplayer ────────────────────────────────────────────────────────────
-  if (sub === 'resetplayer') {
+  // ── player/reset ──────────────────────────────────────────────────────────
+  if (grp === 'player' && sub === 'reset') {
     const user = interaction.options.getUser('kullanici', true);
     const player = await ctx.prisma.player.findUnique({ where: { id: user.id } });
     if (!player) { await interaction.reply({ content: `❌ <@${user.id}> kayıtlı değil.`, flags: 64 }); return; }
@@ -222,8 +217,8 @@ async function execute(
     return;
   }
 
-  // ── setlevel ───────────────────────────────────────────────────────────────
-  if (sub === 'setlevel') {
+  // ── player/setlevel ────────────────────────────────────────────────────────
+  if (grp === 'player' && sub === 'setlevel') {
     const user = interaction.options.getUser('kullanici', true);
     const level = interaction.options.getInteger('seviye', true);
     const player = await ctx.prisma.player.findUnique({ where: { id: user.id } });
@@ -234,8 +229,8 @@ async function execute(
     return;
   }
 
-  // ── setcoins ───────────────────────────────────────────────────────────────
-  if (sub === 'setcoins') {
+  // ── player/setcoins ────────────────────────────────────────────────────────
+  if (grp === 'player' && sub === 'setcoins') {
     const user = interaction.options.getUser('kullanici', true);
     const amount = interaction.options.getInteger('miktar', true);
     const player = await ctx.prisma.player.findUnique({ where: { id: user.id } });
@@ -246,8 +241,8 @@ async function execute(
     return;
   }
 
-  // ── addcoins ───────────────────────────────────────────────────────────────
-  if (sub === 'addcoins') {
+  // ── player/addcoins ────────────────────────────────────────────────────────
+  if (grp === 'player' && sub === 'addcoins') {
     const user = interaction.options.getUser('kullanici', true);
     const amount = interaction.options.getInteger('miktar', true);
     const player = await ctx.prisma.player.findUnique({ where: { id: user.id } });
@@ -258,8 +253,8 @@ async function execute(
     return;
   }
 
-  // ── addxp ──────────────────────────────────────────────────────────────────
-  if (sub === 'addxp') {
+  // ── player/addxp ───────────────────────────────────────────────────────────
+  if (grp === 'player' && sub === 'addxp') {
     const user = interaction.options.getUser('kullanici', true);
     const amount = interaction.options.getInteger('miktar', true);
     const player = await ctx.prisma.player.findUnique({ where: { id: user.id } });
@@ -270,8 +265,8 @@ async function execute(
     return;
   }
 
-  // ── healowl ────────────────────────────────────────────────────────────────
-  if (sub === 'healowl') {
+  // ── owl/heal ───────────────────────────────────────────────────────────────
+  if (grp === 'owl' && sub === 'heal') {
     const user = interaction.options.getUser('kullanici', true);
     const owl = await ctx.prisma.owl.findFirst({ where: { ownerId: user.id, isMain: true } });
     if (!owl) { await interaction.reply({ content: `❌ <@${user.id}> main baykusu yok.`, flags: 64 }); return; }
@@ -281,8 +276,8 @@ async function execute(
     return;
   }
 
-  // ── setstat ────────────────────────────────────────────────────────────────
-  if (sub === 'setstat') {
+  // ── owl/setstat ────────────────────────────────────────────────────────────
+  if (grp === 'owl' && sub === 'setstat') {
     const user = interaction.options.getUser('kullanici', true);
     const stat = interaction.options.getString('stat', true);
     const value = interaction.options.getInteger('deger', true);
@@ -294,8 +289,8 @@ async function execute(
     return;
   }
 
-  // ── resetowl ───────────────────────────────────────────────────────────────
-  if (sub === 'resetowl') {
+  // ── owl/reset ──────────────────────────────────────────────────────────────
+  if (grp === 'owl' && sub === 'reset') {
     const user = interaction.options.getUser('kullanici', true);
     const owl = await ctx.prisma.owl.findFirst({ where: { ownerId: user.id, isMain: true } });
     if (!owl) { await interaction.reply({ content: `❌ <@${user.id}> main baykusu yok.`, flags: 64 }); return; }
@@ -308,8 +303,8 @@ async function execute(
     return;
   }
 
-  // ── additem ────────────────────────────────────────────────────────────────
-  if (sub === 'additem') {
+  // ── inv/add ────────────────────────────────────────────────────────────────
+  if (grp === 'inv' && sub === 'add') {
     const user = interaction.options.getUser('kullanici', true);
     const itemName = interaction.options.getString('item', true);
     const quantity = interaction.options.getInteger('miktar', true);
@@ -327,8 +322,8 @@ async function execute(
     return;
   }
 
-  // ── removeitem ─────────────────────────────────────────────────────────────
-  if (sub === 'removeitem') {
+  // ── inv/remove ─────────────────────────────────────────────────────────────
+  if (grp === 'inv' && sub === 'remove') {
     const user = interaction.options.getUser('kullanici', true);
     const itemName = interaction.options.getString('item', true);
     const item = await ctx.prisma.inventoryItem.findFirst({ where: { ownerId: user.id, itemName } });
@@ -339,8 +334,8 @@ async function execute(
     return;
   }
 
-  // ── clearinventory ─────────────────────────────────────────────────────────
-  if (sub === 'clearinventory') {
+  // ── inv/clear ──────────────────────────────────────────────────────────────
+  if (grp === 'inv' && sub === 'clear') {
     const user = interaction.options.getUser('kullanici', true);
     const count = await ctx.prisma.inventoryItem.count({ where: { ownerId: user.id } });
     await ctx.prisma.inventoryItem.deleteMany({ where: { ownerId: user.id } });
@@ -348,32 +343,32 @@ async function execute(
     return;
   }
 
-  // ── clearcooldown ──────────────────────────────────────────────────────────
-  if (sub === 'clearcooldown') {
+  // ── sys/clearcooldown ──────────────────────────────────────────────────────
+  if (grp === 'sys' && sub === 'clearcooldown') {
     const user = interaction.options.getUser('kullanici', true);
     await ctx.redis.del(`cooldown:hunt:${user.id}`);
     await interaction.reply({ content: `✅ <@${user.id}> hunt cooldown temizlendi. ⏰`, flags: 64 });
     return;
   }
 
-  // ── clearallcooldowns ──────────────────────────────────────────────────────
-  if (sub === 'clearallcooldowns') {
+  // ── sys/clearallcooldowns ──────────────────────────────────────────────────
+  if (grp === 'sys' && sub === 'clearallcooldowns') {
     const keys = await ctx.redis.keys('cooldown:hunt:*');
     if (keys.length > 0) await ctx.redis.del(...keys);
     await interaction.reply({ content: `✅ ${keys.length} hunt cooldown temizlendi. ⏰`, flags: 64 });
     return;
   }
 
-  // ── clearupgradecooldown ───────────────────────────────────────────────────
-  if (sub === 'clearupgradecooldown') {
+  // ── sys/clearupgradecooldown ───────────────────────────────────────────────
+  if (grp === 'sys' && sub === 'clearupgradecooldown') {
     const user = interaction.options.getUser('kullanici', true);
     await ctx.redis.del(`cooldown:upgrade:${user.id}`);
     await interaction.reply({ content: `✅ <@${user.id}> upgrade cooldown temizlendi. ⏰`, flags: 64 });
     return;
   }
 
-  // ── serverinfo ─────────────────────────────────────────────────────────────
-  if (sub === 'serverinfo') {
+  // ── sys/info ───────────────────────────────────────────────────────────────
+  if (grp === 'sys' && sub === 'info') {
     const [playerCount, owlCount, itemCount, pvpCount] = await Promise.all([
       ctx.prisma.player.count(),
       ctx.prisma.owl.count(),
@@ -396,8 +391,8 @@ async function execute(
     return;
   }
 
-  // ── broadcast ──────────────────────────────────────────────────────────────
-  if (sub === 'broadcast') {
+  // ── sys/broadcast ──────────────────────────────────────────────────────────
+  if (grp === 'sys' && sub === 'broadcast') {
     const baslik = interaction.options.getString('baslik', true);
     const mesajRaw = interaction.options.getString('mesaj', true);
     const footer = interaction.options.getString('footer') ?? null;
@@ -468,8 +463,8 @@ async function execute(
     return;
   }
 
-  // ── siralama — rolleri otomatik olustur ───────────────────────────────────
-  if (sub === 'siralama') {
+  // ── lb/siralama ────────────────────────────────────────────────────────────
+  if (grp === 'lb' && sub === 'siralama') {
     if (!interaction.guildId || !interaction.guild) {
       await interaction.reply({ content: `❌ Bu komut sadece sunucuda kullanılabilir.`, flags: 64 });
       return;
@@ -480,15 +475,15 @@ async function execute(
     return;
   }
 
-  // ── lbcache ────────────────────────────────────────────────────────────────
-  if (sub === 'lbcache') {
+  // ── lb/cache ───────────────────────────────────────────────────────────────
+  if (grp === 'lb' && sub === 'cache') {
     await invalidateLeaderboardCache(ctx.redis);
     await interaction.reply({ content: `✅ Liderboard cache temizlendi. Bir sonraki sorgu DB'den yüklenecek.`, flags: 64 });
     return;
   }
 
-  // ── lbseason ───────────────────────────────────────────────────────────────
-  if (sub === 'lbseason') {
+  // ── lb/season ──────────────────────────────────────────────────────────────
+  if (grp === 'lb' && sub === 'season') {
     const season = await getCurrentSeason(ctx.prisma);
     if (!season) {
       await interaction.reply({ content: `ℹ️ Henüz aktif sezon yok. İlk oyun aksiyonunda otomatik oluşur.`, flags: 64 });
@@ -504,35 +499,24 @@ async function execute(
     return;
   }
 
-  // ── lbreset ────────────────────────────────────────────────────────────────
-  if (sub === 'lbreset') {
+  // ── lb/reset ───────────────────────────────────────────────────────────────
+  if (grp === 'lb' && sub === 'reset') {
     await interaction.reply({ content: `⚠️ Sezon sıfırlanıyor... Bu işlem geri alınamaz.`, flags: 64 });
     const archivedId = await archiveAndResetSeason(ctx.prisma, ctx.redis);
     await interaction.followUp({ content: `✅ Sezon **${archivedId}** arşivlendi. Yeni sezon başladı.`, flags: 64 });
     return;
   }
 
-  // ── lbsyncroles ────────────────────────────────────────────────────────────
-  if (sub === 'lbsyncroles') {
-    if (!interaction.guildId) {
-      await interaction.reply({ content: `❌ Bu komut sadece sunucuda kullanılabilir.`, flags: 64 });
-      return;
-    }
-    await interaction.reply({ content: `🔄 Roller senkronize ediliyor...`, flags: 64 });
-    await syncAllRoles(interaction.client, interaction.guildId, ctx.prisma, ctx.redis);
-    await interaction.followUp({ content: `✅ Tüm liderboard rolleri güncellendi.`, flags: 64 });
-    return;
-  }
-  // ── lbrefreshscore ─────────────────────────────────────────────────────────
-  if (sub === 'lbrefreshscore') {
+  // ── lb/refreshscore ────────────────────────────────────────────────────────
+  if (grp === 'lb' && sub === 'refreshscore') {
     const user = interaction.options.getUser('kullanici', true);
     const score = await refreshPowerScore(ctx.prisma, user.id);
     await interaction.reply({ content: `✅ <@${user.id}> power score güncellendi: **${score.toLocaleString('tr-TR')}**`, flags: 64 });
     return;
   }
 
-  // ── lbbackfill ─────────────────────────────────────────────────────────────
-  if (sub === 'lbbackfill') {
+  // ── lb/backfill ────────────────────────────────────────────────────────────
+  if (grp === 'lb' && sub === 'backfill') {
     await interaction.reply({ content: `⏳ Backfill başlatılıyor, tüm oyuncular işleniyor...`, flags: 64 });
     const { updated } = await backfillLeaderboardStats(ctx.prisma);
     await invalidateLeaderboardCache(ctx.redis);
@@ -543,26 +527,22 @@ async function execute(
     return;
   }
 
-  // ── testtame ───────────────────────────────────────────────────────────────
-  if (sub === 'testtame') {
+  // ── sys/testtame ───────────────────────────────────────────────────────────
+  if (grp === 'sys' && sub === 'testtame') {
     await handleTestTame(interaction, ctx);
     return;
   }
 
-  // ── aiquota ────────────────────────────────────────────────────────────────
-  if (sub === 'aiquota') {
+  // ── sys/aiquota ────────────────────────────────────────────────────────────
+  if (grp === 'sys' && sub === 'aiquota') {
     const { getQuotaStats } = await import('../systems/ai-qa.js');
     const stats = await getQuotaStats(ctx.redis);
     await interaction.reply({ content: stats, flags: 64 });
     return;
   }
 
-  // ── undo ───────────────────────────────────────────────────────────────────
-  if (sub === 'undo') {
-    if (!ADMIN_IDS.has(interaction.user.id)) {
-      await interaction.reply({ content: '❌ Bu komutu kullanma yetkiniz yok', flags: 64 });
-      return;
-    }
+  // ── player/undo ────────────────────────────────────────────────────────────
+  if (grp === 'player' && sub === 'undo') {
 
     const userId = interaction.options.getString('userid', true);
 
@@ -584,8 +564,8 @@ async function execute(
     return;
   }
 
-  // ── delete ─────────────────────────────────────────────────────────────────
-  if (sub === 'delete') {
+  // ── player/delete ──────────────────────────────────────────────────────────
+  if (grp === 'player' && sub === 'delete') {
     const user = interaction.options.getUser('kullanici', true);
 
     const player = await ctx.prisma.player.findUnique({ where: { id: user.id } });
@@ -633,8 +613,8 @@ async function execute(
     return;
   }
 
-  // ── giveowl ────────────────────────────────────────────────────────────────
-  if (sub === 'giveowl') {
+  // ── owl/give ───────────────────────────────────────────────────────────────
+  if (grp === 'owl' && sub === 'give') {
     const user    = interaction.options.getUser('kullanici', true);
     const tier    = interaction.options.getInteger('tier', true);
     const quality = interaction.options.getString('kalite', true);
@@ -665,8 +645,8 @@ async function execute(
     return;
   }
 
-  // ── setquality ─────────────────────────────────────────────────────────────
-  if (sub === 'setquality') {
+  // ── owl/setquality ─────────────────────────────────────────────────────────
+  if (grp === 'owl' && sub === 'setquality') {
     const user    = interaction.options.getUser('kullanici', true);
     const quality = interaction.options.getString('kalite', true);
     const owl = await ctx.prisma.owl.findFirst({ where: { ownerId: user.id, isMain: true } });
@@ -677,8 +657,8 @@ async function execute(
     return;
   }
 
-  // ── seteffectiveness ───────────────────────────────────────────────────────
-  if (sub === 'seteffectiveness') {
+  // ── owl/seteffectiveness ───────────────────────────────────────────────────
+  if (grp === 'owl' && sub === 'seteffectiveness') {
     const user  = interaction.options.getUser('kullanici', true);
     const value = interaction.options.getInteger('deger', true);
     const owl = await ctx.prisma.owl.findFirst({ where: { ownerId: user.id, isMain: true } });
@@ -689,8 +669,8 @@ async function execute(
     return;
   }
 
-  // ── setpassivemode ─────────────────────────────────────────────────────────
-  if (sub === 'setpassivemode') {
+  // ── owl/setpassivemode ─────────────────────────────────────────────────────
+  if (grp === 'owl' && sub === 'setpassivemode') {
     const user = interaction.options.getUser('kullanici', true);
     const mod  = interaction.options.getString('mod', true);
     const owl = await ctx.prisma.owl.findFirst({ where: { ownerId: user.id, isMain: true } });
@@ -701,8 +681,8 @@ async function execute(
     return;
   }
 
-  // ── givebuffitem ───────────────────────────────────────────────────────────
-  if (sub === 'givebuffitem') {
+  // ── inv/givebuff ───────────────────────────────────────────────────────────
+  if (grp === 'inv' && sub === 'givebuff') {
     const user     = interaction.options.getUser('kullanici', true);
     const buffId   = interaction.options.getString('buffid', true);
     const quantity = interaction.options.getInteger('miktar') ?? 1;
@@ -724,8 +704,8 @@ async function execute(
     return;
   }
 
-  // ── givelootbox ────────────────────────────────────────────────────────────
-  if (sub === 'givelootbox') {
+  // ── inv/givelootbox ────────────────────────────────────────────────────────
+  if (grp === 'inv' && sub === 'givelootbox') {
     const user     = interaction.options.getUser('kullanici', true);
     const boxName  = interaction.options.getString('tip', true);
     const quantity = interaction.options.getInteger('miktar') ?? 1;
@@ -743,8 +723,8 @@ async function execute(
     return;
   }
 
-  // ── inventory ──────────────────────────────────────────────────────────────
-  if (sub === 'inventory') {
+  // ── inv/view ───────────────────────────────────────────────────────────────
+  if (grp === 'inv' && sub === 'view') {
     const user  = interaction.options.getUser('kullanici', true);
     const items = await ctx.prisma.inventoryItem.findMany({
       where: { ownerId: user.id },
@@ -773,8 +753,8 @@ async function execute(
     return;
   }
 
-  // ── economy ────────────────────────────────────────────────────────────────
-  if (sub === 'economy') {
+  // ── stats/economy ──────────────────────────────────────────────────────────
+  if (grp === 'stats' && sub === 'economy') {
     await interaction.deferReply({ flags: 64 });
 
     const [playerCount, totalCoinsRaw, richest, mostActive] = await Promise.all([
@@ -804,8 +784,8 @@ async function execute(
     return;
   }
 
-  // ── transfercoins ──────────────────────────────────────────────────────────
-  if (sub === 'transfercoins') {
+  // ── player/transfercoins ───────────────────────────────────────────────────
+  if (grp === 'player' && sub === 'transfercoins') {
     const from   = interaction.options.getUser('gonderen', true);
     const to     = interaction.options.getUser('alan', true);
     const amount = interaction.options.getInteger('miktar', true);
@@ -834,8 +814,8 @@ async function execute(
     return;
   }
 
-  // ── setprestige ────────────────────────────────────────────────────────────
-  if (sub === 'setprestige') {
+  // ── player/setprestige ─────────────────────────────────────────────────────
+  if (grp === 'player' && sub === 'setprestige') {
     const user  = interaction.options.getUser('kullanici', true);
     const level = interaction.options.getInteger('seviye', true);
 
@@ -847,7 +827,8 @@ async function execute(
     return;
   }
 
-  if (sub === 'givebuff') {
+  // ── inv/givebuffactive ─────────────────────────────────────────────────────
+  if (grp === 'inv' && sub === 'givebuffactive') {
     const user = interaction.options.getUser('kullanici', true);
     const buffId = interaction.options.getString('buffid', true);
 
@@ -880,8 +861,8 @@ async function execute(
     return;
   }
 
-  // ── clearbuffs ─────────────────────────────────────────────────────────────
-  if (sub === 'clearbuffs') {
+  // ── inv/clearbuffs ─────────────────────────────────────────────────────────
+  if (grp === 'inv' && sub === 'clearbuffs') {
     const user = interaction.options.getUser('kullanici', true);
     const { count } = await (ctx.prisma as any).playerBuff.deleteMany({ where: { playerId: user.id } });
     await interaction.reply({
@@ -891,8 +872,8 @@ async function execute(
     return;
   }
 
-  // ── listbuffs ──────────────────────────────────────────────────────────────
-  if (sub === 'listbuffs') {
+  // ── inv/listbuffs ──────────────────────────────────────────────────────────
+  if (grp === 'inv' && sub === 'listbuffs') {
     const user = interaction.options.getUser('kullanici', true);
     const { BUFF_ITEM_MAP } = await import('../config.js');
 
@@ -921,8 +902,8 @@ async function execute(
     return;
   }
 
-  // ── playerlist ─────────────────────────────────────────────────────────────
-  if (sub === 'playerlist') {
+  // ── player/list ────────────────────────────────────────────────────────────
+  if (grp === 'player' && sub === 'list') {
     const page     = (interaction.options.getInteger('sayfa') ?? 1) - 1;
     const pageSize = 15;
     const [players, total] = await Promise.all([
@@ -947,8 +928,8 @@ async function execute(
     return;
   }
 
-  // ── buffstats ──────────────────────────────────────────────────────────────
-  if (sub === 'buffstats') {
+  // ── stats/buffs ────────────────────────────────────────────────────────────
+  if (grp === 'stats' && sub === 'buffs') {
     await interaction.deferReply({ flags: 64 });
     const { BUFF_ITEMS } = await import('../config.js');
 
@@ -975,8 +956,8 @@ async function execute(
     return;
   }
 
-  // ── ban ────────────────────────────────────────────────────────────────────
-  if (sub === 'ban') {
+  // ── player/ban ─────────────────────────────────────────────────────────────
+  if (grp === 'player' && sub === 'ban') {
     const user   = interaction.options.getUser('kullanici', true);
     const sebep  = interaction.options.getString('sebep') ?? 'Sebep belirtilmedi';
     const banKey = `ban:${user.id}`;
@@ -989,8 +970,8 @@ async function execute(
     return;
   }
 
-  // ── unban ──────────────────────────────────────────────────────────────────
-  if (sub === 'unban') {
+  // ── player/unban ───────────────────────────────────────────────────────────
+  if (grp === 'player' && sub === 'unban') {
     const user   = interaction.options.getUser('kullanici', true);
     const banKey = `ban:${user.id}`;
     const exists = await ctx.redis.get(banKey);
@@ -1005,8 +986,8 @@ async function execute(
     return;
   }
 
-  // ── banlist ────────────────────────────────────────────────────────────────
-  if (sub === 'banlist') {
+  // ── player/banlist ─────────────────────────────────────────────────────────
+  if (grp === 'player' && sub === 'banlist') {
     const keys = await ctx.redis.keys('ban:*');
     if (keys.length === 0) {
       await interaction.reply({ content: `ℹ️ Engellenen oyuncu yok.`, flags: 64 });
@@ -1028,8 +1009,8 @@ async function execute(
     return;
   }
 
-  // ── maintenance ────────────────────────────────────────────────────────────
-  if (sub === 'maintenance') {
+  // ── sys/maintenance ────────────────────────────────────────────────────────
+  if (grp === 'sys' && sub === 'maintenance') {
     const key     = 'system:maintenance';
     const current = await ctx.redis.get(key);
 
@@ -1043,8 +1024,8 @@ async function execute(
     return;
   }
 
-  // ── queststats ─────────────────────────────────────────────────────────────
-  if (sub === 'queststats') {
+  // ── stats/quests ───────────────────────────────────────────────────────────
+  if (grp === 'stats' && sub === 'quests') {
     await interaction.deferReply({ flags: 64 });
 
     const [total, claimed, byType] = await Promise.all([
@@ -1062,8 +1043,8 @@ async function execute(
     return;
   }
 
-  // ── pvpstats ───────────────────────────────────────────────────────────────
-  if (sub === 'pvpstats') {
+  // ── stats/pvp ──────────────────────────────────────────────────────────────
+  if (grp === 'stats' && sub === 'pvp') {
     await interaction.deferReply({ flags: 64 });
 
     const [total, finished, topWinners] = await Promise.all([
@@ -1083,8 +1064,8 @@ async function execute(
     return;
   }
 
-  // ── marketstats ────────────────────────────────────────────────────────────
-  if (sub === 'marketstats') {
+  // ── stats/market ───────────────────────────────────────────────────────────
+  if (grp === 'stats' && sub === 'market') {
     await interaction.deferReply({ flags: 64 });
 
     const [total, byItem] = await Promise.all([
