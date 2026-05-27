@@ -7,12 +7,6 @@ import { undoLastAction } from '../utils/audit';
 
 const ADMIN_IDS = new Set([
   '1110219662509224006',
-  '362666788149788672',
-  '1224054730716614667',
-  '1197562104446726225'
-  // Ana admin
-  // Buraya yeni admin ID'lerini ekle:
-  // '123456789012345678',
 ]);
 
 const data = new SlashCommandBuilder()
