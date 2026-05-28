@@ -56,6 +56,8 @@ export interface CompressedHunt {
   encounterId?: string;
   /** Aktif buff'lar — hunt satırında gösterilir */
   activeBuffs?: { emoji: string; chargeCur: number; chargeMax: number }[];
+  /** Aktif consumable item'lar — hunt satırında gösterilir */
+  activeConsumables?: { emoji: string; name: string; remainingMs: number }[];
 }
 
 export function compressHuntResult(result: HuntRunResult): CompressedHunt {
@@ -150,7 +152,12 @@ export function buildFinalMessage(name: string, compressed: CompressedHunt): str
     ? ` · Buff: ${compressed.activeBuffs.map((b) => `${b.emoji}\`[${b.chargeCur}/${b.chargeMax}]\``).join(' ')}`
     : '';
 
-  lines.push(pipeLine(`**${name}** ${action}!${statusSuffix}${buffStr}`));
+  // Aktif consumable göstergesi
+  const consumableStr = compressed.activeConsumables && compressed.activeConsumables.length > 0
+    ? ` · Item: ${compressed.activeConsumables.map((c) => `${c.emoji}\`${c.name}\``).join(' ')}`
+    : '';
+
+  lines.push(pipeLine(`**${name}** ${action}!${statusSuffix}${buffStr}${consumableStr}`));
 
   // ── LINE 2: Loot display ──────────────────────────────────────────────────
   if (compressed.isEmpty) {

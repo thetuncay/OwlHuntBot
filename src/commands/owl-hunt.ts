@@ -390,7 +390,21 @@ export async function runHuntMessage(
           chargeCur: b.chargeCur,
           chargeMax: b.chargeMax,
         }));
-    } catch { /* buff hatası hunt'u engellemesin */ }
+
+      // Aktif consumable item'ları da göster
+      const { CONSUMABLE_ITEMS } = await import('../config.js');
+      const consumables: { emoji: string; name: string; remainingMs: number }[] = [];
+      for (const def of CONSUMABLE_ITEMS) {
+        if (def.durationMs === 0) continue;
+        const key = `${def.redisKey}:${userId}`;
+        const val = await ctx.redis.get(key);
+        if (val) {
+          const ttl = await ctx.redis.pttl(key);
+          consumables.push({ emoji: def.emoji, name: def.itemName, remainingMs: ttl });
+        }
+      }
+      compressed.activeConsumables = consumables;
+    } catch { /* hata hunt'u engellemesin */ }
 
     await animateHuntMessage(message, name, compressed);
 
