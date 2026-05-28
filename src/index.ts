@@ -74,7 +74,12 @@ const commandMap = new Collection<string, CommandDefinition>();
  * src/commands altindaki komutlari dinamik yukler.
  */
 async function loadCommands(): Promise<void> {
-  const commandsDir = join(import.meta.dir, 'commands');
+  // import.meta.dir Bun'a özgü — Node.js'de fileURLToPath ile çöz
+  const { fileURLToPath } = await import('node:url');
+  const currentDir = typeof import.meta.dir !== 'undefined'
+    ? import.meta.dir
+    : fileURLToPath(new URL('.', import.meta.url));
+  const commandsDir = join(currentDir, 'commands');
   const files = await readdir(commandsDir);
   const commandFiles = files.filter((name) => (name.endsWith('.ts') || name.endsWith('.js')) && !name.endsWith('.d.ts'));
 
