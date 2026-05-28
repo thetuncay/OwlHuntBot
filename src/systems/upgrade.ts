@@ -6,6 +6,7 @@ import {
   UPGRADE_ENDGAME_LEVEL,
   UPGRADE_FAIL_DOWNGRADE_RATE,
   UPGRADE_ITEM_BONUS,
+  CONSUMABLE_ITEM_BY_NAME,
 } from '../config';
 import type { OwlStatKey } from '../types';
 import { upgradeChance, upgradeCoinCost, upgradeMaterialRequirement } from '../utils/math';
@@ -66,6 +67,7 @@ export async function getUpgradePreview(
   owlId: string,
   stat: OwlStatKey,
   itemNames: string[],
+  consumableBonus = 0,
 ): Promise<UpgradePreview> {
   if (itemNames.length > ITEM_MAX_PER_ATTEMPT) {
     throw new Error(`Tek denemede en fazla ${ITEM_MAX_PER_ATTEMPT} farklı item kullanılabilir.`);
@@ -93,7 +95,7 @@ export async function getUpgradePreview(
 
   const itemBonus = itemNames.reduce((sum, n) => sum + (UPGRADE_ITEM_BONUS[n] ?? 0), 0);
   const buffEffects = await getBuffEffects(prisma, playerId, 'upgrade');
-  const totalItemBonus = itemBonus + buffEffects.upgradeBonus;
+  const totalItemBonus = itemBonus + buffEffects.upgradeBonus + consumableBonus;
   const chance    = upgradeChance(UPGRADE_BASE_CHANCE, player.level, totalItemBonus, statValue);
 
   const requiredCosts = UPGRADE_COST[stat] ?? [];
@@ -133,6 +135,7 @@ export async function attemptUpgrade(
   owlId: string,
   stat: OwlStatKey,
   itemNames: string[],
+  consumableBonus = 0,
 ): Promise<UpgradeResult> {
   return withLock(playerId, 'financial', async () => {
     if (itemNames.length > ITEM_MAX_PER_ATTEMPT) {
@@ -235,7 +238,11 @@ export async function attemptUpgrade(
 
       // Aktif upgrade buff'larını al (diminishing returns uygulanmış)
       const buffEffects = await getBuffEffects(prisma, playerId, 'upgrade');
-      const totalItemBonus = itemBonus + buffEffects.upgradeBonus;
+
+      // Consumable (Bileme Taşı) bonusu — Redis'ten oku
+      // Not: redis upgrade.ts'e geçilmediği için prisma.$transaction dışında kontrol edilemez
+      // Bu yüzden consumable bonus'u itemBonus'a ekliyoruz (transaction öncesi hesaplanır)
+      const totalItemBonus = itemBonus + buffEffects.upgradeBonus + consumableBonus;
 
       const chance    = upgradeChance(UPGRADE_BASE_CHANCE, player.level, totalItemBonus, oldValue);
       const success   = Math.random() * 100 < chance;

@@ -2,7 +2,7 @@ import { SlashCommandBuilder } from 'discord.js';
 import { coinFlip } from '../systems/gambling';
 import type { CommandDefinition } from '../types';
 import { failEmbed } from '../utils/embed';
-import { getCooldownRemainingMs } from '../middleware/cooldown';
+import { getCooldownRemainingMs, setCooldown } from '../middleware/cooldown';
 import { GAMBLE_COINFLIP_COOLDOWN_MS } from '../config';
 
 const data = new SlashCommandBuilder()
@@ -42,6 +42,9 @@ async function execute(
 
     const bet = interaction.options.getInteger('bet', true);
     const choice = interaction.options.getString('secim', true);
+
+    // Cooldown'ı hemen set et — işlem başlamadan önce
+    await setCooldown(ctx.redis, cooldownKey, GAMBLE_COINFLIP_COOLDOWN_MS);
 
     // Ephemeral deferred reply — yalnızca komutu kullanan kişiye görünür
     await interaction.deferReply({ flags: 64 });

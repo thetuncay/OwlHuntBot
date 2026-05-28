@@ -20,7 +20,7 @@ import {
   ButtonStyle,
   EmbedBuilder,
 } from 'discord.js';
-import { BUFF_ITEM_MAP, BUFF_ITEMS as BUFF_ITEMS_REF } from '../config';
+import { BUFF_ITEM_MAP, BUFF_ITEMS as BUFF_ITEMS_REF, CRAFTING_RECIPES } from '../config';
 import {
   COLORS,
   RARITY_BADGE,
@@ -575,12 +575,13 @@ export function buildInventoryText(data: InventoryRenderData): string {
 
   // ── Item'ları kategorilere ayır ──
   const CATEGORY_ORDER: Record<string, number> = {
-    'Kutu': 1, 'Buff': 2, 'Materyal': 3,
+    'Kutu': 1, 'Buff': 2, 'Consumable': 3, 'Materyal': 4,
   };
   const CATEGORY_HEADER: Record<string, string> = {
-    'Kutu':     '📦 LOOTBOX\'LAR',
-    'Buff':     '✨ BUFF ITEM\'LARI',
-    'Materyal': '🧱 MATERYALLER',
+    'Kutu':       '📦 LOOTBOX\'LAR',
+    'Buff':       '✨ BUFF ITEM\'LARI',
+    'Consumable': '🧪 KULLANILABILIR ITEM\'LAR',
+    'Materyal':   '🧱 MATERYALLER',
   };
 
   const byCategory = new Map<string, InventoryItem[]>();
@@ -604,18 +605,24 @@ export function buildInventoryText(data: InventoryRenderData): string {
 
     lines.push(header);
 
-    if (cat === 'Materyal' || cat === 'Buff') {
-      // Materyaller ve Buff'lar: her satırda bir item, isim + miktar görünür
+    if (cat === 'Materyal' || cat === 'Buff' || cat === 'Consumable') {
+      // Materyaller, Buff'lar ve Consumable'lar: her satırda bir item
       for (const item of catItems) {
         const emoji = itemEmoji(item.itemName);
         if (cat === 'Buff') {
-          // Buff için ne işe yaradığını da göster
           const buffDef = BUFF_ITEMS_REF.find((b: any) => b.name === item.itemName);
-          const buffId  = buffDef ? buffDef.id : null; // b001, b002 vb.
+          const buffId  = buffDef ? buffDef.id : null;
           const effectHint = buffDef ? ` *(${buffDef.category} · ${buffDef.chargeMax} charge)*` : '';
           const idStr = buffId ? `\`${buffId}\`` : `\`${String(globalIdx).padStart(3, '0')}\``;
           globalIdx++;
           lines.push(`  ${idStr} ${emoji} **${item.itemName}** ×${item.quantity}${effectHint}`);
+        } else if (cat === 'Consumable') {
+          // Crafting item — c001, c002 formatında ID göster
+          const recipe = CRAFTING_RECIPES.find(r => r.resultItem.itemName === item.itemName);
+          const idStr = recipe ? `\`${recipe.id}\`` : `\`${String(globalIdx).padStart(3, '0')}\``;
+          const hint = recipe ? ` *(${recipe.description})*` : '';
+          globalIdx++;
+          lines.push(`  ${idStr} ${emoji} **${item.itemName}** ×${item.quantity}${hint}`);
         } else {
           const id = String(globalIdx++).padStart(3, '0');
           lines.push(`  \`${id}\` ${emoji} **${item.itemName}** ×${item.quantity}`);

@@ -2,7 +2,7 @@ import { SlashCommandBuilder } from 'discord.js';
 import { slot } from '../systems/gambling';
 import type { CommandDefinition } from '../types';
 import { failEmbed } from '../utils/embed';
-import { getCooldownRemainingMs } from '../middleware/cooldown';
+import { getCooldownRemainingMs, setCooldown } from '../middleware/cooldown';
 import { GAMBLE_SLOT_COOLDOWN_MS } from '../config';
 
 const data = new SlashCommandBuilder()
@@ -49,6 +49,9 @@ async function execute(
 
     const bet = interaction.options.getInteger('bet', true);
     
+    // Cooldown'ı hemen set et
+    await setCooldown(ctx.redis, cooldownKey, GAMBLE_SLOT_COOLDOWN_MS);
+
     // Sonucu ÖNCE belirle
     const result = await slot(ctx.prisma, interaction.user.id, bet);
     

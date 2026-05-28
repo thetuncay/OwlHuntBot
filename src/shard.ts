@@ -42,6 +42,8 @@ const manager = new ShardingManager(scriptPath, {
   totalShards: 'auto',
   respawn: true,
   execArgv: ['--import', 'tsx'],
+  // Bun kuruluysa daha hızlı: execArgv boş bırak, shardArgs ile bun kullan
+  // Şimdilik tsx ile devam
 });
 
 manager.on('shardCreate', (shard) => {

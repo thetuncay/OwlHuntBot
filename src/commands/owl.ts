@@ -30,6 +30,7 @@ import { runTame, runTameMessage } from './owl-tame';
 import { runTransfer, runTransferMessage } from './owl-transfer';
 import { runSellMessage, runZooMessage, runCashMessage, runPrefixMessage, runPrefix, runAcMessage, runSkMessage, runEkMessage, runBuffMessage, runBuffsMessage } from './owl-misc';
 import { runCraftMessage, runDismantleMessage, runCraftSlash, runDismantleSlash } from './owl-crafting';
+import { runItemMessage } from './owl-item';
 import { runMarketMessage, runMarketSlash } from './owl-market';
 import { runPrestigeMessage, runPrestigeSlash } from './owl-prestige';
 import { runQuestsMessage, runQuestsSlash } from './owl-quests';
@@ -203,6 +204,7 @@ export async function handleOwlTextCommand(
     case 'ek':        await runEkMessage(message, args, ctx, helpPrefix);    break;
     case 'buff':      await runBuffMessage(message, args, ctx, helpPrefix);   break;
     case 'buffs':     await runBuffsMessage(message, args, helpPrefix);        break;
+    case 'item':      await runItemMessage(message, args, ctx, helpPrefix);    break;
     case 'craft':     await runCraftMessage(message, args, ctx, helpPrefix);   break;
     case 'dismantle': await runDismantleMessage(message, args, ctx, helpPrefix); break;
     case 'market':    await runMarketMessage(message, args, ctx, helpPrefix); break;

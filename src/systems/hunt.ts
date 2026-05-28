@@ -25,6 +25,7 @@ import {
   XP_RISK_BONUS_RATE,
   BOND_GAIN_PER_HUNT,
   BOND_MAX,
+  CONSUMABLE_ITEM_BY_NAME,
 } from '../config';
 import type { HuntCatchResult, HuntRunResult, LootboxDrop } from '../types';
 import { catchChance, clamp, huntRolls, spawnScore } from '../utils/math';
@@ -259,7 +260,13 @@ export async function rollHunt(
       // Gizli modifier'ları uygula
       // Buff catch bonus da eklenir (diminishing returns zaten uygulandı)
       // Trait huntCatch çarpanı da uygulanır
-      const extraBonus = levelBonus + streakBonus + (isRarePrey ? pityBonus : 0) + buffEffects.catchBonus;
+      // Consumable (Yırtıcı İksiri) bonusu da eklenir
+      const consumableCatchBonus = await (async () => {
+        const key = `${CONSUMABLE_ITEM_BY_NAME['Yırtıcı İksiri']?.redisKey ?? 'consumable:hunt_catch'}:${playerId}`;
+        const val = await redis.get(key);
+        return val ? parseFloat(val) : 0;
+      })();
+      const extraBonus = levelBonus + streakBonus + (isRarePrey ? pityBonus : 0) + buffEffects.catchBonus + consumableCatchBonus;
       const finalChance = clamp(0.05, 0.95, (baseChanceVal + extraBonus) * safeBiome.catchModifier * traitEffects.huntCatch);
 
       const isSuccess = Math.random() < finalChance;
