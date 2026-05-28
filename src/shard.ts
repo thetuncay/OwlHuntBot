@@ -34,18 +34,14 @@ if (!token) {
   process.exit(1);
 }
 
-// Üretimde dist/index.js, geliştirmede src/index.ts
-const scriptPath = process.env.NODE_ENV === 'production'
-  ? join(process.cwd(), 'dist', 'index.js')
-  : join(process.cwd(), 'src', 'index.ts');
+// Her zaman src/index.ts'i tsx ile çalıştır — build gerektirmez, ESM sorunları olmaz
+const scriptPath = join(process.cwd(), 'src', 'index.ts');
 
 const manager = new ShardingManager(scriptPath, {
   token,
-  // 'auto' = Discord'un önerdiği shard sayısı (guild sayısına göre)
-  // Küçük bot için 1 yeterli, ama 2 koy: paralel event loop kazanımı var
   totalShards: 'auto',
-  respawn: true,  // Shard çökerse otomatik yeniden başlat
-  execArgv: process.env.NODE_ENV !== 'production' ? ['--import', 'tsx'] : [],
+  respawn: true,
+  execArgv: ['--import', 'tsx'],
 });
 
 manager.on('shardCreate', (shard) => {
