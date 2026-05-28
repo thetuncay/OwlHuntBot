@@ -45,7 +45,7 @@ import {
 } from '../utils/tame-ux';
 import { animateHuntInteraction, animateHuntMessage, buildFinalMessage, compressHuntResult } from '../utils/hunt-ux';
 import { listActiveBuffs } from '../systems/items';
-import { BUFF_ITEM_MAP } from '../config';
+import { BUFF_ITEM_MAP, CONSUMABLE_ITEMS } from '../config';
 import { getPlayerBundle } from '../utils/player-cache';
 import {
   buildEncounterEmbed,
@@ -392,7 +392,6 @@ export async function runHuntMessage(
         }));
 
       // Aktif consumable item'ları da göster
-      const { CONSUMABLE_ITEMS } = await import('../config.js');
       const consumables: { emoji: string; name: string; remainingMs: number }[] = [];
       for (const def of CONSUMABLE_ITEMS) {
         if (def.durationMs === 0) continue;
