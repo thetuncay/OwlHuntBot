@@ -31,8 +31,10 @@ const envSchema = z.object({
 const env = envSchema.parse(process.env);
 
 function appendPoolParams(url: string): string {
+  // .env'de zaten connection_limit ve pool_timeout varsa tekrar ekleme
+  if (url.includes('connection_limit') || url.includes('pool_timeout')) return url;
   const separator = url.includes('?') ? '&' : '?';
-  return `${url}${separator}maxPoolSize=20&pool_timeout=10&connectTimeoutMS=10000`;
+  return `${url}${separator}connection_limit=50&pool_timeout=15&connect_timeout=10`;
 }
 
 const prisma = new PrismaClient({

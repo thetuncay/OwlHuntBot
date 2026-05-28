@@ -9,7 +9,7 @@ import {
 import { settleBlackjack } from '../systems/gambling';
 import type { CommandDefinition, CommandContext } from '../types';
 import { failEmbed } from '../utils/embed';
-import { getCooldownRemainingMs } from '../middleware/cooldown';
+import { getCooldownRemainingMs, setCooldown } from '../middleware/cooldown';
 import { GAMBLE_BJ_COOLDOWN_MS } from '../config';
 import { recordCoinsEarned } from '../systems/leaderboard';
 
@@ -286,6 +286,9 @@ async function execute(
     const playerHand: Card[] = [deck.pop()!, deck.pop()!];
     const dealerHand: Card[] = [deck.pop()!, deck.pop()!];
 
+    // Cooldown'ı oyun başlamadan set et
+    await setCooldown(ctx.redis, cooldownKey, GAMBLE_BJ_COOLDOWN_MS);
+
     // ── Anında Blackjack ──────────────────────────────────────────────────────
     if (isBlackjack(playerHand)) {
       const result = await settleBlackjack(ctx.prisma, interaction.user.id, bet, 'win');
@@ -441,6 +444,9 @@ export async function handleBjTextCommand(
   const deck = makeDeck();
   const playerHand: Card[] = [deck.pop()!, deck.pop()!];
   const dealerHand: Card[] = [deck.pop()!, deck.pop()!];
+
+  // Cooldown'ı oyun başlamadan set et
+  await setCooldown(ctx.redis, cooldownKey, GAMBLE_BJ_COOLDOWN_MS);
 
   // Anında Blackjack
   if (isBlackjack(playerHand)) {

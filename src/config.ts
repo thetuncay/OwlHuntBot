@@ -765,27 +765,96 @@ export const CRAFTING_RECIPES: CraftingRecipe[] = [
     id: 'c001',
     name: 'Gelişmiş Gaga Bileme Taşı',
     emoji: '🪨',
-    description: 'Gaga upgrade başarı şansını %10 artırır.',
+    description: 'Gaga upgrade başarı şansını %10 artırır (tek kullanım).',
     requiredMaterials: [
       { itemName: 'Kemik Tozu', quantity: 10 },
       { itemName: 'Parlak Tüy', quantity: 5 },
     ],
     requiredCoins: 500,
-    resultItem: { itemName: 'Bileme Taşı', itemType: 'Buff', rarity: 'Uncommon', quantity: 1 },
+    resultItem: { itemName: 'Bileme Taşı', itemType: 'Consumable', rarity: 'Uncommon', quantity: 1 },
   },
   {
     id: 'c002',
     name: 'Yırtıcı İksiri',
     emoji: '🧪',
-    description: 'Hunt sırasında yakalama şansını %15 artırır.',
+    description: 'Bir sonraki hunt\'ta yakalama şansını %15 artırır (tek kullanım).',
     requiredMaterials: [
       { itemName: 'fare', quantity: 20 },
       { itemName: 'serce', quantity: 10 },
     ],
     requiredCoins: 1000,
-    resultItem: { itemName: 'Yırtıcı İksiri', itemType: 'Buff', rarity: 'Rare', quantity: 1 },
+    resultItem: { itemName: 'Yırtıcı İksiri', itemType: 'Consumable', rarity: 'Rare', quantity: 1 },
   },
 ];
+
+// ============================================================
+// CONSUMABLE ITEM SİSTEMİ
+// ============================================================
+// Crafting ile üretilen tek kullanımlık item'lar.
+// Buff'lardan farklı: charge sistemi yok, kullanınca anında etki eder ve silinir.
+// Max 2 aktif consumable slot (buff'lardan bağımsız).
+// ============================================================
+
+export interface ConsumableItemDef {
+  /** Crafting recipe ID ile eşleşir (c000, c001...) */
+  id:          string;
+  /** Envanterdeki item adı */
+  itemName:    string;
+  emoji:       string;
+  description: string;
+  /** Etki tipi */
+  effectType:  'stamina_restore' | 'upgrade_bonus_once' | 'hunt_catch_once';
+  /** Etki değeri */
+  effectValue: number;
+  /** Redis'te saklanacak key prefix */
+  redisKey:    string;
+  /** Etkinin süresi (ms) — 0 ise anlık */
+  durationMs:  number;
+}
+
+export const CONSUMABLE_ITEMS: ConsumableItemDef[] = [
+  {
+    id:          'c000',
+    itemName:    'Karma Yem',
+    emoji:       '🌾',
+    description: 'Baykuşun staminasını 50 puan yeniler.',
+    effectType:  'stamina_restore',
+    effectValue: 50,
+    redisKey:    'consumable:stamina',
+    durationMs:  0, // anlık
+  },
+  {
+    id:          'c001',
+    itemName:    'Bileme Taşı',
+    emoji:       '🪨',
+    description: 'Bir sonraki upgrade denemesinde başarı şansı +10 puan artar.',
+    effectType:  'upgrade_bonus_once',
+    effectValue: 10,
+    redisKey:    'consumable:upgrade_bonus',
+    durationMs:  30 * 60 * 1000, // 30 dakika
+  },
+  {
+    id:          'c002',
+    itemName:    'Yırtıcı İksiri',
+    emoji:       '🧪',
+    description: 'Bir sonraki hunt\'ta yakalama şansı +15% artar.',
+    effectType:  'hunt_catch_once',
+    effectValue: 0.15,
+    redisKey:    'consumable:hunt_catch',
+    durationMs:  60 * 60 * 1000, // 1 saat
+  },
+];
+
+export const CONSUMABLE_ITEM_MAP: Record<string, ConsumableItemDef> = Object.fromEntries(
+  CONSUMABLE_ITEMS.map((c) => [c.id, c]),
+);
+
+export const CONSUMABLE_ITEM_BY_NAME: Record<string, ConsumableItemDef> = Object.fromEntries(
+  CONSUMABLE_ITEMS.map((c) => [c.itemName, c]),
+);
+
+/** Aynı anda aktif olabilecek maksimum consumable sayısı */
+export const MAX_ACTIVE_CONSUMABLES = 2;
 
 // ============================================================
 // BİYOM SİSTEMİ
