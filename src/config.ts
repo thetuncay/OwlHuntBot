@@ -866,8 +866,7 @@ export const COLOR_INFO = 0x3498db;
 export const COLOR_WARNING = 0xf1c40f;
 
 // --- LOCK & RATE LIMIT ---
-export const LOCK_TTL_SECONDS = 15;  // 3s → 15s: yüksek yük altında race condition önlenir
-                                      // Hunt ~200ms, PvP ~500ms, Tame ~300ms — 15s yeterli margin
+export const LOCK_TTL_SECONDS = 5;   // 15s → 5s: hunt ~200ms, pvp ~500ms, upgrade ~300ms için yeterli margin
 export const COMMAND_RATE_LIMIT_TOKENS = 12;
 export const COMMAND_RATE_LIMIT_WINDOW_SECONDS = 10;
 export const SPAM_MUTE_SECONDS = 15;
