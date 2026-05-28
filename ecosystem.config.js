@@ -2,8 +2,9 @@ module.exports = {
   apps: [
     {
       name: 'owlhuntbot-shard',
-      script: 'dist/shard.js',
+      script: 'src/shard.ts',
       interpreter: 'node',
+      interpreter_args: '--import tsx',
       instances: 1,
       exec_mode: 'fork',
       env_file: '.env',
