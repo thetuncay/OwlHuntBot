@@ -74,17 +74,19 @@ const commandMap = new Collection<string, CommandDefinition>();
  * src/commands altindaki komutlari dinamik yukler.
  */
 async function loadCommands(): Promise<void> {
-  // import.meta.dir Bun'a özgü — Node.js'de fileURLToPath ile çöz
-  const { fileURLToPath } = await import('node:url');
-  const currentDir = typeof import.meta.dir !== 'undefined'
-    ? import.meta.dir
+  const { fileURLToPath, pathToFileURL } = await import('node:url');
+  // import.meta.dir Bun'a özgü; Node.js'de import.meta.url'den türet
+  const currentDir = typeof (import.meta as any).dir !== 'undefined'
+    ? (import.meta as any).dir as string
     : fileURLToPath(new URL('.', import.meta.url));
   const commandsDir = join(currentDir, 'commands');
   const files = await readdir(commandsDir);
   const commandFiles = files.filter((name) => (name.endsWith('.ts') || name.endsWith('.js')) && !name.endsWith('.d.ts'));
 
   for (const fileName of commandFiles) {
-    const mod = (await import(join(commandsDir, fileName))) as { default?: CommandDefinition | { default?: CommandDefinition } };
+    // Windows'ta join() C:\... path üretir — ESM loader file:// ister
+    const filePath = pathToFileURL(join(commandsDir, fileName)).href;
+    const mod = (await import(filePath)) as { default?: CommandDefinition | { default?: CommandDefinition } };
     // CJS interop: TypeScript CJS çıktısında asıl export mod.default.default'ta olabilir
     const raw = mod.default as any;
     const cmd: CommandDefinition | undefined = raw?.data ? raw : raw?.default?.data ? raw.default : undefined;
