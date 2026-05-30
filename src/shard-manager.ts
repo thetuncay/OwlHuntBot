@@ -4,26 +4,6 @@
  * NOT: Ubuntu PM2 production ortami src/shard.ts (Node.js) kullanir.
  * Bu dosya yalnizca Dockerfile (oven/bun) ile calistirilir.
  */
- *   1 bot process = 1 event loop = tüm komutlar sıra bekler
- *   ShardingManager = N process = N paralel event loop
- *
- *   OWO gibi botlar 10-100+ shard kullanır.
- *   Senin botun için 2-4 shard bile büyük fark yaratır.
- *
- * NASIL ÇALIŞIR:
- *   Bu dosya ana process olarak çalışır.
- *   Her shard ayrı bir process olarak spawn edilir.
- *   Her shard kendi Discord gateway bağlantısını yönetir.
- *   Shard'lar arası iletişim için ShardingManager.broadcastEval kullanılır.
- *
- * KULLANIM:
- *   Geliştirme: bun run src/index.ts (shard yok)
- *   Üretim:     bun run src/shard-manager.ts (ShardingManager başlatır)
- *
- * SHARD SAYISI:
- *   Discord kuralı: her shard max 2500 guild
- *   'auto' = Discord'un önerdiği shard sayısı (guild sayısına göre)
- */
 
 import { ShardingManager } from 'discord.js';
 import { join } from 'node:path';
