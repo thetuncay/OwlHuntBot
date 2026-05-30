@@ -1,0 +1,1986 @@
+{
+  "_metadata": {
+    "datasetType": "sequence_prediction",
+    "format": "json",
+    "recordCount": 247,
+    "exportedAt": "2026-05-27T09:37:07.224Z"
+  },
+  "records": [
+    {
+      "sequence_id": "2725179f-46e4-4069-89bd-dba7d27f1d8a",
+      "user_id": "1005456438782591147",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"daily\",\"pray\"]",
+      "start_time": 1774094079383,
+      "end_time": 1774094085006
+    },
+    {
+      "sequence_id": "0433360e-d964-4996-b4bd-9e338b10d951",
+      "user_id": "1005456438782591147",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"team\",\"team\",\"weapon\"]",
+      "start_time": 1774098479942,
+      "end_time": 1774098852062
+    },
+    {
+      "sequence_id": "4bf831f9-7ada-4fd7-b14c-f01f0e25ee28",
+      "user_id": "1005456438782591147",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"h\",\"b\",\"s\"]",
+      "start_time": 1774104246130,
+      "end_time": 1774104254017
+    },
+    {
+      "sequence_id": "0a5039ae-2472-4352-897d-38bd0e91b1c3",
+      "user_id": "1006190399867605072",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"cf\",\"cash\",\"slot\",\"daily\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\"]",
+      "start_time": 1751870219069,
+      "end_time": 1751870684331
+    },
+    {
+      "sequence_id": "94aaf590-ff9a-427a-a9ba-36a1ab000066",
+      "user_id": "1006190399867605072",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"cf\",\"daily\",\"cf\",\"cf\",\"daily\",\"cash\"]",
+      "start_time": 1752010903152,
+      "end_time": 1752011157354
+    },
+    {
+      "sequence_id": "6e5ceb9e-8513-43ea-ae62-850003d75d28",
+      "user_id": "1006190399867605072",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"daily\",\"cf\",\"fuck\",\"sik\"]",
+      "start_time": 1752104670655,
+      "end_time": 1752104687891
+    },
+    {
+      "sequence_id": "d2a11701-0e9b-4d80-b237-fa9477e2098a",
+      "user_id": "1006190399867605072",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"cf\",\"daily\",\"cf\"]",
+      "start_time": 1752129097785,
+      "end_time": 1752129106006
+    },
+    {
+      "sequence_id": "ff5b7cc4-1fc6-49c7-a113-235e3eb7215c",
+      "user_id": "1006190399867605072",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"cf\",\"daily\",\"cf\",\"cf\",\"cash\"]",
+      "start_time": 1752947318591,
+      "end_time": 1752947341575
+    },
+    {
+      "sequence_id": "b6d03758-6d9e-4f71-99b1-7d46f5d38930",
+      "user_id": "1025448887542087710",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"bj\",\"bj\"]",
+      "start_time": 1752441996568,
+      "end_time": 1752442011268
+    },
+    {
+      "sequence_id": "5bdb0dd9-7ee6-447f-801f-ecad7b039e22",
+      "user_id": "1025448887542087710",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"bj\",\"cash\"]",
+      "start_time": 1753341258170,
+      "end_time": 1753341281272
+    },
+    {
+      "sequence_id": "3dc1ab7c-c8fa-4ed3-8df5-8691f758561f",
+      "user_id": "1025448887542087710",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"pray\",\"s\"]",
+      "start_time": 1755909293094,
+      "end_time": 1755909300639
+    },
+    {
+      "sequence_id": "7a5ecfea-a908-4727-bce5-2f05451f782b",
+      "user_id": "1034904911026061375",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"shop\",\"buy\",\"walpaper\",\"wallpaper\",\"profile\",\"buy\",\"marry\",\"help\",\"my\",\"pray\",\"profile\",\"avatar\",\"cookie\",\"help\"]",
+      "start_time": 1757534713480,
+      "end_time": 1757535255665
+    },
+    {
+      "sequence_id": "9a4300bd-ddd1-45b9-b2d8-e0fbdea8995e",
+      "user_id": "1034904911026061375",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"help\",\"rings\",\"marry\",\"marry\",\"am\"]",
+      "start_time": 1757964422619,
+      "end_time": 1757964491743
+    },
+    {
+      "sequence_id": "fce10dcf-5117-45d7-a0cd-f40fe0dc8e6f",
+      "user_id": "1034904911026061375",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"team\",\"team\",\"remove\",\"team\"]",
+      "start_time": 1758120263441,
+      "end_time": 1758120304098
+    },
+    {
+      "sequence_id": "cda052c7-c2e8-45b5-a420-09d5428032b7",
+      "user_id": "1034904911026061375",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"team\",\"rename\"]",
+      "start_time": 1758916343059,
+      "end_time": 1758916374631
+    },
+    {
+      "sequence_id": "45a77be5-e559-40ea-8f6d-6a1cd941fa84",
+      "user_id": "1034904911026061375",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"cash\",\"autohunt\",\"autohunt\"]",
+      "start_time": 1758964108941,
+      "end_time": 1758964145234
+    },
+    {
+      "sequence_id": "3395ab35-d142-40e4-aa2f-6c29fd1a136e",
+      "user_id": "1034904911026061375",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"upgrade\",\"upgrade\",\"upgrade\",\"upgrade\",\"essence\",\"upgrade\",\"upgrade\",\"upgrade\",\"upgrade\",\"upgrade\",\"upgrade\",\"upgrade\",\"wah\"]",
+      "start_time": 1758980307450,
+      "end_time": 1758980471301
+    },
+    {
+      "sequence_id": "bfbf5dd5-9b1e-473e-87df-ab397e696116",
+      "user_id": "1034904911026061375",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"upgrade\",\"upgrade\",\"autohunt\",\"autohunt\",\"autohunt\",\"team\",\"team\",\"add\",\"weapon\",\"weapon\",\"weapon\",\"weapon\",\"weapon\",\"weapon\",\"weapon\",\"upgrade\"]",
+      "start_time": 1758992890845,
+      "end_time": 1758993717552
+    },
+    {
+      "sequence_id": "817995e3-0291-43b6-8ef3-d6601e723662",
+      "user_id": "1034904911026061375",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"weapon\",\"weapo\",\"weapon\",\"weapon\",\"weapon\",\"team\",\"team\",\"frame\",\"level\",\"level\",\"coinflip\",\"lot\",\"lottery\",\"lottery\",\"lottery\"]",
+      "start_time": 1758995919146,
+      "end_time": 1758996283445
+    },
+    {
+      "sequence_id": "ef31937e-0f4a-40ec-8766-9974e30454e1",
+      "user_id": "1034904911026061375",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"weapon\",\"team\",\"team\",\"weapon\",\"weapon\",\"team\",\"team\",\"weapon\",\"upgrade\",\"team\",\"rename\",\"rename\",\"sell\",\"sac\",\"weapon\",\"team\",\"team\",\"weapon\"]",
+      "start_time": 1759009048193,
+      "end_time": 1759009804949
+    },
+    {
+      "sequence_id": "e8dbe2ab-3374-4a57-b05a-32a80eaf2346",
+      "user_id": "1034904911026061375",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"sell\",\"sell\"]",
+      "start_time": 1759161707695,
+      "end_time": 1759161721770
+    },
+    {
+      "sequence_id": "df55f10e-a49c-478b-a0ea-8c629d610921",
+      "user_id": "1041627720431456278",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"top\",\"hunt\",\"battle\",\"daily\",\"hb\",\"hb\",\"hb\",\"hb\"]",
+      "start_time": 1751853166441,
+      "end_time": 1751853186281
+    },
+    {
+      "sequence_id": "3c1831ac-9721-4b03-87b8-3b99b8821489",
+      "user_id": "1048289786735099984",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"bj\",\"bj\",\"daily\",\"divorce\",\"cash\",\"give\",\"bj\",\"bj\",\"bj\",\"pray\",\"ping\",\"cash\",\"bj\",\"bj\",\"cash\",\"cf\",\"cf\",\"cf1\",\"cf\",\"profile\",\"am\",\"daily\",\"kiss\",\"cf\",\"cf\",\"send\",\"send\",\"cash\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cash\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cash\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cash\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cash\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cash\",\"pray\",\"cf\",\"cash\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cash\",\"send\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cash\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cash\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cash\",\"cf\",\"inv\"]",
+      "start_time": 1751854365199,
+      "end_time": 1751856285486
+    },
+    {
+      "sequence_id": "c02f4b00-f9d0-4a54-934a-7defb4ed206d",
+      "user_id": "1048289786735099984",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"cf\",\"daily\"]",
+      "start_time": 1751925872831,
+      "end_time": 1751925902640
+    },
+    {
+      "sequence_id": "6364541f-2d1d-4164-9333-08eca15f5c7c",
+      "user_id": "1048289786735099984",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"marry\",\"daily\",\"cf\",\"pray\",\"cash\",\"cf\"]",
+      "start_time": 1752272022346,
+      "end_time": 1752272050101
+    },
+    {
+      "sequence_id": "59d61500-d06d-41c2-9f94-867f58c62979",
+      "user_id": "1048289786735099984",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"cf\",\"cash\",\"pray\",\"cf\"]",
+      "start_time": 1753153328885,
+      "end_time": 1753153355243
+    },
+    {
+      "sequence_id": "6ef09cb8-85e0-457f-9593-5e2afd13a5bb",
+      "user_id": "1048289786735099984",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"marry\",\"cash\"]",
+      "start_time": 1754539408467,
+      "end_time": 1754539417719
+    },
+    {
+      "sequence_id": "f5923080-0c5a-4d79-a2d3-ed183310398e",
+      "user_id": "1048289786735099984",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"divorce\",\"cash\",\"shop\",\"buy\",\"marry\",\"hug\",\"fight\",\"daily\"]",
+      "start_time": 1756582208459,
+      "end_time": 1756582497072
+    },
+    {
+      "sequence_id": "71d72a2d-f1f5-455f-b80c-88a00bc65721",
+      "user_id": "1048289786735099984",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"cf\",\"cash\",\"daily\",\"bj\",\"bj\"]",
+      "start_time": 1760036561326,
+      "end_time": 1760036615254
+    },
+    {
+      "sequence_id": "a070e148-7a5d-40eb-a6d8-443bd924a22b",
+      "user_id": "1048289786735099984",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"marriage\",\"daily\",\"pray\",\"bj\"]",
+      "start_time": 1761675988327,
+      "end_time": 1761676016518
+    },
+    {
+      "sequence_id": "62a829fd-96dc-4a2c-b4ca-6a6526cd995e",
+      "user_id": "1048289786735099984",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"punch\",\"hug\"]",
+      "start_time": 1761767073610,
+      "end_time": 1761767089410
+    },
+    {
+      "sequence_id": "78c4cf98-f0fd-4d76-a66e-26dc042609ce",
+      "user_id": "1048289786735099984",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"cf\",\"marry\"]",
+      "start_time": 1762525910683,
+      "end_time": 1762525921363
+    },
+    {
+      "sequence_id": "c724f746-0fec-4ea0-986b-b4cd4819ce1b",
+      "user_id": "1048289786735099984",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"am\",\"cash\",\"daily\",\"bj\",\"cf\"]",
+      "start_time": 1775695940499,
+      "end_time": 1775696028615
+    },
+    {
+      "sequence_id": "9a269bcb-8034-4f13-bd8e-f064969ab7f9",
+      "user_id": "1048289786735099984",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"marry\",\"cash\",\"bj\"]",
+      "start_time": 1778004625760,
+      "end_time": 1778004673942
+    },
+    {
+      "sequence_id": "ced8ac87-67c1-4ea2-9222-ce0340bf201f",
+      "user_id": "1071516658163777596",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"cash\",\"daily\",\"lootbox\",\"cf\"]",
+      "start_time": 1758114744748,
+      "end_time": 1758114815557
+    },
+    {
+      "sequence_id": "b27dbed4-c171-40b2-a2ea-47c18e49dd95",
+      "user_id": "1098046936470274161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"help\"]",
+      "start_time": 1765562728660,
+      "end_time": 1765562929246
+    },
+    {
+      "sequence_id": "ca0ad7fd-8305-43d6-a2c6-f8e8b1748a6b",
+      "user_id": "1098881877760278579",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"daily\",\"olduhttp\"]",
+      "start_time": 1759766161300,
+      "end_time": 1759766176559
+    },
+    {
+      "sequence_id": "7fd59ebb-c9e2-47a7-b225-c188e96b3575",
+      "user_id": "1112658142090776666",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"all\",\"all\",\"cash'e\",\"all\",\"all\"]",
+      "start_time": 1751901742405,
+      "end_time": 1751901810381
+    },
+    {
+      "sequence_id": "d0b6a042-38b0-460c-a792-21b63a23c7b5",
+      "user_id": "1167853303787438160",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"help\",\"cash\"]",
+      "start_time": 1754570935294,
+      "end_time": 1754570958937
+    },
+    {
+      "sequence_id": "5e6e08bd-05ac-4b5e-be7f-9d9913055381",
+      "user_id": "1172573074000990278",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"cash\",\"cash\",\"blackjack\"]",
+      "start_time": 1756297124631,
+      "end_time": 1756297234246
+    },
+    {
+      "sequence_id": "7bc2b78b-5eea-48ce-915a-3a5ca67bdce9",
+      "user_id": "1197562104446726225",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"inv\",\"daily\"]",
+      "start_time": 1752880996082,
+      "end_time": 1752881016520
+    },
+    {
+      "sequence_id": "f57cedd3-81af-42a9-b0b6-1e81d93543d7",
+      "user_id": "1197562104446726225",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"wc\",\"animal\",\"weapon\"]",
+      "start_time": 1753027508498,
+      "end_time": 1753027973697
+    },
+    {
+      "sequence_id": "b8b0ae40-2601-42cd-b945-9f99c9bb664f",
+      "user_id": "1197562104446726225",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"zoo\",\"help\"]",
+      "start_time": 1755421691889,
+      "end_time": 1755421722945
+    },
+    {
+      "sequence_id": "aad4cba9-1583-4a99-8bd6-89e6473e1858",
+      "user_id": "1199769064902512732",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"s\",\"s\",\"s\",\"s\"]",
+      "start_time": 1755918546277,
+      "end_time": 1755918613017
+    },
+    {
+      "sequence_id": "79ab4e99-c444-46bf-8294-b23bf340d7e8",
+      "user_id": "1224054730716614667",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"daily\",\"cash\",\"slot\",\"cash\"]",
+      "start_time": 1752979131533,
+      "end_time": 1752979173776
+    },
+    {
+      "sequence_id": "13d02379-1c65-4017-b208-557275742120",
+      "user_id": "1248370496953913485",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"am\",\"am\",\"daily\"]",
+      "start_time": 1756582457816,
+      "end_time": 1756582502049
+    },
+    {
+      "sequence_id": "eaa5bd24-df86-4c6b-b557-060c2af34fc9",
+      "user_id": "1248370496953913485",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"h\",\"cash\",\"shop\",\"buy\",\"marry\",\"marry\",\"marry\",\"daily\",\"cash\",\"give\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cash\",\"cf\",\"cf\",\"cf\",\"cf\",\"cash\"]",
+      "start_time": 1775695572407,
+      "end_time": 1775696336767
+    },
+    {
+      "sequence_id": "3a127fab-035a-4c20-b579-58b84ceead8f",
+      "user_id": "1248370496953913485",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"cf\",\"cf\",\"cf\",\"cf\"]",
+      "start_time": 1775745920498,
+      "end_time": 1775745980152
+    },
+    {
+      "sequence_id": "91d634e3-7014-4dc5-8570-258d3ec3e9e4",
+      "user_id": "1280878414533754892",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"cash\",\"cf\",\"cf\",\"cf\"]",
+      "start_time": 1753703070989,
+      "end_time": 1753703095499
+    },
+    {
+      "sequence_id": "2b675bb5-e8b6-4d32-aadb-2557c10a6f53",
+      "user_id": "1282000157453582362",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"cf\",\"money\"]",
+      "start_time": 1772386873103,
+      "end_time": 1772386877233
+    },
+    {
+      "sequence_id": "491b116a-5bf8-4d0e-8be2-30fc38937223",
+      "user_id": "1284236293693378624",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"hunt\",\"hunt\",\"hunt\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"daily\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"sell\",\"sell\",\"cf\",\"sell\",\"hunt\",\"pray\",\"pray\",\"pray\",\"pray\"]",
+      "start_time": 1753428008213,
+      "end_time": 1753428470593
+    },
+    {
+      "sequence_id": "e8e42939-e8fc-429b-af25-2ce756bf8ee7",
+      "user_id": "1284236293693378624",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"cash\",\"daily\",\"pray\",\"cf\",\"help\",\"lootbox\",\"lootbox\",\"sell\",\"hunt\",\"hunt\",\"hunt\",\"zoo\",\"s\",\"pray\",\"s\"]",
+      "start_time": 1755887399820,
+      "end_time": 1755887606141
+    },
+    {
+      "sequence_id": "a6fb4e42-cd71-477a-9bfe-eb45b8dbb985",
+      "user_id": "1284236293693378624",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"cash\",\"help\",\"lottery\",\"cf\",\"cf\",\"cash\",\"slot\",\"slot\",\"slot\",\"cash\",\"sell\"]",
+      "start_time": 1766326232428,
+      "end_time": 1766326316107
+    },
+    {
+      "sequence_id": "03193fbb-a945-420e-8dad-8d3ca37a4551",
+      "user_id": "1314519091075354676",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"daily\",\"cf\",\"give\",\"bj\",\"bj\",\"bj\"]",
+      "start_time": 1754093702437,
+      "end_time": 1754093752492
+    },
+    {
+      "sequence_id": "a3f67f34-b1fc-407b-8aef-da4b76169d8d",
+      "user_id": "1392846910766846094",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"daily\",\"inv\",\"use\",\"inv\",\"use\",\"use\",\"use\",\"inv\",\"use\",\"use\",\"use\",\"use\",\"hunt\",\"use\",\"inv\",\"sell\",\"cash\",\"inv\",\"use\",\"sell\",\"sell\",\"use\",\"inv\",\"inv\",\"use\",\"sell\",\"pray\",\"gamle\",\"huny\",\"hunt\",\"sell\",\"cash\",\"hunt\",\"hunt\",\"daily\",\"cash\",\"hunt\",\"sell\",\"sell\",\"sell\",\"hunt\",\"sell\",\"hunt\",\"pray\",\"use\",\"inv\",\"inv\",\"use\",\"weapon\",\"weapon\",\"weapon\",\"cash\",\"pray\",\"hunt\",\"sell\",\"hunt\",\"zoo\",\"hunt\",\"sell\",\"use\",\"inv\",\"use\",\"use\",\"use\",\"animal\",\"zoo\",\"weapon\",\"hunt\",\"sell\",\"inv\",\"sell\",\"sell\",\"sell\",\"senin\",\"hunt\",\"sell\",\"pray\",\"hunt\",\"sell\",\"hunt\",\"sell\",\"zoo\",\"weapon\",\"lootbox\",\"inv\",\"use\",\"use\",\"use\",\"all\",\"sell\",\"cash\",\"pray\",\"hunt\",\"sell\",\"inv\",\"use\",\"fight\",\"hunt\",\"all\",\"all\",\"lootbox\",\"inv\",\"use\",\"use\",\"zoo\",\"sell\",\"hunt\",\"sell\",\"currency\",\"blackjack\",\"pray\",\"pray\",\"currency\",\"hunt\",\"sell\",\"use\",\"weapon\",\"use\",\"hunt\",\"sell\",\"cash\",\"blackjack\",\"hunt\",\"lootbox\",\"sell\",\"hunt\",\"pray\",\"sell\",\"hunt\",\"cash\",\"sell\",\"cash\",\"hunt\",\"pray\",\"sell\",\"pray\",\"sell\",\"cash\",\"hint\",\"all\",\"blackjack\",\"hunt\",\"all\",\"currency\",\"pray\",\"blackjack\",\"cash\",\"pray\",\"sell\",\"inv\",\"use\",\"sell\",\"hunt\",\"sell\",\"z\",\"pray\",\"hunt\",\"luck\",\"pray\",\"pray\",\"sell\",\"hunt\",\"sell\",\"pray\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"pray\",\"hunt\",\"sell\",\"hunt\",\"sell\",\"hunt\",\"sell\",\"cash\",\"blackjack\",\"cash\",\"blackjack\",\"blackjack\",\"cash\",\"hunt\",\"pray\",\"sell\",\"use\",\"hunt\",\"sell\",\"zoo\",\"all\",\"pray\",\"hunt\",\"sell\",\"blackjack\",\"cash\"]",
+      "start_time": 1754914454510,
+      "end_time": 1754917498042
+    },
+    {
+      "sequence_id": "abefa7cf-3c8e-49a9-81f6-baf630599275",
+      "user_id": "1392846910766846094",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"blackjack\",\"hunt\",\"sell\",\"lootbox\",\"inv\",\"use\",\"hunt\",\"blackjack\",\"sell\",\"cf\",\"daily\",\"inv\",\"sell\",\"sell\",\"weapon\",\"weapon\",\"sell\",\"weapon\",\"weapon\",\"weapon\",\"weapon\",\"weapon\",\"weapon\"]",
+      "start_time": 1755077321831,
+      "end_time": 1755077676031
+    },
+    {
+      "sequence_id": "183be249-f284-4d2e-95df-212d157ca4ec",
+      "user_id": "1392846910766846094",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"lootbox\",\"lootbox\",\"lootbox\",\"inv\",\"use\"]",
+      "start_time": 1755353090537,
+      "end_time": 1755353127434
+    },
+    {
+      "sequence_id": "770c92dc-75fc-4a9b-a010-99649addbfc4",
+      "user_id": "1392846910766846094",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"lootbox\",\"inv\",\"use\",\"lootbox\",\"lootbox\",\"weaponcrate\",\"inv\",\"weapon\",\"weapon\",\"weapon\",\"weapon\",\"weapon\",\"hunt\",\"cash\",\"sell\",\"sell\",\"bj\",\"cash\",\"wcf\",\"sell\",\"lootbox\",\"hunt\",\"sell\",\"zoo\",\"cf\",\"cash\",\"bj\",\"cash\"]",
+      "start_time": 1755459142914,
+      "end_time": 1755459444948
+    },
+    {
+      "sequence_id": "5a90ea51-b477-46b0-afcb-25232dff02bf",
+      "user_id": "1392846910766846094",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"lootbox\",\"weapon\",\"weapon\",\"weaponcrate\",\"lootbox\",\"sell\",\"inc\",\"inv\",\"sell\",\"sell\"]",
+      "start_time": 1755643489187,
+      "end_time": 1755643550128
+    },
+    {
+      "sequence_id": "9dbf2167-adde-4353-bc8d-26f4f336031b",
+      "user_id": "1392846910766846094",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"cash\",\"lootbox\",\"weaponcrate\",\"bj\",\"pray\",\"hunt\",\"lootbox\",\"sell\",\"cf\"]",
+      "start_time": 1755705893490,
+      "end_time": 1755706053094
+    },
+    {
+      "sequence_id": "f1dbaad4-30e1-4dcd-a939-f38fe6efef7f",
+      "user_id": "1392846910766846094",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"daily\",\"lootbox\",\"cf\"]",
+      "start_time": 1755858150400,
+      "end_time": 1755858160446
+    },
+    {
+      "sequence_id": "ca16a263-b34b-4e09-b9df-6c342b8d75d4",
+      "user_id": "1392846910766846094",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"weaponbox\",\"weaponbox\",\"weaponcrate\",\"weaponcrafte\",\"weaponcrate\"]",
+      "start_time": 1756491754632,
+      "end_time": 1756491786168
+    },
+    {
+      "sequence_id": "e35ce835-6023-4b72-bf31-cb0164e80563",
+      "user_id": "1392846910766846094",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"lb\",\"sell\",\"cf\",\"pray\",\"hunt\",\"sell\",\"inv\",\"sell\",\"sell\",\"hunt\"]",
+      "start_time": 1757692869858,
+      "end_time": 1757692945125
+    },
+    {
+      "sequence_id": "96b858a7-1df6-4efe-b6f7-2303e10a19c9",
+      "user_id": "1392846910766846094",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"weaponbox\",\"wb\",\"lootbox\",\"wb\",\"wb\",\"weaponbox\",\"weaponcrate\",\"daily\",\"peay\",\"lootbox\",\"inv\"]",
+      "start_time": 1759092543822,
+      "end_time": 1759092614851
+    },
+    {
+      "sequence_id": "6060f084-7001-4527-9d91-3753635c05b2",
+      "user_id": "1392846910766846094",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"daily\",\"cf\",\"weaponcrate\",\"wc\",\"pray\",\"hunt\"]",
+      "start_time": 1760367549239,
+      "end_time": 1760367605474
+    },
+    {
+      "sequence_id": "446c6fae-e6f8-402a-8efb-c065b39400f8",
+      "user_id": "1392846910766846094",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"flb\",\"fb\",\"zoo\"]",
+      "start_time": 1761500427628,
+      "end_time": 1761500852962
+    },
+    {
+      "sequence_id": "89a6a0ae-90ea-426e-910c-7d90f2429e35",
+      "user_id": "1392846910766846094",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"cash\",\"pray\"]",
+      "start_time": 1761507666292,
+      "end_time": 1761507671748
+    },
+    {
+      "sequence_id": "e82ef7f3-6a34-47a1-b794-bd2953955ae5",
+      "user_id": "1392846910766846094",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"lb\",\"wc\",\"hunt\"]",
+      "start_time": 1761730119043,
+      "end_time": 1761730127097
+    },
+    {
+      "sequence_id": "26074248-ff90-4d24-b483-7b58138cb241",
+      "user_id": "1408422845012250704",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"atın\",\"at\"]",
+      "start_time": 1758119600043,
+      "end_time": 1758120071590
+    },
+    {
+      "sequence_id": "b80b373c-5b51-49c6-b0c3-64d1320791df",
+      "user_id": "1408422845012250704",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"daily\",\"cash\",\"bj\"]",
+      "start_time": 1759919679147,
+      "end_time": 1759919684707
+    },
+    {
+      "sequence_id": "65fcdb4a-917f-4d0a-9200-9a390c00017c",
+      "user_id": "1408422845012250704",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"oyniyiö\",\"varmı\"]",
+      "start_time": 1765231745722,
+      "end_time": 1765231914876
+    },
+    {
+      "sequence_id": "4bea63e6-f034-4431-9bba-de475ff986b1",
+      "user_id": "1408422845012250704",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"denir\",\"varmı\"]",
+      "start_time": 1765291987446,
+      "end_time": 1765291988911
+    },
+    {
+      "sequence_id": "784f5b5b-1166-4937-b083-22aea9c8280c",
+      "user_id": "220545025283588096",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"money\",\"daily\",\"bj\"]",
+      "start_time": 1751875299670,
+      "end_time": 1751875304460
+    },
+    {
+      "sequence_id": "9a0a9732-7584-4466-8a1a-22465a46b24c",
+      "user_id": "220545025283588096",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"money\",\"daily\",\"money\"]",
+      "start_time": 1753793958703,
+      "end_time": 1753794008466
+    },
+    {
+      "sequence_id": "2fe602d9-fbd4-4ba2-98a6-2c8a4e9ce634",
+      "user_id": "220545025283588096",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"daily\",\"money\",\"bj\"]",
+      "start_time": 1759654829605,
+      "end_time": 1759654834206
+    },
+    {
+      "sequence_id": "ee7ce5c6-db1f-4dae-8240-7ad599695784",
+      "user_id": "355278477651607553",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"daily\",\"bj\",\"bj\"]",
+      "start_time": 1751882220605,
+      "end_time": 1751882240590
+    },
+    {
+      "sequence_id": "f1a2a6c7-1d39-438a-9dce-9f67bede6b35",
+      "user_id": "362666788149788672",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"daily\",\"sell\",\"help\",\"battlesetting\",\"inv\",\"weapon\",\"sell\",\"inv\",\"sell\",\"sell\"]",
+      "start_time": 1752757984116,
+      "end_time": 1752758280823
+    },
+    {
+      "sequence_id": "22cd15ac-c91b-4843-97a4-d56a3cb9b7a8",
+      "user_id": "362666788149788672",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"gelsin\",\"evlenme\"]",
+      "start_time": 1753793465103,
+      "end_time": 1753794281864
+    },
+    {
+      "sequence_id": "a6758769-7e95-48a4-bb8d-14aff3b7c915",
+      "user_id": "362666788149788672",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"daily\",\"cash\"]",
+      "start_time": 1759654849928,
+      "end_time": 1759654858601
+    },
+    {
+      "sequence_id": "ad5bfba1-ac8d-42da-9c6d-baa9da4218e6",
+      "user_id": "395163015915503616",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"cash\",\"cash\",\"top\"]",
+      "start_time": 1754654907965,
+      "end_time": 1754654938729
+    },
+    {
+      "sequence_id": "d62aea41-caa3-4af9-93f4-77ca797f36a9",
+      "user_id": "447386704626581504",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"cf\",\"cf\"]",
+      "start_time": 1751848523018,
+      "end_time": 1751848528858
+    },
+    {
+      "sequence_id": "58980827-a8e7-4b82-8a08-4da163463c58",
+      "user_id": "456226577798135808",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"money\",\"money\"]",
+      "start_time": 1753225561312,
+      "end_time": 1753225568380
+    },
+    {
+      "sequence_id": "a33a3aac-3f22-46d4-a537-4567ab97721b",
+      "user_id": "536858095771582475",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"cf\",\"bj\",\"cf\",\"cf\"]",
+      "start_time": 1772315968280,
+      "end_time": 1772315984714
+    },
+    {
+      "sequence_id": "e4e7e03b-0dcd-4803-b361-3609b2d27d01",
+      "user_id": "536858095771582475",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"cf\",\"bj\",\"cf\",\"bj\",\"cf\",\"bj\",\"cf\",\"cash\",\"cf\",\"bj\",\"bj\",\"cf\",\"cash\",\"bj\",\"cf\",\"bj\",\"bj\",\"cf\",\"cash\",\"cf\",\"bj\"]",
+      "start_time": 1772319717927,
+      "end_time": 1772319923473
+    },
+    {
+      "sequence_id": "e27d3523-032b-47f8-b0b1-828b5cd339b6",
+      "user_id": "536858095771582475",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"cf\",\"cf\",\"cf\",\"bj\",\"cf\",\"cash\",\"cf\",\"cf\",\"cf\",\"cahs\",\"cash\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\"]",
+      "start_time": 1772359152462,
+      "end_time": 1772359453775
+    },
+    {
+      "sequence_id": "31cb01ce-b083-4b84-b7be-f580136150d4",
+      "user_id": "639896040648212501",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"cf\",\"money\",\"bj\",\"money\",\"top\",\"money\",\"top\",\"top\",\"cf\",\"bj\",\"s\",\"bj\",\"cf\",\"s\",\"bj\",\"cf\",\"bj\",\"money\",\"bj\",\"cf\",\"s\",\"cf\",\"bj\",\"cf\",\"cf\",\"money\",\"bj\",\"cf\",\"bj\",\"money\",\"top\"]",
+      "start_time": 1755232492568,
+      "end_time": 1755233529662
+    },
+    {
+      "sequence_id": "f4888f48-ca1c-46ba-81d6-84a30d87be59",
+      "user_id": "707917427270484009",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"cash\",\"daily\"]",
+      "start_time": 1753573961930,
+      "end_time": 1753574006925
+    },
+    {
+      "sequence_id": "3e18d99b-2921-496f-82b7-a568ffbc30c3",
+      "user_id": "707917427270484009",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"cok\",\"daily\",\"daily\",\"inv\",\"inv\"]",
+      "start_time": 1753745647125,
+      "end_time": 1753746117932
+    },
+    {
+      "sequence_id": "4d61a206-be5f-4ab3-92f3-0c8c5c6b6136",
+      "user_id": "707917427270484009",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"sell\",\"sell\",\"sell\",\"sell\",\"sell\",\"sell\",\"sell\",\"sell\",\"sell\",\"sell\"]",
+      "start_time": 1753748111299,
+      "end_time": 1753748495600
+    },
+    {
+      "sequence_id": "afb76884-df6e-44f2-b059-2fc963151e0a",
+      "user_id": "707917427270484009",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"hb\",\"autohunt\",\"autohunt\",\"gelşyordu\"]",
+      "start_time": 1753791757198,
+      "end_time": 1753792013746
+    },
+    {
+      "sequence_id": "4551e7f7-315b-4c57-91aa-199c86e9cf01",
+      "user_id": "707917427270484009",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"daily\",\"sell\",\"sell\",\"sell\",\"sell\",\"sell\"]",
+      "start_time": 1753865055107,
+      "end_time": 1753866074262
+    },
+    {
+      "sequence_id": "533a93a1-512e-4d3d-b4bd-35ff1cca8679",
+      "user_id": "707917427270484009",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"xp\",\"top\",\"60000\",\"cash\",\"1\",\"cf1\",\"cf\",\"cf\"]",
+      "start_time": 1753892247081,
+      "end_time": 1753892618081
+    },
+    {
+      "sequence_id": "791872fb-4fb8-43e2-9773-1f52aa5d6327",
+      "user_id": "707917427270484009",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"sell\",\"sell\",\"sell\",\"sell\",\"sell\"]",
+      "start_time": 1754088313215,
+      "end_time": 1754088459112
+    },
+    {
+      "sequence_id": "3a936fc2-b8d6-46f7-a43b-21a0d4e20055",
+      "user_id": "707917427270484009",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"sell\",\"sell\",\"sell\",\"sell\",\"sell\"]",
+      "start_time": 1754225154145,
+      "end_time": 1754225166939
+    },
+    {
+      "sequence_id": "c8efb658-ac12-4d0c-9d3f-5de94c0b4acd",
+      "user_id": "707917427270484009",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"team\",\"team\",\"team\",\"team\",\"team\",\"team\",\"team\",\"team\",\"team\",\"team\",\"weaponadd\",\"weapon\",\"weapon\",\"weapon\"]",
+      "start_time": 1756728048069,
+      "end_time": 1756728206147
+    },
+    {
+      "sequence_id": "1d3f371f-570c-49c8-882b-311e2ae8ca48",
+      "user_id": "707917427270484009",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"sell\",\"sell\",\"sell\",\"sell\",\"sell\"]",
+      "start_time": 1756844204702,
+      "end_time": 1756844213725
+    },
+    {
+      "sequence_id": "fbca45d0-d0e1-4369-b8a3-0265647675fb",
+      "user_id": "707917427270484009",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"sell\",\"sell\",\"sell\",\"sell\",\"sell\",\"sell\"]",
+      "start_time": 1757096891627,
+      "end_time": 1757096925883
+    },
+    {
+      "sequence_id": "44dfc966-9985-4dfa-b722-224984b42894",
+      "user_id": "707917427270484009",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"sell\",\"sell\",\"sell\",\"sell\",\"sell\"]",
+      "start_time": 1758033890171,
+      "end_time": 1758033896702
+    },
+    {
+      "sequence_id": "25bcdaa7-bce7-4cc5-836a-72f44faaa12a",
+      "user_id": "707917427270484009",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"daily\",\"da\"]",
+      "start_time": 1763474057520,
+      "end_time": 1763474062026
+    },
+    {
+      "sequence_id": "7bbe9ac4-cb3c-4a1a-9ed1-ec55b46937ae",
+      "user_id": "707917427270484009",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"send\",\"send\"]",
+      "start_time": 1765212196684,
+      "end_time": 1765212217641
+    },
+    {
+      "sequence_id": "2b90834e-8c1d-4288-bbca-e744b3be90c6",
+      "user_id": "722466754122481664",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"daily\",\"bj\"]",
+      "start_time": 1751879103752,
+      "end_time": 1751879106113
+    },
+    {
+      "sequence_id": "25ced6e5-2a8d-4463-a5e7-9a6c79e905b5",
+      "user_id": "722466754122481664",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"lb\",\"wb\",\"i\",\"zoo\",\"b\"]",
+      "start_time": 1751899477015,
+      "end_time": 1751899508280
+    },
+    {
+      "sequence_id": "b2381082-afda-4e5e-91dd-264f48013d35",
+      "user_id": "722466754122481664",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"daily\",\"bj\"]",
+      "start_time": 1752140557849,
+      "end_time": 1752140561626
+    },
+    {
+      "sequence_id": "03f4cd8d-3e10-4f4d-8758-102f3c26c177",
+      "user_id": "722466754122481664",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"daily\",\"pray\",\"bj\",\"bj\",\"bj\",\"bj\",\"bj\",\"bj\",\"bj\"]",
+      "start_time": 1752223589340,
+      "end_time": 1752223648855
+    },
+    {
+      "sequence_id": "82a6c473-a638-429c-a81e-807ca06b4a41",
+      "user_id": "722466754122481664",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"bj\",\"bj\"]",
+      "start_time": 1752356713268,
+      "end_time": 1752356734157
+    },
+    {
+      "sequence_id": "34e11a76-ce36-435e-85fb-5c2a62a0281c",
+      "user_id": "722466754122481664",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"bj\",\"cf\"]",
+      "start_time": 1752397011935,
+      "end_time": 1752397021750
+    },
+    {
+      "sequence_id": "45b5d2d5-0837-4df3-8b80-cd7c5a9a144c",
+      "user_id": "722466754122481664",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"bj\",\"bj\",\"cf\"]",
+      "start_time": 1752405707030,
+      "end_time": 1752405720163
+    },
+    {
+      "sequence_id": "c9dd0d77-3150-44ad-95a0-b6225b4531b8",
+      "user_id": "722466754122481664",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"cf\",\"daily\",\"cf\",\"bj\"]",
+      "start_time": 1752540088836,
+      "end_time": 1752540101189
+    },
+    {
+      "sequence_id": "3737eb70-097e-41de-b8c5-f81d1da30437",
+      "user_id": "722466754122481664",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"daily\",\"bj\"]",
+      "start_time": 1753263582075,
+      "end_time": 1753263583616
+    },
+    {
+      "sequence_id": "75a0399c-0d10-4b5d-8355-2fc918850655",
+      "user_id": "722466754122481664",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"daily\",\"bj\"]",
+      "start_time": 1753706665783,
+      "end_time": 1753706669317
+    },
+    {
+      "sequence_id": "fd37978d-9b78-4bb8-80d6-93accd3c88f8",
+      "user_id": "722466754122481664",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"daily\",\"bj\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"bj\"]",
+      "start_time": 1754758870343,
+      "end_time": 1754758933540
+    },
+    {
+      "sequence_id": "8c81b74e-dfb6-4fbc-b91b-d1d157578833",
+      "user_id": "722466754122481664",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"cf\",\"daily\",\"bj\"]",
+      "start_time": 1754837936570,
+      "end_time": 1754837960029
+    },
+    {
+      "sequence_id": "1cb1ab0f-f01f-4f5f-9da8-8df02df4eefd",
+      "user_id": "722466754122481664",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"daily\",\"cf\"]",
+      "start_time": 1755002048884,
+      "end_time": 1755002050474
+    },
+    {
+      "sequence_id": "836645d2-8f87-4f01-9ea4-5dfc8afbfc6a",
+      "user_id": "722466754122481664",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"daily\",\"cf\"]",
+      "start_time": 1755566668592,
+      "end_time": 1755566670245
+    },
+    {
+      "sequence_id": "3cacd987-757b-41db-8ac0-20b3c92ea628",
+      "user_id": "722466754122481664",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"marry\",\"rank\",\"help\",\"top\",\"top\"]",
+      "start_time": 1758031151937,
+      "end_time": 1758031326103
+    },
+    {
+      "sequence_id": "4efc8ab3-5eec-424b-aad4-953d0af12065",
+      "user_id": "722466754122481664",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"marriage\",\"daily\",\"bj\"]",
+      "start_time": 1761676007156,
+      "end_time": 1761676026163
+    },
+    {
+      "sequence_id": "0035677f-fe82-444e-a613-5875449eb1c6",
+      "user_id": "722466754122481664",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"daily\",\"cf\"]",
+      "start_time": 1762526770810,
+      "end_time": 1762526773253
+    },
+    {
+      "sequence_id": "ebbf7a85-a0ba-4190-8ae9-a1837c5a3447",
+      "user_id": "722466754122481664",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"marry\",\"profil\",\"profile\",\"zoo\",\"dalily\",\"daily\",\"bj\",\"fuck\",\"fuck\",\"lick\",\"gunm\",\"ejderha\",\"fuck\"]",
+      "start_time": 1763046901181,
+      "end_time": 1763047822779
+    },
+    {
+      "sequence_id": "15a052f4-6460-4094-bd85-827e55b739dc",
+      "user_id": "722466754122481664",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"kiss\",\"daily\",\"bj\",\"bj\",\"lucky\"]",
+      "start_time": 1763115884853,
+      "end_time": 1763116004324
+    },
+    {
+      "sequence_id": "d8340add-730b-4dc6-a830-0818ea2921a1",
+      "user_id": "722466754122481664",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"kiss\",\"fuck\",\"kiss\",\"bj\",\"moneyh\",\"money\",\"bj\",\"mıney\",\"money\",\"cf\",\"bj\",\"bj\",\"fuck\",\"bj\",\"bj\",\"cf\",\"cf\",\"bj\",\"cf\",\"bj\",\"cf\"]",
+      "start_time": 1763130887811,
+      "end_time": 1763131468952
+    },
+    {
+      "sequence_id": "8a0d0b18-95f9-46a7-84c4-f131d226c2dc",
+      "user_id": "722466754122481664",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"d\",\"daily\",\"bj\"]",
+      "start_time": 1772823320312,
+      "end_time": 1772823333090
+    },
+    {
+      "sequence_id": "c98d72c6-188a-4e2e-926e-5c7420d7f94f",
+      "user_id": "722466754122481664",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"daily\",\"bj\"]",
+      "start_time": 1775938250208,
+      "end_time": 1775938252684
+    },
+    {
+      "sequence_id": "c6471a94-c293-4c9f-8299-413bcca17159",
+      "user_id": "723969082667302923",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"daily\",\"cf\",\"all\"]",
+      "start_time": 1751854747763,
+      "end_time": 1751854753418
+    },
+    {
+      "sequence_id": "01a9ae9a-b978-46f5-a8da-75cc002a5d64",
+      "user_id": "723969082667302923",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"cash\",\"caily\",\"cf\",\"daily\",\"all\",\"crate\",\"inv\",\"inb\",\"inv\",\"all\",\"crate\",\"lb\",\"sell\",\"sell\",\"crate\",\"weapon\",\"sell\",\"sell\",\"sell\",\"sell\"]",
+      "start_time": 1751934670097,
+      "end_time": 1751934742744
+    },
+    {
+      "sequence_id": "f0f6993f-f1f3-474e-89e5-4b97b8486edf",
+      "user_id": "723969082667302923",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"daily\",\"cash\",\"all\"]",
+      "start_time": 1752525960227,
+      "end_time": 1752525965515
+    },
+    {
+      "sequence_id": "6efda70d-b893-4e6d-b009-3f93750cadbe",
+      "user_id": "726461454827520031",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"help\",\"blackjack\",\"blackjack\",\"balance\",\"blackjack\",\"blackjack\"]",
+      "start_time": 1758803777579,
+      "end_time": 1758803919685
+    },
+    {
+      "sequence_id": "f904489f-40da-446f-8e89-74bc95a4bcad",
+      "user_id": "752413579004870718",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"daily\",\"cash\"]",
+      "start_time": 1756658976161,
+      "end_time": 1756658977693
+    },
+    {
+      "sequence_id": "7fe3a55c-750a-4293-8cff-ec6dfb694fb4",
+      "user_id": "752413579004870718",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"daily\",\"cash\"]",
+      "start_time": 1758056157377,
+      "end_time": 1758056162535
+    },
+    {
+      "sequence_id": "9d5fff5e-7f16-4ca0-b36a-ede8e09a9e81",
+      "user_id": "752413579004870718",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"daily\",\"cash\"]",
+      "start_time": 1758472324474,
+      "end_time": 1758472328895
+    },
+    {
+      "sequence_id": "0e7aa52b-b851-4146-9b61-23e5a9e7c4c6",
+      "user_id": "752413579004870718",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"cash\",\"daily\"]",
+      "start_time": 1759056475259,
+      "end_time": 1759056480597
+    },
+    {
+      "sequence_id": "f979b886-0c60-4418-b603-ef6ca18bdfc3",
+      "user_id": "752413579004870718",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"daily\",\"cash\"]",
+      "start_time": 1759160823060,
+      "end_time": 1759160824436
+    },
+    {
+      "sequence_id": "c7850d02-e7c5-4ff8-b79c-4d87200a2849",
+      "user_id": "752413579004870718",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"daily\",\"cash\"]",
+      "start_time": 1761931868782,
+      "end_time": 1761931873073
+    },
+    {
+      "sequence_id": "20bcee27-78da-4c56-99de-514a2d35d645",
+      "user_id": "756802911480315935",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"marry\",\"inv\",\"shop\",\"cash\",\"cf\",\"cf\",\"bj\",\"bj\",\"cf\",\"cf\",\"bj\",\"cf\",\"cash\",\"pray\",\"bj\",\"cash\",\"slot\",\"bj\",\"bj\",\"bj\",\"cookie\",\"cookie\",\"bj\",\"cash\",\"cf\",\"bj\",\"cash\",\"shop\",\"buy\",\"marry\",\"marry\",\"profile\",\"marry\",\"kiss\",\"daily\",\"quest\",\"cash\",\"slot\",\"cash\",\"quest\",\"battle\",\"team\",\"weapons\",\"weapon\",\"weapon\",\"weapon\",\"battle\",\"help\",\"hunt\",\"hunt\",\"hunt\",\"hunt\",\"cash\",\"hunt\",\"hunt\",\"cash\",\"bj\",\"cf\",\"bj\",\"cf\",\"bj\",\"bj\",\"cf\",\"cash\",\"bj\",\"cf\",\"bj\",\"cf\",\"cf\",\"bj\",\"cash\",\"cf\",\"bj\",\"cf\",\"bj\",\"cf\",\"cash\",\"bj\",\"cf\",\"bj\",\"cash\",\"cf\",\"bj\",\"cf\",\"cash\",\"bj\",\"cf\",\"bj\",\"cf\",\"cash\",\"bj\",\"cf\",\"bj\",\"cf\",\"bj\",\"cash\",\"cf\",\"bj\",\"cf\",\"bj\",\"cf\",\"bj\",\"cash\",\"bj\",\"cf\",\"bj\",\"cf\",\"cash\",\"cf\",\"cash\",\"bj\",\"cf\",\"cash\",\"bj\",\"pray\",\"cf\",\"cash\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cash\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cash\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cf\",\"cash\",\"send\",\"cash\",\"cf\",\"cf\",\"cf\",\"cash\",\"cf\",\"cash\"]",
+      "start_time": 1751854499529,
+      "end_time": 1751856347914
+    },
+    {
+      "sequence_id": "98b86e1c-6769-4564-94a6-5e753fea0039",
+      "user_id": "759483973909872651",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"d\",\"daily\"]",
+      "start_time": 1752950559210,
+      "end_time": 1752950562001
+    },
+    {
+      "sequence_id": "42506764-4745-44c9-af1d-0e50f2b4aec2",
+      "user_id": "759483973909872651",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"autohunt\",\"zoo\"]",
+      "start_time": 1753204070558,
+      "end_time": 1753204208752
+    },
+    {
+      "sequence_id": "29a8fdc8-905b-4aba-b467-df3ae186b755",
+      "user_id": "759483973909872651",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"autohunt\",\"top\"]",
+      "start_time": 1753434863479,
+      "end_time": 1753435167558
+    },
+    {
+      "sequence_id": "a8461b64-d5b1-479d-a24c-77bff72155bb",
+      "user_id": "759483973909872651",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"top\",\"top\"]",
+      "start_time": 1753441973203,
+      "end_time": 1753441977858
+    },
+    {
+      "sequence_id": "d9f41223-1060-429f-9146-16a12bcabea0",
+      "user_id": "763430490354221086",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"h\",\"daily\",\"top\",\"h\",\"b\",\"inv\",\"use\"]",
+      "start_time": 1751887491427,
+      "end_time": 1751887522062
+    },
+    {
+      "sequence_id": "4c33e657-8695-46e6-90bc-1cbcdce347eb",
+      "user_id": "781939565870579732",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"s\",\"daily\",\"cf\",\"cf\",\"s\",\"cf\"]",
+      "start_time": 1752690757890,
+      "end_time": 1752690779029
+    },
+    {
+      "sequence_id": "bd5340a2-2f90-4dfe-ada1-3b909415ef81",
+      "user_id": "807281623355097098",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"pay\",\"give\"]",
+      "start_time": 1756297108844,
+      "end_time": 1756297146312
+    },
+    {
+      "sequence_id": "6b795931-723d-49d1-bf9c-1964e12682b7",
+      "user_id": "810064281529614406",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"hunt\",\"sell\",\"hunt\",\"equip\",\"equip\",\"hunt\",\"sell\",\"hunt\",\"equip\",\"hunt\",\"sell\",\"hunt\",\"equip\",\"hunt\",\"sell\",\"hunt\",\"equip\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"loot\",\"hunt\",\"hunt\",\"cash\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"cash\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"cash\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"cash\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"cash\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"inv\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\",\"hunt\",\"hunt\",\"hunt\",\"sell\",\"weapon\"]",
+      "start_time": 1753715693820,
+      "end_time": 1753729531486
+    },
+    {
+      "sequence_id": "3cb430e9-c135-4d1b-9e20-cc2d533ba5f5",
+      "user_id": "810064281529614406",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"sell\",\"sell\",\"sell\",\"sell\",\"sell\"]",
+      "start_time": 1753803863940,
+      "end_time": 1753803880205
+    },
+    {
+      "sequence_id": "7f356475-c3b8-4eb6-901e-f5078a5f19c2",
+      "user_id": "810808910172127304",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"c\",\"cash\",\"cf\",\"cf\",\"cf\",\"cf\"]",
+      "start_time": 1754741417908,
+      "end_time": 1754741462121
+    },
+    {
+      "sequence_id": "6288064f-ffab-4241-bd5c-8bcc63438866",
+      "user_id": "811531127381557268",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"cf\",\"cf\",\"cf\",\"cf\"]",
+      "start_time": 1754391432351,
+      "end_time": 1754391563217
+    },
+    {
+      "sequence_id": "704288f5-f874-4c87-a353-700242d121c5",
+      "user_id": "812067074205155350",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"team\",\"weapon\"]",
+      "start_time": 1756630848331,
+      "end_time": 1756632521809
+    },
+    {
+      "sequence_id": "65c6210f-3398-4d5b-b007-3d894352d634",
+      "user_id": "812067074205155350",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"money\",\"top\",\"streak\"]",
+      "start_time": 1758387200678,
+      "end_time": 1758387570744
+    },
+    {
+      "sequence_id": "490b23cf-cf8d-45f3-8368-d70076b0897a",
+      "user_id": "812067074205155350",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"top\",\"top\",\"top\",\"top\"]",
+      "start_time": 1759018129794,
+      "end_time": 1759018337612
+    },
+    {
+      "sequence_id": "831c07d2-d43a-4a77-8bf0-2467fbcd414c",
+      "user_id": "812067074205155350",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"top\",\"top\"]",
+      "start_time": 1762127449686,
+      "end_time": 1762127497443
+    },
+    {
+      "sequence_id": "c1103ada-3b77-479c-84bb-c95b810b08c3",
+      "user_id": "812067074205155350",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"claim\",\"claim\",\"claim\"]",
+      "start_time": 1768764906688,
+      "end_time": 1768764922720
+    },
+    {
+      "sequence_id": "912bb3a2-f164-473b-8b6d-86398f7f5177",
+      "user_id": "833707891852443708",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"daily\",\"bj\",\"money\"]",
+      "start_time": 1751900524454,
+      "end_time": 1751900552720
+    },
+    {
+      "sequence_id": "08334572-989d-4e5f-a019-9a5097ef7fec",
+      "user_id": "853227090357518356",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"claim\",\"all\",\"sell\",\"sell\",\"all\",\"sell\",\"uunt\",\"hunt\",\"daily\",\"inv\",\"rep\",\"all\",\"all\"]",
+      "start_time": 1751880914891,
+      "end_time": 1751882580232
+    },
+    {
+      "sequence_id": "cf181259-0d66-4c86-8079-959e31d8b638",
+      "user_id": "853227090357518356",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"all\",\"bj\",\"prau\",\"pray\"]",
+      "start_time": 1751894215256,
+      "end_time": 1751894245504
+    },
+    {
+      "sequence_id": "f672258c-9d18-4ff6-8154-6871240c3dd0",
+      "user_id": "853227090357518356",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"battle\",\"pray\",\"daily\",\"battle\",\"battle\",\"battle\",\"battle\",\"hunt\",\"battle\",\"hunt\",\"hunt\",\"battle\",\"hunt\",\"hunt\",\"battle\",\"hunt\",\"hunt\",\"pray\",\"hunt\"]",
+      "start_time": 1751914202936,
+      "end_time": 1751914591092
+    },
+    {
+      "sequence_id": "9e4b776a-2b42-4afe-8544-acffffd050eb",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"h\"]",
+      "start_time": 1751839407689,
+      "end_time": 1751839412030
+    },
+    {
+      "sequence_id": "43571d33-0578-4d99-9ad9-1f473d7384e8",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"daily\",\"b\",\"cf\",\"h\",\"b\",\"h\",\"cash\"]",
+      "start_time": 1751885180252,
+      "end_time": 1751885223691
+    },
+    {
+      "sequence_id": "ef2485c1-841d-4ad4-86f1-1065d787441e",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"h\",\"xp\",\"b\",\"h\",\"h\",\"b\",\"cf\",\"b\",\"h\",\"b\",\"b\",\"h\",\"b\",\"h\",\"inv\",\"lb\",\"inv\",\"wc\",\"wc\",\"wc\",\"wc\",\"h\",\"b\",\"inv\",\"wc\",\"wc\",\"b\",\"h\",\"h\",\"b\",\"h\",\"b\",\"h\",\"b\",\"b\",\"h\",\"inv\",\"use\",\"use\",\"use\",\"h\",\"b\"]",
+      "start_time": 1751894360796,
+      "end_time": 1751895407412
+    },
+    {
+      "sequence_id": "58f32599-3a42-4c2c-9270-d89bbbe9bf26",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"h\"]",
+      "start_time": 1751923308834,
+      "end_time": 1751923309451
+    },
+    {
+      "sequence_id": "7b9d683e-7fa8-4ad9-8cfe-24fd4ae47db8",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"h\",\"h\",\"b\",\"h\",\"xp\",\"lb\",\"b\",\"b\",\"h\",\"b\",\"h\",\"xp\",\"b\",\"h\",\"b\",\"h\",\"pray\",\"h\",\"b\",\"b\",\"h\",\"b\",\"h\",\"b\",\"h\",\"b\",\"b\",\"h\",\"h\",\"b\",\"b\",\"h\",\"b\",\"h\",\"avatar\",\"h\",\"b\",\"b\",\"h\",\"xp\",\"h\",\"b\"]",
+      "start_time": 1751931055872,
+      "end_time": 1751932992549
+    },
+    {
+      "sequence_id": "033efad5-a594-4ebe-ad54-46ab7c66ecd1",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"h\",\"daily\"]",
+      "start_time": 1751966565587,
+      "end_time": 1751966568538
+    },
+    {
+      "sequence_id": "11cfb315-5c77-4132-a883-c1c66f67d1cf",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"h\",\"b\",\"h\",\"b\",\"xp\",\"b\",\"h\",\"b\",\"h\"]",
+      "start_time": 1751973406580,
+      "end_time": 1751973639035
+    },
+    {
+      "sequence_id": "c07a4cc9-c569-41b9-8fba-96dbf6fef255",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"h\",\"xp\",\"h\",\"b\",\"b\",\"h\",\"b\",\"h\",\"pray\",\"b\",\"h\",\"h\",\"b\",\"h\",\"b\",\"pray\",\"b\",\"h\",\"b\",\"h\",\"zoo\",\"b\",\"h\",\"h\",\"b\",\"h\",\"b\"]",
+      "start_time": 1751996085662,
+      "end_time": 1751998340851
+    },
+    {
+      "sequence_id": "7929c89f-d3bf-4fbc-a0a1-e4ee114ce44a",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"h\",\"b\",\"xp\",\"pray\",\"h\",\"b\",\"cookie\",\"b\",\"b\",\"b\",\"b\",\"h\",\"b\",\"h\",\"b\",\"b\",\"pray\",\"h\",\"b\",\"h\",\"b\",\"pray\",\"h\",\"b\",\"xp\",\"b\",\"b\",\"cookie\"]",
+      "start_time": 1752006340915,
+      "end_time": 1752006776134
+    },
+    {
+      "sequence_id": "d6234f85-fc9c-4531-9fa4-4afb25dc6a0b",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"h\",\"xp\",\"b\",\"h\",\"b\",\"b\",\"b\",\"b\",\"b\",\"b\",\"xp\",\"b\",\"b\"]",
+      "start_time": 1752010839013,
+      "end_time": 1752011649006
+    },
+    {
+      "sequence_id": "77be7f2b-ad75-48a8-8c0d-0d31de97e925",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"h\",\"b\",\"b\",\"zoo\"]",
+      "start_time": 1752016580615,
+      "end_time": 1752016601595
+    },
+    {
+      "sequence_id": "9555a1f6-a1ab-47c5-9d1e-60e552288929",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"h\",\"b\",\"pray\",\"cookie\",\"b\",\"b\",\"xp\",\"b\",\"b\",\"b\",\"b\",\"pray\",\"cash\",\"b\",\"cookie\",\"b\",\"xp\",\"pray\",\"b\",\"b\",\"pray\",\"b\",\"b\",\"xp\",\"b\",\"pray\",\"cf\",\"cash\",\"b\",\"b\",\"b\",\"xp\",\"b\",\"h\",\"b\",\"b\",\"pray\"]",
+      "start_time": 1752019127420,
+      "end_time": 1752025895757
+    },
+    {
+      "sequence_id": "01601491-395b-41b1-9aae-1c4d7e1eef83",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"h\",\"b\",\"daily\"]",
+      "start_time": 1752047583728,
+      "end_time": 1752047585920
+    },
+    {
+      "sequence_id": "0d1ae27a-3cea-467a-b27a-8810c1d48acf",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"xp\",\"b\",\"b\",\"b\",\"pray\",\"b\",\"b\",\"h\",\"inv\"]",
+      "start_time": 1752080100960,
+      "end_time": 1752082397746
+    },
+    {
+      "sequence_id": "7a727a7c-98aa-4fc3-9408-f9cb4725d23a",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"xp\",\"inv\",\"b\",\"b\",\"b\",\"b\",\"b\",\"pray\",\"b\",\"b\",\"b\",\"xp\",\"b\",\"b\",\"b\",\"pray\",\"cookie\",\"b\"]",
+      "start_time": 1752094929630,
+      "end_time": 1752098109438
+    },
+    {
+      "sequence_id": "2662ba20-76e8-4035-bbd9-3f7b2e47612f",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"pray\",\"b\",\"b\",\"b\",\"amınakoy\",\"b\",\"zoo\",\"b\",\"b\",\"b\",\"b\",\"pray\",\"cookie\",\"b\",\"b\",\"cash\",\"b\",\"pray\",\"b\",\"pray\",\"b\",\"pray\"]",
+      "start_time": 1752103403847,
+      "end_time": 1752106955370
+    },
+    {
+      "sequence_id": "d8df0f89-7e03-4297-97fc-d40abcbd6479",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"xp\",\"daily\",\"daily\",\"b\",\"b\",\"b\",\"b\",\"b\",\"b\",\"pray\",\"cash\",\"b\"]",
+      "start_time": 1752146957932,
+      "end_time": 1752147150854
+    },
+    {
+      "sequence_id": "0fe28f9e-b861-44e3-b40d-31d37ee77131",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"b\",\"pray\",\"cookie\",\"b\"]",
+      "start_time": 1752149099222,
+      "end_time": 1752149154489
+    },
+    {
+      "sequence_id": "4c47a87d-0e86-44cb-836b-992ba3a61fd6",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"xp\"]",
+      "start_time": 1752179502820,
+      "end_time": 1752179504250
+    },
+    {
+      "sequence_id": "df498442-2d35-464c-b76c-b1c91518f819",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"xp\",\"b\",\"b\",\"pray\",\"b\",\"b\",\"b\",\"pray\",\"b\",\"b\",\"xp\",\"b\",\"b\",\"b\",\"b\",\"b\",\"b\",\"b\",\"xp\",\"b\",\"pray\",\"cf\",\"cash\",\"inv\",\"weapons\",\"sell\",\"sell\",\"weapon\",\"sell\",\"sell\",\"sell\",\"weapon\",\"cash\",\"b\",\"cookie\",\"b\",\"b\",\"b\",\"b\",\"b\",\"pray\",\"b\",\"cf\",\"b\",\"b\",\"pray\",\"cookie\",\"b\",\"b\",\"b\",\"b\",\"xp\",\"pray\",\"b\"]",
+      "start_time": 1752185467717,
+      "end_time": 1752191943941
+    },
+    {
+      "sequence_id": "f7010c52-b99a-4b9c-a982-741c19f8e9c5",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"xp\",\"h\"]",
+      "start_time": 1752194322793,
+      "end_time": 1752194429233
+    },
+    {
+      "sequence_id": "a381be62-e9b9-40fc-af02-6fe1ceecbddd",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"daily\",\"b\",\"pray\",\"b\",\"b\",\"pray\",\"b\",\"b\",\"b\"]",
+      "start_time": 1752224035622,
+      "end_time": 1752226882413
+    },
+    {
+      "sequence_id": "8151717e-d535-4895-a794-7dca57553eda",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"xp\",\"b\"]",
+      "start_time": 1752229643562,
+      "end_time": 1752229707164
+    },
+    {
+      "sequence_id": "1bf3a473-bbae-4d2a-a749-9786800aa4cd",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"b\",\"xp\",\"b\",\"b\",\"b\",\"b\",\"pray\",\"b\",\"cookie\",\"b\",\"zoo\",\"b\",\"b\"]",
+      "start_time": 1752232100703,
+      "end_time": 1752234584490
+    },
+    {
+      "sequence_id": "5dfa081a-bfaa-4869-a2d0-fd8ca1cae80a",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"pray\",\"cf\",\"b\",\"b\",\"b\",\"b\",\"pray\"]",
+      "start_time": 1752237607479,
+      "end_time": 1752239836696
+    },
+    {
+      "sequence_id": "d9b356a4-9a66-43e8-ba94-b73ff3200c87",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"xp\",\"b\",\"b\",\"b\",\"b\"]",
+      "start_time": 1752245257802,
+      "end_time": 1752246626155
+    },
+    {
+      "sequence_id": "f80a37bb-cc80-49a8-9a23-28235b7d2ab0",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"b\",\"inv\",\"b\"]",
+      "start_time": 1752249507549,
+      "end_time": 1752250427884
+    },
+    {
+      "sequence_id": "931878d4-9b75-4b2f-a14d-c7001a0f0bc5",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"xp\",\"b\",\"pray\"]",
+      "start_time": 1752252767252,
+      "end_time": 1752254141668
+    },
+    {
+      "sequence_id": "586d3c08-7cd9-416a-889e-70fdd15a4cf4",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"pray\",\"b\",\"b\",\"xp\"]",
+      "start_time": 1752257405857,
+      "end_time": 1752257562279
+    },
+    {
+      "sequence_id": "0bfda49a-037d-4e68-8c47-660d4b372668",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"pray\"]",
+      "start_time": 1752261536947,
+      "end_time": 1752261540691
+    },
+    {
+      "sequence_id": "2d10ebef-4239-42bf-b86c-5b84be48cdf3",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"xp\",\"b\"]",
+      "start_time": 1752269000885,
+      "end_time": 1752269764255
+    },
+    {
+      "sequence_id": "3333718d-e517-4472-8cb2-3aca91216edf",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"daily\"]",
+      "start_time": 1752314175132,
+      "end_time": 1752314175527
+    },
+    {
+      "sequence_id": "61a95283-cf06-43ee-8a95-7df73c8d665f",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"pray\",\"cash\",\"b\"]",
+      "start_time": 1752318446792,
+      "end_time": 1752318463443
+    },
+    {
+      "sequence_id": "1568680a-0cee-4128-a4dd-a090b0656779",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"daily\",\"xp\",\"b\",\"b\",\"b\",\"pray\",\"b\",\"b\",\"b\",\"b\"]",
+      "start_time": 1752355793109,
+      "end_time": 1752356822545
+    },
+    {
+      "sequence_id": "40fad734-cf1d-4df1-93ab-3f79588d2be1",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"b\"]",
+      "start_time": 1752399110665,
+      "end_time": 1752399148668
+    },
+    {
+      "sequence_id": "6536bdd5-f8cd-4b19-8103-0235a594f7eb",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"daily\",\"pray\",\"b\",\"cash\",\"b\"]",
+      "start_time": 1752447034788,
+      "end_time": 1752447068263
+    },
+    {
+      "sequence_id": "8286c640-04a6-410e-8418-97aaf3401784",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"b\",\"b\"]",
+      "start_time": 1752449530537,
+      "end_time": 1752449628685
+    },
+    {
+      "sequence_id": "162184a6-cd78-4cd9-b753-a0038fe6ec9b",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"daily\",\"b\",\"pray\",\"cf\",\"cash\"]",
+      "start_time": 1752493609765,
+      "end_time": 1752493630515
+    },
+    {
+      "sequence_id": "a8afe781-bd28-4e22-9b68-508f1bee7aae",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"daily\"]",
+      "start_time": 1752571166509,
+      "end_time": 1752571168279
+    },
+    {
+      "sequence_id": "416a133a-b707-4b4d-bd46-4df5d05fd274",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"xp\"]",
+      "start_time": 1752579650486,
+      "end_time": 1752579652048
+    },
+    {
+      "sequence_id": "dbef0cf1-84d0-4505-b958-16841b8c4728",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"daily\",\"b\"]",
+      "start_time": 1752669829299,
+      "end_time": 1752669830077
+    },
+    {
+      "sequence_id": "efcbb376-edcf-4b6d-8891-a7e1fa87658a",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"daily\",\"xp\",\"pray\",\"cf\",\"cash\",\"b\",\"b\"]",
+      "start_time": 1752706346410,
+      "end_time": 1752706920611
+    },
+    {
+      "sequence_id": "24b7da0e-b8a7-4d1e-8207-3dd5c77a517a",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"daily\",\"xp\",\"xp\",\"b\",\"b\",\"b\",\"pray\",\"cash\"]",
+      "start_time": 1752743786281,
+      "end_time": 1752744042962
+    },
+    {
+      "sequence_id": "1576f8a1-5a59-42cc-9a5b-2a250592efcb",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"xp\"]",
+      "start_time": 1752747064289,
+      "end_time": 1752747069076
+    },
+    {
+      "sequence_id": "cdb4d102-4471-40a1-9eb6-6d9c501603fd",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"xp\",\"pray\",\"cf\",\"b\",\"xp\",\"b\",\"b\",\"b\",\"b\"]",
+      "start_time": 1752756429047,
+      "end_time": 1752758195348
+    },
+    {
+      "sequence_id": "3f7a17f2-bf13-4948-a953-0329c5055954",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"h\"]",
+      "start_time": 1752783554827,
+      "end_time": 1752783556230
+    },
+    {
+      "sequence_id": "04b4484e-43b4-4e3d-af94-68668fb8b212",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"pray\",\"b\",\"xp\"]",
+      "start_time": 1752785573392,
+      "end_time": 1752786135513
+    },
+    {
+      "sequence_id": "683b358b-2c09-4269-a4ce-e269e2a84dc4",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"daily\",\"pray\",\"wf\",\"b\",\"cf\",\"b\"]",
+      "start_time": 1752837185046,
+      "end_time": 1752837228964
+    },
+    {
+      "sequence_id": "f770de48-ad90-4148-86d5-fb615d94d7b7",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"pray\",\"cash\",\"b\",\"cf\"]",
+      "start_time": 1752859466219,
+      "end_time": 1752859505421
+    },
+    {
+      "sequence_id": "f683688c-2ea1-4836-a6b5-00341b0bbe8f",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"xp\"]",
+      "start_time": 1752871358040,
+      "end_time": 1752871359397
+    },
+    {
+      "sequence_id": "f5b2c872-b7d0-4ed5-a873-ceda602a0873",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"daily\",\"pray\",\"b\",\"cash\"]",
+      "start_time": 1752946871307,
+      "end_time": 1752946916643
+    },
+    {
+      "sequence_id": "89004dd6-8d68-4494-a61e-ae4e10876523",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"xp\",\"b\",\"xp\",\"zoo\",\"b\"]",
+      "start_time": 1752953450863,
+      "end_time": 1752953505726
+    },
+    {
+      "sequence_id": "f0504a24-3fb6-406b-a371-8c8c75cc522c",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"dai̇ly\",\"daily\",\"b\",\"xp\",\"pray\",\"cash\"]",
+      "start_time": 1753004153843,
+      "end_time": 1753004176027
+    },
+    {
+      "sequence_id": "0ea02dba-17ee-40a3-a7bb-4ee958075e0f",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"xp\"]",
+      "start_time": 1753030500117,
+      "end_time": 1753030501085
+    },
+    {
+      "sequence_id": "1cead8ad-e7a1-4c55-a1e4-8d9ea5e127d8",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"daily\"]",
+      "start_time": 1753087623816,
+      "end_time": 1753087625170
+    },
+    {
+      "sequence_id": "8e19a831-1870-4356-90f8-7081d37af8ab",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"daily\",\"xp\"]",
+      "start_time": 1753196371171,
+      "end_time": 1753196376543
+    },
+    {
+      "sequence_id": "95a95e53-7071-46f8-8df2-08c0c1ae2152",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"daily\",\"b\"]",
+      "start_time": 1753260415435,
+      "end_time": 1753260416760
+    },
+    {
+      "sequence_id": "e6bec610-1fc1-4c4e-a15c-40ba5c4e4c84",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"daily\",\"xp\",\"cash\",\"pray\",\"b\"]",
+      "start_time": 1753373524890,
+      "end_time": 1753373560423
+    },
+    {
+      "sequence_id": "6e28ec4f-51f2-4ce8-a7c4-7b1c859ee339",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"daily\",\"xp\",\"b\",\"b\",\"cash\",\"b\",\"b\",\"b\",\"inv\",\"b\",\"b\",\"b\",\"b\",\"pray\",\"b\",\"b\",\"b\",\"b\",\"b\",\"xp\",\"b\",\"top\",\"b\",\"b\",\"b\",\"b\",\"b\",\"b\",\"b\",\"b\",\"b\",\"b\",\"b\",\"b\",\"b\",\"b\",\"b\",\"b\",\"b\",\"b\",\"b\"]",
+      "start_time": 1753891870571,
+      "end_time": 1753893990108
+    },
+    {
+      "sequence_id": "fe945e0d-f61d-424a-a403-d20b97bda0b2",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"b\"]",
+      "start_time": 1753896308318,
+      "end_time": 1753896713584
+    },
+    {
+      "sequence_id": "e8a0029f-ff01-4390-9426-d707819cc4a4",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"pray\",\"b\",\"b\",\"cookie\"]",
+      "start_time": 1753902073878,
+      "end_time": 1753902122661
+    },
+    {
+      "sequence_id": "0001243e-7242-4376-8ba3-3f454065f044",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"b\",\"b\",\"b\",\"b\",\"pray\",\"b\",\"b\",\"b\",\"b\",\"cah\",\"cash\",\"b\"]",
+      "start_time": 1753916859305,
+      "end_time": 1753917237505
+    },
+    {
+      "sequence_id": "651591cf-a106-4022-8b1f-a8671d1d71c9",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"daily\",\"xp\",\"pray\",\"b\",\"cash\",\"b\",\"b\",\"b\",\"b\",\"b\",\"b\",\"b\"]",
+      "start_time": 1753948803933,
+      "end_time": 1753950938185
+    },
+    {
+      "sequence_id": "be9fffdd-12c3-4333-b128-90ce24cbb661",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"b\",\"b\"]",
+      "start_time": 1753973917378,
+      "end_time": 1753974049446
+    },
+    {
+      "sequence_id": "f3efeb4e-f3c8-42a4-a1d9-6376c2a8c899",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"xp\",\"cash\",\"inv\"]",
+      "start_time": 1760782940460,
+      "end_time": 1760782951330
+    },
+    {
+      "sequence_id": "563c626a-0ced-4a78-9259-8371a189ad44",
+      "user_id": "855429645193052161",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"xp\",\"cash\",\"inv\"]",
+      "start_time": 1763440200313,
+      "end_time": 1763440208827
+    },
+    {
+      "sequence_id": "5198a3f9-d6b2-462c-9dda-9f48037cd75d",
+      "user_id": "861510212543447071",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"cash\",\"slot\"]",
+      "start_time": 1753558346594,
+      "end_time": 1753558352099
+    },
+    {
+      "sequence_id": "2b57cba0-9f3b-4c88-bdb9-566b499efa28",
+      "user_id": "880845802556244038",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"team\",\"sell\",\"sell\",\"sell\",\"unequip\",\"sell\",\"weaponm\",\"wepaon\",\"weapon\",\"sell\",\"unequip\",\"weapon\",\"weapon\",\"ell\",\"sell\",\"unequip\",\"sell\",\"weapon\",\"sell\",\"sell\",\"team\",\"team\",\"team\",\"team\",\"team\",\"sell\",\"sell\",\"lick\",\"bite\",\"dismantle\",\"w\",\"sell\",\"sell\",\"dismantle\",\"team\"]",
+      "start_time": 1758993900717,
+      "end_time": 1758995031386
+    },
+    {
+      "sequence_id": "da56ec4a-6edd-4e16-a77f-994b7db838c0",
+      "user_id": "897191884068372580",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"sell\",\"sell\",\"ister\"]",
+      "start_time": 1753748086088,
+      "end_time": 1753749851258
+    },
+    {
+      "sequence_id": "a92d3f11-0b17-43e5-85d4-53ec95e90a47",
+      "user_id": "897191884068372580",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"sell\",\"oyna\"]",
+      "start_time": 1753803835968,
+      "end_time": 1753804967592
+    },
+    {
+      "sequence_id": "70b08fd1-d41c-4fe9-b4e2-a3d73d0afdad",
+      "user_id": "930756310327255042",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"daily\",\"all\"]",
+      "start_time": 1752785451019,
+      "end_time": 1752785454158
+    },
+    {
+      "sequence_id": "338e24db-75e3-4f96-ba48-bdb098386fe6",
+      "user_id": "944224223747014696",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"bj\",\"bj\",\"bj\",\"bj\",\"b\",\"bj\"]",
+      "start_time": 1752667796485,
+      "end_time": 1752667875213
+    },
+    {
+      "sequence_id": "7e3ca8b9-dbf4-44d5-873a-d6b9c4520b8b",
+      "user_id": "944224223747014696",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"bj\",\"bj\",\"bj\"]",
+      "start_time": 1753528442873,
+      "end_time": 1753528489114
+    },
+    {
+      "sequence_id": "8c8768d5-379d-4a4a-8237-8f29c6ca3b92",
+      "user_id": "944224223747014696",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"daily\",\"bj\",\"bj\",\"bj\",\"20000\",\"bj\",\"bj\",\"bj\",\"bj\",\"bj\",\"bj\",\"bj\",\"bj\",\"bj\",\"bj\",\"bj\",\"bj\",\"bj\",\"bj\",\"bj\",\"bj\",\"bj\",\"bj\"]",
+      "start_time": 1753632614505,
+      "end_time": 1753633784588
+    },
+    {
+      "sequence_id": "6f191896-e5a1-43f4-946a-782c8e37e973",
+      "user_id": "944224223747014696",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"bj\",\"bj\",\"bj\",\"cash\",\"bj\",\"bj\",\"bj\",\"bj\"]",
+      "start_time": 1753886830069,
+      "end_time": 1753886953519
+    },
+    {
+      "sequence_id": "1bddc7d1-9af3-412e-8941-710006b3b00c",
+      "user_id": "944224223747014696",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"w\",\"w\",\"bj\",\"bj\"]",
+      "start_time": 1756491967046,
+      "end_time": 1756492125539
+    },
+    {
+      "sequence_id": "5e1598b7-86c1-4883-b13e-125451e0e2f5",
+      "user_id": "944326532791418910",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"wow\",\"cf\"]",
+      "start_time": 1754268086098,
+      "end_time": 1754268094292
+    },
+    {
+      "sequence_id": "3a87205e-3e97-48ad-97ea-30dff5a5c2a4",
+      "user_id": "944326532791418910",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"cf\",\"cf\"]",
+      "start_time": 1754316205581,
+      "end_time": 1754316209673
+    },
+    {
+      "sequence_id": "72109c9d-37b5-45e6-accb-82f03dda2270",
+      "user_id": "944635356333109388",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"all\",\"all\",\"all\",\"all\",\"all\",\"all\",\"cf\"]",
+      "start_time": 1754653486124,
+      "end_time": 1754653529606
+    },
+    {
+      "sequence_id": "52454050-8578-4aa7-b9e9-a9318b65ae66",
+      "user_id": "947869237198880788",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"10\",\"top\",\"cf\",\"help\",\"gif\",\"gif\",\"gif\",\"gif\"]",
+      "start_time": 1751848507061,
+      "end_time": 1751848591106
+    },
+    {
+      "sequence_id": "1278f717-cc73-4d0f-a1c6-a1ae342fca43",
+      "user_id": "947869237198880788",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"cash\",\"give\",\"help\",\"give\",\"cash\",\"pray\",\"bj\",\"bj\"]",
+      "start_time": 1751854496957,
+      "end_time": 1751854581283
+    },
+    {
+      "sequence_id": "d6d7eddc-08d5-4a3c-8b1b-b0297a158f16",
+      "user_id": "947869237198880788",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"inv\",\"sell\",\"zoo\",\"sell\",\"sell\",\"sell\",\"sell\",\"sell\",\"open\",\"025\",\"olc\",\"balance\",\"bal\",\"help\",\"checklist\",\"top\",\"top\"]",
+      "start_time": 1751856759988,
+      "end_time": 1751857252604
+    },
+    {
+      "sequence_id": "32ac8d8b-b9d3-409f-9f90-85a155a4ef45",
+      "user_id": "947869237198880788",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"daily\",\"bj\",\"pray\",\"cash\",\"cash\",\"baltop\",\"help\",\"top\",\"top\",\"top\",\"top\"]",
+      "start_time": 1751879196057,
+      "end_time": 1751879687161
+    },
+    {
+      "sequence_id": "2c5a1ce8-50d4-41ab-bdd1-d4426830d569",
+      "user_id": "947869237198880788",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"dailt\",\"daily\",\"zoo\",\"item\",\"id\",\"weapon\",\"inventory\",\"sell\",\"ella6p37g\",\"sell\",\"sell\",\"sell\",\"sell\",\"pray\",\"bj\",\"sell\",\"bj\",\"bj\",\"bj\",\"bj\",\"choose\",\"sella6p331\",\"sell\",\"choose\",\"cf\",\"choose\",\"cf\"]",
+      "start_time": 1751945346146,
+      "end_time": 1751945545578
+    },
+    {
+      "sequence_id": "643021ea-b211-4deb-a94b-5dd3a4e8c36f",
+      "user_id": "947869237198880788",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"daily\",\"authohunt\",\"autohunt\",\"autohunt\",\"autohunt\",\"autohunt\",\"help\",\"olc\",\"open\",\"crate\",\"crate\",\"lb\",\"lb\",\"lb\",\"lb\",\"lb\",\"crate\",\"lb\",\"open\",\"inv\",\"open\",\"lb\",\"crate\",\"lb\",\"inv\",\"crate\",\"crate\",\"crate\",\"crate\",\"id\",\"id\",\"inv\",\"zoo\",\"lb\",\"fabled\",\"fabled\",\"flb\",\"flootbox\",\"help\",\"sell\",\"sell\",\"weapon\",\"zoo\",\"h\",\"sell\",\"sell\",\"sell\",\"inv\",\"use\",\"equip\",\"equip\",\"lb\",\"inv\",\"equip\",\"equip\",\"equip\",\"equip\",\"equip\",\"equip\",\"hb\",\"help\",\"id\",\"use\",\"dismantle\",\"dismantle\",\"dismantle\",\"help\",\"sell\",\"sell\",\"use\",\"sell\",\"sell\",\"use\",\"weapon\",\"weapon\",\"weapon\",\"weapon\",\"cowoncy\",\"autohunt\",\"autohunt\",\"cowoncy\",\"zoo\",\"battle\",\"battlesettings\",\"help\",\"battlesetting\",\"team\",\"team\",\"team\",\"team\",\"team\",\"zoo\",\"team\",\"team\",\"team\",\"team\",\"team\",\"t3eam\",\"team\",\"give\",\"team\",\"team\",\"use\",\"equip\",\"equip\",\"equip\",\"battle\",\"battle\",\"battle\",\"pray\",\"battle\",\"distorted\",\"battle\",\"autohunt\",\"upgrade\",\"upgrade\",\"upgrade\",\"upgrade\",\"animal\",\"help\",\"animal\",\"zoo\",\"help\",\"dismantle\",\"essence\",\"essence\",\"essence\",\"essence\",\"essence\",\"essence\",\"hb\",\"hb\",\"upgrade\",\"essence\",\"inv\",\"hb\",\"hb\",\"hb\",\"hb\",\"upgrade\",\"upgrade\",\"upgrade\",\"essence\",\"zoo\",\"battle\",\"essence\",\"upgrade\",\"hv\",\"hb\",\"hb\",\"hb\",\"essence\",\"essence\",\"essence\",\"upgrade\",\"cowoncy\",\"hb\",\"autohunt\"]",
+      "start_time": 1752034055262,
+      "end_time": 1752037046856
+    },
+    {
+      "sequence_id": "e58cb9ca-f807-43d7-a11f-a772aa9c541e",
+      "user_id": "947869237198880788",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"daily\",\"lb\",\"lb\",\"hb\",\"battle\",\"team\",\"team\",\"use\",\"team\",\"help\",\"team\",\"give\",\"team\",\"equip\",\"battle\",\"essence\",\"hb\",\"upgrade\",\"battle\",\"battle\",\"battle\",\"battle\",\"h\",\"essence\",\"zoo\",\"battle\",\"zoo\",\"battle\",\"zoo\",\"zoo\",\"battle\",\"battle\",\"zoo\",\"zoo\",\"zoo\",\"team\",\"team\",\"team\",\"use\",\"weapon\",\"battle\",\"battle\",\"inv\",\"battle\",\"battle\",\"battle\",\"zoo\",\"battle\",\"battle\",\"zoo\",\"zoo\",\"zoo\",\"team\",\"use\",\"weapon\",\"battle\",\"zoo\",\"zoo\",\"zoo\",\"bttle\",\"b\",\"battle\",\"b\",\"b\",\"b\",\"b\",\"b\",\"b\",\"battle\",\"battle\",\"b\",\"hb\",\"zoo\",\"team\",\"use\",\"hb\",\"battle\",\"battle\",\"battle\",\"bj\",\"cowoncy\",\"battle\",\"zoo\",\"battle\",\"bj\",\"cf\",\"bj\",\"bj\",\"autohunt\",\"cf\"]",
+      "start_time": 1752048121407,
+      "end_time": 1752049551093
+    },
+    {
+      "sequence_id": "0e016df8-9366-4375-b538-bc83c688fb16",
+      "user_id": "947869237198880788",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"hb\",\"cash\",\"inv\",\"use\",\"add\",\"taem\",\"hb\",\"zoo\",\"essence\",\"essence\",\"essence\",\"essence\",\"essence\",\"essence\",\"hv\",\"hv\",\"hb\",\"upgrade\",\"hb\",\"autohunt\",\"cash\",\"autohunt\",\"autohunt\"]",
+      "start_time": 1752070086026,
+      "end_time": 1752070378573
+    },
+    {
+      "sequence_id": "ab93ae10-e0a1-480e-9d87-6a93450bedcf",
+      "user_id": "947869237198880788",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"hb\",\"cash\",\"cf\",\"cf\"]",
+      "start_time": 1752081903772,
+      "end_time": 1752081932781
+    },
+    {
+      "sequence_id": "c84c9925-bedf-4078-b952-270afef14c61",
+      "user_id": "947869237198880788",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"bj\",\"team\",\"zoo\",\"sell\",\"sell\",\"sell\",\"sell\",\"sell\",\"bj\",\"bj\",\"slot\",\"bj\",\"bj\",\"slot\",\"cf\",\"bj\",\"bj\",\"slot\",\"cf\",\"cf\",\"bj\",\"bj\"]",
+      "start_time": 1752140572023,
+      "end_time": 1752140710447
+    },
+    {
+      "sequence_id": "61ba2e0f-0652-47c2-9433-3590c034ff96",
+      "user_id": "947869237198880788",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"daily\",\"bj\",\"bj\",\"cf\",\"s\",\"bj\"]",
+      "start_time": 1752233077557,
+      "end_time": 1752233095050
+    },
+    {
+      "sequence_id": "cbeddbb9-b1cd-4196-8434-1271f6a11acf",
+      "user_id": "947869237198880788",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"daily\",\"bj\",\"cf\",\"s\",\"bj\",\"bj\",\"crf\",\"cf\",\"s3\",\"s3\",\"s\",\"bj\",\"cf\",\"cg\",\"c2\",\"cf\",\"s\",\"cfd\",\"cf\",\"cf\",\"s\",\"cf\",\"cf\",\"cf\",\"bj\"]",
+      "start_time": 1752413962120,
+      "end_time": 1752414061474
+    },
+    {
+      "sequence_id": "647c41b3-fa34-4c2c-afdd-c5a030eeea98",
+      "user_id": "952637543797645353",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"money\",\"daily\",\"100000\",\"fc\",\"100000\",\"coin\"]",
+      "start_time": 1753276336794,
+      "end_time": 1753277054747
+    },
+    {
+      "sequence_id": "aa8ee918-e43a-438f-ba7a-ff35515916e1",
+      "user_id": "952637543797645353",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"coin\",\"coin\",\"coin\",\"money\"]",
+      "start_time": 1753280247452,
+      "end_time": 1753280273402
+    },
+    {
+      "sequence_id": "859b251b-9fb8-4d8a-b544-e7b5ecb3b219",
+      "user_id": "952637543797645353",
+      "guild_id": "1350212663044472974",
+      "commands": "[\"daily\",\"cash\",\"cf\",\"cf\",\"cf\",\"100000\",\"cash\"]",
+      "start_time": 1754004678154,
+      "end_time": 1754004754483
+    }
+  ]
+}

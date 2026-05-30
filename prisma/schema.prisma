@@ -330,3 +330,16 @@ model AuditLog {
 
   @@index([playerId, createdAt])
 }
+
+model CommandEvent {
+  id        String   @id @default(uuid())
+  userId    String
+  guildId   String
+  command   String
+  category  String   @default("owl_command")
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([guildId, createdAt])
+  @@index([command])
+}

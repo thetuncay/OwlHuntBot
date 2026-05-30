@@ -107,17 +107,10 @@ describe('A2 Fix — Duel Daily Coin Cap Boundary (Requirements 2.7, 2.8)', () =
     }
 
     it(
-      'dailyEarned = 499 → partial award: coinsGained is capped to 1 (500 - 499 = 1)',
+      'dailyEarned = cap - 1 → partial award: coinsGained is capped to 1',
       () => {
-        /**
-         * **Validates: Requirements 2.7, 2.8**
-         *
-         * Property 4: Bug Condition — Bot Duel Daily Cap Enforced
-         * When dailyEarned = 499 and coinsGained = SIM_PVP_WIN_COINS (60),
-         * only 1 coin remains in the budget → cappedCoins = 1.
-         */
-        const dailyEarned = 499;
-        const coinsGained = SIM_PVP_WIN_COINS; // 60
+        const dailyEarned = DUEL_DAILY_COIN_CAP - 1;
+        const coinsGained = SIM_PVP_WIN_COINS;
 
         const cappedCoins = applyCap(coinsGained, dailyEarned);
 
@@ -205,37 +198,27 @@ describe('A2 Fix — Duel Daily Coin Cap Boundary (Requirements 2.7, 2.8)', () =
     );
 
     it(
-      'boundary: dailyEarned = 440, coinsGained = 60 → cappedCoins = 60 (exactly fits)',
+      'boundary: dailyEarned one win below cap → cappedCoins = SIM_PVP_WIN_COINS (exactly fits)',
       () => {
-        /**
-         * **Validates: Requirements 2.7, 2.8**
-         *
-         * 440 + 60 = 500 = cap exactly. Full award is given.
-         */
-        const dailyEarned = 440;
-        const coinsGained = SIM_PVP_WIN_COINS; // 60
+        const dailyEarned = DUEL_DAILY_COIN_CAP - SIM_PVP_WIN_COINS;
+        const coinsGained = SIM_PVP_WIN_COINS;
 
         const cappedCoins = applyCap(coinsGained, dailyEarned);
 
-        expect(cappedCoins).toBe(60);
+        expect(cappedCoins).toBe(SIM_PVP_WIN_COINS);
         expect(dailyEarned + cappedCoins).toBe(DUEL_DAILY_COIN_CAP);
       },
     );
 
     it(
-      'boundary: dailyEarned = 441, coinsGained = 60 → cappedCoins = 59 (partial award)',
+      'boundary: dailyEarned one coin over exact-fit → partial award',
       () => {
-        /**
-         * **Validates: Requirements 2.7, 2.8**
-         *
-         * 441 + 60 = 501 > cap. Only 59 coins remain in the budget.
-         */
-        const dailyEarned = 441;
-        const coinsGained = SIM_PVP_WIN_COINS; // 60
+        const dailyEarned = DUEL_DAILY_COIN_CAP - SIM_PVP_WIN_COINS + 1;
+        const coinsGained = SIM_PVP_WIN_COINS;
 
         const cappedCoins = applyCap(coinsGained, dailyEarned);
 
-        expect(cappedCoins).toBe(59);
+        expect(cappedCoins).toBe(SIM_PVP_WIN_COINS - 1);
         expect(dailyEarned + cappedCoins).toBe(DUEL_DAILY_COIN_CAP);
       },
     );
@@ -309,7 +292,7 @@ describe('A2 Fix — Duel Daily Coin Cap Boundary (Requirements 2.7, 2.8)', () =
          * The function must award exactly 1 coin regardless of the base reward.
          */
         const { prisma } = buildStrongPlayerPrismaMock();
-        const redis = buildRedisMock(499);
+        const redis = buildRedisMock(DUEL_DAILY_COIN_CAP - 1);
 
         const { runSimulatedPvP } = await import('../systems/pvp-sim');
 
@@ -331,17 +314,10 @@ describe('A2 Fix — Duel Daily Coin Cap Boundary (Requirements 2.7, 2.8)', () =
     );
 
     it(
-      'dailyEarned = 500 → result.coinsGained = 0 and xpGained > 0 (cap reached, XP unaffected)',
+      'dailyEarned = cap → result.coinsGained = 0 and xpGained > 0 (cap reached, XP unaffected)',
       async () => {
-        /**
-         * **Validates: Requirements 2.7, 2.8**
-         *
-         * Property 4: Bug Condition — Bot Duel Daily Cap Enforced
-         * When the daily cap is already reached (dailyEarned = 500),
-         * no coins are awarded but XP is still given in full.
-         */
         const { prisma } = buildStrongPlayerPrismaMock();
-        const redis = buildRedisMock(500);
+        const redis = buildRedisMock(DUEL_DAILY_COIN_CAP);
 
         const { runSimulatedPvP } = await import('../systems/pvp-sim');
 
@@ -440,7 +416,7 @@ describe('A2 Fix — Duel Daily Coin Cap Boundary (Requirements 2.7, 2.8)', () =
          * The Redis counter must not be updated with a zero value.
          */
         const { prisma } = buildStrongPlayerPrismaMock();
-        const redis = buildRedisMock(500);
+        const redis = buildRedisMock(DUEL_DAILY_COIN_CAP);
 
         const { runSimulatedPvP } = await import('../systems/pvp-sim');
 
@@ -469,7 +445,7 @@ describe('A2 Fix — Duel Daily Coin Cap Boundary (Requirements 2.7, 2.8)', () =
          * With dailyEarned = 499, only 1 coin should be credited to the player.
          */
         const { prisma } = buildStrongPlayerPrismaMock();
-        const redis = buildRedisMock(499);
+        const redis = buildRedisMock(DUEL_DAILY_COIN_CAP - 1);
 
         const { runSimulatedPvP } = await import('../systems/pvp-sim');
 

@@ -116,8 +116,9 @@ const FALLBACK_RESPONSES: Record<string, string> = {
    - Göl Kenarı: Kolay yakalama
    - Derin Orman: Nadir hayvan + materyal
 
-2. **Daily Quest** (2.900💰/gün)
+2. **Daily Quest** (~4.500💰/gün — OwO daily karşılığı)
    - 10 av, 3 craft, 1 tame, 2 market ilanı
+   - \`w quests\` veya OwO alışkanlığı \`w daily\`
 
 3. **Market Satışı**
    - Nadir materyaller sat
@@ -181,6 +182,19 @@ const FALLBACK_RESPONSES: Record<string, string> = {
 4. Mini-PvP'yi kazan (+10 bonus)
 
 **Başarısız olursa:** Max 3 deneme hakkın var`,
+
+  'owo|wh|wdaily|cowoncy': `🔄 **OwO'dan OwlHunt'a:**
+
+| OwO | OwlHunt |
+|-----|---------|
+| \`wh\` / \`h\` | \`w hunt\` |
+| \`wb\` / \`b\` | \`w duel\` |
+| \`ws\` / \`s\` | \`w sell\` (stat: \`w st\`) |
+| \`daily\` | \`w quests\` (~4500💰/gün) |
+| \`cf\` \`bj\` \`slot\` | aynı |
+| \`cash\` | \`w cash\` |
+
+OwO'daki \`h b s\` döngüsü: av → duel → sat.`,
 };
 
 function getFallbackResponse(question: string): string {
@@ -364,6 +378,15 @@ Cevapların açıklayıcı ve yardımcı olsun (maksimum 800 karakter). Emoji ku
 
 📋 TEMEL OYUN DÖNGÜSÜ:
 Hunt (av) → Sell (sat) → Upgrade (geliştir) → Tame (evcilleştir) → Prestige (yüksel)
+
+🔄 OwO GEÇİŞ SÖZLÜĞÜ (prefix \`w\` örneği):
+• OwO \`wh\` / \`h\` → \`w hunt\` (av)
+• OwO \`wb\` / \`b\` / battle → \`w duel\` (bot savaşı; loot için encounter'da Savaş)
+• OwO \`ws\` / \`s\` / sell → \`w sell\` (satış) — stats için \`w st\`
+• OwO \`daily\` / \`wdaily\` → \`w quests\` (günlük görev + ~4500 coin)
+• OwO \`cf\` / \`bj\` / \`slot\` → aynı kumar komutları
+• OwO \`cash\` → \`w cash\` · OwO \`top\` → \`w lb\`
+• Klasik döngü: \`h → b → s\` = \`hunt → duel → sell\`
 
 ═══════════════════════════════════════════════════════════════
 

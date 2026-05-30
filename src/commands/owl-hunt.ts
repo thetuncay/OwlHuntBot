@@ -48,6 +48,7 @@ import { listActiveBuffs } from '../systems/items';
 import { BUFF_ITEM_MAP } from '../config';
 import { getActiveConsumables } from '../utils/use-items';
 import { hydratePlayerState } from '../state/player-state';
+import { getGuildPrefix } from '../utils/prefix';
 import type { CachedOwlData } from '../utils/player-cache';
 import {
   buildEncounterEmbed,
@@ -154,6 +155,7 @@ function spawnHuntFollowUp(
   player: { level: number; prestigeLevel?: number },
   mainOwl: CachedOwlData,
   hasCritical: boolean,
+  prefix = 'w',
 ): void {
   void runHuntSideEffects(ctx.prisma, ctx.redis, userId, player, {
     tier: mainOwl.tier,
@@ -164,7 +166,7 @@ function spawnHuntFollowUp(
     statPence: mainOwl.statPence,
   }, hasCritical).then(({ encounterId }) => {
     if (encounterId) {
-      void sendEncounterMessage(sender, ctx, userId, encounterId, mainOwl);
+      void sendEncounterMessage(sender, ctx, userId, encounterId, mainOwl, prefix);
     }
   }).catch(() => null);
 }
@@ -270,8 +272,11 @@ export async function runHunt(
     const name = interaction.member && 'displayName' in interaction.member
       ? (interaction.member as { displayName: string }).displayName
       : interaction.user.username;
+    const prefix = interaction.guildId
+      ? await getGuildPrefix(ctx.redis, interaction.guildId)
+      : 'w';
 
-    await interaction.editReply({ content: buildFinalMessage(name, compressed) });
+    await interaction.editReply({ content: buildFinalMessage(name, compressed, prefix) });
 
     spawnHuntFollowUp(
       { followUp: interaction.followUp.bind(interaction) },
@@ -280,6 +285,7 @@ export async function runHunt(
       bundle.player,
       bundle.mainOwl,
       result.catches.some((c) => c.critical),
+      prefix,
     );
   } catch (err: any) {
     // Biyom süresi dolmuşsa oturumu temizle
@@ -434,7 +440,10 @@ export async function runHuntMessage(
         }));
     } catch { /* hata hunt'u engellemesin */ }
 
-    await animateHuntMessage(message, name, compressed);
+    const prefix = message.guildId
+      ? await getGuildPrefix(ctx.redis, message.guildId)
+      : 'w';
+    await animateHuntMessage(message, name, compressed, prefix);
 
     spawnHuntFollowUp(
       { reply: message.reply.bind(message) },
@@ -443,6 +452,7 @@ export async function runHuntMessage(
       bundle.player,
       bundle.mainOwl,
       result.catches.some((c) => c.critical),
+      prefix,
     );
   } catch (err: any) {
     if (err.message?.includes('biyom') || err.message?.includes('coin')) {
@@ -464,6 +474,7 @@ export async function sendEncounterMessage(
     statGaga: number; statGoz: number; statKulak: number;
     statKanat: number; statPence: number; hp: number; hpMax: number;
   },
+  prefix = 'w',
 ): Promise<void> {
   const encounter = await ctx.prisma.encounter.findFirst({
     where: { id: encounterId, playerId: userId },
@@ -512,7 +523,7 @@ export async function sendEncounterMessage(
     sumStats(wildData),
   );
 
-  const embed = buildEncounterEmbed(wildData, playerData, fightPreview);
+  const embed = buildEncounterEmbed(wildData, playerData, fightPreview, prefix);
   const row   = buildEncounterActionRow(encounterId);
 
   const sendFn = sender.followUp ?? sender.reply;

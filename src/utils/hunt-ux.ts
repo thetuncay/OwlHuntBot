@@ -6,6 +6,7 @@
 import type { HuntRunResult } from '../types';
 import { PREY } from '../config';
 import { pipeLine } from './theme';
+import { formatFlowHint, getOwOFlowHints } from './owo-command';
 
 // ─── Prey meta ────────────────────────────────────────────────────────────────
 const PREY_EMOJI: Record<string, string> = {
@@ -137,7 +138,7 @@ const ANIMATION_FRAMES: [string, string, string][] = [
 const FINISHING = ['🌲 Av tamamlanıyor...', '🏃 Son hamle...', '✨ Neredeyse...', '🎯 Şimdi!!'];
 
 // ─── Final mesaj builder ──────────────────────────────────────────────────────
-export function buildFinalMessage(name: string, compressed: CompressedHunt): string {
+export function buildFinalMessage(name: string, compressed: CompressedHunt, prefix = 'w'): string {
   const lines: string[] = [];
 
   // ── LINE 1: Status / Buffs ────────────────────────────────────────────────
@@ -209,6 +210,9 @@ export function buildFinalMessage(name: string, compressed: CompressedHunt): str
   // Hunt mesajına sadece kısa bir bildirim eklenir
   if (compressed.encounterId) {
     lines.push(`\n🦉 **Yabani baykuş göründü!** Seçimini yap ↓`);
+  } else {
+    const hints = getOwOFlowHints();
+    lines.push(`\n💡 ${formatFlowHint(hints.huntLoop, prefix)}`);
   }
 
   return lines.join('\n');
@@ -235,8 +239,9 @@ export async function animateHuntInteraction(
   interaction: { reply?: Function; editReply: Function },
   name: string,
   compressed: CompressedHunt,
+  prefix = 'w',
 ): Promise<void> {
-  const final = buildFinalMessage(name, compressed);
+  const final = buildFinalMessage(name, compressed, prefix);
   if (interaction.reply) {
     await interaction.reply({ content: final });
   } else {
@@ -249,7 +254,8 @@ export async function animateHuntMessage(
   message: { reply: Function },
   name: string,
   compressed: CompressedHunt,
+  prefix = 'w',
 ): Promise<void> {
-  const final = buildFinalMessage(name, compressed);
+  const final = buildFinalMessage(name, compressed, prefix);
   await message.reply(final);
 }

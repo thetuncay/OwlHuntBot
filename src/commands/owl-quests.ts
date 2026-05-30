@@ -4,6 +4,7 @@ import { successEmbed, failEmbed, infoEmbed } from '../utils/embed';
 import { DAILY_QUEST_CONFIG } from '../config';
 import type { CommandContext } from '../types';
 import { hpBar } from '../utils/theme';
+import { formatFlowHint, getOwOFlowHints } from '../utils/owo-command';
 
 /**
  * /owl quests komutu (UI)
@@ -29,8 +30,9 @@ export async function runQuestsMessage(
 
   const embed = new EmbedBuilder()
     .setTitle('📅 Günlük Görevler')
-    .setDescription('Görevleri tamamla ve ödülleri topla! Görevler her gece yarısı sıfırlanır.')
-    .setColor(0xf1c40f);
+    .setDescription('Görevleri tamamla ve ödül al! OwO `daily` → burada. Gece yarısı sıfırlanır.')
+    .setColor(0xf1c40f)
+    .setFooter({ text: formatFlowHint(getOwOFlowHints().afterQuests, prefix) });
 
   const row = new ActionRowBuilder<ButtonBuilder>();
 
@@ -73,7 +75,7 @@ export async function runQuestsMessage(
       try {
         const reward = await claimQuestReward(ctx.prisma, userId, questId, ctx.redis);
         await i.update({
-          content: `🎉 **Görev Ödülü Alındı!**\nKazancın: **${reward.coins}** 💰 ve **${reward.xp}** XP${reward.levelUp ? '\n🆙 **LEVEL UP!**' : ''}`,
+          content: `🎉 **Görev Ödülü Alındı!**\nKazancın: **${reward.coins}** 💰 ve **${reward.xp}** XP${reward.levelUp ? '\n🆙 **LEVEL UP!**' : ''}\n💡 ${formatFlowHint(getOwOFlowHints().afterQuests, prefix)}`,
           embeds: [],
           components: []
         });
@@ -100,10 +102,13 @@ export async function runQuestsSlash(interaction: ChatInputCommandInteraction, c
     return interaction.reply({ embeds: [infoEmbed('Günlük Görevler', 'Şu anda aktif görev bulunmuyor.')], flags: 64 });
   }
 
+  const slashPrefix = interaction.guildId ? 'w' : 'owl';
+
   const embed = new EmbedBuilder()
     .setTitle('📅 Günlük Görevler')
-    .setDescription('Görevleri tamamla ve ödülleri topla! Görevler her gece yarısı sıfırlanır.')
-    .setColor(0xf1c40f);
+    .setDescription('Görevleri tamamla ve ödül al! OwO `daily` → burada. Gece yarısı sıfırlanır.')
+    .setColor(0xf1c40f)
+    .setFooter({ text: formatFlowHint(getOwOFlowHints().afterQuests, slashPrefix) });
 
   const row = new ActionRowBuilder<ButtonBuilder>();
 
@@ -147,7 +152,7 @@ export async function runQuestsSlash(interaction: ChatInputCommandInteraction, c
       try {
         const reward = await claimQuestReward(ctx.prisma, userId, questId, ctx.redis);
         await i.update({
-          content: `🎉 **Görev Ödülü Alındı!**\nKazancın: **${reward.coins}** 💰 ve **${reward.xp}** XP${reward.levelUp ? '\n🆙 **LEVEL UP!**' : ''}`,
+          content: `🎉 **Görev Ödülü Alındı!**\nKazancın: **${reward.coins}** 💰 ve **${reward.xp}** XP${reward.levelUp ? '\n🆙 **LEVEL UP!**' : ''}\n💡 ${formatFlowHint(getOwOFlowHints().afterQuests, slashPrefix)}`,
           embeds: [],
           components: []
         });

@@ -1237,7 +1237,7 @@ export const SIM_PVP_LOSE_XP    = 10;   // Kaybetme XP (sıfır değil)
 export const SIM_PVP_COOLDOWN_MS = HUNT_COOLDOWN_MS;  // Hunt ile aynı
 
 // Günlük bot duel coin kazanç üst sınırı — aşıldığında coin ödülü 0'a düşer, XP etkilenmez
-export const DUEL_DAILY_COIN_CAP = 500;
+export const DUEL_DAILY_COIN_CAP = 800;
 
 // Sahte oyuncu isimleri havuzu
 export const SIM_PVP_FAKE_NAMES: string[] = [
@@ -1646,10 +1646,10 @@ export const PRESTIGE_STAT_CAP_BONUS_PER_LEVEL = 2; // Her prestige seviyesi iç
 // --- GÖREV SİSTEMİ ---
 export const DAILY_QUEST_TYPES = ['hunt', 'craft', 'tame', 'market'] as const;
 export const DAILY_QUEST_CONFIG = {
-  hunt:   { target: 10, rewardCoins: 500,  rewardXp: 200, label: '10 Hayvan Avla' },
-  craft:  { target: 3,  rewardCoins: 800,  rewardXp: 300, label: '3 Eşya Craft Et' },
-  tame:   { target: 1,  rewardCoins: 1200, rewardXp: 500, label: '1 Baykuş Evcilleştir' },
-  market: { target: 2,  rewardCoins: 400,  rewardXp: 150, label: 'Markete 2 İlan Koy' },
+  hunt:   { target: 10, rewardCoins: 990,  rewardXp: 200, label: '10 Hayvan Avla' },
+  craft:  { target: 3,  rewardCoins: 1080, rewardXp: 300, label: '3 Eşya Craft Et' },
+  tame:   { target: 1,  rewardCoins: 1440, rewardXp: 500, label: '1 Baykuş Evcilleştir' },
+  market: { target: 2,  rewardCoins: 990,  rewardXp: 150, label: 'Markete 2 İlan Koy' },
 };
 
 /** Gönderici için minimum oyuncu seviyesi */

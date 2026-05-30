@@ -8,6 +8,8 @@ import {
 } from 'discord.js';
 import type { CommandContext } from '../types';
 import { rehydratePlayerState } from '../state/player-state';
+import { getOwOSegmentHint } from '../data/owo-segments';
+import { getGuildPrefix } from '../utils/prefix';
 
 const REGISTER_BUTTON_PREFIX = 'register_accept';
 const STARTER_SPECIES = 'Kukumav baykusu';
@@ -171,22 +173,34 @@ export async function handleRegistrationButton(
 
   await rehydratePlayerState(ctx.redis, ctx.prisma, interaction.user.id);
 
+  const segmentHint = getOwOSegmentHint(interaction.user.id);
+  const guildPrefix = interaction.guildId
+    ? await getGuildPrefix(ctx.redis, interaction.guildId)
+    : 'w';
+
+  const welcomeLines = [
+    '✅ **Kaydin tamamlandi!** 🎉',
+    '',
+    '🦉 **Ilk Adimlar:**',
+    `\`${guildPrefix} hunt\` — Ilk avini yap`,
+    `\`${guildPrefix} stats\` veya \`${guildPrefix} st\` — Baykusunu incele`,
+    `\`${guildPrefix} yardim\` — Tum komutlari gor`,
+  ];
+  if (segmentHint) {
+    welcomeLines.push('', '💡 **Sana ozel (OwO):**', segmentHint);
+  }
+  welcomeLines.push(
+    '',
+    '💡 **Yeni misin?** Oyunla ilgili her seyi sorabilirsin:',
+    `\`> ${guildPrefix} soru nasil para kazanirim?\``,
+    `\`> ${guildPrefix} soru upgrade sirasi nedir?\``,
+    `\`> ${guildPrefix} soru en iyi biome hangisi?\``,
+    '',
+    'Basarilar! 🎮',
+  );
+
   await interaction.update({
-    content: [
-      '✅ **Kaydin tamamlandi!** 🎉',
-      '',
-      '🦉 **Ilk Adimlar:**',
-      '• `owl hunt` — Ilk avini yap',
-      '• `owl stats` — Baykusunu incele',
-      '• `owl yardim` — Tum komutlari gor',
-      '',
-      '💡 **Yeni misin?** Oyunla ilgili her seyi sorabilirsin:',
-      '> `owl soru nasil para kazanirim?`',
-      '> `owl soru upgrade sirasi nedir?`',
-      '> `owl soru en iyi biome hangisi?`',
-      '',
-      'Basarilar! 🎮',
-    ].join('\n'),
+    content: welcomeLines.join('\n'),
     components: [],
   });
 

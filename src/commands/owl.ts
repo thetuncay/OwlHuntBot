@@ -37,6 +37,7 @@ import { runQuestsMessage, runQuestsSlash } from './owl-quests';
 import { runSoruMessage } from './owl-soru';
 import { ALIASES, TEXT_SUBCOMMANDS, findClosest, buildUnknownCommandEmbed } from './owl-utils';
 import { runPvpCoinFlip, runPvpSlot, runPvpBlackjack } from './pvp';
+import { logCommandEvent } from '../utils/command-telemetry';
 
 // ─── Slash komut tanımı ───────────────────────────────────────────────────────
 
@@ -167,6 +168,14 @@ export async function handleOwlTextCommand(
   const sub       = ALIASES[rawSub] ?? rawSub;
   const args      = parts.slice(1);
   const helpPrefix = (await getGuildPrefix(ctx.redis, message.guildId ?? '')) || 'owl';
+
+  if (message.guildId) {
+    logCommandEvent(ctx.prisma, {
+      userId: message.author.id,
+      guildId: message.guildId,
+      command: sub,
+    });
+  }
 
   // Kayıt gerektirmeyen komutlar
   if (sub === 'yardim' || sub === 'yardım') {

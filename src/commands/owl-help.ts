@@ -92,6 +92,13 @@ export function buildHelpEmbed(prefix: string): EmbedBuilder {
     `• Prestige için oyuncu Lv.30+ ve baykuş ort. stat 80+ gerekir`,
   ].join('\n');
 
+  const owoSection = [
+    `**OwO'dan geçiyorsan** — aynı alışkanlıklar:`,
+    `\`${p} h\` av · \`${p} b\` duel · \`${p} s\` sat · \`${p} daily\` → \`${p} quests\``,
+    `\`${p} cf\` · \`${p} bj\` · \`${p} slot\` kumar · \`${p} cash\` bakiye`,
+    `Stats için \`${p} st\` (OwO'daki \`s\` artık satış)`,
+  ].join('\n');
+
   return new EmbedBuilder()
     .setColor(0x5865f2)
     .setTitle('🦉 Owl Komutları')
@@ -103,6 +110,7 @@ export function buildHelpEmbed(prefix: string): EmbedBuilder {
       { name: '🎲 Kumar', value: kumarSection, inline: false },
       { name: '💰 Ekonomi & Görevler', value: ekonomiSection, inline: false },
       { name: '🎒 Eşya & Market', value: eşyaSection, inline: false },
+      { name: '🔄 OwO Geçiş', value: owoSection, inline: false },
       { name: '💡 İpuçları', value: ipucuSection, inline: false },
     )
     .setFooter({ text: `Tüm komutlar ${p} <komut> formatında çalışır` });

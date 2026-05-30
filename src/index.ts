@@ -8,6 +8,7 @@ import { redis, assertRedisConnection } from './utils/redis';
 import { enforceAntiSpam } from './middleware/antiSpam';
 import { acquireCommandSlot } from './middleware/load-shed';
 import { getGuildPrefix } from './utils/prefix';
+import { stripGluedPrefix } from './utils/owo-command';
 import { handleOwlTextCommand } from './commands/owl';
 import { handleTopTextCommand } from './commands/leaderboard';
 import { handleRegistrationButton, isRegistrationButton } from './systems/onboarding';
@@ -180,27 +181,27 @@ async function bootstrap(): Promise<void> {
     if (!content) return;
 
     const guildPrefix = await getGuildPrefix(redis, message.guildId);
-    const lowered = content.toLowerCase();
+    const glued = stripGluedPrefix(content, guildPrefix);
+    const lowered = glued.toLowerCase();
     const defaultPrefix = 'owl ';
     const customPrefix = `${guildPrefix} `;
-    // Boşluksuz kısaltma: "wh" → "w h", "wc" → "w c" vb.
-    // Prefix tek harf veya kısa kelimeyse boşluksuz kullanım da desteklenir
     const shortPrefix = guildPrefix.length <= 3 ? guildPrefix : null;
     let commandText: string;
 
     if (lowered.startsWith(defaultPrefix)) {
-      commandText = content.slice(defaultPrefix.length).trim();
+      commandText = glued.slice(defaultPrefix.length).trim();
     } else if (lowered.startsWith(customPrefix)) {
-      commandText = content.slice(customPrefix.length).trim();
+      commandText = glued.slice(customPrefix.length).trim();
     } else if (shortPrefix && lowered.startsWith(shortPrefix) && lowered.length > shortPrefix.length) {
-      // Boşluksuz: "wh" → commandText = "h", "wbj" → "bj 100" değil sadece "bj"
-      // Sadece tek karakter kısaltmalar için çalışır: wh, ws, wc, wd, wz vb.
-      const afterPrefix = content.slice(shortPrefix.length).trim();
+      const afterPrefix = glued.slice(shortPrefix.length).trim();
       if (afterPrefix.length > 0) {
         commandText = afterPrefix;
       } else {
         return;
       }
+    } else if (glued !== content) {
+      // stripGluedPrefix zaten wh/wdaily → h/daily ayırdı
+      commandText = glued;
     } else {
       return;
     }

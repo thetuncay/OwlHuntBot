@@ -11,6 +11,7 @@
 
 import { EmbedBuilder } from 'discord.js';
 import type { OwlStatKey } from '../types';
+import { buildOwOMigrationHint } from '../utils/owo-command';
 
 // ─── Sabitler ─────────────────────────────────────────────────────────────────
 
@@ -21,12 +22,14 @@ export const TEXT_SUBCOMMANDS = [
   'cf', 'slot', 'bj',
   'aç', 'ac', 'sk', 'ek', 'wc', 'ec',
   'use', 'u',
-  'buff', 'buffs', 'b', 'bs', 'gem', 'gems',
+  'buff', 'buffs', 'bs', 'gem', 'gems',
   'item', 'i',
   'craft', 'craftinfo', 'dismantle', 'market', 'buy', 'msell', 'prestige', 'quests',
+  // OwO uyumlu
+  'daily', 'battle', 'money', 'pray', 'top', 'lb',
   // kısaltmalar
-  'h', 's', 'sm', 'z', 'd', 'c', 't', 'g',
-  'p', 'sl', 'ow', 'y', 'pf',
+  'h', 'b', 's', 'st', 'stat', 'sm', 'z', 'd', 'c', 't', 'g',
+  'p', 'sl', 'ow', 'y', 'pf', 'q',
 ] as const;
 
 export const ALIASES: Record<string, string> = {
@@ -34,7 +37,6 @@ export const ALIASES: Record<string, string> = {
   inv:  'inventory',
   up:   'upgrade',
   h:    'hunt',
-  s:    'stats',
   sm:   'setmain',
   z:    'zoo',
   d:    'duel',
@@ -46,7 +48,6 @@ export const ALIASES: Record<string, string> = {
   wc:   'sk',   // weapon crate → sk
   ec:   'ek',   // equipment crate → ek
   u:    'use',
-  b:    'use',
   gem:  'use',
   i:    'use',
   buff: 'use',
@@ -58,13 +59,24 @@ export const ALIASES: Record<string, string> = {
   ascension: 'prestige',
   q: 'quests',
   görevler: 'quests',
-  // Yeni
-  p:    'vs',       // pvp → vs
-  sl:   'sell',     // sell
-  ow:   'owls',     // owls
-  y:    'yardim',   // yardım
-  yardım: 'yardim', // Türkçe ı harfi ile yazılanlar
-  pf:   'prefix',   // prefix
+  p:    'vs',
+  sl:   'sell',
+  ow:   'owls',
+  y:    'yardim',
+  yardım: 'yardim',
+  pf:   'prefix',
+  // OwO uyum (veri: h→b→s, daily, cf)
+  s:    'sell',      // OwO sell — stats için st/stat
+  st:   'stats',
+  stat: 'stats',
+  b:    'duel',      // OwO battle — use için u/buff
+  battle: 'duel',
+  daily: 'quests',
+  money: 'cash',
+  top: 'lb',
+  liderboard: 'lb',
+  leaderboard: 'lb',
+  pray: 'buffs',
 };
 
 export const UPGRADE_STATS: OwlStatKey[] = ['gaga', 'goz', 'kulak', 'kanat', 'pence'];
@@ -128,7 +140,7 @@ export function commandInfo(prefix: string, sub: string): CommandInfo {
       };
     case 'stats':
       return {
-        usage: `${prefix} stats [deep]`, aliases: `${prefix} s`,
+        usage: `${prefix} stats [deep]`, aliases: `${prefix} st · ${prefix} stat`,
         description: 'Main baykuşunun istatistiklerini gösterir. `deep` yazarsan formül detayları da çıkar.',
         example: `${prefix} stats deep`,
       };
@@ -164,8 +176,8 @@ export function commandInfo(prefix: string, sub: string): CommandInfo {
       };
     case 'sell':
       return {
-        usage: `${prefix} sell [all|<hayvan>]`,
-        description: 'Avladığın hayvanları satar.',
+        usage: `${prefix} sell [all|<hayvan>]`, aliases: `${prefix} s · ${prefix} sl`,
+        description: 'Avladığın hayvanları satar (OwO `s` ile aynı).',
         example: `${prefix} sell all`,
       };
     case 'zoo':
@@ -176,8 +188,8 @@ export function commandInfo(prefix: string, sub: string): CommandInfo {
       };
     case 'duel':
       return {
-        usage: `${prefix} duel`, aliases: `${prefix} d`,
-        description: 'Bot ile simüle bir PvP duel yapar.',
+        usage: `${prefix} duel`, aliases: `${prefix} d · ${prefix} b · ${prefix} battle`,
+        description: 'Bot ile simüle bir PvP duel yapar (OwO `b` / battle).',
         example: `${prefix} duel`,
       };
     case 'cash':
@@ -192,6 +204,12 @@ export function commandInfo(prefix: string, sub: string): CommandInfo {
         description: 'Bu sunucu için metin komut prefixini değiştirir. Yönetici yetkisi gerekir.',
         example: `${prefix} prefix baykus`,
       };
+    case 'quests':
+      return {
+        usage: `${prefix} quests [claim]`, aliases: `${prefix} q · ${prefix} daily`,
+        description: 'Günlük görevleri görüntüle ve ödül al (OwO `daily` karşılığı).',
+        example: `${prefix} quests`,
+      };
     default:
       return { usage: `${prefix} yardim`, description: 'Tüm komutları listeler.' };
   }
@@ -205,6 +223,7 @@ export function buildUnknownCommandEmbed(
   suggestion: string | null,
 ): EmbedBuilder {
   const embed = new EmbedBuilder().setColor(0xed4245);
+  const owoHint = buildOwOMigrationHint(prefix, rawInput);
 
   if (suggestion) {
     const info = commandInfo(prefix, suggestion);
@@ -213,32 +232,42 @@ export function buildUnknownCommandEmbed(
     lines.push(`\n${info.description}`);
     if (info.example) lines.push(`\n**Örnek:** \`${info.example}\``);
 
+    const fields = [
+      { name: `💡 ${suggestion}`, value: lines.join('\n'), inline: false },
+      { name: '📚 Tüm Komutlar', value: `\`${prefix} yardim\` yazarak tam listeye ulaşabilirsin.`, inline: false },
+      { name: '🤖 AI Asistan', value: `Oyunla ilgili soru sorabilirsin:\n\`${prefix} soru ${rawInput} nedir?\``, inline: false },
+    ];
+    if (owoHint) {
+      fields.unshift({ name: '🔄 OwO', value: owoHint, inline: false });
+    }
+
     embed
       .setTitle('❓ Komut Bulunamadı')
       .setDescription(`\`${prefix} ${rawInput}\` tanımlı değil.\n\nBunu mu demek istedin?`)
-      .addFields(
-        { name: `💡 ${suggestion}`, value: lines.join('\n'), inline: false },
-        { name: '📚 Tüm Komutlar', value: `\`${prefix} yardim\` yazarak tam listeye ulaşabilirsin.`, inline: false },
-        { name: '🤖 AI Asistan', value: `Oyunla ilgili soru sorabilirsin:\n\`${prefix} soru ${rawInput} nedir?\``, inline: false },
-      )
+      .addFields(fields)
       .setFooter({ text: `Slash komutlar için /owl kullanabilirsin` });
   } else {
+    const fields = [
+      {
+        name: '📚 Tüm Komutlar',
+        value: `\`${prefix} yardim\` yazarak komut listesine ulaşabilirsin.\nSlash komutlar için \`/owl\` kullanabilirsin.`,
+        inline: false,
+      },
+      {
+        name: '🤖 AI Asistan',
+        value: `Oyunla ilgili soru sorabilirsin:\n\`${prefix} soru ${rawInput} nedir?\``,
+        inline: false,
+      },
+    ];
+    if (owoHint) {
+      fields.unshift({ name: '🔄 OwO', value: owoHint, inline: false });
+    }
+
     embed
       .setTitle('❓ Komut Bulunamadı')
       .setDescription(`\`${prefix} ${rawInput}\` tanımlı bir komut değil.`)
-      .addFields(
-        {
-          name: '📚 Tüm Komutlar',
-          value: `\`${prefix} yardim\` yazarak komut listesine ulaşabilirsin.\nSlash komutlar için \`/owl\` kullanabilirsin.`,
-          inline: false,
-        },
-        {
-          name: '🤖 AI Asistan',
-          value: `Oyunla ilgili soru sorabilirsin:\n\`${prefix} soru ${rawInput} nedir?\``,
-          inline: false,
-        },
-      )
-      .setFooter({ text: 'İpucu: Komut adını tam yazmaya çalış' });
+      .addFields(fields)
+      .setFooter({ text: 'OwO: h b s = hunt · duel · sell' });
   }
 
   return embed;

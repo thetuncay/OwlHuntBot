@@ -1,0 +1,6 @@
+{
+  "huntLoop": "Sırada: `{p} sell` · `{p} duel` · `{p} hunt`",
+  "afterDaily": "daily → cf",
+  "afterQuests": "Görevler bitti → `{p} cf` veya `{p} hunt`",
+  "encounterLoop": "OwO `b` = `{p} duel` · Loot için encounter'da **Savaş**"
+}

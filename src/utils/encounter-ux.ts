@@ -6,6 +6,7 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } from 'disc
 import { resolveTraits } from '../systems/traits';
 import type { StoredTrait } from '../systems/traits';
 import type { LootboxDrop } from '../types';
+import { formatFlowHint, getOwOFlowHints } from './owo-command';
 
 export interface EncounterFightPreview {
   coinMin: number;
@@ -106,6 +107,7 @@ export function buildEncounterEmbed(
   wild: EncounterOwlData,
   player: PlayerOwlData,
   fightPreview: EncounterFightPreview,
+  prefix = 'w',
 ): EmbedBuilder {
   const wildPower   = totalPower(wild);
   const playerPower = totalPower(player);
@@ -150,6 +152,7 @@ export function buildEncounterEmbed(
   const coinMax = estimate.coinMax.toLocaleString('tr-TR');
   const xpMin   = estimate.xpMin.toLocaleString('tr-TR');
   const xpMax   = estimate.xpMax.toLocaleString('tr-TR');
+  const flowHint = formatFlowHint(getOwOFlowHints().encounterLoop, prefix);
 
   return new EmbedBuilder()
     .setColor(color)
@@ -193,7 +196,7 @@ export function buildEncounterEmbed(
         inline: false,
       },
     )
-    .setFooter({ text: '60 saniye içinde seçim yapmazsan baykuş kaçar.' });
+    .setFooter({ text: `60 sn · ${flowHint}` });
 }
 
 export function buildEncounterActionRow(encounterId: string): ActionRowBuilder<ButtonBuilder> {
