@@ -1,4 +1,5 @@
 import type { PrismaClient } from '@prisma/client';
+import type { Redis } from 'ioredis';
 import {
   ITEM_MAX_PER_ATTEMPT,
   UPGRADE_BASE_CHANCE,
@@ -13,6 +14,7 @@ import { upgradeChance, upgradeCoinCost, upgradeMaterialRequirement } from '../u
 import { withLock } from '../utils/lock';
 import { checkUpgradeDep, suggestNextUpgrade, type AllStats } from '../utils/upgrade-deps';
 import { getBuffEffects, drainBuffCharge } from './items';
+import { hydratePlayerState, deductCoinsInRedis, applyOwlStatUpdate } from '../state/player-state';
 
 const statFieldMap: Record<OwlStatKey, 'statGaga' | 'statGoz' | 'statKulak' | 'statKanat' | 'statPence'> = {
   gaga:  'statGaga',
@@ -136,6 +138,7 @@ export async function attemptUpgrade(
   stat: OwlStatKey,
   itemNames: string[],
   consumableBonus = 0,
+  redis?: Redis,
 ): Promise<UpgradeResult> {
   return withLock(playerId, 'financial', async () => {
     if (itemNames.length > ITEM_MAX_PER_ATTEMPT) {
@@ -176,6 +179,11 @@ export async function attemptUpgrade(
         throw new Error(`Yetersiz bakiye: **${coinCost.toLocaleString('tr-TR')}** 💰 gerekli.`);
       }
 
+      if (redis) {
+        await hydratePlayerState(redis, prisma, playerId);
+        await deductCoinsInRedis(redis, playerId, coinCost);
+      }
+
       // Zorunlu malzeme kontrolü: paralel findUnique
       const requiredInvChecks = await Promise.all(
         requiredCosts.map((cost) =>
@@ -207,10 +215,12 @@ export async function attemptUpgrade(
       }
 
       // Coin ve malzeme tüketimi
-      await tx.player.update({
-        where: { id: playerId },
-        data: { coins: { decrement: coinCost } },
-      });
+      if (!redis) {
+        await tx.player.update({
+          where: { id: playerId },
+          data: { coins: { decrement: coinCost } },
+        });
+      }
 
       // Zorunlu malzeme tüketimi: tek updateMany
       if (requiredCosts.length > 0) {
@@ -261,6 +271,12 @@ export async function attemptUpgrade(
       }
 
       await tx.owl.update({ where: { id: owlId }, data: { [field]: newValue } });
+
+      if (redis) {
+        await applyOwlStatUpdate(redis, playerId, owlId, { [field]: newValue } as Partial<{
+          statGaga: number; statGoz: number; statKulak: number; statKanat: number; statPence: number;
+        }>);
+      }
 
       // Upgrade buff charge'ını tüket (transaction dışında — lock yeterli)
       drainBuffCharge(prisma, playerId, 'upgrade').catch(() => null);

@@ -21,10 +21,21 @@ export const botEnvSchema = z.object({
   HEALTH_PORT: z.coerce.number().int().positive().default(3010),
 });
 
+export const workerEnvSchema = z.object({
+  DATABASE_URL: z.string().min(1),
+  REDIS_URL: z.string().min(1),
+  NODE_ENV: z.enum(['development', 'production', 'test']).default('production'),
+});
+
 export type BotEnv = z.infer<typeof botEnvSchema>;
+export type WorkerEnv = z.infer<typeof workerEnvSchema>;
 
 export function parseBotEnv(): BotEnv {
   return botEnvSchema.parse(process.env);
+}
+
+export function parseWorkerEnv(): WorkerEnv {
+  return workerEnvSchema.parse(process.env);
 }
 
 export const deployEnvSchema = botEnvSchema.pick({
@@ -34,8 +45,12 @@ export const deployEnvSchema = botEnvSchema.pick({
 });
 
 /** PostgreSQL connection pool parametrelerini DATABASE_URL'e ekler. */
-export function appendPoolParams(url: string): string {
+export function appendPoolParams(url: string, mode: 'bot' | 'worker' = 'bot'): string {
   if (url.includes('connection_limit') || url.includes('pool_timeout')) return url;
   const separator = url.includes('?') ? '&' : '?';
-  return `${url}${separator}connection_limit=50&pool_timeout=15&connect_timeout=10`;
+  const limit = mode === 'worker'
+    ? Number.parseInt(process.env.WORKER_DB_POOL_LIMIT ?? '25', 10)
+    : Number.parseInt(process.env.BOT_DB_POOL_LIMIT ?? '8', 10);
+  const timeout = Number.parseInt(process.env.DB_POOL_TIMEOUT ?? '10', 10);
+  return `${url}${separator}connection_limit=${limit}&pool_timeout=${timeout}&connect_timeout=10`;
 }

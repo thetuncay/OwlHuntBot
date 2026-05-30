@@ -95,8 +95,14 @@ export interface RecordPityJob {
   type: 'recordPity';
   playerId: string;
   lootboxId: string;
-  increment: number;  // +1 per open, or 0 to reset
-  reset: boolean;     // true = set counter to 0 (on pity trigger)
+  increment: number;
+  reset: boolean;
+}
+
+export interface PersistPlayerJob {
+  type: 'persistPlayer';
+  playerId: string;
+  priority: number;
 }
 
 export type DbWriteJob =
@@ -104,30 +110,39 @@ export type DbWriteJob =
   | UpdateOwlJob
   | UpsertInventoryJob
   | RecordStatsJob
-  | RecordPityJob;
+  | RecordPityJob
+  | PersistPlayerJob;
+
+const PERSIST_DEBOUNCE_MS = Number.parseInt(process.env.PERSIST_DEBOUNCE_MS ?? '2500', 10);
 
 // ── Queue instance ────────────────────────────────────────────────────────────
 
 let queue: Queue | null = null;
 let worker: Worker | null = null;
 let prismaRef: PrismaClient | null = null;
+let consumerStarted = false;
 
-/**
- * Queue ve Worker'ı başlatır.
- * index.ts'de bootstrap sırasında bir kez çağrılır.
- */
-export function initDbQueue(prisma: PrismaClient): void {
-  prismaRef = prisma;
-
+/** Bot process: sadece kuyruk ureticisi (Worker yok). */
+export function initDbQueueProducer(): void {
+  if (queue) return;
   queue = new Queue(QUEUE_NAME, {
     connection,
     defaultJobOptions: {
       attempts: 3,
-      backoff: { type: 'exponential', delay: 1000 }, // 1s, 2s, 4s
-      removeOnComplete: { count: 100 },  // Son 100 başarılı job'ı tut
-      removeOnFail: { count: 50 },       // Son 50 başarısız job'ı tut
+      backoff: { type: 'exponential', delay: 1000 },
+      removeOnComplete: { count: 200 },
+      removeOnFail: { count: 100 },
     },
   });
+  console.info('[Queue] Producer baslatildi (enqueue only).');
+}
+
+/** Worker process: BullMQ consumer + ayni kuyruk. */
+export function initDbQueueConsumer(prisma: PrismaClient): void {
+  prismaRef = prisma;
+  initDbQueueProducer();
+  if (consumerStarted) return;
+  consumerStarted = true;
 
   worker = new Worker(QUEUE_NAME, processJob, {
     connection,
@@ -135,14 +150,19 @@ export function initDbQueue(prisma: PrismaClient): void {
   });
 
   worker.on('failed', (job, err) => {
-    console.error(`[Queue] Job başarısız: ${job?.name} #${job?.id}`, err.message);
+    console.error(`[Queue] Job basarisiz: ${job?.name} #${job?.id}`, err.message);
   });
 
   worker.on('error', (err) => {
-    console.error('[Queue] Worker hatası:', err.message);
+    console.error('[Queue] Worker hatasi:', err.message);
   });
 
-  console.info(`[Queue] DB write queue başlatıldı. concurrency=${DB_QUEUE_CONCURRENCY}`);
+  console.info(`[Queue] Consumer baslatildi. concurrency=${DB_QUEUE_CONCURRENCY}`);
+}
+
+/** @deprecated Worker ayirimi oncesi uyumluluk — consumer kullanin. */
+export function initDbQueue(prisma: PrismaClient): void {
+  initDbQueueConsumer(prisma);
 }
 
 /**
@@ -228,6 +248,12 @@ async function processJob(job: Job<DbWriteJob>): Promise<void> {
       break;
     }
 
+    case 'persistPlayer': {
+      const { persistPlayerSnapshot } = await import('../state/player-state.js');
+      await persistPlayerSnapshot(prismaRef, redis, data.playerId);
+      break;
+    }
+
     default:
       console.warn('[Queue] Bilinmeyen job tipi:', (data as any).type);
   }
@@ -289,8 +315,28 @@ export function enqueueDbWriteBulk(jobs: DbWriteJob[]): void {
   queue.addBulk(
     jobs.map((j) => ({ name: j.type, data: j })),
   ).catch((err) => {
-    console.error('[Queue] Bulk enqueue hatası:', err.message);
-    // Bulk enqueue başarısız olursa her job için fallback
+    console.error('[Queue] Bulk enqueue hatasi:', err.message);
     for (const job of jobs) void processFallback(job);
+  });
+}
+
+/**
+ * Redis-first state persist — debounced (aynı oyuncu icin tek job).
+ * Level-up sonrasi priority=1 ile daha hizli persist.
+ */
+export function enqueuePersistPlayer(playerId: string, priority = 0): void {
+  const job: PersistPlayerJob = { type: 'persistPlayer', playerId, priority };
+  if (!queue) {
+    console.warn('[Queue] Producer yok, persist atlandi:', playerId);
+    return;
+  }
+  queue.add(job.type, job, {
+    jobId: `persist:${playerId}`,
+    delay: PERSIST_DEBOUNCE_MS,
+    priority: priority > 0 ? 1 : 10,
+    removeOnComplete: true,
+    removeOnFail: false,
+  }).catch((err) => {
+    console.error('[Queue] Persist enqueue hatasi:', err.message);
   });
 }

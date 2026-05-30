@@ -17,7 +17,7 @@ import {
 } from 'discord.js';
 import { HUNT_COOLDOWN_MS, BIOMES, BIOME_SESSION_TTL_MS } from '../config';
 import { getCooldownRemainingMs } from '../middleware/cooldown';
-import { rollHunt } from '../systems/hunt';
+import { rollHunt, runHuntSideEffects } from '../systems/hunt';
 import {
   getBiomeSession,
   setBiomeSession,
@@ -46,7 +46,8 @@ import {
 import { animateHuntMessage, buildFinalMessage, compressHuntResult } from '../utils/hunt-ux';
 import { listActiveBuffs } from '../systems/items';
 import { BUFF_ITEM_MAP, CONSUMABLE_ITEMS } from '../config';
-import { getPlayerBundle } from '../utils/player-cache';
+import { hydratePlayerState } from '../state/player-state';
+import type { CachedOwlData } from '../utils/player-cache';
 import {
   buildEncounterEmbed,
   buildEncounterActionRow,
@@ -143,6 +144,30 @@ function buildActiveBiomeRow(): ActionRowBuilder<ButtonBuilder> {
   );
 }
 
+// ─── Hunt sonrasi async encounter ────────────────────────────────────────────
+
+function spawnHuntFollowUp(
+  sender: { followUp?: Function; reply?: Function },
+  ctx: Parameters<CommandDefinition['execute']>[1],
+  userId: string,
+  player: { level: number; prestigeLevel?: number },
+  mainOwl: CachedOwlData,
+  hasCritical: boolean,
+): void {
+  void runHuntSideEffects(ctx.prisma, ctx.redis, userId, player, {
+    tier: mainOwl.tier,
+    statGoz: mainOwl.statGoz,
+    statKulak: mainOwl.statKulak,
+    statGaga: mainOwl.statGaga,
+    statKanat: mainOwl.statKanat,
+    statPence: mainOwl.statPence,
+  }, hasCritical).then(({ encounterId }) => {
+    if (encounterId) {
+      void sendEncounterMessage(sender, ctx, userId, encounterId, mainOwl);
+    }
+  }).catch(() => null);
+}
+
 // ─── Slash: /owl hunt ─────────────────────────────────────────────────────────
 
 export async function runHunt(
@@ -230,7 +255,7 @@ export async function runHunt(
     return;
   }
 
-  const bundle = await getPlayerBundle(ctx.redis, ctx.prisma, userId);
+  const bundle = await hydratePlayerState(ctx.redis, ctx.prisma, userId);
   if (!bundle || !bundle.mainOwl) {
     await interaction.reply({ content: '❌ **Hata** | Main baykuş bulunamadı.', flags: 64 });
     return;
@@ -247,12 +272,14 @@ export async function runHunt(
 
     await interaction.editReply({ content: buildFinalMessage(name, compressed) });
 
-    if (compressed.encounterId) {
-      await sendEncounterMessage(
-        { followUp: interaction.followUp.bind(interaction) },
-        ctx, userId, compressed.encounterId, bundle.mainOwl,
-      );
-    }
+    spawnHuntFollowUp(
+      { followUp: interaction.followUp.bind(interaction) },
+      ctx,
+      userId,
+      bundle.player,
+      bundle.mainOwl,
+      result.catches.some((c) => c.critical),
+    );
   } catch (err: any) {
     // Biyom süresi dolmuşsa oturumu temizle
     if (err.message?.includes('biyom') || err.message?.includes('coin')) {
@@ -368,7 +395,7 @@ export async function runHuntMessage(
     return;
   }
 
-  const bundle = await getPlayerBundle(ctx.redis, ctx.prisma, userId);
+  const bundle = await hydratePlayerState(ctx.redis, ctx.prisma, userId);
   if (!bundle || !bundle.mainOwl) {
     await message.reply('❌ **Hata** | Main baykuş bulunamadı.');
     return;
@@ -406,12 +433,14 @@ export async function runHuntMessage(
 
     await animateHuntMessage(message, name, compressed);
 
-    if (compressed.encounterId) {
-      await sendEncounterMessage(
-        { reply: message.reply.bind(message) },
-        ctx, userId, compressed.encounterId, bundle.mainOwl,
-      );
-    }
+    spawnHuntFollowUp(
+      { reply: message.reply.bind(message) },
+      ctx,
+      userId,
+      bundle.player,
+      bundle.mainOwl,
+      result.catches.some((c) => c.critical),
+    );
   } catch (err: any) {
     if (err.message?.includes('biyom') || err.message?.includes('coin')) {
       await clearBiomeSession(ctx.redis, userId);

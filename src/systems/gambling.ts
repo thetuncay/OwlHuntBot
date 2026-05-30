@@ -1,4 +1,5 @@
 import type { PrismaClient } from '@prisma/client';
+import type { Redis } from 'ioredis';
 import {
   GAMBLE_BJ_BLACKJACK_PAYOUT,
   GAMBLE_BJ_WIN_PAYOUT,
@@ -15,6 +16,8 @@ import type { GambleResult } from '../types';
 import { finalWinChance } from '../utils/math';
 import { withLock } from '../utils/lock';
 import { weightedRandom } from '../utils/rng';
+import { hydratePlayerState, applyCoinDeltaInRedis } from '../state/player-state';
+import { enqueueDbWrite } from '../utils/db-queue';
 import { recordCoinsEarned } from './leaderboard';
 import { writeAudit } from '../utils/audit';
 
@@ -36,8 +39,53 @@ async function settleGamble(
   payout: number,
   winMessage: string,
   loseMessage: string,
+  redis?: Redis,
 ): Promise<GambleResult> {
   return withLock(playerId, 'financial', async () => {
+    if (redis) {
+      const bundle = await hydratePlayerState(redis, prisma, playerId);
+      if (!bundle) throw new Error('Oyuncu bulunamadi.');
+      const player = bundle.player;
+      if (player.coins < bet) throw new Error('Yetersiz bakiye.');
+
+      const streakMod = streakModifier(player.gambleStreakWins ?? 0, player.gambleStreakLosses ?? 0);
+      const chance = finalWinChance(baseChance, player.coins, bet, streakMod);
+      const win = Math.random() * 100 < chance;
+      const gain = win ? Math.floor(bet * payout) - bet : -bet;
+      const finalCoins = await applyCoinDeltaInRedis(redis, playerId, gain);
+
+      enqueueDbWrite({
+        type: 'updatePlayer',
+        playerId,
+        data: {
+          gambleStreakWins: win ? { increment: 1 } : 0,
+          gambleStreakLosses: win ? 0 : { increment: 1 },
+        },
+      });
+
+      if (win && gain > 0) {
+        recordCoinsEarned(prisma, playerId, gain).catch(() => null);
+      }
+
+      writeAudit(prisma, playerId, 'gamble', {
+        coins: player.coins,
+        gambleStreakWins: player.gambleStreakWins,
+        gambleStreakLosses: player.gambleStreakLosses,
+      }, {
+        coins: finalCoins,
+        bet,
+        win,
+        gain,
+      }).catch(console.error);
+
+      return {
+        win,
+        deltaCoins: gain,
+        finalCoins,
+        message: win ? winMessage : loseMessage,
+      };
+    }
+
     const player = await prisma.player.findUnique({ where: { id: playerId } });
     if (!player) throw new Error('Oyuncu bulunamadi.');
     if (player.coins < bet) throw new Error('Yetersiz bakiye.');
@@ -83,12 +131,56 @@ async function settleGamble(
   });
 }
 
-export async function coinFlip(prisma: PrismaClient, playerId: string, bet: number): Promise<GambleResult> {
-  return settleGamble(prisma, playerId, bet, GAMBLE_COINFLIP_WIN_CHANCE, GAMBLE_COINFLIP_PAYOUT, 'Coinflip kazandin.', 'Coinflip kaybettin.');
+export async function coinFlip(
+  prisma: PrismaClient,
+  playerId: string,
+  bet: number,
+  redis?: Redis,
+): Promise<GambleResult> {
+  return settleGamble(prisma, playerId, bet, GAMBLE_COINFLIP_WIN_CHANCE, GAMBLE_COINFLIP_PAYOUT, 'Coinflip kazandin.', 'Coinflip kaybettin.', redis);
 }
 
-export async function slot(prisma: PrismaClient, playerId: string, bet: number): Promise<GambleResult> {
+export async function slot(
+  prisma: PrismaClient,
+  playerId: string,
+  bet: number,
+  redis?: Redis,
+): Promise<GambleResult> {
   return withLock(playerId, 'financial', async () => {
+    if (redis) {
+      const bundle = await hydratePlayerState(redis, prisma, playerId);
+      if (!bundle) throw new Error('Oyuncu bulunamadi.');
+      const player = bundle.player;
+      if (player.coins < bet) throw new Error('Yetersiz bakiye.');
+
+      const roll = weightedRandom(SLOT_TABLE.map((entry) => ({ value: entry, weight: entry.chance })));
+      const jackpot = Math.random() * 100 < GAMBLE_SLOT_HIDDEN_JACKPOT;
+      const payout = jackpot ? roll.payout * 2 : roll.payout;
+      const gain = Math.floor(bet * payout) - bet;
+      const win = gain > 0;
+      const finalCoins = await applyCoinDeltaInRedis(redis, playerId, gain);
+
+      enqueueDbWrite({
+        type: 'updatePlayer',
+        playerId,
+        data: {
+          gambleStreakWins: win ? { increment: 1 } : 0,
+          gambleStreakLosses: win ? 0 : { increment: 1 },
+        },
+      });
+
+      if (win && gain > 0) {
+        recordCoinsEarned(prisma, playerId, gain).catch(() => null);
+      }
+
+      return {
+        win,
+        deltaCoins: gain,
+        finalCoins,
+        message: jackpot ? `${roll.name} + Gizli Jackpot!` : roll.name,
+      };
+    }
+
     const player = await prisma.player.findUnique({ where: { id: playerId } });
     if (!player) throw new Error('Oyuncu bulunamadi.');
     if (player.coins < bet) throw new Error('Yetersiz bakiye.');

@@ -1,4 +1,5 @@
 import type { PrismaClient } from '@prisma/client';
+import type { Redis } from 'ioredis';
 import {
   ITEM_MAX_PER_ATTEMPT,
   OWL_SPECIES,
@@ -35,6 +36,7 @@ import {
 } from '../config';
 import { rollEncounterLootboxDrop } from './drops';
 import { trackQuestProgress } from './daily-quests';
+import { setScoutingOwlCount } from '../state/player-state';
 
 type OwlQuality = 'Trash' | 'Common' | 'Good' | 'Rare' | 'Elite' | 'God Roll';
 
@@ -94,6 +96,7 @@ export async function createEncounter(
     tier: number; statGoz: number; statKulak: number;
     statGaga: number; statKanat: number; statPence: number;
   },
+  redis?: Redis,
 ): Promise<string | null> {
   // Snapshot geçilmişse DB'ye gitme — round-trip tasarrufu
   const player = playerSnapshot ?? await prisma.player.findUnique({ where: { id: playerId } });
@@ -102,10 +105,11 @@ export async function createEncounter(
     throw new Error('Encounter icin oyuncu veya main baykus bulunamadi.');
   }
 
-  const chance = encounterChance(player.level, mainOwl.statGoz, mainOwl.statKulak,
-    // Scouting modundaki baykuş sayısını say — her biri +%1 encounter şansı verir
-    await prisma.owl.count({ where: { ownerId: playerId, passiveMode: 'scouting', isMain: false } }),
-  );
+  const scoutingCount = redis
+    ? await setScoutingOwlCount(redis, prisma, playerId)
+    : await prisma.owl.count({ where: { ownerId: playerId, passiveMode: 'scouting', isMain: false } });
+
+  const chance = encounterChance(player.level, mainOwl.statGoz, mainOwl.statKulak, scoutingCount);
   if (Math.random() * 100 > chance) {
     return null;
   }

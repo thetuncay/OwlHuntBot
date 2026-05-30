@@ -111,7 +111,7 @@ export async function runUpgrade(
       return;
     }
     try {
-      const result = await attemptUpgrade(ctx.prisma, interaction.user.id, main.id, stat, []);
+      const result = await attemptUpgrade(ctx.prisma, interaction.user.id, main.id, stat, [], 0, ctx.redis);
       const cdMs = result.success ? UPGRADE_COOLDOWN_SUCCESS_MS : UPGRADE_COOLDOWN_FAIL_MS;
       await Promise.all([
         setCooldown(ctx.redis, cooldownKey, cdMs),
@@ -239,7 +239,7 @@ export async function runUpgradeMessage(
       return;
     }
     try {
-      const result = await attemptUpgrade(ctx.prisma, message.author.id, main.id, stat, []);
+      const result = await attemptUpgrade(ctx.prisma, message.author.id, main.id, stat, [], 0, ctx.redis);
       const cdMs = result.success ? UPGRADE_COOLDOWN_SUCCESS_MS : UPGRADE_COOLDOWN_FAIL_MS;
       await Promise.all([
         setCooldown(ctx.redis, upgradeCooldownKey, cdMs),

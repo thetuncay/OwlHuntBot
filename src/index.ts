@@ -9,22 +9,18 @@ import { enforceAntiSpam } from './middleware/antiSpam';
 import { acquireCommandSlot } from './middleware/load-shed';
 import { getGuildPrefix } from './utils/prefix';
 import { handleOwlTextCommand } from './commands/owl';
-import { handleRegistrationButton, isRegistrationButton } from './systems/onboarding';
-import { archiveAndResetSeason } from './systems/leaderboard';
-import { syncAllRoles } from './systems/roles';
 import { handleTopTextCommand } from './commands/leaderboard';
-import { addXP } from './systems/xp';
-import { initDbQueue, closeDbQueue } from './utils/db-queue';
-import { cleanupExpiredListings } from './systems/market';
-import { dailyMaintenance } from './systems/economy';
-import { cleanupOldAuditLogs } from './utils/audit';
+import { handleRegistrationButton, isRegistrationButton } from './systems/onboarding';
+import { syncAllRoles } from './systems/roles';
 import { isShard0 } from './utils/shard';
-import { registerGracefulShutdown, trackInterval, trackTimeout } from './utils/shutdown';
+import { initDbQueueProducer } from './utils/db-queue';
+import { consumeRoleSyncFlag } from './jobs/background-jobs';
+import { registerGracefulShutdown, trackInterval } from './utils/shutdown';
 
 const env = parseBotEnv();
 
 const prisma = new PrismaClient({
-  datasources: { db: { url: appendPoolParams(process.env.DATABASE_URL!) } },
+  datasources: { db: { url: appendPoolParams(process.env.DATABASE_URL!, 'bot') } },
 });
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
@@ -93,8 +89,8 @@ async function bootstrap(): Promise<void> {
   await prisma.$connect();
   console.info('PostgreSQL connected');
 
-  // DB write queue başlat — kullanıcı cevapları DB yazmasını beklemez
-  initDbQueue(prisma);
+  // DB kuyruk ureticisi — consumer ayri worker process'te
+  initDbQueueProducer();
 
   await loadCommands();
 
@@ -236,194 +232,19 @@ async function bootstrap(): Promise<void> {
   await client.login(env.DISCORD_TOKEN);
 }
 
-// --- SEZON ZAMANLAYICI ---
-
-/**
- * Sezon bitis tarihini kontrol eder ve gerekirse arsivler.
- * Her saat basinda calisir.
- */
-async function checkSeasonRollover(): Promise<void> {
-  // Sezon rollover yalnızca shard 0'da çalışır — çift yazma önlenir
+// Worker sezon rollover sonrasi rol sync istegi birakir — shard 0 isler
+trackInterval(async () => {
   if (!isShard0()) return;
-
+  const pending = await consumeRoleSyncFlag(redis);
+  if (!pending) return;
   try {
-    const season = await prisma.season.findUnique({ where: { id: 'current' } });
-    const now = new Date();
-
-    if (!season || now >= season.endsAt) {
-      const archivedId = await archiveAndResetSeason(prisma, redis);
-      console.info(`[Season] Sezon tamamlandi ve arsivlendi: ${archivedId}`);
-
-      // Eski audit loglarını temizle
-      cleanupOldAuditLogs(prisma)
-        .then((count) => console.info(`[Season] ${count} eski AuditLog kaydı silindi.`))
-        .catch((err) => console.error('[Season] AuditLog temizleme hatasi:', err));
-
-      // Rolleri senkronize et
-      await syncAllRoles(client, env.GUILD_ID, prisma, redis);
-    }
+    await syncAllRoles(client, env.GUILD_ID, prisma, redis);
   } catch (err) {
-    console.error('[Season] Rollover hatasi:', err);
+    console.error('[Roles] Shard role sync hatasi:', err);
   }
-}
-
-/**
- * Training modundaki baykuşlara saatlik XP verir.
- * Her saat başında checkSeasonRollover ile birlikte çalışır.
- */
-async function applyPassiveTrainingXP(): Promise<void> {
-  try {
-    // training modundaki tüm baykuşları bul
-    const trainingOwls = await prisma.owl.findMany({
-      where: { passiveMode: 'training', isMain: false },
-      select: { id: true, ownerId: true },
-    });
-    if (trainingOwls.length === 0) return;
-
-    // Her baykuşun sahibine XP ver (fire-and-forget, hata saatlik döngüyü durdurmasın)
-    await Promise.allSettled(
-      trainingOwls.map((owl) =>
-        addXP(prisma, owl.ownerId, 5, 'passiveTraining'),
-      ),
-    );
-    console.info(`[Passive] ${trainingOwls.length} training baykusu icin XP verildi.`);
-  } catch (err) {
-    console.error('[Passive] Training XP hatasi:', err);
-  }
-}
-
-// Her saat basinda sezon kontrolu + passive training XP
-trackInterval(() => {
-  void checkSeasonRollover();
-  void applyPassiveTrainingXP();
-}, 60 * 60 * 1000);
-trackTimeout(() => { void checkSeasonRollover(); }, 5000);
-
-// --- ORPHAN BOT PLAYER CLEANUP ---
-// Tame mini-PvP sırasında oluşturulan `wild:*` bot oyuncuları
-// encounter kapandıktan sonra DB'de kalıyor. Günde bir kez temizle.
-async function cleanupOrphanBotPlayers(): Promise<void> {
-  try {
-    // 24 saatten eski, ID'si "wild:" ile başlayan bot oyuncuları sil
-    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    const orphans = await prisma.player.findMany({
-      where: {
-        id: { startsWith: 'wild:' },
-        createdAt: { lt: cutoff },
-      },
-      select: { id: true },
-    });
-    if (orphans.length === 0) return;
-    const ids = orphans.map((p) => p.id);
-    // İlişkili kayıtları paralel sil (tüm foreign key relation'ları)
-    await Promise.all([
-      prisma.pvpSession.deleteMany({
-        where: { OR: [{ challengerId: { in: ids } }, { defenderId: { in: ids } }] },
-      }),
-      prisma.seasonArchive.deleteMany({ where: { playerId: { in: ids } } }),
-      prisma.playerBuff.deleteMany({ where: { playerId: { in: ids } } }),
-      prisma.encounter.deleteMany({ where: { playerId: { in: ids } } }),
-      prisma.inventoryItem.deleteMany({ where: { ownerId: { in: ids } } }),
-      prisma.playerRegistration.deleteMany({ where: { userId: { in: ids } } }),
-    ]);
-    await prisma.owl.deleteMany({ where: { ownerId: { in: ids } } });
-    await prisma.player.deleteMany({ where: { id: { in: ids } } });
-    console.info(`[Cleanup] ${ids.length} orphan bot oyuncu temizlendi.`);
-  } catch (err) {
-    console.error('[Cleanup] Orphan cleanup hatasi:', err);
-  }
-}
-
-// Günde bir kez orphan cleanup (24 saat)
-trackInterval(() => { void cleanupOrphanBotPlayers(); }, 24 * 60 * 60 * 1000);
-trackTimeout(() => { void cleanupOrphanBotPlayers(); }, 30_000);
-
-// --- GÜNLÜK BAKIM (MAINTENANCE) ---
-// WHY: dailyMaintenance() fonksiyonu economy.ts'de tanımlıydı ama hiç çağrılmıyordu.
-// Baykuşlar hiç yıpranmıyor, effectiveness asla düşmüyor, repair sink çalışmıyordu.
-// Gece yarısı (UTC 00:00) tüm aktif oyuncular için bakım çalıştırılır.
-// Batch işleme: 100'er gruplar halinde — büyük sunucularda timeout önlenir.
-async function runDailyMaintenance(): Promise<void> {
-  try {
-    const players = await prisma.player.findMany({
-      select: { id: true },
-      // Sadece son 7 günde aktif olan oyuncular — inaktif hesaplar için gereksiz yük yok
-      where: { updatedAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } },
-    });
-    if (players.length === 0) return;
-
-    // 100'er batch — Atlas M0'da büyük paralel yük önlenir
-    const BATCH_SIZE = 100;
-    let processed = 0;
-    for (let i = 0; i < players.length; i += BATCH_SIZE) {
-      const batch = players.slice(i, i + BATCH_SIZE);
-      await Promise.allSettled(
-        batch.map((p) => dailyMaintenance(prisma, p.id)),
-      );
-      processed += batch.length;
-    }
-    console.info(`[Maintenance] ${processed} oyuncu için günlük bakım tamamlandı.`);
-  } catch (err) {
-    console.error('[Maintenance] Günlük bakım hatası:', err);
-  }
-}
-
-// Gece yarısı UTC'de çalıştır
-function scheduleNextMaintenance(): void {
-  const now = new Date();
-  const nextMidnight = new Date(now);
-  nextMidnight.setUTCHours(24, 0, 0, 0); // Bir sonraki UTC gece yarısı
-  const msUntilMidnight = nextMidnight.getTime() - now.getTime();
-
-  trackTimeout(() => {
-    void runDailyMaintenance();
-    trackInterval(() => { void runDailyMaintenance(); }, 24 * 60 * 60 * 1000);
-  }, msUntilMidnight);
-
-  console.info(`[Maintenance] Sonraki bakım: ${nextMidnight.toISOString()} (${Math.round(msUntilMidnight / 60000)} dakika sonra)`);
-}
-scheduleNextMaintenance();
-
-// --- MARKET EXPIRED LISTING CLEANUP ---
-// Süresi dolan ilanları temizle ve eşyaları satıcılara iade et.
-// Her 10 dakikada bir çalışır — 48 saatlik TTL ile orantılı.
-async function runMarketCleanup(): Promise<void> {
-  try {
-    const count = await cleanupExpiredListings(prisma);
-    if (count > 0) {
-      console.info(`[Market] ${count} süresi dolmuş ilan temizlendi.`);
-    }
-  } catch (err) {
-    console.error('[Market] Cleanup hatası:', err);
-  }
-}
-trackInterval(() => { void runMarketCleanup(); }, 10 * 60 * 1000);
-trackTimeout(() => { void runMarketCleanup(); }, 60_000);
-
-// --- ENCOUNTER LIMBO CLEANUP ---
-// Eski açık encounter kayıtlarını per-request yerine periyodik temizle.
-async function cleanupStaleEncounters(): Promise<void> {
-  try {
-    const limboThreshold = new Date(Date.now() - 6 * 60 * 1000);
-    const { count } = await prisma.encounter.updateMany({
-      where: {
-        status: 'open',
-        createdAt: { lt: limboThreshold },
-      },
-      data: { status: 'closed' },
-    });
-    if (count > 0) {
-      console.info(`[Encounter] ${count} stale encounter kapatildi.`);
-    }
-  } catch (err) {
-    console.error('[Encounter] Limbo cleanup hatasi:', err);
-  }
-}
-trackInterval(() => { void cleanupStaleEncounters(); }, 10 * 60 * 1000);
-trackTimeout(() => { void cleanupStaleEncounters(); }, 45_000);
+}, 60_000);
 
 registerGracefulShutdown([
-  () => closeDbQueue(),
   () => client.destroy(),
   async () => { await redis.quit(); },
   () => prisma.$disconnect(),

@@ -109,7 +109,7 @@ export async function runVs(
     await i.update({ content: `⚔️ **Savaş başlıyor...**`, components: [] });
 
     try {
-      const result = await simulatePvP(ctx.prisma, sessionId);
+      const result = await simulatePvP(ctx.prisma, sessionId, ctx.redis);
       const defenderName = defender.displayName ?? defender.username;
 
       const battleData: PvpBattleData = {
@@ -276,7 +276,7 @@ export async function runVsMessage(
     await i.update({ content: `⚔️ **Savaş başlıyor...**`, components: [] });
 
     try {
-      const result = await simulatePvP(ctx.prisma, sessionId);
+      const result = await simulatePvP(ctx.prisma, sessionId, ctx.redis);
       const challengerName = message.member?.displayName ?? message.author.username;
       const defenderMember = message.guild?.members.cache.get(defenderId);
       const defenderName   = defenderMember?.displayName ?? defenderId;

@@ -35,6 +35,8 @@ export interface CachedPlayerData {
   dailyLootboxDrops: number;
   lastLootboxDropDate: string | null; // ISO 8601 string
   prestigeLevel?: number;
+  gambleStreakWins?: number;
+  gambleStreakLosses?: number;
 }
 
 export interface CachedOwlData {

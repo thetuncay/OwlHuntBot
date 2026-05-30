@@ -939,7 +939,7 @@ export const LOCK_TTL_SECONDS = 5;   // 15s → 5s: hunt ~200ms, pvp ~500ms, upg
 export const COMMAND_RATE_LIMIT_TOKENS = 12;
 export const COMMAND_RATE_LIMIT_WINDOW_SECONDS = 10;
 export const SPAM_MUTE_SECONDS = 15;
-export const MAX_CONCURRENT_COMMANDS = Number.parseInt(process.env.MAX_CONCURRENT_COMMANDS ?? '150', 10);
+export const MAX_CONCURRENT_COMMANDS = Number.parseInt(process.env.MAX_CONCURRENT_COMMANDS ?? '40', 10);
 export const COMMAND_GATE_TTL_SECONDS = Number.parseInt(process.env.COMMAND_GATE_TTL_SECONDS ?? '15', 10);
 
 // ============================================================

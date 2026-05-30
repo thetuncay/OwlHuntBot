@@ -1,4 +1,5 @@
 import type { PrismaClient } from '@prisma/client';
+import type { Redis } from 'ioredis';
 import {
   PVP_EXECUTE_POWER_MULT,
   PVP_EXECUTE_HP_THRESH,
@@ -28,6 +29,7 @@ import { recordPvpWin, refreshPowerScore, recordCoinsEarned } from './leaderboar
 import { updatePvpStreak, applyStreakXpBonus } from './pvp-streak';
 import { getBuffEffects, drainBuffCharge } from './items';
 import { rollPvpLootboxDrop } from './drops';
+import { applyCoinDeltaInRedis } from '../state/player-state';
 
 interface BattleState {
   playerId: string;
@@ -70,7 +72,11 @@ export async function startPvP(
 /**
  * Aktif PvP oturumunu simule eder.
  */
-export async function simulatePvP(prisma: PrismaClient, sessionId: string): Promise<PvpSimResult> {
+export async function simulatePvP(
+  prisma: PrismaClient,
+  sessionId: string,
+  redis?: Redis,
+): Promise<PvpSimResult> {
   const session = await prisma.pvpSession.findUnique({
     where: { id: sessionId },
   });
@@ -189,7 +195,10 @@ export async function simulatePvP(prisma: PrismaClient, sessionId: string): Prom
       await Promise.all([
         tx.player.update({
           where: { id: winner.playerId },
-          data: { coins: { increment: 100 }, pvpCount: { increment: 1 } },
+          data: {
+            ...(redis ? {} : { coins: { increment: 100 } }),
+            pvpCount: { increment: 1 },
+          },
         }),
         tx.player.update({
           where: { id: loser.playerId },
@@ -221,9 +230,12 @@ export async function simulatePvP(prisma: PrismaClient, sessionId: string): Prom
   const winnerXP = applyStreakXpBonus(XP_PVP_WIN, streakResult.xpBonusPct);
   const totalCoinGain = 100 + streakResult.bonusCoins;
 
+  if (redis) {
+    await applyCoinDeltaInRedis(redis, winner.playerId, totalCoinGain);
+  }
+
   await prisma.$transaction(async (tx) => {
-    // Streak bonus coin varsa kazanana ekle
-    if (streakResult.bonusCoins > 0) {
+    if (!redis && streakResult.bonusCoins > 0) {
       await tx.player.update({
         where: { id: winner.playerId },
         data: { coins: { increment: streakResult.bonusCoins } },
