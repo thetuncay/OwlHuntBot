@@ -4,100 +4,105 @@
 # Kullanim:
 #   bash scripts/restore-postgres.sh ./owlhuntbot_backup.dump
 #
-# Desteklenen format: pg_dump -F c (custom/binary) ve duz .sql
+# PG major surum degisimi (16→17): once volume sifirlanmali:
+#   bash scripts/restore-postgres.sh --reset-volume ./owlhuntbot_backup.dump
 
 set -euo pipefail
 
 APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$APP_DIR"
 
-DUMP_FILE="${1:-./owlhuntbot_backup.dump}"
+RESET_VOLUME=false
+DUMP_FILE=""
+
+for arg in "$@"; do
+  if [ "${arg}" = "--reset-volume" ]; then
+    RESET_VOLUME=true
+  elif [ -z "${DUMP_FILE}" ]; then
+    DUMP_FILE="${arg}"
+  fi
+done
+
+DUMP_FILE="${DUMP_FILE:-./owlhuntbot_backup.dump}"
 DB_NAME="${PGDATABASE:-owlhuntbot}"
 DB_USER="${PGUSER:-postgres}"
 
 if [ ! -f "${DUMP_FILE}" ]; then
   echo "HATA: Dump dosyasi bulunamadi: ${DUMP_FILE}"
-  echo "  Termius SFTP ile yukleyin: ~/OwlHuntBot/owlhuntbot_backup.dump"
-  exit 1
-fi
-
-if ! command -v docker >/dev/null 2>&1; then
-  echo "HATA: docker kurulu degil"
   exit 1
 fi
 
 echo "============================================================"
 echo " PostgreSQL Geri Yukleme"
 echo " Dosya: ${DUMP_FILE}"
-echo " Veritabani: ${DB_NAME}"
 echo "============================================================"
 
 echo ""
-echo "[1/6] Bot durduruluyor..."
+echo "[1/7] Bot durduruluyor..."
 pm2 stop owlhuntbot 2>/dev/null || true
 
-echo ""
-echo "[2/6] PostgreSQL baslatiliyor..."
-docker compose up -d postgres
-sleep 5
-
-if ! docker compose ps postgres 2>/dev/null | grep -q running; then
-  echo "HATA: postgres container calismiyor"
-  exit 1
+if [ "${RESET_VOLUME}" = true ]; then
+  echo ""
+  echo "[2/7] PostgreSQL volume sifirlaniyor (PG surum degisimi)..."
+  docker compose down postgres 2>/dev/null || true
+  docker volume rm owlhuntbot_postgres_data owlhuntbot_postgres_wal_archive 2>/dev/null || true
 fi
 
 echo ""
-echo "[3/6] Mevcut veritabani yedegi aliniyor..."
+echo "[3/7] PostgreSQL baslatiliyor..."
+docker compose up -d postgres
+echo "  Postgres hazir olana kadar bekleniyor..."
+for i in $(seq 1 30); do
+  if docker compose exec -T postgres pg_isready -U "${DB_USER}" >/dev/null 2>&1; then
+    echo "  Postgres hazir (${i}s)"
+    break
+  fi
+  if [ "${i}" -eq 30 ]; then
+    echo "HATA: Postgres 30 saniyede hazir olmadi. Log:"
+    docker compose logs postgres --tail 30
+    exit 1
+  fi
+  sleep 1
+done
+
+echo ""
+echo "[4/7] Mevcut DB yedegi..."
 SAFETY_DIR="./backups/pre-restore-$(date +%Y%m%d-%H%M%S)"
 mkdir -p "${SAFETY_DIR}"
 docker compose exec -T postgres pg_dump -U "${DB_USER}" -d "${DB_NAME}" -F c \
   > "${SAFETY_DIR}/${DB_NAME}-before-restore.dump" 2>/dev/null \
-  || echo "  (bos veya yeni DB — atlandi)"
+  || echo "  (atlandi)"
 
 echo ""
-echo "[4/6] Veri geri yukleniyor (bu biraz surebilir)..."
-
-COMPOSE_NETWORK="$(docker compose ps -q postgres 2>/dev/null | xargs docker inspect -f '{{range $k, $v := .NetworkSettings.Networks}}{{$k}}{{end}}' 2>/dev/null || echo owlhuntbot_default)"
+echo "[5/7] Veri geri yukleniyor..."
+CONTAINER="$(docker compose ps -q postgres)"
 DUMP_ABS="$(cd "$(dirname "${DUMP_FILE}")" && pwd)/$(basename "${DUMP_FILE}")"
+docker cp "${DUMP_ABS}" "${CONTAINER}:/tmp/backup.dump"
 
-if file "${DUMP_FILE}" 2>/dev/null | grep -qE 'PostgreSQL custom|tar archive'; then
-  echo "  Format: pg_dump custom (-F c)"
-  echo "  Not: PG17 dump → pg_restore 17 istemcisi kullanilir (PG16 uyumsuzlugu onlenir)"
-  docker run --rm \
-    -v "${DUMP_ABS}:/tmp/backup.dump:ro" \
-    --network "${COMPOSE_NETWORK}" \
-    postgres:17-alpine pg_restore \
-    -h postgres \
-    -U "${DB_USER}" \
-    -d "${DB_NAME}" \
-    --clean \
-    --if-exists \
-    --no-owner \
-    --no-acl \
-    /tmp/backup.dump
-else
-  echo "  Format: duz SQL"
-  docker compose exec -T postgres psql -U "${DB_USER}" -d "${DB_NAME}" \
-    < "${DUMP_FILE}"
-fi
+docker compose exec postgres pg_restore \
+  -U "${DB_USER}" \
+  -d "${DB_NAME}" \
+  --clean \
+  --if-exists \
+  --no-owner \
+  --no-acl \
+  /tmp/backup.dump
+
+docker compose exec postgres rm -f /tmp/backup.dump
 
 echo ""
-echo "[5/6] Oyuncu sayisi kontrol..."
+echo "[6/7] Oyuncu sayisi..."
 docker compose exec -T postgres psql -U "${DB_USER}" -d "${DB_NAME}" -t -c \
-  'SELECT COUNT(*) AS players FROM "Player";'
+  'SELECT COUNT(*) FROM "Player";'
 
 echo ""
-echo "[6/6] Redis liderboard senkronu + bot baslat..."
-if [ -f .env ]; then
-  node --import tsx src/scripts/post-migration.ts 2>/dev/null || echo "  (post-migration atlandi — node/tsx kontrol edin)"
-fi
-
+echo "[7/7] Redis + bot..."
+docker compose up -d redis 2>/dev/null || true
+node --import tsx src/scripts/post-migration.ts 2>/dev/null || true
 pm2 restart owlhuntbot --update-env 2>/dev/null || pm2 start ecosystem.config.js
 pm2 save
 
 echo ""
 echo "============================================================"
-echo " Geri yukleme tamamlandi"
-echo " Guvenlik yedegi: ${SAFETY_DIR}"
-echo " Log: pm2 logs owlhuntbot"
+echo " Tamamlandi. Log: pm2 logs owlhuntbot"
 echo "============================================================"
