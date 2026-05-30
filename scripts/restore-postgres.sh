@@ -45,7 +45,7 @@ if [ "${RESET_VOLUME}" = true ]; then
   echo ""
   echo "[2/7] PostgreSQL volume sifirlaniyor (PG surum degisimi)..."
   docker compose down postgres 2>/dev/null || true
-  docker volume rm owlhuntbot_postgres_data owlhuntbot_postgres_wal_archive 2>/dev/null || true
+  docker volume rm owlhuntbot_postgres_data 2>/dev/null || true
 fi
 
 echo ""

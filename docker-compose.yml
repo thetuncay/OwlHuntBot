@@ -18,14 +18,8 @@ services:
       POSTGRES_DB: owlhuntbot
       POSTGRES_USER: postgres
       POSTGRES_HOST_AUTH_METHOD: trust
-    command: >
-      postgres
-      -c wal_level=replica
-      -c archive_mode=on
-      -c archive_command='cp %p /var/lib/postgresql/wal_archive/%f'
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - postgres_wal_archive:/var/lib/postgresql/wal_archive
     ports:
       - '5432:5432'
     healthcheck:
@@ -61,5 +55,4 @@ services:
 
 volumes:
   postgres_data:
-  postgres_wal_archive:
   redis-data:
