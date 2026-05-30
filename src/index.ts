@@ -19,6 +19,19 @@ import { registerGracefulShutdown, trackInterval } from './utils/shutdown';
 
 const env = parseBotEnv();
 
+/** Kullaniciya gosterilen beklenen hatalar — PM2 logunu kirletmez. */
+function isExpectedUserError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  const msg = error.message;
+  return (
+    msg.includes('hizli komut') ||
+    msg.includes('Spam algilandi') ||
+    msg.includes('yoğun') ||
+    msg.includes('beklemelisin') ||
+    msg.includes('Tekrar avlanmak')
+  );
+}
+
 const dbUrl = resolveDatabaseUrl('bot');
 const prisma = new PrismaClient({
   datasources: { db: { url: dbUrl } },
@@ -222,7 +235,9 @@ async function bootstrap(): Promise<void> {
       await enforceAntiSpam(redis, message.author.id);
       await handleOwlTextCommand(message, parts, { prisma, redis });
     } catch (error) {
-      console.error('[Message Command Error]', error);
+      if (!isExpectedUserError(error)) {
+        console.error('[Message Command Error]', error);
+      }
       const errorMsg = error instanceof Error ? error.message : 'Bir seyler ters gitti, islem geri alindi.';
       await message.reply(`❌ **Hata** | ${errorMsg}`);
     } finally {

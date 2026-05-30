@@ -936,9 +936,9 @@ export const COLOR_WARNING = 0xf1c40f;
 
 // --- LOCK & RATE LIMIT ---
 export const LOCK_TTL_SECONDS = 5;   // 15s → 5s: hunt ~200ms, pvp ~500ms, upgrade ~300ms için yeterli margin
-export const COMMAND_RATE_LIMIT_TOKENS = 12;
-export const COMMAND_RATE_LIMIT_WINDOW_SECONDS = 10;
-export const SPAM_MUTE_SECONDS = 15;
+export const COMMAND_RATE_LIMIT_TOKENS = Number.parseInt(process.env.COMMAND_RATE_LIMIT_TOKENS ?? '12', 10);
+export const COMMAND_RATE_LIMIT_WINDOW_SECONDS = Number.parseInt(process.env.COMMAND_RATE_LIMIT_WINDOW_SECONDS ?? '10', 10);
+export const SPAM_MUTE_SECONDS = Number.parseInt(process.env.SPAM_MUTE_SECONDS ?? '15', 10);
 export const MAX_CONCURRENT_COMMANDS = Number.parseInt(process.env.MAX_CONCURRENT_COMMANDS ?? '40', 10);
 export const COMMAND_GATE_TTL_SECONDS = Number.parseInt(process.env.COMMAND_GATE_TTL_SECONDS ?? '15', 10);
 
