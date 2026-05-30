@@ -56,6 +56,7 @@ docker exec -it $(docker ps -qf name=postgres) psql -U postgres -d owlhuntbot -c
 
 | Belirti | Kontrol |
 |---------|---------|
+| `prepared statement "s0" already exists` (42P05) | PgBouncer + Prisma: URL port 6432 olmali; `pgbouncer=true` otomatik eklenir (`appendPoolParams`). PM2 restart. |
 | Hunt hala yavas | `REDIS_URL` 6380 mi? Worker calisiyor mu? |
 | Coin/envanter kaybi | `pm2 logs owlhuntbot-worker` failed job |
 | Cift cron / sezon | Sadece worker'da cron olmali, eski tek-app PM2 silinmeli |

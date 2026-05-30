@@ -44,13 +44,44 @@ export const deployEnvSchema = botEnvSchema.pick({
   GUILD_ID: true,
 });
 
-/** PostgreSQL connection pool parametrelerini DATABASE_URL'e ekler. */
+/** PgBouncer (transaction mode) uzerinden mi baglaniliyor? */
+function usesPgBouncer(url: string): boolean {
+  if (process.env.USE_PGBOUNCER === 'true' || process.env.USE_PGBOUNCER === '1') return true;
+  try {
+    const port = new URL(url.replace(/^postgresql:/, 'http:')).port;
+    return port === '6432';
+  } catch {
+    return url.includes(':6432/') || url.includes(':6432?');
+  }
+}
+
+/** PostgreSQL connection pool + PgBouncer parametrelerini DATABASE_URL'e ekler. */
 export function appendPoolParams(url: string, mode: 'bot' | 'worker' = 'bot'): string {
-  if (url.includes('connection_limit') || url.includes('pool_timeout')) return url;
-  const separator = url.includes('?') ? '&' : '?';
-  const limit = mode === 'worker'
-    ? Number.parseInt(process.env.WORKER_DB_POOL_LIMIT ?? '25', 10)
-    : Number.parseInt(process.env.BOT_DB_POOL_LIMIT ?? '8', 10);
-  const timeout = Number.parseInt(process.env.DB_POOL_TIMEOUT ?? '10', 10);
-  return `${url}${separator}connection_limit=${limit}&pool_timeout=${timeout}&connect_timeout=10`;
+  const params = new URLSearchParams(
+    url.includes('?') ? (url.split('?')[1] ?? '') : '',
+  );
+
+  if (usesPgBouncer(url) && !params.has('pgbouncer')) {
+    // PgBouncer transaction pooling: prepared statement isimleri cakisir (42P05)
+    params.set('pgbouncer', 'true');
+  }
+
+  if (!params.has('connection_limit')) {
+    const limit = mode === 'worker'
+      ? Number.parseInt(process.env.WORKER_DB_POOL_LIMIT ?? '25', 10)
+      : Number.parseInt(process.env.BOT_DB_POOL_LIMIT ?? '8', 10);
+    params.set('connection_limit', String(limit));
+  }
+
+  if (!params.has('pool_timeout')) {
+    params.set('pool_timeout', process.env.DB_POOL_TIMEOUT ?? '10');
+  }
+
+  if (!params.has('connect_timeout')) {
+    params.set('connect_timeout', '10');
+  }
+
+  const base = url.split('?')[0] ?? url;
+  const qs = params.toString();
+  return qs ? `${base}?${qs}` : base;
 }
