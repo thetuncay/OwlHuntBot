@@ -1,12 +1,17 @@
 /**
- * player-cache.ts — Oyuncu + main baykuş okuma (Redis-first state uzerinden)
+ * player-cache.ts — Oyuncu + main baykuş okuma
  *
- * Tek kaynak: state:player:* (player-state.ts). Eski pcache TTL katmani kaldirildi.
+ * Hunt hot path: state:player:* (player-state.ts)
+ * Komut okuması (stats/upgrade/…): önce atomik pcache bundle — eski davranış;
+ *   mainOwl her zaman player ile birlikte cache'lenir (ayrı owl key'e güvenilmez).
  */
 
 import type { Redis } from 'ioredis';
 import type { PrismaClient } from '@prisma/client';
-import { hydratePlayerState, invalidatePlayerState } from '../state/player-state';
+import { hydratePlayerState } from '../state/player-state';
+
+const PLAYER_CACHE_TTL_S = 15;
+const CACHE_PREFIX = 'pcache:';
 
 export interface CachedPlayerData {
   id: string;
@@ -48,28 +53,65 @@ export interface CachedPlayerBundle {
   mainOwl: CachedOwlData | null;
 }
 
-/** @deprecated setCachedPlayerBundle artik no-op. */
-export async function setCachedPlayerBundle(
-  _redis: Redis,
-  _playerId: string,
-  _bundle: CachedPlayerBundle,
-): Promise<void> {
-  // no-op
+function pcacheKey(playerId: string): string {
+  return `${CACHE_PREFIX}player:${playerId}`;
 }
 
-/** State + legacy pcache temizligi. */
+/** Atomik bundle okuma — mainOwl player JSON'undan ayrı değil, tek key. */
+export async function getCachedPlayerBundle(
+  redis: Redis,
+  playerId: string,
+): Promise<CachedPlayerBundle | null> {
+  try {
+    const raw = await redis.get(pcacheKey(playerId));
+    if (!raw) return null;
+    const bundle = JSON.parse(raw) as CachedPlayerBundle;
+    if (!bundle.mainOwl) return null;
+    return bundle;
+  } catch {
+    return null;
+  }
+}
+
+export async function setCachedPlayerBundle(
+  redis: Redis,
+  playerId: string,
+  bundle: CachedPlayerBundle,
+): Promise<void> {
+  if (!bundle.mainOwl) return;
+  try {
+    await redis.set(pcacheKey(playerId), JSON.stringify(bundle), 'EX', PLAYER_CACHE_TTL_S);
+  } catch {
+    // Redis down — sessizce geç
+  }
+}
+
+/** Sadece pcache bundle sil — hunt hot state (state:player) korunur. */
 export async function invalidatePlayerCache(
   redis: Redis,
   playerId: string,
 ): Promise<void> {
-  await invalidatePlayerState(redis, playerId);
+  try {
+    await redis.del(pcacheKey(playerId));
+  } catch {
+    // Redis down — sessizce geç
+  }
 }
 
-/** Oyuncu + main baykuş — Redis-first hydrate (PG miss'te bir kez yukler). */
+/**
+ * Oyuncu + main baykuş — önce atomik pcache, miss'te hydrate (PG fallback + mainOwl garantisi).
+ */
 export async function getPlayerBundle(
   redis: Redis,
   prisma: PrismaClient,
   playerId: string,
 ): Promise<CachedPlayerBundle | null> {
-  return hydratePlayerState(redis, prisma, playerId);
+  const cached = await getCachedPlayerBundle(redis, playerId);
+  if (cached) return cached;
+
+  const bundle = await hydratePlayerState(redis, prisma, playerId);
+  if (bundle?.mainOwl) {
+    setCachedPlayerBundle(redis, playerId, bundle).catch(() => null);
+  }
+  return bundle;
 }

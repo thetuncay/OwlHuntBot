@@ -23,7 +23,7 @@ import type { UpgradePanelData } from '../utils/upgrade-ux';
 import { failEmbed } from '../utils/embed';
 import type { CommandDefinition, OwlStatKey } from '../types';
 import { UPGRADE_COOLDOWN_SUCCESS_MS, UPGRADE_COOLDOWN_FAIL_MS, UPGRADE_STATS } from './owl-utils';
-import { getPlayerBundle } from '../utils/player-cache';
+import { getPlayerBundle, invalidatePlayerCache } from '../utils/player-cache';
 import { reloadInventoryFromPg } from '../state/player-state';
 
 // ─── Slash: /owl upgrade ──────────────────────────────────────────────────────
@@ -118,6 +118,7 @@ export async function runUpgrade(
         setCooldown(ctx.redis, cooldownKey, cdMs),
         ctx.redis.del(panelLockKey),
         // Stat değişti — cache'i invalidate et
+        invalidatePlayerCache(ctx.redis, interaction.user.id),
         reloadInventoryFromPg(ctx.redis, ctx.prisma, interaction.user.id),
       ]);
       await i.update({
@@ -246,6 +247,7 @@ export async function runUpgradeMessage(
         setCooldown(ctx.redis, upgradeCooldownKey, cdMs),
         ctx.redis.del(upgradePanelKey),
         // Stat değişti — cache'i invalidate et
+        invalidatePlayerCache(ctx.redis, message.author.id),
         reloadInventoryFromPg(ctx.redis, ctx.prisma, message.author.id),
       ]);
       await i.update({
