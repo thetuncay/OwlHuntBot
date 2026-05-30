@@ -7,6 +7,8 @@ cd "$APP_DIR"
 
 echo "=== OwlHuntBot Guncelleme ==="
 
+bash scripts/ensure-pnpm.sh
+
 if [ -d .git ]; then
   echo "[1/5] Git pull..."
   git pull --ff-only

@@ -4,9 +4,10 @@
   "private": true,
   "description": "Production-ready BaykusBot with TypeScript, Prisma, Redis and Discord.js",
   "license": "UNLICENSED",
+  "packageManager": "pnpm@9.15.9",
   "engines": {
-    "node": ">=20.0.0",
-    "pnpm": ">=9.0.0",
+    "node": ">=20.0.0 <23.0.0",
+    "pnpm": ">=9.0.0 <10.0.0",
     "npm": ">=10.0.0"
   },
   "scripts": {
@@ -30,7 +31,7 @@
     "prisma:generate": "prisma generate",
     "prisma:db:push": "prisma db push",
     "deploy:commands": "tsx src/deploy-commands.ts",
-    "deploy:commands:prod": "node dist/deploy-commands.js"
+    "deploy:commands:prod": "node --import tsx dist/deploy-commands.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

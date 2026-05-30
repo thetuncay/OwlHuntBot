@@ -8,6 +8,8 @@ cd "$APP_DIR"
 mkdir -p logs backups
 chmod 755 logs backups
 
+bash scripts/ensure-pnpm.sh
+
 if [ ! -f .env ]; then
   echo "HATA: .env dosyasi yok. Once: cp .env.example .env"
   exit 1

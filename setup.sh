@@ -30,10 +30,9 @@ fi
 echo "[4/9] npm guncelleniyor..."
 sudo npm install -g npm@latest
 
-# ── pnpm (package.json engines gereksinimi) ───────────────────────────────────
+# ── pnpm (Node 20 uyumlu — pnpm 11+ Node 22.13+ gerektirir) ─────────────────
 echo "[5/9] pnpm etkinlestiriliyor..."
-sudo corepack enable
-sudo corepack prepare pnpm@latest --activate
+bash scripts/ensure-pnpm.sh
 
 # ── PM2 ───────────────────────────────────────────────────────────────────────
 if ! command -v pm2 >/dev/null 2>&1; then
