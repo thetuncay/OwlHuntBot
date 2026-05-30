@@ -526,16 +526,22 @@ Toplam: 2.900💰 + 1.150 XP/gün
 ═══════════════════════════════════════════════════════════════
 
 🛒 MARKET (owl market):
-Minimum Lv.15 gerekli.
-- Satış vergisi: %10 (yakılır)
+Serbest piyasa — fiyat sınırı yok. Minimum Lv.15 gerekli.
+- Listeleme ücreti: %1 (iade edilmez)
+- Satış vergisi: %5 (coin sink)
 - İlan süresi: 48 saat
-- Günlük limit: 5 ilan
-- Fiyat aralığı: 50-100.000💰
+- Aktif ilan limiti: 5
+- Escrow: ilan açılınca eşya oyuncudan alınır
 
 Komutlar:
-- owl market → İlanları listele
-- owl market sat <eşya> <miktar> <fiyat>
-- owl market al <ilan_id>
+- owl market → Ana hub + son satışlar
+- owl market owl/item/buff/material [sayfa]
+- owl market sell <eşya> <miktar> <fiyat>
+- owl market sell owl <id> <fiyat>
+- owl buy <ilanNo> / owl market al <ilanNo>
+- owl market search <kelime>
+- owl market info <ilanNo> → piyasa analitiği
+- owl market my / owl market cancel <ilanNo>
 
 ═══════════════════════════════════════════════════════════════
 

@@ -224,20 +224,84 @@ model PlayerRegistration {
 }
 
 model MarketListing {
-  id          String   @id @default(uuid())
-  sellerId    String
-  itemName    String
-  itemType    String
-  rarity      String
-  quantity    Int
-  price       Int
-  createdAt   DateTime @default(now())
-  expiresAt   DateTime
+  id              String    @id @default(uuid())
+  listingNo       Int       @unique @default(autoincrement())
+  sellerId        String
+  itemId          String
+  itemName        String
+  itemType        String
+  marketCategory  String    // owl | item | buff | material
+  rarity          String
+  quantity        Int
+  price           Int
+  listingFeePaid  Int       @default(0)
+  status          String    @default("active") // active | reserved | sold | expired | cancelled | returned
+  buyerId         String?
+  createdAt       DateTime  @default(now())
+  expiresAt       DateTime
+  soldAt          DateTime?
 
   seller Player @relation(fields: [sellerId], references: [id])
 
   @@index([itemName])
-  @@index([sellerId])
+  @@index([itemId])
+  @@index([sellerId, status])
+  @@index([status, expiresAt])
+  @@index([marketCategory, status])
+}
+
+model MarketSale {
+  id             Int      @id @default(autoincrement())
+  listingId      String
+  listingNo      Int
+  sellerId       String
+  buyerId        String
+  itemId         String
+  itemName       String
+  itemType       String
+  marketCategory String
+  quantity       Int
+  salePrice      Int
+  taxPaid        Int
+  riskScore      Int      @default(0)
+  soldAt         DateTime @default(now())
+
+  @@index([itemId])
+  @@index([itemName])
+  @@index([sellerId, buyerId])
+  @@index([soldAt])
+}
+
+model MarketAnalytics {
+  itemId            String   @id
+  itemName          String
+  lastSalePrice     Int      @default(0)
+  averagePrice24h   Int      @default(0)
+  averagePrice7d    Int      @default(0)
+  medianPrice30d    Int      @default(0)
+  salesCount24h     Int      @default(0)
+  salesCount7d      Int      @default(0)
+  updatedAt         DateTime @updatedAt
+
+  @@index([itemName])
+}
+
+model MarketSuspiciousLog {
+  id          Int      @id @default(autoincrement())
+  saleId      Int?
+  listingId   String?
+  sellerId    String
+  buyerId     String
+  itemId      String
+  itemName    String
+  salePrice   Int
+  riskScore   Int
+  riskFactors Json
+  createdAt   DateTime @default(now())
+
+  @@index([riskScore])
+  @@index([sellerId, buyerId])
+  @@index([createdAt])
 }
 
 model DailyQuest {

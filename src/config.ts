@@ -1622,11 +1622,14 @@ export const PVP_BUFF_DODGE_BONUS_MAX = 0.12;   // max +12% dodge
 
 // --- MARKET SİSTEMİ ---
 export const MARKET_MIN_LEVEL = 15;
-export const MARKET_TAX_RATE = 0.10; // %10 vergi
-export const MARKET_LISTING_LIMIT_DAILY = 5;
+export const MARKET_TAX_RATE = 0.05; // %5 satış vergisi
+export const MARKET_LISTING_FEE_RATE = 0.01; // %1 listeleme ücreti (iade edilmez)
+export const MARKET_MAX_ACTIVE_LISTINGS = 5;
 export const MARKET_LISTING_DURATION_MS = 48 * 60 * 60 * 1000; // 48 saat
-export const MARKET_MIN_PRICE = 50;
-export const MARKET_MAX_PRICE = 100000;
+export const MARKET_PAGE_SIZE = 8;
+export const MARKET_SUSPICIOUS_THRESHOLD = 50;
+/** @deprecated Günlük limit yerine MARKET_MAX_ACTIVE_LISTINGS kullanılır */
+export const MARKET_LISTING_LIMIT_DAILY = 5;
 
 // --- PRESTIGE SİSTEMİ ---
 export const PRESTIGE_MIN_STAT_AVG = 80; // Ortalama stat 80+ olmalı

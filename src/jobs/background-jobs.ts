@@ -115,9 +115,9 @@ async function runDailyMaintenance(prisma: PrismaClient): Promise<void> {
   }
 }
 
-async function runMarketCleanup(prisma: PrismaClient): Promise<void> {
+async function runMarketCleanup(prisma: PrismaClient, redis: Redis): Promise<void> {
   try {
-    const count = await cleanupExpiredListings(prisma);
+    const count = await cleanupExpiredListings(prisma, redis);
     if (count > 0) {
       console.info(`[Market] ${count} suresi dolmus ilan temizlendi.`);
     }
@@ -175,8 +175,8 @@ export function startBackgroundJobs(prisma: PrismaClient, redis: Redis): void {
 
   scheduleNextMaintenance(prisma);
 
-  trackInterval(() => { void runMarketCleanup(prisma); }, 10 * 60 * 1000);
-  trackTimeout(() => { void runMarketCleanup(prisma); }, 60_000);
+  trackInterval(() => { void runMarketCleanup(prisma, redis); }, 10 * 60 * 1000);
+  trackTimeout(() => { void runMarketCleanup(prisma, redis); }, 60_000);
 
   trackInterval(() => { void cleanupStaleEncounters(prisma); }, 10 * 60 * 1000);
   trackTimeout(() => { void cleanupStaleEncounters(prisma); }, 45_000);
