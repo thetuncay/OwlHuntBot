@@ -4,7 +4,7 @@
  */
 
 import { PrismaClient } from '@prisma/client';
-import { appendPoolParams, parseWorkerEnv } from './env';
+import { appendPoolParams, parseWorkerEnv, resolveDatabaseUrl, describeDatabaseUrl } from './env';
 import { redis, assertRedisConnection } from './utils/redis';
 import { initDbQueueConsumer, closeDbQueue } from './utils/db-queue';
 import { startBackgroundJobs } from './jobs/background-jobs';
@@ -12,15 +12,16 @@ import { registerGracefulShutdown } from './utils/shutdown';
 
 const env = parseWorkerEnv();
 
+const dbUrl = resolveDatabaseUrl('worker');
 const prisma = new PrismaClient({
-  datasources: { db: { url: appendPoolParams(process.env.DATABASE_URL!, 'worker') } },
+  datasources: { db: { url: dbUrl } },
 });
 
 async function bootstrap(): Promise<void> {
   await assertRedisConnection();
   console.info('[Worker] Redis connected');
   await prisma.$connect();
-  console.info('[Worker] PostgreSQL connected');
+  console.info(`[Worker] PostgreSQL connected (${describeDatabaseUrl(dbUrl)})`);
 
   initDbQueueConsumer(prisma);
   startBackgroundJobs(prisma, redis);

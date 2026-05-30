@@ -44,24 +44,31 @@ export const deployEnvSchema = botEnvSchema.pick({
   GUILD_ID: true,
 });
 
+/** .env'den gelen tirnak/bosluk temizligi */
+export function normalizeDatabaseUrl(url: string): string {
+  return url.trim().replace(/^["']|["']$/g, '');
+}
+
 /** PgBouncer (transaction mode) uzerinden mi baglaniliyor? */
 function usesPgBouncer(url: string): boolean {
   if (process.env.USE_PGBOUNCER === 'true' || process.env.USE_PGBOUNCER === '1') return true;
+  const normalized = normalizeDatabaseUrl(url);
   try {
-    const port = new URL(url.replace(/^postgresql:/, 'http:')).port;
+    const port = new URL(normalized.replace(/^postgresql:/, 'http:')).port;
     return port === '6432';
   } catch {
-    return url.includes(':6432/') || url.includes(':6432?');
+    return normalized.includes(':6432/') || normalized.includes(':6432?');
   }
 }
 
 /** PostgreSQL connection pool + PgBouncer parametrelerini DATABASE_URL'e ekler. */
 export function appendPoolParams(url: string, mode: 'bot' | 'worker' = 'bot'): string {
+  const normalized = normalizeDatabaseUrl(url);
   const params = new URLSearchParams(
-    url.includes('?') ? (url.split('?')[1] ?? '') : '',
+    normalized.includes('?') ? (normalized.split('?')[1] ?? '') : '',
   );
 
-  if (usesPgBouncer(url) && !params.has('pgbouncer')) {
+  if (usesPgBouncer(normalized) && !params.has('pgbouncer')) {
     // PgBouncer transaction pooling: prepared statement isimleri cakisir (42P05)
     params.set('pgbouncer', 'true');
   }
@@ -81,7 +88,22 @@ export function appendPoolParams(url: string, mode: 'bot' | 'worker' = 'bot'): s
     params.set('connect_timeout', '10');
   }
 
-  const base = url.split('?')[0] ?? url;
+  const base = normalized.split('?')[0] ?? normalized;
   const qs = params.toString();
   return qs ? `${base}?${qs}` : base;
+}
+
+/** Runtime Prisma URL — log icin host/port/param ozeti. */
+export function describeDatabaseUrl(url: string): string {
+  try {
+    const u = new URL(normalizeDatabaseUrl(url).replace(/^postgresql:/, 'http:'));
+    const pgbouncer = u.searchParams.get('pgbouncer') === 'true';
+    return `${u.hostname}:${u.port || '5432'}/${u.pathname.slice(1)} pgbouncer=${pgbouncer} limit=${u.searchParams.get('connection_limit') ?? 'default'}`;
+  } catch {
+    return '(url parse failed)';
+  }
+}
+
+export function resolveDatabaseUrl(mode: 'bot' | 'worker'): string {
+  return appendPoolParams(process.env.DATABASE_URL ?? '', mode);
 }

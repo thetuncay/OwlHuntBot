@@ -3,7 +3,7 @@ import { Client, Collection, Events, GatewayIntentBits, Options, Sweepers } from
 import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { CommandDefinition } from './types';
-import { parseBotEnv, appendPoolParams } from './env';
+import { parseBotEnv, resolveDatabaseUrl, describeDatabaseUrl } from './env';
 import { redis, assertRedisConnection } from './utils/redis';
 import { enforceAntiSpam } from './middleware/antiSpam';
 import { acquireCommandSlot } from './middleware/load-shed';
@@ -19,8 +19,9 @@ import { registerGracefulShutdown, trackInterval } from './utils/shutdown';
 
 const env = parseBotEnv();
 
+const dbUrl = resolveDatabaseUrl('bot');
 const prisma = new PrismaClient({
-  datasources: { db: { url: appendPoolParams(process.env.DATABASE_URL!, 'bot') } },
+  datasources: { db: { url: dbUrl } },
 });
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
@@ -87,7 +88,7 @@ async function bootstrap(): Promise<void> {
   await assertRedisConnection();
   console.info('Redis connected');
   await prisma.$connect();
-  console.info('PostgreSQL connected');
+  console.info(`PostgreSQL connected (${describeDatabaseUrl(dbUrl)})`);
 
   // DB kuyruk ureticisi — consumer ayri worker process'te
   initDbQueueProducer();
