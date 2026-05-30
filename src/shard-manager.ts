@@ -1,7 +1,9 @@
 /**
- * shard-manager.ts — Discord.js ShardingManager (Bun.js uyumlu)
+ * shard-manager.ts — Discord.js ShardingManager (Bun.js runtime — Docker icin)
  *
- * NEDEN GEREKLİ:
+ * NOT: Ubuntu PM2 production ortami src/shard.ts (Node.js) kullanir.
+ * Bu dosya yalnizca Dockerfile (oven/bun) ile calistirilir.
+ */
  *   1 bot process = 1 event loop = tüm komutlar sıra bekler
  *   ShardingManager = N process = N paralel event loop
  *

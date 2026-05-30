@@ -2,8 +2,8 @@ import { PrismaClient } from '@prisma/client';
 import { Client, Collection, Events, GatewayIntentBits, Options, Sweepers } from 'discord.js';
 import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import { z } from 'zod';
 import type { CommandDefinition } from './types';
+import { parseBotEnv, appendPoolParams } from './env';
 import { redis, assertRedisConnection } from './utils/redis';
 import { enforceAntiSpam } from './middleware/antiSpam';
 import { getGuildPrefix } from './utils/prefix';
@@ -18,24 +18,9 @@ import { cleanupExpiredListings } from './systems/market';
 import { dailyMaintenance } from './systems/economy';
 import { cleanupOldAuditLogs } from './utils/audit';
 import { isShard0 } from './utils/shard';
+import { registerGracefulShutdown, trackInterval, trackTimeout } from './utils/shutdown';
 
-const envSchema = z.object({
-  DISCORD_TOKEN: z.string().min(1),
-  CLIENT_ID: z.string().min(1),
-  GUILD_ID: z.string().min(1),
-  DATABASE_URL: z.string().min(1),
-  REDIS_URL: z.string().min(1),
-  NODE_ENV: z.string().min(1),
-});
-
-const env = envSchema.parse(process.env);
-
-function appendPoolParams(url: string): string {
-  // .env'de zaten connection_limit ve pool_timeout varsa tekrar ekleme
-  if (url.includes('connection_limit') || url.includes('pool_timeout')) return url;
-  const separator = url.includes('?') ? '&' : '?';
-  return `${url}${separator}connection_limit=50&pool_timeout=15&connect_timeout=10`;
-}
+const env = parseBotEnv();
 
 const prisma = new PrismaClient({
   datasources: { db: { url: appendPoolParams(process.env.DATABASE_URL!) } },
@@ -295,12 +280,11 @@ async function applyPassiveTrainingXP(): Promise<void> {
 }
 
 // Her saat basinda sezon kontrolu + passive training XP
-setInterval(() => {
+trackInterval(() => {
   void checkSeasonRollover();
   void applyPassiveTrainingXP();
 }, 60 * 60 * 1000);
-// Baslangicta da kontrol et
-setTimeout(() => { void checkSeasonRollover(); }, 5000);
+trackTimeout(() => { void checkSeasonRollover(); }, 5000);
 
 // --- ORPHAN BOT PLAYER CLEANUP ---
 // Tame mini-PvP sırasında oluşturulan `wild:*` bot oyuncuları
@@ -338,9 +322,8 @@ async function cleanupOrphanBotPlayers(): Promise<void> {
 }
 
 // Günde bir kez orphan cleanup (24 saat)
-setInterval(() => { void cleanupOrphanBotPlayers(); }, 24 * 60 * 60 * 1000);
-// Başlangıçta 30 saniye sonra çalıştır
-setTimeout(() => { void cleanupOrphanBotPlayers(); }, 30_000);
+trackInterval(() => { void cleanupOrphanBotPlayers(); }, 24 * 60 * 60 * 1000);
+trackTimeout(() => { void cleanupOrphanBotPlayers(); }, 30_000);
 
 // --- GÜNLÜK BAKIM (MAINTENANCE) ---
 // WHY: dailyMaintenance() fonksiyonu economy.ts'de tanımlıydı ama hiç çağrılmıyordu.
@@ -379,10 +362,9 @@ function scheduleNextMaintenance(): void {
   nextMidnight.setUTCHours(24, 0, 0, 0); // Bir sonraki UTC gece yarısı
   const msUntilMidnight = nextMidnight.getTime() - now.getTime();
 
-  setTimeout(() => {
+  trackTimeout(() => {
     void runDailyMaintenance();
-    // Sonraki gün için tekrar planla
-    setInterval(() => { void runDailyMaintenance(); }, 24 * 60 * 60 * 1000);
+    trackInterval(() => { void runDailyMaintenance(); }, 24 * 60 * 60 * 1000);
   }, msUntilMidnight);
 
   console.info(`[Maintenance] Sonraki bakım: ${nextMidnight.toISOString()} (${Math.round(msUntilMidnight / 60000)} dakika sonra)`);
@@ -402,20 +384,14 @@ async function runMarketCleanup(): Promise<void> {
     console.error('[Market] Cleanup hatası:', err);
   }
 }
-setInterval(() => { void runMarketCleanup(); }, 10 * 60 * 1000);
-// Başlangıçta 60 saniye sonra çalıştır
-setTimeout(() => { void runMarketCleanup(); }, 60_000);
+trackInterval(() => { void runMarketCleanup(); }, 10 * 60 * 1000);
+trackTimeout(() => { void runMarketCleanup(); }, 60_000);
 
-async function shutdown() {
-  console.info('Bot kapatiliyor...');
-  await closeDbQueue();
-  await client.destroy();
-  await redis.quit();
-  await prisma.$disconnect();
-  process.exit(0);
-}
-
-process.on('SIGTERM', shutdown);
-process.on('SIGINT', shutdown);
+registerGracefulShutdown([
+  () => closeDbQueue(),
+  () => client.destroy(),
+  async () => { await redis.quit(); },
+  () => prisma.$disconnect(),
+], 'Bot');
 
 void bootstrap();

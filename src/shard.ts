@@ -1,87 +1,90 @@
 /**
- * shard.ts — Discord.js ShardingManager
+ * shard.ts — Discord.js ShardingManager (Node.js / PM2 production entry)
  *
- * NEDEN GEREKLİ:
- *   1 bot process = 1 event loop = tüm komutlar sıra bekler
- *   ShardingManager = N process = N paralel event loop
- *
- *   OWO gibi botlar 10-100+ shard kullanır.
- *   Senin botun için 2-4 shard bile büyük fark yaratır.
- *
- * NASIL ÇALIŞIR:
- *   Bu dosya ana process olarak çalışır.
- *   Her shard ayrı bir Node.js process'i olarak spawn edilir.
- *   Her shard kendi Discord gateway bağlantısını yönetir.
- *   Shard'lar arası iletişim için ShardingManager.broadcastEval kullanılır.
- *
- * KULLANIM:
- *   Geliştirme: pnpm dev (index.ts direkt çalışır, shard yok)
- *   Üretim:     node dist/shard.js (ShardingManager başlatır)
- *
- * SHARD SAYISI:
- *   Discord kuralı: her shard max 2500 guild
- *   Şu an tek sunucu → 1 shard yeterli ama 2 koy (yedek + paralel)
- *   İleride büyürse SHARD_COUNT'u artır
+ * Geliştirme: pnpm dev (index.ts direkt, shard yok)
+ * Üretim:     node --import tsx dist/shard.js  (PM2 ecosystem.config.js)
  */
 
-import 'dotenv/config';
-import { ShardingManager } from 'discord.js';
+import { createServer } from 'node:http';
+import { existsSync } from 'node:fs';
 import { join } from 'node:path';
+import { ShardingManager } from 'discord.js';
+import { parseBotEnv } from './env';
+import { registerGracefulShutdown } from './utils/shutdown';
 
-const token = process.env.DISCORD_TOKEN;
-if (!token) {
-  console.error('[Shard] DISCORD_TOKEN eksik!');
-  process.exit(1);
-}
+const env = parseBotEnv();
 
-// Her zaman src/index.ts'i tsx ile çalıştır — build gerektirmez, ESM sorunları olmaz
-const scriptPath = join(process.cwd(), 'src', 'index.ts');
+const distEntry = join(process.cwd(), 'dist', 'index.js');
+const devEntry = join(process.cwd(), 'src', 'index.ts');
+const scriptPath =
+  env.NODE_ENV === 'production' && existsSync(distEntry) ? distEntry : devEntry;
+
+// Derlenmis ESM ciktisi extension'siz import kullanir — tsx hook gerekir
+const shardExecArgv = ['--import', 'tsx'];
 
 const manager = new ShardingManager(scriptPath, {
-  token,
+  token: env.DISCORD_TOKEN,
   totalShards: 'auto',
   respawn: true,
-  execArgv: ['--import', 'tsx'],
-  // Bun kuruluysa daha hızlı: execArgv boş bırak, shardArgs ile bun kullan
-  // Şimdilik tsx ile devam
+  execArgv: shardExecArgv,
 });
 
 manager.on('shardCreate', (shard) => {
-  console.info(`[Shard] Shard #${shard.id} başlatıldı.`);
+  console.info(`[Shard] Shard #${shard.id} baslatildi.`);
 
   shard.on('ready', () => {
-    console.info(`[Shard] Shard #${shard.id} hazır.`);
+    console.info(`[Shard] Shard #${shard.id} hazir.`);
   });
 
   shard.on('disconnect', () => {
-    console.warn(`[Shard] Shard #${shard.id} bağlantısı kesildi.`);
+    console.warn(`[Shard] Shard #${shard.id} baglantisi kesildi.`);
   });
 
   shard.on('reconnecting', () => {
-    console.info(`[Shard] Shard #${shard.id} yeniden bağlanıyor...`);
+    console.info(`[Shard] Shard #${shard.id} yeniden baglaniyor...`);
   });
 
-  shard.on('death', (process) => {
-    const code = 'exitCode' in process ? (process as unknown as { exitCode: number | null }).exitCode : null;
-    console.error(`[Shard] Shard #${shard.id} öldü (exit: ${code}).`);
+  shard.on('death', (proc) => {
+    const code = 'exitCode' in proc ? (proc as { exitCode: number | null }).exitCode : null;
+    console.error(`[Shard] Shard #${shard.id} oldu (exit: ${code}).`);
   });
 });
 
-manager.spawn({ timeout: 30_000 }).then(() => {
-  console.info(`[Shard] Tüm shardlar başlatıldı.`);
-}).catch((err) => {
-  console.error('[Shard] Spawn hatası:', err);
-  process.exit(1);
+const healthServer = createServer((req, res) => {
+  if (req.url === '/health') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      status: 'ok',
+      shards: manager.shards.size,
+      script: scriptPath,
+    }));
+    return;
+  }
+  res.writeHead(404);
+  res.end('Not Found');
 });
 
-process.on('SIGTERM', async () => {
-  console.info('[Shard] SIGTERM alındı, shardlar kapatılıyor...');
-  await Promise.all(manager.shards.map((s) => s.kill()));
-  process.exit(0);
+healthServer.listen(env.HEALTH_PORT, () => {
+  console.info(`[Shard] Health endpoint: http://localhost:${env.HEALTH_PORT}/health`);
 });
 
-process.on('SIGINT', async () => {
-  console.info('[Shard] SIGINT alındı, shardlar kapatılıyor...');
-  await Promise.all(manager.shards.map((s) => s.kill()));
-  process.exit(0);
-});
+async function spawnWithRetry(attempt = 1): Promise<void> {
+  try {
+    await manager.spawn({ timeout: 30_000 });
+    console.info('[Shard] Tum shardlar baslatildi.');
+  } catch (err) {
+    console.error(`[Shard] Spawn hatasi (deneme ${attempt}):`, err);
+    const delay = Math.min(5_000 * attempt, 30_000);
+    await new Promise((resolve) => setTimeout(resolve, delay));
+    await spawnWithRetry(attempt + 1);
+  }
+}
+
+registerGracefulShutdown([
+  () => new Promise<void>((resolve, reject) => {
+    healthServer.close((err) => (err ? reject(err) : resolve()));
+  }),
+  async () => { await Promise.all(manager.shards.map((s) => s.kill())); },
+], 'ShardManager');
+
+void spawnWithRetry();

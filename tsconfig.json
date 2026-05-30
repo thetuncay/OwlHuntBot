@@ -25,6 +25,6 @@
     "types": ["bun-types", "node"]
   },
   "include": ["src/**/*.ts", "prisma/**/*.ts"],
-  "exclude": ["dist", "node_modules", "src/**/*.test.ts", "vitest.config.ts", "src/scripts/backup-mongodb.ts"]
+  "exclude": ["dist", "node_modules", "src/**/*.test.ts", "vitest.config.ts", "src/scripts/**"]
 }
 

@@ -1111,6 +1111,8 @@ export type BuffItemRarity   = 'Common' | 'Rare' | 'Epic' | 'Legendary';
 
 export interface BuffItemDef {
   id:          string;
+  /** Oyuncunun kullandığı kısa ID: 001–012 */
+  useId:       string;
   name:        string;
   emoji:       string;
   description: string;
@@ -1148,6 +1150,7 @@ export const BUFF_ITEMS: BuffItemDef[] = [
   // ── HUNT BUFF'LARI ────────────────────────────────────────────────────────
   {
     id:           'b001',
+    useId:        '001',
     name:         'Keskin Nişan',
     emoji:        '🎯',
     description:  'Aktif olduğu sürece yakalama şansı artar.',
@@ -1157,12 +1160,13 @@ export const BUFF_ITEMS: BuffItemDef[] = [
     huntCost:     1,
     pvpCost:      0,
     upgradeCost:  0,
-    effectValue:  0.25,  // +25% catch
+    effectValue:  0.25,
     effectType:   'catch_bonus',
     tradeoff:     'Charge bitince pasifleşir, item kaybolmaz.',
   },
   {
     id:           'b002',
+    useId:        '002',
     name:         'Av Kokusu',
     emoji:        '🌿',
     description:  'Aktif olduğu sürece item drop şansı artar.',
@@ -1172,12 +1176,13 @@ export const BUFF_ITEMS: BuffItemDef[] = [
     huntCost:     1,
     pvpCost:      0,
     upgradeCost:  0,
-    effectValue:  1.90,  // +90% drop
+    effectValue:  1.90,
     effectType:   'loot_mult',
     tradeoff:     'Charge bitince pasifleşir.',
   },
   {
     id:           'b003',
+    useId:        '003',
     name:         'Nadir İz',
     emoji:        '🔮',
     description:  'Aktif olduğu sürece nadir av drop şansı artar.',
@@ -1187,12 +1192,13 @@ export const BUFF_ITEMS: BuffItemDef[] = [
     huntCost:     1,
     pvpCost:      0,
     upgradeCost:  0,
-    effectValue:  0.35,  // +35% nadir drop
+    effectValue:  0.35,
     effectType:   'rare_drop_bonus',
     tradeoff:     'Güçlü ama Rare, charge daha az.',
   },
   {
     id:           'b004',
+    useId:        '004',
     name:         'Orman Ruhu',
     emoji:        '🌲',
     description:  'Aktif olduğu sürece yakalama ve drop şansı hafifçe artar.',
@@ -1202,12 +1208,13 @@ export const BUFF_ITEMS: BuffItemDef[] = [
     huntCost:     1,
     pvpCost:      0,
     upgradeCost:  0,
-    effectValue:  0.20,  // +20% catch + %40 loot
+    effectValue:  0.20,
     effectType:   'catch_bonus',
     tradeoff:     'Çift etki, uzun ömür.',
   },
   {
     id:           'b005',
+    useId:        '005',
     name:         'Yıldız Tüy',
     emoji:        '⭐',
     description:  'Aktif olduğu sürece tüm drop şansları büyük ölçüde artar.',
@@ -1217,12 +1224,13 @@ export const BUFF_ITEMS: BuffItemDef[] = [
     huntCost:     1,
     pvpCost:      0,
     upgradeCost:  0,
-    effectValue:  2.80,  // +180% drop
+    effectValue:  2.80,
     effectType:   'loot_mult',
     tradeoff:     'Çok güçlü ama Epic, charge az.',
   },
   {
     id:           'b006',
+    useId:        '006',
     name:         'Efsane Av Ruhu',
     emoji:        '🦅',
     description:  'Aktif olduğu sürece yakalama ve nadir drop şansı maksimum artar.',
@@ -1232,7 +1240,7 @@ export const BUFF_ITEMS: BuffItemDef[] = [
     huntCost:     1,
     pvpCost:      0,
     upgradeCost:  0,
-    effectValue:  0.45,  // +45% catch
+    effectValue:  0.45,
     effectType:   'catch_bonus',
     tradeoff:     'En güçlü hunt buff, ama çok az charge.',
   },
@@ -1240,6 +1248,7 @@ export const BUFF_ITEMS: BuffItemDef[] = [
   // ── UPGRADE BUFF'LARI ─────────────────────────────────────────────────────
   {
     id:           'b007',
+    useId:        '007',
     name:         'Berrak Zihin',
     emoji:        '💡',
     description:  'Aktif olduğu sürece upgrade başarı şansı artar.',
@@ -1249,12 +1258,13 @@ export const BUFF_ITEMS: BuffItemDef[] = [
     huntCost:     0,
     pvpCost:      0,
     upgradeCost:  1,
-    effectValue:  15,    // +15 puan (eskiden +8)
+    effectValue:  15,
     effectType:   'upgrade_bonus',
     tradeoff:     'Charge bitince pasifleşir.',
   },
   {
     id:           'b008',
+    useId:        '008',
     name:         'Koruyucu Talisman',
     emoji:        '🛡️',
     description:  'Aktif olduğu sürece başarısız upgrade\'de stat düşme şansı azalır.',
@@ -1264,12 +1274,13 @@ export const BUFF_ITEMS: BuffItemDef[] = [
     huntCost:     0,
     pvpCost:      0,
     upgradeCost:  1,
-    effectValue:  0.2,   // downgrade şansı %80 azalır (eskiden %50)
+    effectValue:  0.2,
     effectType:   'downgrade_shield',
     tradeoff:     'Neredeyse tam koruma.',
   },
   {
     id:           'b009',
+    useId:        '009',
     name:         'Usta Eli',
     emoji:        '🔨',
     description:  'Aktif olduğu sürece upgrade başarı şansı önemli ölçüde artar.',
@@ -1279,7 +1290,7 @@ export const BUFF_ITEMS: BuffItemDef[] = [
     huntCost:     0,
     pvpCost:      0,
     upgradeCost:  1,
-    effectValue:  28,    // +28 puan (eskiden +15)
+    effectValue:  28,
     effectType:   'upgrade_bonus',
     tradeoff:     'Güçlü ama Epic, charge az.',
   },
@@ -1287,6 +1298,7 @@ export const BUFF_ITEMS: BuffItemDef[] = [
   // ── PVP BUFF'LARI ─────────────────────────────────────────────────────────
   {
     id:           'b010',
+    useId:        '010',
     name:         'Savaş Ruhu',
     emoji:        '⚔️',
     description:  'Aktif olduğu sürece PvP hasarı artar.',
@@ -1296,12 +1308,13 @@ export const BUFF_ITEMS: BuffItemDef[] = [
     huntCost:     0,
     pvpCost:      1,
     upgradeCost:  0,
-    effectValue:  1.18,  // +18% hasar (eskiden +8%)
+    effectValue:  1.18,
     effectType:   'pvp_damage_mult',
     tradeoff:     'Belirgin etki, uzun ömür.',
   },
   {
     id:           'b011',
+    useId:        '011',
     name:         'Savunma Duruşu',
     emoji:        '🛡️',
     description:  'Aktif olduğu sürece PvP dodge şansı artar.',
@@ -1311,12 +1324,13 @@ export const BUFF_ITEMS: BuffItemDef[] = [
     huntCost:     0,
     pvpCost:      1,
     upgradeCost:  0,
-    effectValue:  0.18,  // +18% dodge (eskiden +8%)
+    effectValue:  0.18,
     effectType:   'pvp_dodge_bonus',
     tradeoff:     'Sadece dodge, hasar artmaz.',
   },
   {
     id:           'b012',
+    useId:        '012',
     name:         'Arena Ustası',
     emoji:        '🏆',
     description:  'Aktif olduğu sürece hem PvP hasarı hem dodge artar.',
@@ -1326,7 +1340,7 @@ export const BUFF_ITEMS: BuffItemDef[] = [
     huntCost:     0,
     pvpCost:      1,
     upgradeCost:  0,
-    effectValue:  1.25,  // +25% hasar & +15% dodge (eskiden +12%/+6%)
+    effectValue:  1.25,
     effectType:   'pvp_damage_mult',
     tradeoff:     'En güçlü PvP buff, ama az charge.',
   },
@@ -1335,6 +1349,11 @@ export const BUFF_ITEMS: BuffItemDef[] = [
 // Buff item ID → tanım hızlı erişim haritası
 export const BUFF_ITEM_MAP: Record<string, BuffItemDef> = Object.fromEntries(
   BUFF_ITEMS.map((b) => [b.id, b]),
+);
+
+// useId → tanım haritası (001, 002... ile erişim)
+export const BUFF_ITEM_USE_MAP: Record<string, BuffItemDef> = Object.fromEntries(
+  BUFF_ITEMS.map((b) => [b.useId, b]),
 );
 
 // ── DİMİNİSHİNG RETURNS ──────────────────────────────────────────────────────
