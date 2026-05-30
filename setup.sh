@@ -65,8 +65,17 @@ chmod 600 .env 2>/dev/null || true
 
 # ── Bagimliliklar ve build ────────────────────────────────────────────────────
 echo "[8/9] Bagimliliklar kuruluyor ve proje derleniyor..."
-pnpm install --frozen-lockfile
+pnpm install --frozen-lockfile || pnpm install
 pnpm build
+
+# PostgreSQL + Redis (PM2 botu disarida calisir, DB servisleri Docker'da)
+if command -v docker >/dev/null 2>&1; then
+  echo "[8b/9] PostgreSQL ve Redis baslatiliyor (docker compose)..."
+  docker compose up -d postgres redis
+  sleep 5
+  docker compose exec -T redis redis-cli ping || echo "UYARI: Redis henuz hazir degil."
+  pnpm exec prisma migrate deploy || pnpm exec prisma db push || true
+fi
 
 # ── PM2 baslat ────────────────────────────────────────────────────────────────
 echo "[9/9] Bot PM2 ile baslatiliyor..."

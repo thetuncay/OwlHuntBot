@@ -394,4 +394,8 @@ registerGracefulShutdown([
   () => prisma.$disconnect(),
 ], 'Bot');
 
-void bootstrap();
+void bootstrap().catch((err) => {
+  console.error('[Bootstrap] Baslatma basarisiz:', err instanceof Error ? err.message : err);
+  console.error('[Bootstrap] Redis/PostgreSQL kontrol: docker compose up -d postgres redis');
+  process.exit(1);
+});
