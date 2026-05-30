@@ -183,6 +183,20 @@ export function formatActiveBuffLabel(buffItemId: string, chargeCur: number, cha
   return `\`${def.useId}\` ${def.emoji} **${def.name}** \`${chargeCur}/${chargeMax}\``;
 }
 
+/** Craft menüsü / tarif satırı — consumable tanımından üretilir */
+export function formatCraftRecipeBlurb(itemName: string, fallback = ''): string {
+  const def = CONSUMABLE_ITEM_BY_NAME[itemName];
+  if (!def) return fallback;
+  const mins = Math.round(def.durationMs / 60000);
+  return `\`${def.useId}\` ${formatGearCategory(def)} · **${mins} dk yük slotu** · ${def.description}`;
+}
+
+export function formatCraftUseHint(itemName: string, prefix: string): string {
+  const def = CONSUMABLE_ITEM_BY_NAME[itemName];
+  if (!def) return '';
+  return `  📌 Takmak için: \`${prefix} use ${def.useId}\``;
+}
+
 /** Kullanılabilir tüm ID'lerin kısa özeti (yardım metni). */
 export function buildUseIdLegend(helpPrefix: string): string {
   const buffLines = BUFF_ITEMS.map((b) => `\`${b.useId}\` ${b.emoji} ${b.name}`).join(' · ');
