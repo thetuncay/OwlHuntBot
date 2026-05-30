@@ -6,6 +6,7 @@ import type { CommandDefinition } from './types';
 import { parseBotEnv, appendPoolParams } from './env';
 import { redis, assertRedisConnection } from './utils/redis';
 import { enforceAntiSpam } from './middleware/antiSpam';
+import { acquireCommandSlot } from './middleware/load-shed';
 import { getGuildPrefix } from './utils/prefix';
 import { handleOwlTextCommand } from './commands/owl';
 import { handleRegistrationButton, isRegistrationButton } from './systems/onboarding';
@@ -134,7 +135,9 @@ async function bootstrap(): Promise<void> {
     const command = commandMap.get(interaction.commandName);
     if (!command) return;
 
+    let releaseSlot: (() => Promise<void>) | null = null;
     try {
+      releaseSlot = await acquireCommandSlot(redis);
       await enforceAntiSpam(redis, interaction.user.id);
       await command.execute(interaction, { prisma, redis });
     } catch (error) {
@@ -156,6 +159,8 @@ async function bootstrap(): Promise<void> {
       } catch {
         // Yanıt gönderilemedi, sessizce geç
       }
+    } finally {
+      await releaseSlot?.().catch(() => null);
     }
   });
 
@@ -200,23 +205,31 @@ async function bootstrap(): Promise<void> {
 
     // Liderboard: owl top [kategori] veya owl lb [kategori]
     if (firstWord === 'top' || firstWord === 'lb' || firstWord === 'liderboard' || firstWord === 'leaderboard') {
+      let releaseSlot: (() => Promise<void>) | null = null;
       try {
+        releaseSlot = await acquireCommandSlot(redis);
         await enforceAntiSpam(redis, message.author.id);
         await handleTopTextCommand(message, parts.slice(1), { prisma, redis });
       } catch (error) {
         const msg = error instanceof Error ? error.message : 'Bir hata olustu.';
         await message.reply(`❌ ${msg}`);
+      } finally {
+        await releaseSlot?.().catch(() => null);
       }
       return;
     }
 
+    let releaseSlot: (() => Promise<void>) | null = null;
     try {
+      releaseSlot = await acquireCommandSlot(redis);
       await enforceAntiSpam(redis, message.author.id);
       await handleOwlTextCommand(message, parts, { prisma, redis });
     } catch (error) {
       console.error('[Message Command Error]', error);
       const errorMsg = error instanceof Error ? error.message : 'Bir seyler ters gitti, islem geri alindi.';
       await message.reply(`❌ **Hata** | ${errorMsg}`);
+    } finally {
+      await releaseSlot?.().catch(() => null);
     }
   });
 
@@ -386,6 +399,28 @@ async function runMarketCleanup(): Promise<void> {
 }
 trackInterval(() => { void runMarketCleanup(); }, 10 * 60 * 1000);
 trackTimeout(() => { void runMarketCleanup(); }, 60_000);
+
+// --- ENCOUNTER LIMBO CLEANUP ---
+// Eski açık encounter kayıtlarını per-request yerine periyodik temizle.
+async function cleanupStaleEncounters(): Promise<void> {
+  try {
+    const limboThreshold = new Date(Date.now() - 6 * 60 * 1000);
+    const { count } = await prisma.encounter.updateMany({
+      where: {
+        status: 'open',
+        createdAt: { lt: limboThreshold },
+      },
+      data: { status: 'closed' },
+    });
+    if (count > 0) {
+      console.info(`[Encounter] ${count} stale encounter kapatildi.`);
+    }
+  } catch (err) {
+    console.error('[Encounter] Limbo cleanup hatasi:', err);
+  }
+}
+trackInterval(() => { void cleanupStaleEncounters(); }, 10 * 60 * 1000);
+trackTimeout(() => { void cleanupStaleEncounters(); }, 45_000);
 
 registerGracefulShutdown([
   () => closeDbQueue(),

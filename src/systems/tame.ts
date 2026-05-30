@@ -89,7 +89,7 @@ function qualityByScore(score: number): OwlQuality {
 export async function createEncounter(
   prisma: PrismaClient,
   playerId: string,
-  playerSnapshot?: { level: number },
+  playerSnapshot?: { level: number; prestigeLevel?: number },
   owlSnapshot?: {
     tier: number; statGoz: number; statKulak: number;
     statGaga: number; statKanat: number; statPence: number;
@@ -101,21 +101,6 @@ export async function createEncounter(
   if (!player || !mainOwl) {
     throw new Error('Encounter icin oyuncu veya main baykus bulunamadi.');
   }
-
-  // ── Limbo Temizleme ───────────────────────────────────────────────────────
-  // Tame session TTL 5 dakika. Session süresi dolunca encounter DB'de "open"
-  // kalıyordu. Yeni encounter öncesinde 6+ dakika önce oluşturulmuş open
-  // encounter'ları kapat.
-  const limboThreshold = new Date(Date.now() - 6 * 60 * 1000); // 6 dakika önce
-  await prisma.encounter.updateMany({
-    where: {
-      playerId,
-      status: 'open',
-      createdAt: { lt: limboThreshold },
-    },
-    data: { status: 'closed' },
-  });
-  // ─────────────────────────────────────────────────────────────────────────
 
   const chance = encounterChance(player.level, mainOwl.statGoz, mainOwl.statKulak,
     // Scouting modundaki baykuş sayısını say — her biri +%1 encounter şansı verir
@@ -150,8 +135,7 @@ export async function createEncounter(
 
   // ── Hidden Scaling (Matchmaking) ─────────────────────────────────────────
   // Oyuncunun gucunu hesapla (soft cap formulu ile)
-  const playerFull = await prisma.player.findUnique({ where: { id: playerId }, select: { prestigeLevel: true } });
-  const pLvl = playerFull?.prestigeLevel ?? 0;
+  const pLvl = playerSnapshot?.prestigeLevel ?? 0;
   const playerPower =
     statEffect(mainOwl.statGaga, pLvl)  +
     statEffect(mainOwl.statGoz, pLvl)   +

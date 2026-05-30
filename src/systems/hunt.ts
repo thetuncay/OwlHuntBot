@@ -219,13 +219,17 @@ export async function rollHunt(
     const injured: HuntCatchResult[] = [];
     let highTierTaken = false;
     let gotRare = false;
+    const preyPoolThreshold = OWL_PREY_POOL[owl.tier];
+    if (preyPoolThreshold === undefined) throw new Error('Baykus tier av havuzu tanimli degil.');
+    const preyCandidates = PREY.filter((p) => p.difficulty <= preyPoolThreshold);
+    const consumableCatchBonus = await (async () => {
+      const key = `${CONSUMABLE_ITEM_BY_NAME['Yırtıcı İksiri']?.redisKey ?? 'consumable:hunt_catch'}:${playerId}`;
+      const val = await redis.get(key);
+      return val ? parseFloat(val) : 0;
+    })();
 
     for (let i = 0; i < totalRoll; i++) {
-      const threshold = OWL_PREY_POOL[owl.tier];
-      if (threshold === undefined) throw new Error('Baykus tier av havuzu tanimli degil.');
-
-      const candidate = PREY.filter((p) => p.difficulty <= threshold);
-      const weighted = candidate.map((prey) => {
+      const weighted = preyCandidates.map((prey) => {
         let score = spawnScore(prey.difficulty, owl.statGoz, owl.statKulak);
         // Biyom nadirlik çarpanı
         if (prey.difficulty >= HUNT_HIGH_TIER_THRESHOLD) {
@@ -261,11 +265,6 @@ export async function rollHunt(
       // Buff catch bonus da eklenir (diminishing returns zaten uygulandı)
       // Trait huntCatch çarpanı da uygulanır
       // Consumable (Yırtıcı İksiri) bonusu da eklenir
-      const consumableCatchBonus = await (async () => {
-        const key = `${CONSUMABLE_ITEM_BY_NAME['Yırtıcı İksiri']?.redisKey ?? 'consumable:hunt_catch'}:${playerId}`;
-        const val = await redis.get(key);
-        return val ? parseFloat(val) : 0;
-      })();
       const extraBonus = levelBonus + streakBonus + (isRarePrey ? pityBonus : 0) + buffEffects.catchBonus + consumableCatchBonus;
       const finalChance = clamp(0.05, 0.95, (baseChanceVal + extraBonus) * safeBiome.catchModifier * traitEffects.huntCatch);
 
@@ -434,9 +433,9 @@ export async function rollHunt(
     };
     writeAudit(prisma, playerId, 'hunt', auditBefore, auditAfter).catch(console.error);
 
-    // Envanter job'larını tek bulkWrite ile yaz — kullanıcı beklemez (Req 2)
-    buildAndExecuteBulkWrite(prisma, playerId, inventoryJobs)
-      .catch((err: Error) => console.error('[Hunt] BulkWrite failed:', err.message));
+    // Envanter yazılarını queue'ya gönder — cevap yolunda DB baskısını azaltır.
+    // Kuyruk yoksa enqueue katmanı fallback ile direkt yazma yapar.
+    enqueueDbWriteBulk(inventoryJobs);
 
     // ── Arka Plan İşlemleri (fire-and-forget) ────────────────────────────────
     // Bu işlemler kullanıcı cevabını BEKLETMEZ — arka planda çalışır.
@@ -454,7 +453,7 @@ export async function rollHunt(
     const encounterPromise = createEncounter(
       prisma,
       playerId,
-      { level: player.level },
+      { level: player.level, prestigeLevel: player.prestigeLevel },
       {
         tier: owl.tier,
         statGoz: owl.statGoz,

@@ -33,6 +33,7 @@ import { redis } from './redis.js';
 
 const QUEUE_NAME = 'db-writes';
 const REDIS_URL = process.env.REDIS_URL ?? 'redis://localhost:6379';
+const DB_QUEUE_CONCURRENCY = Number.parseInt(process.env.DB_QUEUE_CONCURRENCY ?? '20', 10);
 
 // Redis bağlantı ayarları — BullMQ kendi bağlantısını yönetir
 const connection = {
@@ -130,7 +131,7 @@ export function initDbQueue(prisma: PrismaClient): void {
 
   worker = new Worker(QUEUE_NAME, processJob, {
     connection,
-    concurrency: 5,  // Aynı anda max 5 DB yazma işlemi
+    concurrency: DB_QUEUE_CONCURRENCY,
   });
 
   worker.on('failed', (job, err) => {
@@ -141,7 +142,7 @@ export function initDbQueue(prisma: PrismaClient): void {
     console.error('[Queue] Worker hatası:', err.message);
   });
 
-  console.info('[Queue] DB write queue başlatıldı.');
+  console.info(`[Queue] DB write queue başlatıldı. concurrency=${DB_QUEUE_CONCURRENCY}`);
 }
 
 /**
