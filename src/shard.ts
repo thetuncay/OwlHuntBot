@@ -5,7 +5,7 @@
  * Üretim:     node --import tsx dist/shard.js  (PM2 ecosystem.config.js)
  */
 
-import { createServer } from 'node:http';
+import { createServer, type Server } from 'node:http';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { ShardingManager } from 'discord.js';
@@ -19,7 +19,6 @@ const devEntry = join(process.cwd(), 'src', 'index.ts');
 const scriptPath =
   env.NODE_ENV === 'production' && existsSync(distEntry) ? distEntry : devEntry;
 
-// Derlenmis ESM ciktisi extension'siz import kullanir — tsx hook gerekir
 const shardExecArgv = ['--import', 'tsx'];
 
 const manager = new ShardingManager(scriptPath, {
@@ -50,23 +49,45 @@ manager.on('shardCreate', (shard) => {
   });
 });
 
-const healthServer = createServer((req, res) => {
-  if (req.url === '/health') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({
-      status: 'ok',
-      shards: manager.shards.size,
-      script: scriptPath,
-    }));
-    return;
-  }
-  res.writeHead(404);
-  res.end('Not Found');
-});
+let healthServer: Server | null = null;
+let healthListening = false;
 
-healthServer.listen(env.HEALTH_PORT, () => {
-  console.info(`[Shard] Health endpoint: http://localhost:${env.HEALTH_PORT}/health`);
-});
+function startHealthServer(port: number): void {
+  const server = createServer((req, res) => {
+    if (req.url === '/health') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        status: 'ok',
+        shards: manager.shards.size,
+        script: scriptPath,
+      }));
+      return;
+    }
+    res.writeHead(404);
+    res.end('Not Found');
+  });
+
+  server.on('error', (err: NodeJS.ErrnoException) => {
+    healthListening = false;
+    healthServer = null;
+    if (err.code === 'EADDRINUSE') {
+      console.warn(
+        `[Shard] Port ${port} kullanimda — health endpoint acilmadi. ` +
+        `.env icinde HEALTH_PORT=3010 deneyin (ornek: ss -tlnp | grep ${port}).`,
+      );
+      return;
+    }
+    console.error('[Shard] Health server hatasi:', err.message);
+  });
+
+  server.listen(port, () => {
+    healthServer = server;
+    healthListening = true;
+    console.info(`[Shard] Health endpoint: http://localhost:${port}/health`);
+  });
+}
+
+startHealthServer(env.HEALTH_PORT);
 
 async function spawnWithRetry(attempt = 1): Promise<void> {
   try {
@@ -81,8 +102,12 @@ async function spawnWithRetry(attempt = 1): Promise<void> {
 }
 
 registerGracefulShutdown([
-  () => new Promise<void>((resolve, reject) => {
-    healthServer.close((err) => (err ? reject(err) : resolve()));
+  () => new Promise<void>((resolve) => {
+    if (!healthServer || !healthListening) {
+      resolve();
+      return;
+    }
+    healthServer.close(() => resolve());
   }),
   async () => { await Promise.all(manager.shards.map((s) => s.kill())); },
 ], 'ShardManager');

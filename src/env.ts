@@ -18,7 +18,7 @@ export const botEnvSchema = z.object({
   DATABASE_URL: z.string().min(1),
   REDIS_URL: z.string().min(1),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  HEALTH_PORT: z.coerce.number().int().positive().default(3000),
+  HEALTH_PORT: z.coerce.number().int().positive().default(3010),
 });
 
 export type BotEnv = z.infer<typeof botEnvSchema>;
