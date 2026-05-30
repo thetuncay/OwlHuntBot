@@ -1605,6 +1605,12 @@ export const LOOTBOX_PVP_WIN_CHANCE: Record<LootboxTier, number> = {
   Eşya:   4,    // %4
 };
 
+// Encounter savaş kazanma lootbox şansı (tame'den yüksek — savaş ana ödül yolu)
+export const LOOTBOX_ENCOUNTER_FIGHT_CHANCE: Record<LootboxTier, number> = {
+  Silah:  10,
+  Eşya:   20,
+};
+
 // Encounter kazanmada (tame başarısı) lootbox şansı
 export const LOOTBOX_ENCOUNTER_WIN_CHANCE: Record<LootboxTier, number> = {
   Silah:  5,    // %5

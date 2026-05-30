@@ -28,6 +28,18 @@ interface OwlRecord {
   effectiveness: number; createdAt: Date; passiveMode: string; traits: unknown;
 }
 
+function calcSwitchFee(owls: { tier: number }[]): number {
+  return switchCost(owls.reduce((s, o) => s + o.tier, 0));
+}
+
+function formatSwitchFee(owls: { tier: number }[]): string {
+  return calcSwitchFee(owls).toLocaleString('tr-TR');
+}
+
+function owlsListHeader(owls: { tier: number }[]): string {
+  return `💰 Main değiştirme ücreti: **${formatSwitchFee(owls)}** coin\n\n`;
+}
+
 // ─── Slash: /owl setmain ──────────────────────────────────────────────────────
 
 export async function runSetMain(
@@ -125,7 +137,7 @@ export async function runSetMainMessage(
         { name: '📋 Kullanım', value: `\`${helpPrefix} setmain <kısa_id>\`\nID için \`${helpPrefix} owls\``, inline: false },
         {
           name: '💰 Maliyet',
-          value: 'Maliyet = **500** + (tüm baykuşların tier toplamı × **200**)',
+          value: 'Maliyet = **1.000** + (tüm baykuşların tier toplamı × **400**)',
           inline: false,
         },
         {
@@ -255,17 +267,18 @@ export async function runOwls(
     return new EmbedBuilder()
       .setColor(0x5865f2)
       .setTitle(`🦉 ${username}'in Baykuşları`)
-      .setDescription(lines.join('\n\n') || '*Bu sayfada baykuş yok.*')
+      .setDescription(owlsListHeader(currentOwls) + (lines.join('\n\n') || '*Bu sayfada baykuş yok.*'))
       .setFooter({ text: totalPages > 1 ? `${currentOwls.length} baykuş · Sayfa ${page + 1}/${totalPages}` : `${currentOwls.length} baykuş` });
   };
 
   const renderComponents = () => {
     const pageOwls = currentOwls.slice(page * OWLS_PER_PAGE, (page + 1) * OWLS_PER_PAGE);
+    const feeLabel = formatSwitchFee(currentOwls);
     const rows: ActionRowBuilder<ButtonBuilder>[] = pageOwls.map((owl) =>
       new ActionRowBuilder<ButtonBuilder>().addComponents(
         owl.isMain
           ? new ButtonBuilder().setCustomId('setmain_noop').setLabel('✅ Main').setStyle(ButtonStyle.Success).setDisabled(true)
-          : new ButtonBuilder().setCustomId(`setmain:${owl.id}`).setLabel('⭐ Main Yap').setStyle(ButtonStyle.Primary),
+          : new ButtonBuilder().setCustomId(`setmain:${owl.id}`).setLabel(`⭐ Main Yap · ${feeLabel}💰`).setStyle(ButtonStyle.Primary),
       ),
     );
     if (totalPages > 1) {
@@ -379,17 +392,18 @@ export async function runOwlsMessage(
     return new EmbedBuilder()
       .setColor(0x5865f2)
       .setTitle(`🦉 ${name}'in Baykuşları`)
-      .setDescription(lines.join('\n\n') || '*Bu sayfada baykuş yok.*')
+      .setDescription(owlsListHeader(currentOwls) + (lines.join('\n\n') || '*Bu sayfada baykuş yok.*'))
       .setFooter({ text: totalPages > 1 ? `${currentOwls.length} baykuş · Sayfa ${page + 1}/${totalPages}` : `${currentOwls.length} baykuş` });
   };
 
   const renderComponents = () => {
     const pageOwls = currentOwls.slice(page * OWLS_PER_PAGE, (page + 1) * OWLS_PER_PAGE);
+    const feeLabel = formatSwitchFee(currentOwls);
     const rows: ActionRowBuilder<ButtonBuilder>[] = pageOwls.map((owl) =>
       new ActionRowBuilder<ButtonBuilder>().addComponents(
         owl.isMain
           ? new ButtonBuilder().setCustomId('setmain_noop').setLabel('✅ Main').setStyle(ButtonStyle.Success).setDisabled(true)
-          : new ButtonBuilder().setCustomId(`setmain:${owl.id}`).setLabel('⭐ Main Yap').setStyle(ButtonStyle.Primary),
+          : new ButtonBuilder().setCustomId(`setmain:${owl.id}`).setLabel(`⭐ Main Yap · ${feeLabel}💰`).setStyle(ButtonStyle.Primary),
       ),
     );
     if (totalPages > 1) {

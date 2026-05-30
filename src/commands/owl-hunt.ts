@@ -57,7 +57,7 @@ import {
   buildEncounterTimeoutEmbed,
 } from '../utils/encounter-ux';
 import type { EncounterOwlData, PlayerOwlData } from '../utils/encounter-ux';
-import { resolveEncounterFight } from '../systems/encounter-fight';
+import { resolveEncounterFight, estimateEncounterFightRewards } from '../systems/encounter-fight';
 import { parseStoredTraits } from '../systems/traits';
 import type { CommandDefinition } from '../types';
 import type { Message } from 'discord.js';
@@ -502,7 +502,17 @@ export async function sendEncounterMessage(
     hpMax:     playerOwl.hpMax,
   };
 
-  const embed = buildEncounterEmbed(wildData, playerData);
+  const sumStats = (d: EncounterOwlData | PlayerOwlData) =>
+    d.statGaga + d.statGoz + d.statKulak + d.statKanat + d.statPence;
+
+  const fightPreview = estimateEncounterFightRewards(
+    wildData.tier,
+    wildData.quality,
+    sumStats(playerData),
+    sumStats(wildData),
+  );
+
+  const embed = buildEncounterEmbed(wildData, playerData, fightPreview);
   const row   = buildEncounterActionRow(encounterId);
 
   const sendFn = sender.followUp ?? sender.reply;

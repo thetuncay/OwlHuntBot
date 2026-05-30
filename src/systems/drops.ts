@@ -20,6 +20,7 @@ import {
   LOOTBOX_DEF_MAP,
   LOOTBOX_DEFS,
   LOOTBOX_ENCOUNTER_WIN_CHANCE,
+  LOOTBOX_ENCOUNTER_FIGHT_CHANCE,
   LOOTBOX_HUNT_DROP_CHANCE,
   LOOTBOX_PVP_WIN_CHANCE,
   type LootboxTier,
@@ -243,6 +244,48 @@ export async function rollEncounterLootboxDrop(
       if (!claimed) return null;
 
       await addLootboxToInventory(prisma, playerId, def.id);
+      return { lootboxId: def.id, lootboxName: def.name, emoji: def.emoji };
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Encounter savaş kazanma — yüksek kutu şansı (Redis günlük cap).
+ */
+export async function rollEncounterFightLootboxDrop(
+  prisma: PrismaClient,
+  redis: Redis,
+  playerId: string,
+  playerLevel: number,
+): Promise<LootboxDrop | null> {
+  const mult = levelDropMult(playerLevel);
+  const tierOrder: LootboxTier[] = ['Eşya', 'Silah'];
+
+  for (const tier of tierOrder) {
+    const baseChance  = LOOTBOX_ENCOUNTER_FIGHT_CHANCE[tier];
+    const finalChance = baseChance * mult;
+
+    if (Math.random() * 100 < finalChance) {
+      const def = LOOTBOX_DEFS.find((l) => l.tier === tier);
+      if (!def) continue;
+
+      const claimed = await tryClaimDailyDrop(prisma, redis, playerId);
+      if (!claimed) return null;
+
+      const lootboxDef = LOOTBOX_DEF_MAP[def.id];
+      if (lootboxDef) {
+        enqueueDbWriteBulk([{
+          type:     'upsertInventory',
+          playerId,
+          itemName: lootboxDef.name,
+          itemType: 'Kutu',
+          rarity:   'Common',
+          quantity: 1,
+        }]);
+      }
+
       return { lootboxId: def.id, lootboxName: def.name, emoji: def.emoji };
     }
   }
