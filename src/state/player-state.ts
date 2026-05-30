@@ -89,6 +89,65 @@ export async function clearDirty(redis: Redis, playerId: string): Promise<void> 
   await redis.multi().del(`${DIRTY_PREFIX}${playerId}`).srem(DIRTY_SET, playerId).exec();
 }
 
+const MAIN_OWL_SELECT = {
+  id: true,
+  ownerId: true,
+  species: true,
+  tier: true,
+  bond: true,
+  statGaga: true,
+  statGoz: true,
+  statKulak: true,
+  statKanat: true,
+  statPence: true,
+  quality: true,
+  hp: true,
+  hpMax: true,
+  staminaCur: true,
+  isMain: true,
+  effectiveness: true,
+  traits: true,
+} as const;
+
+/** mainOwlId / Redis owl key uyumsuzlugunu PG'den duzelt. */
+async function ensureMainOwlInBundle(
+  redis: Redis,
+  prisma: PrismaClient,
+  playerId: string,
+  player: CachedPlayerData,
+): Promise<CachedOwlData | null> {
+  if (player.mainOwlId) {
+    const cached = await redis.get(owlKey(player.mainOwlId));
+    if (cached) return JSON.parse(cached) as CachedOwlData;
+  }
+
+  let dbOwl = player.mainOwlId
+    ? await prisma.owl.findUnique({ where: { id: player.mainOwlId }, select: MAIN_OWL_SELECT })
+    : null;
+  if (!dbOwl || dbOwl.ownerId !== playerId) {
+    dbOwl = await prisma.owl.findFirst({
+      where: { ownerId: playerId, isMain: true },
+      select: MAIN_OWL_SELECT,
+    });
+  }
+  if (!dbOwl) return null;
+
+  const owl = dbOwl as CachedOwlData;
+  await redis.set(owlKey(owl.id), JSON.stringify(owl));
+
+  if (player.mainOwlId !== owl.id) {
+    player.mainOwlId = owl.id;
+    await redis.set(playerKey(playerId), JSON.stringify(player));
+    enqueueDbWrite({
+      type: 'updatePlayer',
+      playerId,
+      data: { mainOwlId: owl.id },
+    });
+  }
+
+  return owl;
+}
+
 /** PG'den Redis'e yukle (cache miss). */
 export async function hydratePlayerState(
   redis: Redis,
@@ -102,16 +161,12 @@ export async function hydratePlayerState(
       await redis.del(hydratedKey(playerId));
     } else {
       const player = JSON.parse(rawPlayer) as CachedPlayerData;
-      let mainOwl: CachedOwlData | null = null;
-      if (player.mainOwlId) {
-        const rawOwl = await redis.get(owlKey(player.mainOwlId));
-        if (rawOwl) mainOwl = JSON.parse(rawOwl) as CachedOwlData;
-      }
+      const mainOwl = await ensureMainOwlInBundle(redis, prisma, playerId, player);
       return { player, mainOwl };
     }
   }
 
-  const [dbPlayer, mainOwl] = await Promise.all([
+  const [dbPlayer, mainOwlRow] = await Promise.all([
     prisma.player.findUnique({
       where: { id: playerId },
       select: {
@@ -124,12 +179,7 @@ export async function hydratePlayerState(
     }),
     prisma.owl.findFirst({
       where: { ownerId: playerId, isMain: true },
-      select: {
-        id: true, ownerId: true, species: true, tier: true, bond: true,
-        statGaga: true, statGoz: true, statKulak: true, statKanat: true, statPence: true,
-        quality: true, hp: true, hpMax: true, staminaCur: true,
-        isMain: true, effectiveness: true, traits: true,
-      },
+      select: MAIN_OWL_SELECT,
     }),
   ]);
 
@@ -140,11 +190,23 @@ export async function hydratePlayerState(
     lastLootboxDropDate: dbPlayer.lastLootboxDropDate?.toISOString() ?? null,
   };
 
+  const mainOwl = mainOwlRow as CachedOwlData | null;
+  if (mainOwl && player.mainOwlId !== mainOwl.id) {
+    player.mainOwlId = mainOwl.id;
+    if (dbPlayer.mainOwlId !== mainOwl.id) {
+      enqueueDbWrite({
+        type: 'updatePlayer',
+        playerId,
+        data: { mainOwlId: mainOwl.id },
+      });
+    }
+  }
+
   const pipeline = redis.pipeline();
   pipeline.set(playerKey(playerId), JSON.stringify(player));
   pipeline.set(hydratedKey(playerId), '1');
   if (mainOwl) {
-    pipeline.set(owlKey(mainOwl.id), JSON.stringify(mainOwl as CachedOwlData));
+    pipeline.set(owlKey(mainOwl.id), JSON.stringify(mainOwl));
   }
 
   const invRows = await prisma.inventoryItem.findMany({
@@ -165,7 +227,7 @@ export async function hydratePlayerState(
   }
 
   await pipeline.exec();
-  return { player, mainOwl: mainOwl as CachedOwlData | null };
+  return { player, mainOwl };
 }
 
 /** Saf JS XP hesabi — DB/Redis yazmaz. */
@@ -529,7 +591,22 @@ export async function persistPlayerSnapshot(
   let owlUpdate: CachedOwlData | null = null;
   if (player.mainOwlId) {
     const rawOwl = await redis.get(owlKey(player.mainOwlId));
-    if (rawOwl) owlUpdate = JSON.parse(rawOwl) as CachedOwlData;
+    if (rawOwl) {
+      owlUpdate = JSON.parse(rawOwl) as CachedOwlData;
+    } else {
+      const dbOwl = await prisma.owl.findUnique({
+        where: { id: player.mainOwlId },
+        select: MAIN_OWL_SELECT,
+      });
+      if (dbOwl) owlUpdate = dbOwl as CachedOwlData;
+    }
+  }
+  if (!owlUpdate) {
+    const dbMain = await prisma.owl.findFirst({
+      where: { ownerId: playerId, isMain: true },
+      select: MAIN_OWL_SELECT,
+    });
+    if (dbMain) owlUpdate = dbMain as CachedOwlData;
   }
 
   const invHash = await redis.hgetall(invKey(playerId));

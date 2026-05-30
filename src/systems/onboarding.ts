@@ -7,6 +7,7 @@ import {
   type Message,
 } from 'discord.js';
 import type { CommandContext } from '../types';
+import { rehydratePlayerState } from '../state/player-state';
 
 const REGISTER_BUTTON_PREFIX = 'register_accept';
 const STARTER_SPECIES = 'Kukumav baykusu';
@@ -167,6 +168,8 @@ export async function handleRegistrationButton(
       },
     });
   });
+
+  await rehydratePlayerState(ctx.redis, ctx.prisma, interaction.user.id);
 
   await interaction.update({
     content: [
