@@ -45,7 +45,7 @@ export async function runCraftMessage(
   try {
     await craftItem(ctx.prisma, userId, recipe.id, ctx.redis);
     const name = getCraftDisplayName(recipe);
-    await message.reply(`✅ **${recipe.emoji} ${name}** üretildi ve envanterine eklendi.`);
+    await message.reply(`✅ ${recipe.emoji} **${name}** üretildi! 📦 Envantere eklendi.`);
   } catch (err: any) {
     await message.reply(`❌ ${err.message}`);
   }
@@ -134,7 +134,7 @@ export async function runCraftSlash(interaction: ChatInputCommandInteraction, ct
       await craftItem(ctx.prisma, userId, recipeId, ctx.redis);
       const name = getCraftDisplayName(recipe);
       await interaction.editReply({
-        content: `✅ **${recipe.emoji} ${name}** üretildi ve envanterine eklendi.`,
+        content: `✅ ${recipe.emoji} **${name}** üretildi! 📦 Envantere eklendi.`,
         components: [],
       });
     } catch (err: any) {

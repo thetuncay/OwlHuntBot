@@ -1,5 +1,5 @@
 /**
- * craft-ux.ts — OwO tarzı sade crafting menüsü (monospace text)
+ * craft-ux.ts — OwO tarzı crafting menüsü (monospace text + renk/emoji)
  */
 
 import {
@@ -9,6 +9,7 @@ import {
   type ConsumableItemDef,
   type CraftingRecipe,
 } from '../config';
+import { RARITY_BADGE } from './theme';
 
 export type CraftStatusKind = 'ready' | 'coin' | 'material';
 
@@ -32,10 +33,10 @@ const CRAFT_DISPLAY_NAME: Record<string, string> = {
 };
 
 const GEAR_TYPE_LABEL: Record<string, string> = {
-  yem:   'Yem',
-  iksir: 'İksir',
-  'zırh': 'Zırh',
-  alet:  'Alet',
+  yem:   '🌾 Yem',
+  iksir: '🧪 İksir',
+  'zırh': '🛡️ Zırh',
+  alet:  '🪨 Alet',
 };
 
 const PREY_DISPLAY: Record<string, string> = {
@@ -44,6 +45,22 @@ const PREY_DISPLAY: Record<string, string> = {
   bildircin:  'Bıldırcın',
   hamster:    'Hamster',
   kostebek:   'Kostebek',
+};
+
+const MATERIAL_EMOJI: Record<string, string> = {
+  fare:                  '🐭',
+  serce:                 '🐦',
+  bildircin:             '🦃',
+  hamster:               '🐹',
+  kostebek:              '🕳️',
+  'Kemik Tozu':          '🦴',
+  'Parlak Tüy':          '✨',
+  'Yırtıcı Pençe Parçası': '🐾',
+  'Gölge Tüyü':          '🪶',
+  'Sessizlik Teli':      '🔗',
+  'Av Gözü Kristali':    '👁️',
+  'Orman Yankısı':       '🌲',
+  'Kırık Av Zinciri':    '⛓️',
 };
 
 const STATUS_ICON: Record<CraftStatusKind, string> = {
@@ -58,6 +75,12 @@ const STATUS_SORT: Record<CraftStatusKind, number> = {
   material: 2,
 };
 
+const SECTION_HEADER: Record<CraftStatusKind, string> = {
+  ready:    '✨ Üretilebilir',
+  coin:     '💰 Coin Eksik',
+  material: '📦 Malzeme Eksik',
+};
+
 export function formatCraftCoins(n: number): string {
   return n.toLocaleString('tr-TR');
 }
@@ -66,36 +89,64 @@ function displayMaterial(name: string): string {
   return PREY_DISPLAY[name] ?? name;
 }
 
+function materialEmoji(name: string): string {
+  return MATERIAL_EMOJI[name] ?? '📦';
+}
+
 function getConsumableDef(recipe: CraftingRecipe): ConsumableItemDef | undefined {
   return CONSUMABLE_ITEM_BY_NAME[recipe.resultItem.itemName];
 }
 
-/** Kısa bonus satırı (ana liste) */
-export function formatCraftShortEffect(def: ConsumableItemDef): string {
+function effectEmoji(def: ConsumableItemDef): string {
   switch (def.effectType) {
     case 'stamina_restore_once':
-      return `+${def.effectValue} Stamina`;
     case 'stamina_boost_once':
-      return `+${def.effectValue} Stamina`;
+      return '⚡';
     case 'upgrade_bonus_once':
-      return `+${def.effectValue} Upgrade`;
+      return '⬆️';
     case 'hunt_catch_once':
-      return `+${Math.round(def.effectValue * 100)}% Catch`;
+      return '🎯';
     case 'pvp_damage_once':
-      return `+${Math.round(def.effectValue * 100)}% PvP Damage`;
+      return '⚔️';
     case 'pvp_dodge_equip':
-      return `+${Math.round(def.effectValue * 100)}% Dodge`;
+      return '💨';
     case 'hunt_loot_once':
-      return `+${Math.round(def.effectValue * 100)}% Drop`;
+      return '💎';
     case 'downgrade_shield_once':
-      return `%${Math.round((1 - def.effectValue) * 100)} Daha Az Risk`;
+      return '🛡️';
     default:
-      return recipeFallbackEffect(def);
+      return '✨';
   }
 }
 
-function recipeFallbackEffect(def: ConsumableItemDef): string {
-  return def.description;
+function rarityBadge(recipe: CraftingRecipe): string {
+  const badge = RARITY_BADGE[recipe.resultItem.rarity] ?? '';
+  return badge ? `${badge} ` : '';
+}
+
+/** Kısa bonus satırı (ana liste) */
+export function formatCraftShortEffect(def: ConsumableItemDef): string {
+  const icon = effectEmoji(def);
+  switch (def.effectType) {
+    case 'stamina_restore_once':
+      return `${icon} +${def.effectValue} Stamina`;
+    case 'stamina_boost_once':
+      return `${icon} +${def.effectValue} Stamina`;
+    case 'upgrade_bonus_once':
+      return `${icon} +${def.effectValue} Upgrade`;
+    case 'hunt_catch_once':
+      return `${icon} +${Math.round(def.effectValue * 100)}% Catch`;
+    case 'pvp_damage_once':
+      return `${icon} +${Math.round(def.effectValue * 100)}% PvP Damage`;
+    case 'pvp_dodge_equip':
+      return `${icon} +${Math.round(def.effectValue * 100)}% Dodge`;
+    case 'hunt_loot_once':
+      return `${icon} +${Math.round(def.effectValue * 100)}% Drop`;
+    case 'downgrade_shield_once':
+      return `${icon} %${Math.round((1 - def.effectValue) * 100)} Daha Az Risk`;
+    default:
+      return `${icon} ${def.description}`;
+  }
 }
 
 export function getCraftDisplayName(recipe: CraftingRecipe): string {
@@ -109,18 +160,19 @@ export function evaluateCraftRow(
 ): CraftRowState {
   const def = getConsumableDef(recipe);
   const useId = def?.useId ?? '???';
-  const effectLine = def ? formatCraftShortEffect(def) : recipe.description;
+  const effectLine = def ? formatCraftShortEffect(def) : `✨ ${recipe.description}`;
 
   const missingMat = recipe.requiredMaterials.find(
     (m) => (invMap.get(m.itemName) ?? 0) < m.quantity,
   );
 
   if (missingMat) {
+    const matName = displayMaterial(missingMat.itemName);
     return {
       recipe,
       useId,
       status: 'material',
-      subline: `${displayMaterial(missingMat.itemName)} Eksik`,
+      subline: `${materialEmoji(missingMat.itemName)} ${matName} Eksik`,
       sortOrder: STATUS_SORT.material,
     };
   }
@@ -131,7 +183,7 @@ export function evaluateCraftRow(
       recipe,
       useId,
       status: 'coin',
-      subline: `${formatCraftCoins(deficit)} Coin Eksik`,
+      subline: `💰 ${formatCraftCoins(deficit)} Coin Eksik`,
       sortOrder: STATUS_SORT.coin,
     };
   }
@@ -147,7 +199,7 @@ export function evaluateCraftRow(
 
 function boxTitle(title: string): string[] {
   const inner = `   ${title}`;
-  const w = Math.max(14, inner.length + 2);
+  const w = Math.max(16, inner.length + 2);
   return [
     `╭${'─'.repeat(w)}╮`,
     inner,
@@ -155,10 +207,25 @@ function boxTitle(title: string): string[] {
   ];
 }
 
+function sectionDivider(kind: CraftStatusKind): string {
+  const label = SECTION_HEADER[kind];
+  const pad = Math.max(4, 22 - label.length);
+  return `${label} ${'─'.repeat(pad)}`;
+}
+
 function formatCraftRow(row: CraftRowState): string {
   const icon = STATUS_ICON[row.status];
   const name = getCraftDisplayName(row.recipe);
-  return `${icon} ${row.useId} ${name}\n   ${row.subline}`;
+  const itemEmoji = row.recipe.emoji;
+  const badge = rarityBadge(row.recipe);
+  return `${icon} ${itemEmoji} ${row.useId} ${badge}${name}\n   ${row.subline}`;
+}
+
+function buildSummaryLine(rows: CraftRowState[], playerCoins: number): string {
+  const ready = rows.filter((r) => r.status === 'ready').length;
+  const coin = rows.filter((r) => r.status === 'coin').length;
+  const mat = rows.filter((r) => r.status === 'material').length;
+  return `💰 **${formatCraftCoins(playerCoins)}** coin  ·  ✨ ${ready} hazır  ·  🟡 ${coin} coin  ·  🔴 ${mat} malzeme`;
 }
 
 /** Ana crafting menüsü — düz text */
@@ -172,25 +239,29 @@ export function buildCraftMenuText(
     .sort((a, b) => a.sortOrder - b.sortOrder || a.useId.localeCompare(b.useId));
 
   const lines: string[] = [
-    ...boxTitle('🔨 Crafting'),
+    ...boxTitle('🔨 Crafting Atölyesi'),
+    '',
+    buildSummaryLine(rows, playerCoins),
     '',
   ];
 
   let lastSort = -1;
   for (const row of rows) {
-    if (lastSort >= 0 && row.sortOrder !== lastSort) {
-      lines.push('━━━━━━━━━━━━━━━━━━', '');
+    if (row.sortOrder !== lastSort) {
+      if (lastSort >= 0) lines.push('');
+      lines.push(sectionDivider(row.status), '');
+      lastSort = row.sortOrder;
     }
     lines.push(formatCraftRow(row), '');
-    lastSort = row.sortOrder;
   }
 
   lines.push(
     '━━━━━━━━━━━━━━━━━━',
     '',
+    '📋 Durum Rehberi',
     '🟢 Üretilebilir',
-    '🟡 Yeterli malzeme var, coin eksik',
-    '🔴 En az bir gerekli malzeme eksik',
+    '🟡 Malzeme tam · coin eksik',
+    '🔴 En az bir malzeme eksik',
     '',
     '━━━━━━━━━━━━━━━━━━',
     '',
@@ -201,47 +272,48 @@ export function buildCraftMenuText(
   return lines.join('\n');
 }
 
-function dotPad(label: string, have: number, need: number, ok: boolean): string {
-  const left = `${ok ? '✅' : '❌'} ${label}`;
+function dotPad(label: string, emoji: string, have: number, need: number, ok: boolean): string {
+  const left = `${ok ? '✅' : '❌'} ${emoji} ${label}`;
   const right = `${formatCraftCoins(have)} / ${formatCraftCoins(need)}`;
-  const dots = Math.max(1, 18 - label.length);
+  const dots = Math.max(1, 16 - label.length);
   return `${left} ${'.'.repeat(dots)} ${right}`;
 }
 
 function formatDuration(mins: number): string {
-  return `${mins} Dakika`;
+  return `⏱️ ${mins} Dakika`;
 }
 
 function formatDetailEffect(def: ConsumableItemDef): string[] {
+  const icon = effectEmoji(def);
   switch (def.effectType) {
     case 'stamina_restore_once':
     case 'stamina_boost_once':
-      return ['Av sonunda', `stamina +${def.effectValue}`];
+      return [`${icon} Av sonunda`, `   stamina **+${def.effectValue}**`];
     case 'upgrade_bonus_once':
-      return ['Sonraki upgrade\'de', `başarı şansı +${def.effectValue} puan`];
+      return [`${icon} Sonraki upgrade'de`, `   başarı şansı **+${def.effectValue} puan**`];
     case 'hunt_catch_once':
-      return ['Sonraki avda', `yakalama şansı +${Math.round(def.effectValue * 100)}%`];
+      return [`${icon} Sonraki avda`, `   yakalama **+${Math.round(def.effectValue * 100)}%**`];
     case 'pvp_damage_once':
-      return ['Sonraki PvP\'de', `hasar +${Math.round(def.effectValue * 100)}%`];
+      return [`${icon} Sonraki PvP'de`, `   hasar **+${Math.round(def.effectValue * 100)}%**`];
     case 'pvp_dodge_equip':
-      return [`${Math.round(def.durationMs / 60000)} dk boyunca`, `dodge +${Math.round(def.effectValue * 100)}%`];
+      return [`${icon} ${Math.round(def.durationMs / 60000)} dk boyunca`, `   dodge **+${Math.round(def.effectValue * 100)}%**`];
     case 'hunt_loot_once':
-      return ['Sonraki avda', `drop şansı +${Math.round(def.effectValue * 100)}%`];
+      return [`${icon} Sonraki avda`, `   drop **+${Math.round(def.effectValue * 100)}%**`];
     case 'downgrade_shield_once':
-      return ['Sonraki upgrade\'de', 'downgrade riski yarıya iner'];
+      return [`${icon} Sonraki upgrade'de`, '   downgrade riski **yarıya iner**'];
     default:
-      return [def.description];
+      return [`${icon} ${def.description}`];
   }
 }
 
 function formatStatusLine(row: CraftRowState): string {
   switch (row.status) {
     case 'ready':
-      return '🟢 Üretilebilir';
+      return '✨ 🟢 Üretilebilir — hemen craft edebilirsin!';
     case 'coin':
-      return `🟡 ${row.subline}`;
+      return `💸 🟡 ${row.subline}`;
     case 'material':
-      return `🔴 ${row.subline}`;
+      return `📦 🔴 ${row.subline}`;
   }
 }
 
@@ -256,6 +328,7 @@ export function buildCraftInfoText(
   const row = evaluateCraftRow(recipe, invMap, playerCoins);
   const displayName = getCraftDisplayName(recipe);
   const emoji = recipe.emoji;
+  const badge = rarityBadge(recipe);
   const mins = def ? Math.round(def.durationMs / 60000) : 0;
 
   const lines: string[] = [
@@ -265,9 +338,10 @@ export function buildCraftInfoText(
 
   if (def) {
     lines.push(
-      `ID: ${def.useId}`,
-      `Tür: ${GEAR_TYPE_LABEL[def.gearCategory] ?? def.gearCategory}`,
-      `Süre: ${formatDuration(mins)}`,
+      `🆔 ID · **${def.useId}**`,
+      `🏷️ Tür · ${GEAR_TYPE_LABEL[def.gearCategory] ?? def.gearCategory}`,
+      `⏱️ Süre · **${mins} Dakika**`,
+      `${badge || '⬜'} Nadir · **${recipe.resultItem.rarity}**`,
       '',
       '━━━━━━━━━━━━━━━━━━',
       '',
@@ -286,20 +360,21 @@ export function buildCraftInfoText(
 
   for (const mat of recipe.requiredMaterials) {
     const have = invMap.get(mat.itemName) ?? 0;
-    lines.push(dotPad(displayMaterial(mat.itemName), have, mat.quantity, have >= mat.quantity));
+    const label = displayMaterial(mat.itemName);
+    lines.push(dotPad(label, materialEmoji(mat.itemName), have, mat.quantity, have >= mat.quantity));
   }
 
   lines.push(
-    dotPad('Coin', playerCoins, recipe.requiredCoins, playerCoins >= recipe.requiredCoins),
+    dotPad('Coin', '💰', playerCoins, recipe.requiredCoins, playerCoins >= recipe.requiredCoins),
     '',
     '━━━━━━━━━━━━━━━━━━',
     '',
-    'Durum:',
+    '🎯 Durum',
     formatStatusLine(row),
     '',
     '━━━━━━━━━━━━━━━━━━',
     '',
-    '⚒️ Üret:',
+    '⚒️ Üret',
     `\`${prefix} craft ${row.useId}\``,
   );
 
