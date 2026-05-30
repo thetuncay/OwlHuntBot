@@ -2,8 +2,24 @@
  * market-ux.ts — Global Marketplace monospace UI
  */
 
-import type { MarketAnalytics, MarketListing, MarketSale } from '@prisma/client';
+import type { MarketListing } from '@prisma/client';
 import type { MarketCategory, MarketSort } from '../systems/market';
+
+/** Satış kaydı — UI için (Prisma MarketSale ile uyumlu) */
+export interface MarketSaleView {
+  itemName: string;
+  marketCategory: string;
+  quantity: number;
+  salePrice: number;
+  soldAt: Date;
+}
+
+/** Piyasa analitiği — UI için */
+export interface MarketAnalyticsView {
+  lastSalePrice: number;
+  averagePrice24h: number;
+  averagePrice7d: number;
+}
 
 const CATEGORY_META: Record<MarketCategory, { emoji: string; label: string }> = {
   owl:      { emoji: '🦉', label: 'Baykuşlar' },
@@ -56,7 +72,7 @@ function formatListingLine(l: MarketListing): string {
   return `#${l.listingNo} ${cat} **${l.itemName}**${qty}\n   💰 ${formatMarketCoins(l.price)} coin`;
 }
 
-function formatAnalyticsBlock(analytics: MarketAnalytics | null): string[] {
+function formatAnalyticsBlock(analytics: MarketAnalyticsView | null): string[] {
   if (!analytics || analytics.lastSalePrice === 0) {
     return ['📊 Henüz satış verisi yok.', ''];
   }
@@ -73,7 +89,7 @@ function formatAnalyticsBlock(analytics: MarketAnalytics | null): string[] {
 /** Ana market hub */
 export function buildMarketHubText(
   categoryCounts: Record<MarketCategory, number>,
-  recentSales: MarketSale[],
+  recentSales: MarketSaleView[],
   prefix: string,
 ): string {
   const lines: string[] = [
@@ -186,7 +202,7 @@ export function buildMarketBrowseText(
 /** İlan detay */
 export function buildMarketInfoText(
   listing: MarketListing,
-  analytics: MarketAnalytics | null,
+  analytics: MarketAnalyticsView | null,
   prefix: string,
 ): string {
   const cat = CATEGORY_META[listing.marketCategory as MarketCategory];
