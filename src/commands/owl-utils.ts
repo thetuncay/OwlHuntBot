@@ -23,7 +23,7 @@ export const TEXT_SUBCOMMANDS = [
   'use', 'u',
   'buff', 'buffs', 'b', 'bs', 'gem', 'gems',
   'item', 'i',
-  'craft', 'dismantle', 'market', 'prestige', 'quests',
+  'craft', 'craftinfo', 'dismantle', 'market', 'prestige', 'quests',
   // kısaltmalar
   'h', 's', 'sm', 'z', 'd', 'c', 't', 'g',
   'p', 'sl', 'ow', 'y', 'pf',

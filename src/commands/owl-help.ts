@@ -69,6 +69,8 @@ export function buildHelpEmbed(prefix: string): EmbedBuilder {
     `\`${p} market sat <eşya> <miktar> <fiyat>\` — Markete eşya koy`,
     `\`${p} market al <ilan_id>\` — Marketten eşya satın al`,
     `\`${p} craft\` — Craft menüsü (8 tarif)`,
+    `\`${p} craftinfo <id>\` — Tarif detayı (013–020)`,
+    `\`${p} craft <id>\` — Belirli tarifi üret`,
     `\`${p} use <id>\` · \`${p} u <id>\` — Buff (001–012) veya craft item (013–020)`,
     `\`${p} use\` — Yük slotlarını gör (max 2 craft item)`,
     `\`${p} buffs\` — Tüm buff rehberini gör`,

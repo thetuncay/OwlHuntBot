@@ -29,7 +29,7 @@ import { runUpgrade, runUpgradeMessage } from './owl-upgrade';
 import { runTame, runTameMessage } from './owl-tame';
 import { runTransfer, runTransferMessage } from './owl-transfer';
 import { runSellMessage, runZooMessage, runCashMessage, runPrefixMessage, runPrefix, runAcMessage, runSkMessage, runEkMessage, runBuffsMessage } from './owl-misc';
-import { runCraftMessage, runDismantleMessage, runCraftSlash, runDismantleSlash } from './owl-crafting';
+import { runCraftMessage, runCraftInfoMessage, runDismantleMessage, runCraftSlash, runDismantleSlash } from './owl-crafting';
 import { runUseMessage } from './owl-use';
 import { runMarketMessage, runMarketSlash } from './owl-market';
 import { runPrestigeMessage, runPrestigeSlash } from './owl-prestige';
@@ -205,6 +205,7 @@ export async function handleOwlTextCommand(
     case 'use':       await runUseMessage(message, args, ctx, helpPrefix);     break;
     case 'buffs':     await runBuffsMessage(message, args, helpPrefix);        break;
     case 'craft':     await runCraftMessage(message, args, ctx, helpPrefix);   break;
+    case 'craftinfo': await runCraftInfoMessage(message, args, ctx, helpPrefix); break;
     case 'dismantle': await runDismantleMessage(message, args, ctx, helpPrefix); break;
     case 'market':    await runMarketMessage(message, args, ctx, helpPrefix); break;
     case 'prestige':  await runPrestigeMessage(message, args, ctx, helpPrefix); break;
