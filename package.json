@@ -31,7 +31,10 @@
     "prisma:generate": "prisma generate",
     "prisma:db:push": "prisma db push",
     "deploy:commands": "tsx src/deploy-commands.ts",
-    "deploy:commands:prod": "node --import tsx dist/deploy-commands.js"
+    "deploy:commands:prod": "node --import tsx dist/deploy-commands.js",
+    "migrate:backup": "node --import tsx src/scripts/backup-mongodb.ts",
+    "migrate:data": "MIGRATION_CONFIRM=yes node --import tsx src/scripts/migrate-mongodb-to-pg.ts",
+    "migrate:post": "node --import tsx src/scripts/post-migration.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
