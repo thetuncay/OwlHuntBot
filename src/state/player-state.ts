@@ -218,9 +218,11 @@ export function computeXpDelta(
 /** Hunt sonrasi Redis state guncelle (atomik degil ama tek oyuncu lock altinda). */
 export async function applyHuntDelta(
   redis: Redis,
+  prisma: PrismaClient,
   playerId: string,
   delta: HuntStateDelta,
 ): Promise<CachedPlayerData> {
+  await loadPlayerForMutation(redis, prisma, playerId);
   const rawPlayer = await redis.get(playerKey(playerId));
   if (!rawPlayer) throw new Error('Oyuncu state bulunamadi — hydrate gerekli.');
   const player = JSON.parse(rawPlayer) as CachedPlayerData;
@@ -242,7 +244,22 @@ export async function applyHuntDelta(
   const pipeline = redis.pipeline();
 
   if (delta.bondGain > 0 && delta.owlId) {
-    const rawOwl = await redis.get(owlKey(delta.owlId));
+    let rawOwl = await redis.get(owlKey(delta.owlId));
+    if (!rawOwl) {
+      const dbOwl = await prisma.owl.findUnique({
+        where: { id: delta.owlId },
+        select: {
+          id: true, ownerId: true, species: true, tier: true, bond: true,
+          statGaga: true, statGoz: true, statKulak: true, statKanat: true, statPence: true,
+          quality: true, hp: true, hpMax: true, staminaCur: true,
+          isMain: true, effectiveness: true, traits: true,
+        },
+      });
+      if (dbOwl) {
+        await redis.set(owlKey(delta.owlId), JSON.stringify(dbOwl));
+        rawOwl = JSON.stringify(dbOwl);
+      }
+    }
     if (rawOwl) {
       const owl = JSON.parse(rawOwl) as CachedOwlData;
       owl.bond = Math.min(100, (owl.bond ?? 0) + delta.bondGain);
@@ -333,15 +350,28 @@ export async function applyHuntDelta(
   return player;
 }
 
+/** Redis'te yoksa PG'den hydrate et. */
+async function loadPlayerForMutation(
+  redis: Redis,
+  prisma: PrismaClient | undefined,
+  playerId: string,
+): Promise<CachedPlayerData> {
+  const raw = await redis.get(playerKey(playerId));
+  if (raw) return JSON.parse(raw) as CachedPlayerData;
+  if (!prisma) throw new Error('Oyuncu state bulunamadi.');
+  const bundle = await hydratePlayerState(redis, prisma, playerId);
+  if (!bundle) throw new Error('Oyuncu bulunamadi.');
+  return bundle.player;
+}
+
 /** Biyom giris ucreti — Redis coin dus. */
 export async function deductCoinsInRedis(
   redis: Redis,
   playerId: string,
   amount: number,
+  prisma?: PrismaClient,
 ): Promise<number> {
-  const raw = await redis.get(playerKey(playerId));
-  if (!raw) throw new Error('Oyuncu state bulunamadi.');
-  const player = JSON.parse(raw) as CachedPlayerData;
+  const player = await loadPlayerForMutation(redis, prisma, playerId);
   if (player.coins < amount) throw new Error('Yetersiz coin.');
   player.coins -= amount;
   await redis.set(playerKey(playerId), JSON.stringify(player));
@@ -355,15 +385,62 @@ export async function applyCoinDeltaInRedis(
   redis: Redis,
   playerId: string,
   delta: number,
+  prisma?: PrismaClient,
 ): Promise<number> {
-  const raw = await redis.get(playerKey(playerId));
-  if (!raw) throw new Error('Oyuncu state bulunamadi.');
-  const player = JSON.parse(raw) as CachedPlayerData;
+  const player = await loadPlayerForMutation(redis, prisma, playerId);
   player.coins = Math.max(0, player.coins + delta);
   await redis.set(playerKey(playerId), JSON.stringify(player));
   await markDirty(redis, playerId);
   enqueuePersistPlayer(playerId);
   return player.coins;
+}
+
+const PCACHE_PLAYER_PREFIX = 'pcache:player:';
+
+/** PG yazimindan sonra Redis state senkronize et (coin veya tam invalidate). */
+export async function syncPlayerStateAfterPgWrite(
+  redis: Redis | undefined,
+  prisma: PrismaClient,
+  playerId: string,
+  mode: 'coins' | 'full' = 'coins',
+): Promise<void> {
+  if (!redis) return;
+  if (mode === 'full') {
+    await invalidatePlayerState(redis, playerId);
+  } else {
+    await refreshPlayerCoinsInRedis(redis, prisma, playerId);
+  }
+}
+
+/** PG coin yazimindan sonra Redis coin alanini senkronize et. */
+export async function refreshPlayerCoinsInRedis(
+  redis: Redis,
+  prisma: PrismaClient,
+  playerId: string,
+): Promise<void> {
+  const db = await prisma.player.findUnique({
+    where: { id: playerId },
+    select: { coins: true },
+  });
+  if (!db) return;
+  try {
+    const player = await loadPlayerForMutation(redis, prisma, playerId);
+    player.coins = db.coins;
+    await redis.set(playerKey(playerId), JSON.stringify(player));
+    await markDirty(redis, playerId);
+    enqueuePersistPlayer(playerId);
+  } catch {
+    await invalidatePlayerState(redis, playerId);
+  }
+}
+
+/** Redis hot state + eski pcache temizle — sonraki okuma PG'den hydrate eder. */
+export async function invalidatePlayerState(redis: Redis, playerId: string): Promise<void> {
+  await redis.del(
+    playerKey(playerId),
+    hydratedKey(playerId),
+    `${PCACHE_PLAYER_PREFIX}${playerId}`,
+  );
 }
 
 /** Worker: dirty oyunculari PG'ye persist et. */
@@ -483,11 +560,28 @@ export function buildLevelUpRewards(
 /** Upgrade/PvP sonrasi owl stat guncelleme — Redis-first. */
 export async function applyOwlStatUpdate(
   redis: Redis,
+  prisma: PrismaClient,
   playerId: string,
   owlId: string,
   updates: Partial<Pick<CachedOwlData, 'statGaga' | 'statGoz' | 'statKulak' | 'statKanat' | 'statPence' | 'bond' | 'effectiveness'>>,
 ): Promise<void> {
-  const raw = await redis.get(owlKey(owlId));
+  await loadPlayerForMutation(redis, prisma, playerId);
+  let raw = await redis.get(owlKey(owlId));
+  if (!raw) {
+    const dbOwl = await prisma.owl.findUnique({
+      where: { id: owlId },
+      select: {
+        id: true, ownerId: true, species: true, tier: true, bond: true,
+        statGaga: true, statGoz: true, statKulak: true, statKanat: true, statPence: true,
+        quality: true, hp: true, hpMax: true, staminaCur: true,
+        isMain: true, effectiveness: true, traits: true,
+      },
+    });
+    if (dbOwl) {
+      await redis.set(owlKey(owlId), JSON.stringify(dbOwl));
+      raw = JSON.stringify(dbOwl);
+    }
+  }
   if (!raw) return;
   const owl = JSON.parse(raw) as CachedOwlData;
   Object.assign(owl, updates);

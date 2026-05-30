@@ -231,7 +231,7 @@ export async function simulatePvP(
   const totalCoinGain = 100 + streakResult.bonusCoins;
 
   if (redis) {
-    await applyCoinDeltaInRedis(redis, winner.playerId, totalCoinGain);
+    await applyCoinDeltaInRedis(redis, winner.playerId, totalCoinGain, prisma);
   }
 
   await prisma.$transaction(async (tx) => {

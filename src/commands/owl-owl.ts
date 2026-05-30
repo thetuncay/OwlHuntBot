@@ -17,6 +17,7 @@ import { withLock } from '../utils/lock';
 import { formatDuration } from '../utils/format';
 import { successEmbed, warningEmbed, failEmbed } from '../utils/embed';
 import type { CommandDefinition } from '../types';
+import { syncPlayerStateAfterPgWrite } from '../state/player-state';
 
 // Prisma Owl modelinin lokal tip tanımı (generate edilmemiş @prisma/client için)
 interface OwlRecord {
@@ -80,6 +81,7 @@ export async function runSetMain(
   });
 
   // Cooldown sadece başarılı işlemden sonra set edilir
+  await syncPlayerStateAfterPgWrite(ctx.redis, ctx.prisma, userId, 'full');
   await setCooldown(ctx.redis, `cooldown:switch:${userId}`, SWITCH_COOLDOWN_MS);
   await interaction.reply({ embeds: [successEmbed('Main Degisti', 'Yeni main baykus aktif. 🦉')], flags: 64 });
 }
@@ -164,6 +166,7 @@ export async function runSetMainMessage(
   });
 
   // Cooldown sadece başarılı işlemden sonra set edilir
+  await syncPlayerStateAfterPgWrite(ctx.redis, ctx.prisma, userId, 'full');
   await setCooldown(ctx.redis, `cooldown:switch:${userId}`, SWITCH_COOLDOWN_MS);
   await message.reply(`✅ **Main Degisti** | Yeni main baykus aktif. 🦉`);
 }
@@ -282,6 +285,7 @@ export async function runOwls(
           });
         });
         // Cooldown sadece başarılı işlemden sonra set edilir
+        await syncPlayerStateAfterPgWrite(ctx.redis, ctx.prisma, userId, 'full');
         await setCooldown(ctx.redis, `cooldown:switch:${userId}`, SWITCH_COOLDOWN_MS);
         // Listeyi güncelle
         currentOwls = currentOwls.map((o) => ({ ...o, isMain: o.id === targetOwlId }));
@@ -404,6 +408,7 @@ export async function runOwlsMessage(
           });
         });
         // Cooldown sadece başarılı işlemden sonra set edilir
+        await syncPlayerStateAfterPgWrite(ctx.redis, ctx.prisma, userId, 'full');
         await setCooldown(ctx.redis, `cooldown:switch:${userId}`, SWITCH_COOLDOWN_MS);
         currentOwls = currentOwls.map((o) => ({ ...o, isMain: o.id === targetOwlId }));
       } catch (err) {

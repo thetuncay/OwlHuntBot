@@ -678,7 +678,7 @@ export async function sendEncounterMessage(
     if (action === 'enc_fight') {
       await i.deferUpdate();
       try {
-        const fightResult = await resolveEncounterFight(ctx.prisma, userId, eid);
+        const fightResult = await resolveEncounterFight(ctx.prisma, userId, eid, ctx.redis);
         await i.editReply({ embeds: [buildEncounterFightEmbed(fightResult)], components: [] });
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Bir hata oluştu.';

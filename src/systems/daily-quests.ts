@@ -1,7 +1,9 @@
 import type { PrismaClient } from '@prisma/client';
+import type { Redis } from 'ioredis';
 import { DAILY_QUEST_TYPES, DAILY_QUEST_CONFIG } from '../config';
 import { addXP } from './xp';
 import { withLock } from '../utils/lock';
+import { syncPlayerStateAfterPgWrite } from '../state/player-state';
 
 /**
  * Oyuncu için günlük görevleri oluşturur (eğer yoksa).
@@ -56,11 +58,12 @@ export async function trackQuestProgress(
 export async function claimQuestReward(
   prisma: PrismaClient,
   playerId: string,
-  questId: string
+  questId: string,
+  redis?: Redis,
 ) {
   // withLock: çift tıklama / concurrent claim'i önler
   return withLock(playerId, 'quest_claim', async () => {
-    return prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
       const quest = await tx.dailyQuest.findUnique({ where: { id: questId } });
 
       if (!quest || quest.playerId !== playerId) throw new Error('Görev bulunamadı.');
@@ -81,5 +84,7 @@ export async function claimQuestReward(
 
       return { coins: quest.rewardCoins, xp: quest.rewardXp, levelUp: xpResult.levelUp };
     });
+    await syncPlayerStateAfterPgWrite(redis, prisma, playerId, 'coins');
+    return result;
   });
 }

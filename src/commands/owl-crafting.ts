@@ -55,7 +55,7 @@ export async function runCraftMessage(
   }
 
   try {
-    const result = await craftItem(ctx.prisma, userId, recipe.id);
+    const result = await craftItem(ctx.prisma, userId, recipe.id, ctx.redis);
     await message.reply({
       embeds: [successEmbed('Başarılı!', `**${recipe.emoji} ${recipe.name}** başarıyla üretildi ve envanterine eklendi.`)]
     });
@@ -124,7 +124,7 @@ export async function runCraftSlash(interaction: ChatInputCommandInteraction, ct
         await interaction.editReply({ embeds: [failEmbed('Hata', 'Tarif bulunamadı.')], components: [] });
         return;
       }
-      await craftItem(ctx.prisma, userId, recipeId);
+      await craftItem(ctx.prisma, userId, recipeId, ctx.redis);
       await interaction.editReply({
         embeds: [successEmbed('Başarılı!', `**${recipe.emoji} ${recipe.name}** başarıyla üretildi ve envanterine eklendi.`)],
         components: [],
@@ -152,7 +152,7 @@ export async function runDismantleSlash(interaction: ChatInputCommandInteraction
   await interaction.deferReply({ flags: 64 });
 
   try {
-    const produced = await dismantleItem(ctx.prisma, userId, itemName, quantity);
+    const produced = await dismantleItem(ctx.prisma, userId, itemName, quantity, ctx.redis);
     const producedStr = produced.map(p => `${p.quantity}x ${p.itemName}`).join(', ');
     await interaction.editReply({
       embeds: [successEmbed('Parçalama Başarılı', `**${quantity}x ${itemName}** parçalandı.\n\nElde edilen materyaller: **${producedStr}**`)]
@@ -184,7 +184,7 @@ export async function runDismantleMessage(
   const quantity = parseInt(args[1] ?? '1') || 1;
 
   try {
-    const produced = await dismantleItem(ctx.prisma, userId, itemName, quantity);
+    const produced = await dismantleItem(ctx.prisma, userId, itemName, quantity, ctx.redis);
     const producedStr = produced.map(p => `${p.quantity}x ${p.itemName}`).join(', ');
     await message.reply({
       embeds: [successEmbed('Parçalama Başarılı', `**${quantity}x ${itemName}** parçalandı.\n\nElde edilen materyaller: **${producedStr}**`)]

@@ -24,6 +24,7 @@ import {
   TRANSFER_TAX_BRACKETS,
 } from '../config';
 import { withLock } from '../utils/lock';
+import { syncPlayerStateAfterPgWrite } from '../state/player-state';
 
 // ── TİPLER ───────────────────────────────────────────────────────────────────
 
@@ -200,6 +201,10 @@ export async function transferCoins(
 
     // Cooldown lock body içinde set edilir — crash window ortadan kalkar
     await setTransferCooldown(redis, senderId);
+    await Promise.all([
+      syncPlayerStateAfterPgWrite(redis, prisma, senderId, 'coins'),
+      syncPlayerStateAfterPgWrite(redis, prisma, receiverId, 'coins'),
+    ]);
     return result;
   });
 }

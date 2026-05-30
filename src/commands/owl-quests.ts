@@ -71,7 +71,7 @@ export async function runQuestsMessage(
       if (!questId) return;
 
       try {
-        const reward = await claimQuestReward(ctx.prisma, userId, questId);
+        const reward = await claimQuestReward(ctx.prisma, userId, questId, ctx.redis);
         await i.update({
           content: `🎉 **Görev Ödülü Alındı!**\nKazancın: **${reward.coins}** 💰 ve **${reward.xp}** XP${reward.levelUp ? '\n🆙 **LEVEL UP!**' : ''}`,
           embeds: [],
@@ -145,7 +145,7 @@ export async function runQuestsSlash(interaction: ChatInputCommandInteraction, c
       if (!questId) return;
 
       try {
-        const reward = await claimQuestReward(ctx.prisma, userId, questId);
+        const reward = await claimQuestReward(ctx.prisma, userId, questId, ctx.redis);
         await i.update({
           content: `🎉 **Görev Ödülü Alındı!**\nKazancın: **${reward.coins}** 💰 ve **${reward.xp}** XP${reward.levelUp ? '\n🆙 **LEVEL UP!**' : ''}`,
           embeds: [],

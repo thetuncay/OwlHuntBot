@@ -12,8 +12,10 @@
 // ============================================================
 
 import type { PrismaClient } from '@prisma/client';
+import type { Redis } from 'ioredis';
 import { statEffect } from '../utils/math';
 import { addXP } from './xp';
+import { applyCoinDeltaInRedis } from '../state/player-state';
 import type { EncounterFightResult } from '../utils/encounter-ux';
 
 // ─── ÖDÜL TABLOSU ─────────────────────────────────────────────────────────────
@@ -99,6 +101,7 @@ export async function resolveEncounterFight(
   prisma:      PrismaClient,
   playerId:    string,
   encounterId: string,
+  redis?:      Redis,
 ): Promise<EncounterFightResult> {
   // Encounter ve oyuncu verilerini paralel çek
   const [encounter, player, mainOwl] = await Promise.all([
@@ -171,13 +174,15 @@ export async function resolveEncounterFight(
   const { coins, xp } = calcReward(baseCoin, baseXP, playerPower, enemyPower);
 
   // Coin ve XP ver
-  await Promise.all([
-    prisma.player.update({
+  if (redis) {
+    await applyCoinDeltaInRedis(redis, playerId, coins, prisma);
+  } else {
+    await prisma.player.update({
       where: { id: playerId },
       data: { coins: { increment: coins } },
-    }),
-    addXP(prisma, playerId, xp, 'encounterFight'),
-  ]);
+    });
+  }
+  await addXP(prisma, playerId, xp, 'encounterFight');
 
   return {
     playerWon:   true,

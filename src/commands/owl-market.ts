@@ -36,7 +36,7 @@ export async function runMarketMessage(
     }
 
     try {
-      await createListing(ctx.prisma, userId, itemName, qty, price);
+      await createListing(ctx.prisma, userId, itemName, qty, price, ctx.redis);
       await message.reply({ embeds: [successEmbed('İlan Oluşturuldu', `**${qty}x ${itemName}** markete **${price}** 💰 fiyatla eklendi.`)] });
     } catch (err: any) {
       await message.reply({ embeds: [failEmbed('Hata', err.message)] });
@@ -53,7 +53,7 @@ export async function runMarketMessage(
     }
 
     try {
-      const { listing, tax, sellerGain } = await buyListing(ctx.prisma, userId, listingId);
+      const { listing, tax, sellerGain } = await buyListing(ctx.prisma, userId, listingId, ctx.redis);
       await message.reply({
         embeds: [successEmbed('Satın Alma Başarılı', `**${listing.quantity}x ${listing.itemName}** satın aldın.\n\nÖdenen: **${listing.price}** 💰\nKesilen Vergi: **${tax}** 💰`)]
       });
@@ -110,7 +110,7 @@ export async function runMarketSlash(interaction: ChatInputCommandInteraction, c
     }
     await interaction.deferReply({ flags: 64 });
     try {
-      await createListing(ctx.prisma, userId, p1, p2, p3);
+      await createListing(ctx.prisma, userId, p1, p2, p3, ctx.redis);
       await interaction.editReply({ embeds: [successEmbed('İlan Oluşturuldu', `**${p2}x ${p1}** markete **${p3}** 💰 fiyatla eklendi.`)] });
     } catch (err: any) {
       await interaction.editReply({ embeds: [failEmbed('Hata', err.message)] });
@@ -122,7 +122,7 @@ export async function runMarketSlash(interaction: ChatInputCommandInteraction, c
     if (!p1) return interaction.reply({ content: '❌ İlan ID belirtmelisin.', flags: 64 });
     await interaction.deferReply({ flags: 64 });
     try {
-      const { listing, tax } = await buyListing(ctx.prisma, userId, p1);
+      const { listing, tax } = await buyListing(ctx.prisma, userId, p1, ctx.redis);
       await interaction.editReply({
         embeds: [successEmbed('Satın Alma Başarılı', `**${listing.quantity}x ${listing.itemName}** satın aldın.\n\nÖdenen: **${listing.price}** 💰\nKesilen Vergi: **${tax}** 💰`)]
       });

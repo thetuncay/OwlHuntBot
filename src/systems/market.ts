@@ -9,6 +9,8 @@ import {
 } from '../config';
 import { withLock } from '../utils/lock';
 import { trackQuestProgress } from './daily-quests';
+import type { Redis } from 'ioredis';
+import { syncPlayerStateAfterPgWrite } from '../state/player-state';
 
 /**
  * Markette yeni bir ilan oluşturur.
@@ -18,7 +20,8 @@ export async function createListing(
   sellerId: string,
   itemName: string,
   quantity: number,
-  price: number
+  price: number,
+  redis?: Redis,
 ) {
   return withLock(sellerId, 'market_list', async () => {
     const player = await prisma.player.findUnique({
@@ -85,6 +88,9 @@ export async function createListing(
       trackQuestProgress(tx as any, sellerId, 'market').catch(() => null);
 
       return listing;
+    }).then(async (listing) => {
+      await syncPlayerStateAfterPgWrite(redis, prisma, sellerId, 'full');
+      return listing;
     });
   });
 }
@@ -96,7 +102,8 @@ export async function createListing(
 export async function buyListing(
   prisma: PrismaClient,
   buyerId: string,
-  listingId: string
+  listingId: string,
+  redis?: Redis,
 ) {
   return withLock(buyerId, 'market_buy', async () => {
     return prisma.$transaction(async (tx) => {
@@ -156,6 +163,12 @@ export async function buyListing(
       });
 
       return { listing, tax, sellerGain };
+    }).then(async (result) => {
+      await Promise.all([
+        syncPlayerStateAfterPgWrite(redis, prisma, buyerId, 'full'),
+        syncPlayerStateAfterPgWrite(redis, prisma, result.listing.sellerId, 'full'),
+      ]);
+      return result;
     });
   });
 }

@@ -4,6 +4,7 @@ import { archiveAndResetSeason, getCurrentSeason, invalidateLeaderboardCache, re
 import { createLeaderboardRoles, syncAllRoles } from '../systems/roles';
 import { handleTestTame } from './admin-testtame';
 import { undoLastAction } from '../utils/audit';
+import { syncPlayerStateAfterPgWrite } from '../state/player-state';
 
 const ADMIN_IDS = new Set([
   '1110219662509224006',
@@ -249,6 +250,7 @@ async function execute(
     if (!player) { await interaction.reply({ content: `❌ <@${user.id}> kayıtlı değil.`, flags: 64 }); return; }
 
     await ctx.prisma.player.update({ where: { id: user.id }, data: { coins: { increment: amount } } });
+    await syncPlayerStateAfterPgWrite(ctx.redis, ctx.prisma, user.id, 'coins');
     await interaction.reply({ content: `✅ <@${user.id}> +${amount} coin eklendi. 💰`, flags: 64 });
     return;
   }
@@ -805,6 +807,10 @@ async function execute(
     await ctx.prisma.$transaction([
       ctx.prisma.player.update({ where: { id: from.id }, data: { coins: { decrement: amount } } }),
       ctx.prisma.player.update({ where: { id: to.id },   data: { coins: { increment: amount } } }),
+    ]);
+    await Promise.all([
+      syncPlayerStateAfterPgWrite(ctx.redis, ctx.prisma, from.id, 'coins'),
+      syncPlayerStateAfterPgWrite(ctx.redis, ctx.prisma, to.id, 'coins'),
     ]);
 
     await interaction.reply({

@@ -1,7 +1,9 @@
 import type { PrismaClient } from '@prisma/client';
+import type { Redis } from 'ioredis';
 import { DISMANTLE_TABLE, CRAFTING_RECIPES } from '../config';
 import { withLock } from '../utils/lock';
 import { trackQuestProgress } from './daily-quests';
+import { syncPlayerStateAfterPgWrite } from '../state/player-state';
 
 /**
  * Bir eşyayı parçalayarak materyal üretir.
@@ -10,7 +12,8 @@ export async function dismantleItem(
   prisma: PrismaClient,
   playerId: string,
   itemName: string,
-  quantity = 1
+  quantity = 1,
+  redis?: Redis,
 ) {
   return withLock(playerId, 'dismantle', async () => {
     return prisma.$transaction(async (tx) => {
@@ -66,6 +69,9 @@ export async function dismantleItem(
       }
 
       return produced;
+    }).then(async (produced) => {
+      await syncPlayerStateAfterPgWrite(redis, prisma, playerId, 'full');
+      return produced;
     });
   });
 }
@@ -76,7 +82,8 @@ export async function dismantleItem(
 export async function craftItem(
   prisma: PrismaClient,
   playerId: string,
-  recipeId: string
+  recipeId: string,
+  redis?: Redis,
 ) {
   return withLock(playerId, 'craft', async () => {
     const recipe = CRAFTING_RECIPES.find(r => r.id === recipeId);
@@ -134,6 +141,9 @@ export async function craftItem(
       trackQuestProgress(tx as any, playerId, 'craft').catch(() => null);
 
       return recipe.resultItem;
+    }).then(async (result) => {
+      await syncPlayerStateAfterPgWrite(redis, prisma, playerId, 'full');
+      return result;
     });
   });
 }

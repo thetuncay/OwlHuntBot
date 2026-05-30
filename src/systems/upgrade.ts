@@ -181,7 +181,7 @@ export async function attemptUpgrade(
 
       if (redis) {
         await hydratePlayerState(redis, prisma, playerId);
-        await deductCoinsInRedis(redis, playerId, coinCost);
+        await deductCoinsInRedis(redis, playerId, coinCost, prisma);
       }
 
       // Zorunlu malzeme kontrolü: paralel findUnique
@@ -273,7 +273,7 @@ export async function attemptUpgrade(
       await tx.owl.update({ where: { id: owlId }, data: { [field]: newValue } });
 
       if (redis) {
-        await applyOwlStatUpdate(redis, playerId, owlId, { [field]: newValue } as Partial<{
+        await applyOwlStatUpdate(redis, prisma, playerId, owlId, { [field]: newValue } as Partial<{
           statGaga: number; statGoz: number; statKulak: number; statKanat: number; statPence: number;
         }>);
       }

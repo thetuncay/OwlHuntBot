@@ -178,7 +178,7 @@ export async function rollHunt(
             `Sahip olduğun: **${player.coins}** 💰`,
           );
         }
-        await deductCoinsInRedis(redis, playerId, safeBiome.entryCost);
+        await deductCoinsInRedis(redis, playerId, safeBiome.entryCost, prisma);
         player.coins -= safeBiome.entryCost;
         await setBiomeSession(redis, playerId, biomeId);
       }
@@ -357,7 +357,7 @@ export async function rollHunt(
       noRareStreak: player.noRareStreak,
     };
 
-    await applyHuntDelta(redis, playerId, {
+    await applyHuntDelta(redis, prisma, playerId, {
       gainedXP: xpResult.gainedXP,
       newLevel: xpResult.levelUp ? xpResult.levelUp.newLevel : player.level,
       newXp: xpResult.levelUp ? xpResult.levelUp.remainingXP : xpResult.currentXP,
