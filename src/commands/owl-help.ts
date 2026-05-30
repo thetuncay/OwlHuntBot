@@ -68,8 +68,8 @@ export function buildHelpEmbed(prefix: string): EmbedBuilder {
     `\`${p} market\` — Global marketi görüntüle`,
     `\`${p} market sat <eşya> <miktar> <fiyat>\` — Markete eşya koy`,
     `\`${p} market al <ilan_id>\` — Marketten eşya satın al`,
-    `\`${p} buff\` — Aktif buff item'larını gör`,
-    `\`${p} buff <item adı>\` — Buff item aktifleştir`,
+    `\`${p} use <id>\` · \`${p} u <id>\` — Buff veya item kullan (001–015)`,
+    `\`${p} use\` — Kullanılabilir eşyaları listele`,
     `\`${p} buffs\` — Tüm buff rehberini gör`,
   ].join('\n');
 

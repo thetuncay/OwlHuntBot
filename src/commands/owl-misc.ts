@@ -7,7 +7,7 @@ import { PREY, LOOTBOX_DEFS, LOOTBOX_DEF_MAP, BUFF_ITEMS, BUFF_ITEM_MAP } from '
 import { setGuildPrefix } from '../utils/prefix';
 import { failEmbed } from '../utils/embed';
 import { openLootbox, openAllLootboxes, listLootboxInventory, getPityCounts } from '../systems/lootbox';
-import { activateBuff, listBuffInventory } from '../systems/items';
+import { runUseMessage } from './owl-use';
 import type Redis from 'ioredis';
 import type { CommandDefinition } from '../types';
 import { applyCoinDeltaInRedis, reloadInventoryFromPg } from '../state/player-state';
@@ -365,7 +365,7 @@ async function runCrateOpen(
   }
 }
 
-// ─── buff (buff item aktifleştirme) ──────────────────────────────────────────
+// ─── buff (geriye dönük uyumluluk → use) ─────────────────────────────────────
 
 export async function runBuffMessage(
   message: Message,
@@ -373,91 +373,7 @@ export async function runBuffMessage(
   ctx: Parameters<CommandDefinition['execute']>[1],
   helpPrefix: string,
 ): Promise<void> {
-  const playerId = message.author.id;
-
-  if (!args[0]) {
-    // Envanterdeki buff item'larını listele
-    const buffItems = await listBuffInventory(ctx.prisma as any, playerId);
-
-    if (buffItems.length === 0) {
-      await message.reply(
-        `✨ **Envanterinde hiç buff item yok.**\n` +
-        `> Lootbox açarak buff item kazanabilirsin.\n` +
-        `> Kullanım: \`${helpPrefix} buff <item adı>\``,
-      );
-      return;
-    }
-
-    const lines = buffItems.map(({ def, quantity }) => {
-      // Buff'ın ne işe yaradığını kısa göster
-      const effectMap: Record<string, string> = {
-        catch_bonus:      `🎯 Yakalama +${Math.round(def.effectValue * 100)}%`,
-        loot_mult:        `📦 Drop +${Math.round((def.effectValue - 1) * 100)}%`,
-        rare_drop_bonus:  `🔮 Nadir drop +${Math.round(def.effectValue * 100)}%`,
-        upgrade_bonus:    `⚡ Upgrade şansı +${def.effectValue} puan`,
-        downgrade_shield: `🛡️ Downgrade riski -%${Math.round((1 - def.effectValue) * 100)}`,
-        pvp_damage_mult:  `⚔️ PvP hasar +${Math.round((def.effectValue - 1) * 100)}%`,
-        pvp_dodge_bonus:  `🌀 PvP dodge +${Math.round(def.effectValue * 100)}%`,
-      };
-      const effect = effectMap[def.effectType] ?? def.description;
-      return (
-        `${def.emoji} **${def.name}** ×${quantity} — *${def.rarity}*\n` +
-        `┗ ${effect} · ${def.chargeMax} charge\n` +
-        `┗ \`${helpPrefix} b ${def.id}\` ile aktifleştir`
-      );
-    });
-
-    await message.reply(
-      `✨ **Buff Item Envanteri**\n\n${lines.join('\n')}\n\n` +
-      `> \`${helpPrefix} buffs\` ile tüm buff rehberini gör`,
-    );
-    return;
-  }
-
-  const itemName = args.join(' ').trim();
-  // ID veya tam isim ile eşleştir (OwO tarzı: "owl b keskin_nisan" veya "owl b Keskin Nişan")
-  const def = BUFF_ITEMS.find(
-    (b) =>
-      b.id.toLowerCase() === itemName.toLowerCase() ||
-      b.name.toLowerCase() === itemName.toLowerCase(),
-  );
-
-  if (!def) {
-    // Kısmi eşleşme öner
-    const suggestions = BUFF_ITEMS.filter(
-      (b) =>
-        b.name.toLowerCase().includes(itemName.toLowerCase()) ||
-        b.id.toLowerCase().includes(itemName.toLowerCase()),
-    ).slice(0, 3);
-    const hint = suggestions.length > 0
-      ? `\nBunlardan birini mi kastettin?\n${suggestions.map((b) => `• ${b.emoji} **${b.name}** (\`${helpPrefix} b ${b.id}\`)`).join('\n')}`
-      : `\n> \`${helpPrefix} buffs\` ile tüm listeyi gör.`;
-    await message.reply(`❌ **Geçersiz item.** \`${itemName}\` bulunamadı.${hint}`);
-    return;
-  }
-
-  try {
-    const result = await activateBuff(ctx.prisma as any, playerId, def.id);
-
-    const embed = new EmbedBuilder()
-      .setColor(0x9b59b6)
-      .setTitle(`${def.emoji} ${result.buffName} Aktifleştirildi!`)
-      .setDescription(
-        `> ${result.effectDescription}\n\n` +
-        `> 🔋 Charge: **${result.chargeCur}/${result.chargeMax}**`,
-      )
-      .addFields(
-        { name: '⚡ Kategori', value: def.category === 'hunt' ? '🏹 Av' : def.category === 'pvp' ? '⚔️ PvP' : '🔨 Upgrade', inline: true },
-        { name: '🔋 Charge', value: `${result.chargeCur}/${result.chargeMax}`, inline: true },
-        { name: '⚠️ Tradeoff', value: def.tradeoff, inline: false },
-      )
-      .setFooter({ text: 'Charge bitince buff pasifleşir — item silinmez. Max 3 aynı türden buff.' });
-
-    await message.reply({ embeds: [embed] });
-  } catch (err) {
-    const errMsg = err instanceof Error ? err.message : 'Bir hata oluştu.';
-    await message.reply(`❌ **Hata** | ${errMsg}`);
-  }
+  await runUseMessage(message, args, ctx, helpPrefix);
 }
 
 // ─── buffs (buff rehberi) ─────────────────────────────────────────────────────
@@ -501,7 +417,7 @@ export async function runBuffsMessage(
     .setTitle('✨ Buff Item Rehberi')
     .setDescription(
       '> Buff item\'ları aktifleştirerek av, upgrade ve PvP performansını artırabilirsin.\n' +
-      `> Aktifleştirmek için: \`${helpPrefix} buff <item adı>\`\n` +
+      `> Aktifleştirmek için: \`${helpPrefix} use 001\` *(001–012 buff ID'leri)*\n` +
       `> Lootbox açarak buff kazanmak için: \`${helpPrefix} aç\``,
     );
 
@@ -534,7 +450,7 @@ export async function runBuffsMessage(
       if (item.id === 'b012') effectDesc = '+%12 hasar & +%6 dodge';
       if (item.id === 'b004') effectDesc = '+%5 yakalama & +%20 drop';
 
-      return `${badge} ${item.emoji} **${item.name}** *(${item.rarity})*\n` +
+      return `${badge} \`${item.useId}\` ${item.emoji} **${item.name}** *(${item.rarity})*\n` +
              `> ${effectDesc} · ${costInfo} charge`;
     });
 

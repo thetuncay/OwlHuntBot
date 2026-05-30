@@ -796,8 +796,10 @@ export const CRAFTING_RECIPES: CraftingRecipe[] = [
 // ============================================================
 
 export interface ConsumableItemDef {
-  /** Crafting recipe ID ile eşleşir (c000, c001...) */
+  /** Internal ID (crafting recipe ile eşleşir) */
   id:          string;
+  /** Oyuncu komutu: owl use 013 */
+  useId:       string;
   /** Envanterdeki item adı */
   itemName:    string;
   emoji:       string;
@@ -815,6 +817,7 @@ export interface ConsumableItemDef {
 export const CONSUMABLE_ITEMS: ConsumableItemDef[] = [
   {
     id:          'c000',
+    useId:       '013',
     itemName:    'Karma Yem',
     emoji:       '🌾',
     description: 'Baykuşun staminasını 50 puan yeniler.',
@@ -825,6 +828,7 @@ export const CONSUMABLE_ITEMS: ConsumableItemDef[] = [
   },
   {
     id:          'c001',
+    useId:       '014',
     itemName:    'Bileme Taşı',
     emoji:       '🪨',
     description: 'Bir sonraki upgrade denemesinde başarı şansı +10 puan artar.',
@@ -835,6 +839,7 @@ export const CONSUMABLE_ITEMS: ConsumableItemDef[] = [
   },
   {
     id:          'c002',
+    useId:       '015',
     itemName:    'Yırtıcı İksiri',
     emoji:       '🧪',
     description: 'Bir sonraki hunt\'ta yakalama şansı +15% artar.',
@@ -852,6 +857,23 @@ export const CONSUMABLE_ITEM_MAP: Record<string, ConsumableItemDef> = Object.fro
 export const CONSUMABLE_ITEM_BY_NAME: Record<string, ConsumableItemDef> = Object.fromEntries(
   CONSUMABLE_ITEMS.map((c) => [c.itemName, c]),
 );
+
+/** useId (013–015) → consumable tanımı */
+export const CONSUMABLE_USE_MAP: Record<string, ConsumableItemDef> = Object.fromEntries(
+  CONSUMABLE_ITEMS.map((c) => [c.useId, c]),
+);
+
+/**
+ * Birleşik kullanım ID haritası (owl use 001):
+ *   001–012 → Buff item (lootbox, charge sistemi)
+ *   013–015 → Consumable item (craft, anlık/süreli etki)
+ */
+export const USE_ID_RANGE = {
+  buffMin: '001',
+  buffMax: '012',
+  consumableMin: '013',
+  consumableMax: '015',
+} as const;
 
 /** Aynı anda aktif olabilecek maksimum consumable sayısı */
 export const MAX_ACTIVE_CONSUMABLES = 2;
