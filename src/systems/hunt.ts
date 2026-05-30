@@ -24,7 +24,6 @@ import {
   XP_FAIL_RATIO,
   XP_RISK_BONUS_RATE,
   BOND_GAIN_PER_HUNT,
-  CONSUMABLE_ITEM_BY_NAME,
 } from '../config';
 import type { HuntCatchResult, HuntRunResult, LootboxDrop } from '../types';
 import { catchChance, clamp, huntRolls, spawnScore } from '../utils/math';
@@ -46,6 +45,7 @@ import { trackQuestProgress } from './daily-quests';
 import { getBiomeSession, setBiomeSession } from '../utils/biome-session';
 import { parseStoredTraits, resolveTraits, calcTraitEffects } from './traits';
 import { writeAudit } from '../utils/audit';
+import { consumeConsumableEffect, getConsumableEffectValue } from '../utils/use-items';
 
 /**
  * Hunt sonrasi encounter + lootbox — kullanici cevabini BEKLEMEZ.
@@ -213,11 +213,8 @@ export async function rollHunt(
     const preyPoolThreshold = OWL_PREY_POOL[owl.tier];
     if (preyPoolThreshold === undefined) throw new Error('Baykus tier av havuzu tanimli degil.');
     const preyCandidates = PREY.filter((p) => p.difficulty <= preyPoolThreshold);
-    const consumableCatchBonus = await (async () => {
-      const key = `${CONSUMABLE_ITEM_BY_NAME['Yırtıcı İksiri']?.redisKey ?? 'consumable:hunt_catch'}:${playerId}`;
-      const val = await redis.get(key);
-      return val ? parseFloat(val) : 0;
-    })();
+    const consumableCatchBonus = await getConsumableEffectValue(redis, playerId, 'hunt_catch_once');
+    const consumableLootBonus = await getConsumableEffectValue(redis, playerId, 'hunt_loot_once');
 
     for (let i = 0; i < totalRoll; i++) {
       const weighted = preyCandidates.map((prey) => {
@@ -330,7 +327,10 @@ export async function rollHunt(
       });
       for (const drop of HUNT_ITEM_DROPS) {
         if (c.difficulty < drop.minDifficulty) continue;
-        const dropChance = (c.critical ? drop.dropChance * 1.5 : drop.dropChance) * buffEffects.lootMult * safeBiome.lootModifier;
+        const dropChance = (c.critical ? drop.dropChance * 1.5 : drop.dropChance)
+          * buffEffects.lootMult
+          * (1 + consumableLootBonus)
+          * safeBiome.lootModifier;
         if (Math.random() * 100 < dropChance) {
           inventoryItems.push({
             itemName: drop.itemName,
@@ -392,6 +392,25 @@ export async function rollHunt(
       }]);
     }
     drainBuffCharge(prisma, playerId, 'hunt').catch(() => null);
+
+    if (consumableCatchBonus > 0) {
+      await consumeConsumableEffect(redis, playerId, 'hunt_catch_once');
+    }
+    if (consumableLootBonus > 0) {
+      await consumeConsumableEffect(redis, playerId, 'hunt_loot_once');
+    }
+
+    // Yem item'ları — av sonunda stamina yenile
+    for (const effectType of ['stamina_restore_once', 'stamina_boost_once'] as const) {
+      const amount = await getConsumableEffectValue(redis, playerId, effectType);
+      if (amount <= 0) continue;
+      const owlRow = await prisma.owl.findUnique({ where: { id: owlId }, select: { staminaCur: true, hpMax: true } });
+      if (owlRow) {
+        const newStamina = Math.min(owlRow.hpMax, owlRow.staminaCur + amount);
+        await prisma.owl.update({ where: { id: owlId }, data: { staminaCur: newStamina } });
+      }
+      await consumeConsumableEffect(redis, playerId, effectType);
+    }
 
     return {
       catches,

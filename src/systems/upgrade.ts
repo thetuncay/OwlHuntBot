@@ -7,7 +7,6 @@ import {
   UPGRADE_ENDGAME_LEVEL,
   UPGRADE_FAIL_DOWNGRADE_RATE,
   UPGRADE_ITEM_BONUS,
-  CONSUMABLE_ITEM_BY_NAME,
 } from '../config';
 import type { OwlStatKey } from '../types';
 import { upgradeChance, upgradeCoinCost, upgradeMaterialRequirement } from '../utils/math';
@@ -15,6 +14,7 @@ import { withLock } from '../utils/lock';
 import { checkUpgradeDep, suggestNextUpgrade, type AllStats } from '../utils/upgrade-deps';
 import { getBuffEffects, drainBuffCharge } from './items';
 import { hydratePlayerState, deductCoinsInRedis, applyOwlStatUpdate } from '../state/player-state';
+import { getConsumableEffectValue, consumeConsumableEffect } from '../utils/use-items';
 
 const statFieldMap: Record<OwlStatKey, 'statGaga' | 'statGoz' | 'statKulak' | 'statKanat' | 'statPence'> = {
   gaga:  'statGaga',
@@ -28,6 +28,10 @@ export interface UpgradePreview {
   chance:        number;
   statValue:     number;
   requiredItems: string[];
+  /** Aktif Bileme Taşı bonusu (varsa) */
+  consumableBonus: number;
+  /** Aktif Koruyucu Balmumu (1.0 = yok) */
+  downgradeShieldMult: number;
   /** Bağımlılık kontrolü sonucu */
   depCheck: {
     ok:        boolean;
@@ -69,7 +73,7 @@ export async function getUpgradePreview(
   owlId: string,
   stat: OwlStatKey,
   itemNames: string[],
-  consumableBonus = 0,
+  redis?: Redis,
 ): Promise<UpgradePreview> {
   if (itemNames.length > ITEM_MAX_PER_ATTEMPT) {
     throw new Error(`Tek denemede en fazla ${ITEM_MAX_PER_ATTEMPT} farklı item kullanılabilir.`);
@@ -97,6 +101,13 @@ export async function getUpgradePreview(
 
   const itemBonus = itemNames.reduce((sum, n) => sum + (UPGRADE_ITEM_BONUS[n] ?? 0), 0);
   const buffEffects = await getBuffEffects(prisma, playerId, 'upgrade');
+  const consumableBonus = redis
+    ? await getConsumableEffectValue(redis, playerId, 'upgrade_bonus_once')
+    : 0;
+  const downgradeShieldRaw = redis
+    ? await getConsumableEffectValue(redis, playerId, 'downgrade_shield_once')
+    : 0;
+  const downgradeShieldMult = downgradeShieldRaw > 0 ? downgradeShieldRaw : 1;
   const totalItemBonus = itemBonus + buffEffects.upgradeBonus + consumableBonus;
   const chance    = upgradeChance(UPGRADE_BASE_CHANCE, player.level, totalItemBonus, statValue);
 
@@ -124,6 +135,8 @@ export async function getUpgradePreview(
     statValue,
     requiredItems,
     depCheck: { ...depCheck, suggestion },
+    consumableBonus,
+    downgradeShieldMult,
   };
 }
 
@@ -137,9 +150,17 @@ export async function attemptUpgrade(
   owlId: string,
   stat: OwlStatKey,
   itemNames: string[],
-  consumableBonus = 0,
   redis?: Redis,
 ): Promise<UpgradeResult> {
+  const consumableBonus = redis
+    ? await getConsumableEffectValue(redis, playerId, 'upgrade_bonus_once')
+    : 0;
+  const downgradeShieldRaw = redis
+    ? await getConsumableEffectValue(redis, playerId, 'downgrade_shield_once')
+    : 0;
+  const hadDowngradeShield = downgradeShieldRaw > 0;
+  const downgradeShieldMult = hadDowngradeShield ? downgradeShieldRaw : 1;
+
   return withLock(playerId, 'financial', async () => {
     if (itemNames.length > ITEM_MAX_PER_ATTEMPT) {
       throw new Error(`Tek denemede en fazla ${ITEM_MAX_PER_ATTEMPT} farklı item kullanılabilir.`);
@@ -263,8 +284,10 @@ export async function attemptUpgrade(
       } else if (
         player.level >= UPGRADE_ENDGAME_LEVEL
       ) {
-        // Downgrade shield buff'u varsa şansı azalt
-        const effectiveDowngradeRate = UPGRADE_FAIL_DOWNGRADE_RATE * buffEffects.downgradeShield;
+        // Downgrade shield buff + balmumu consumable
+        const effectiveDowngradeRate = UPGRADE_FAIL_DOWNGRADE_RATE
+          * buffEffects.downgradeShield
+          * downgradeShieldMult;
         if (Math.random() * 100 < effectiveDowngradeRate) {
           newValue = Math.max(1, oldValue - 1);
         }
@@ -282,6 +305,14 @@ export async function attemptUpgrade(
       drainBuffCharge(prisma, playerId, 'upgrade').catch(() => null);
 
       return { success, chance, oldValue, newValue };
+    }).then(async (result) => {
+      if (redis && consumableBonus > 0) {
+        await consumeConsumableEffect(redis, playerId, 'upgrade_bonus_once');
+      }
+      if (redis && hadDowngradeShield) {
+        await consumeConsumableEffect(redis, playerId, 'downgrade_shield_once');
+      }
+      return result;
     });
   });
 }

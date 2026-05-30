@@ -45,7 +45,8 @@ import {
 } from '../utils/tame-ux';
 import { animateHuntMessage, buildFinalMessage, compressHuntResult } from '../utils/hunt-ux';
 import { listActiveBuffs } from '../systems/items';
-import { BUFF_ITEM_MAP, CONSUMABLE_ITEMS } from '../config';
+import { BUFF_ITEM_MAP } from '../config';
+import { getActiveConsumables } from '../utils/use-items';
 import { hydratePlayerState } from '../state/player-state';
 import type { CachedOwlData } from '../utils/player-cache';
 import {
@@ -417,18 +418,20 @@ export async function runHuntMessage(
           chargeMax: b.chargeMax,
         }));
 
-      // Aktif consumable item'ları da göster
-      const consumables: { emoji: string; name: string; remainingMs: number }[] = [];
-      for (const def of CONSUMABLE_ITEMS) {
-        if (def.durationMs === 0) continue;
-        const key = `${def.redisKey}:${userId}`;
-        const val = await ctx.redis.get(key);
-        if (val) {
-          const ttl = await ctx.redis.pttl(key);
-          consumables.push({ emoji: def.emoji, name: def.itemName, remainingMs: ttl });
-        }
-      }
-      compressed.activeConsumables = consumables;
+      // Aktif av consumable'ları (Yırtıcı İksiri — upgrade item'ları hunt'ta gösterilmez)
+      const activeCons = await getActiveConsumables(ctx.redis, userId);
+      compressed.activeConsumables = activeCons
+        .filter(({ def }) =>
+          def.effectType === 'hunt_catch_once'
+          || def.effectType === 'hunt_loot_once'
+          || def.effectType === 'stamina_restore_once'
+          || def.effectType === 'stamina_boost_once',
+        )
+        .map(({ def, expiresAt }) => ({
+          emoji: def.emoji,
+          name: def.itemName,
+          remainingMs: expiresAt - Date.now(),
+        }));
     } catch { /* hata hunt'u engellemesin */ }
 
     await animateHuntMessage(message, name, compressed);

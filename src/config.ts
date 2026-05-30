@@ -712,7 +712,6 @@ export const UPGRADE_ITEM_BONUS: Record<string, number> = {
   'Orman Yankısı': 5,
   'Kırık Av Zinciri': 4,
   'Gölge Tüyü': 2,
-  'Bileme Taşı': 10,
 };
 
 export const TAME_ITEM_BONUS: Record<string, number> = {
@@ -753,12 +752,12 @@ export const CRAFTING_RECIPES: CraftingRecipe[] = [
     id: 'c000',
     name: 'Besleyici Karma Yem',
     emoji: '🌾',
-    description: 'Baykuşun enerjisini yeniler (Stamina +50).',
+    description: '15 dk aktif kalır; sonraki av sonunda stamina +50.',
     requiredMaterials: [
       { itemName: 'fare', quantity: 5 },
       { itemName: 'serce', quantity: 2 },
     ],
-    requiredCoins: 100,
+    requiredCoins: 1500,
     resultItem: { itemName: 'Karma Yem', itemType: 'Consumable', rarity: 'Common', quantity: 1 },
   },
   {
@@ -770,7 +769,7 @@ export const CRAFTING_RECIPES: CraftingRecipe[] = [
       { itemName: 'Kemik Tozu', quantity: 10 },
       { itemName: 'Parlak Tüy', quantity: 5 },
     ],
-    requiredCoins: 500,
+    requiredCoins: 4500,
     resultItem: { itemName: 'Bileme Taşı', itemType: 'Consumable', rarity: 'Uncommon', quantity: 1 },
   },
   {
@@ -782,18 +781,92 @@ export const CRAFTING_RECIPES: CraftingRecipe[] = [
       { itemName: 'fare', quantity: 20 },
       { itemName: 'serce', quantity: 10 },
     ],
-    requiredCoins: 1000,
+    requiredCoins: 6500,
     resultItem: { itemName: 'Yırtıcı İksiri', itemType: 'Consumable', rarity: 'Rare', quantity: 1 },
+  },
+  {
+    id: 'c003',
+    name: 'Savaş İksiri',
+    emoji: '⚗️',
+    description: 'Sonraki PvP maçında hasar +12% (tek maç).',
+    requiredMaterials: [
+      { itemName: 'Yırtıcı Pençe Parçası', quantity: 3 },
+      { itemName: 'Kemik Tozu', quantity: 8 },
+    ],
+    requiredCoins: 6000,
+    resultItem: { itemName: 'Savaş İksiri', itemType: 'Consumable', rarity: 'Rare', quantity: 1 },
+  },
+  {
+    id: 'c004',
+    name: 'Gölge Zırhı',
+    emoji: '🛡️',
+    description: '45 dk boyunca PvP dodge +10% (zırh slotu).',
+    requiredMaterials: [
+      { itemName: 'Gölge Tüyü', quantity: 2 },
+      { itemName: 'Sessizlik Teli', quantity: 4 },
+    ],
+    requiredCoins: 7000,
+    resultItem: { itemName: 'Gölge Zırhı', itemType: 'Consumable', rarity: 'Epic', quantity: 1 },
+  },
+  {
+    id: 'c005',
+    name: 'Av Trofesi Yağı',
+    emoji: '🫙',
+    description: 'Sonraki hunt\'ta drop şansı +30% (tek av).',
+    requiredMaterials: [
+      { itemName: 'bildircin', quantity: 8 },
+      { itemName: 'Av Gözü Kristali', quantity: 2 },
+    ],
+    requiredCoins: 3500,
+    resultItem: { itemName: 'Av Trofesi Yağı', itemType: 'Consumable', rarity: 'Uncommon', quantity: 1 },
+  },
+  {
+    id: 'c006',
+    name: 'Koruyucu Balmumu',
+    emoji: '🕯️',
+    description: 'Sonraki upgrade\'de downgrade riski yarıya iner.',
+    requiredMaterials: [
+      { itemName: 'Orman Yankısı', quantity: 2 },
+      { itemName: 'Kırık Av Zinciri', quantity: 5 },
+    ],
+    requiredCoins: 5500,
+    resultItem: { itemName: 'Koruyucu Balmumu', itemType: 'Consumable', rarity: 'Rare', quantity: 1 },
+  },
+  {
+    id: 'c007',
+    name: 'Güç Kapsülü',
+    emoji: '💊',
+    description: '15 dk aktif kalır; sonraki av sonunda stamina +80.',
+    requiredMaterials: [
+      { itemName: 'hamster', quantity: 6 },
+      { itemName: 'kostebek', quantity: 3 },
+    ],
+    requiredCoins: 2000,
+    resultItem: { itemName: 'Güç Kapsülü', itemType: 'Consumable', rarity: 'Common', quantity: 1 },
   },
 ];
 
 // ============================================================
 // CONSUMABLE ITEM SİSTEMİ
 // ============================================================
-// Crafting ile üretilen tek kullanımlık item'lar.
-// Buff'lardan farklı: charge sistemi yok, kullanınca anında etki eder ve silinir.
-// Max 2 aktif consumable slot (buff'lardan bağımsız).
+// Crafting ile üretilen takılabilir item'lar (min 15 dk aktif).
+// Buff'lardan (001–012, charge) bağımsız: max 2 aktif yük slotu.
 // ============================================================
+
+/** Craft item minimum aktif süre (ms) */
+export const CONSUMABLE_MIN_DURATION_MS = 15 * 60 * 1000;
+
+export type ConsumableGearCategory = 'yem' | 'iksir' | 'zırh' | 'alet';
+
+export type ConsumableEffectType =
+  | 'stamina_restore_once'
+  | 'stamina_boost_once'
+  | 'upgrade_bonus_once'
+  | 'hunt_catch_once'
+  | 'hunt_loot_once'
+  | 'pvp_damage_once'
+  | 'pvp_dodge_equip'
+  | 'downgrade_shield_once';
 
 export interface ConsumableItemDef {
   /** Internal ID (crafting recipe ile eşleşir) */
@@ -803,50 +876,115 @@ export interface ConsumableItemDef {
   /** Envanterdeki item adı */
   itemName:    string;
   emoji:       string;
+  /** yem / iksir / zırh / alet — yük slotu UI kategorisi */
+  gearCategory: ConsumableGearCategory;
   description: string;
   /** Etki tipi */
-  effectType:  'stamina_restore' | 'upgrade_bonus_once' | 'hunt_catch_once';
+  effectType:  ConsumableEffectType;
   /** Etki değeri */
   effectValue: number;
   /** Redis'te saklanacak key prefix */
   redisKey:    string;
-  /** Etkinin süresi (ms) — 0 ise anlık */
+  /** Etkinin süresi (ms) — min 15 dk, yük slotu kullanır */
   durationMs:  number;
 }
 
 export const CONSUMABLE_ITEMS: ConsumableItemDef[] = [
   {
-    id:          'c000',
-    useId:       '013',
-    itemName:    'Karma Yem',
-    emoji:       '🌾',
-    description: 'Baykuşun staminasını 50 puan yeniler.',
-    effectType:  'stamina_restore',
-    effectValue: 50,
-    redisKey:    'consumable:stamina',
-    durationMs:  0, // anlık
+    id:           'c000',
+    useId:        '013',
+    itemName:     'Karma Yem',
+    emoji:        '🌾',
+    gearCategory: 'yem',
+    description:  '15 dk aktif kalır; sonraki av sonunda stamina +50.',
+    effectType:   'stamina_restore_once',
+    effectValue:  50,
+    redisKey:     'consumable:stamina',
+    durationMs:   CONSUMABLE_MIN_DURATION_MS,
   },
   {
-    id:          'c001',
-    useId:       '014',
-    itemName:    'Bileme Taşı',
-    emoji:       '🪨',
-    description: 'Bir sonraki upgrade denemesinde başarı şansı +10 puan artar.',
-    effectType:  'upgrade_bonus_once',
-    effectValue: 10,
-    redisKey:    'consumable:upgrade_bonus',
-    durationMs:  30 * 60 * 1000, // 30 dakika
+    id:           'c001',
+    useId:        '014',
+    itemName:     'Bileme Taşı',
+    emoji:        '🪨',
+    gearCategory: 'alet',
+    description:  'Bir sonraki upgrade denemesinde başarı şansı +10 puan artar.',
+    effectType:   'upgrade_bonus_once',
+    effectValue:  10,
+    redisKey:     'consumable:upgrade_bonus',
+    durationMs:   20 * 60 * 1000,
   },
   {
-    id:          'c002',
-    useId:       '015',
-    itemName:    'Yırtıcı İksiri',
-    emoji:       '🧪',
-    description: 'Bir sonraki hunt\'ta yakalama şansı +15% artar.',
-    effectType:  'hunt_catch_once',
-    effectValue: 0.15,
-    redisKey:    'consumable:hunt_catch',
-    durationMs:  60 * 60 * 1000, // 1 saat
+    id:           'c002',
+    useId:        '015',
+    itemName:     'Yırtıcı İksiri',
+    emoji:        '🧪',
+    gearCategory: 'iksir',
+    description:  'Bir sonraki hunt\'ta yakalama şansı +15% artar.',
+    effectType:   'hunt_catch_once',
+    effectValue:  0.15,
+    redisKey:     'consumable:hunt_catch',
+    durationMs:   30 * 60 * 1000,
+  },
+  {
+    id:           'c003',
+    useId:        '016',
+    itemName:     'Savaş İksiri',
+    emoji:        '⚗️',
+    gearCategory: 'iksir',
+    description:  'Sonraki PvP maçında hasar +12% artar.',
+    effectType:   'pvp_damage_once',
+    effectValue:  0.12,
+    redisKey:     'consumable:pvp_damage',
+    durationMs:   30 * 60 * 1000,
+  },
+  {
+    id:           'c004',
+    useId:        '017',
+    itemName:     'Gölge Zırhı',
+    emoji:        '🛡️',
+    gearCategory: 'zırh',
+    description:  '45 dk boyunca PvP dodge şansı +10% artar.',
+    effectType:   'pvp_dodge_equip',
+    effectValue:  0.10,
+    redisKey:     'consumable:pvp_dodge',
+    durationMs:   45 * 60 * 1000,
+  },
+  {
+    id:           'c005',
+    useId:        '018',
+    itemName:     'Av Trofesi Yağı',
+    emoji:        '🫙',
+    gearCategory: 'iksir',
+    description:  'Sonraki hunt\'ta drop şansı +30% artar.',
+    effectType:   'hunt_loot_once',
+    effectValue:  0.30,
+    redisKey:     'consumable:hunt_loot',
+    durationMs:   20 * 60 * 1000,
+  },
+  {
+    id:           'c006',
+    useId:        '019',
+    itemName:     'Koruyucu Balmumu',
+    emoji:        '🕯️',
+    gearCategory: 'alet',
+    description:  'Sonraki upgrade\'de downgrade riski yarıya iner.',
+    effectType:   'downgrade_shield_once',
+    effectValue:  0.50,
+    redisKey:     'consumable:downgrade_shield',
+    durationMs:   25 * 60 * 1000,
+  },
+  {
+    id:           'c007',
+    useId:        '020',
+    itemName:     'Güç Kapsülü',
+    emoji:        '💊',
+    gearCategory: 'yem',
+    description:  '20 dk aktif kalır; sonraki av sonunda stamina +80.',
+    effectType:   'stamina_boost_once',
+    effectValue:  80,
+    redisKey:     'consumable:power_capsule',
+    durationMs:   20 * 60 * 1000,
   },
 ];
 
@@ -858,24 +996,27 @@ export const CONSUMABLE_ITEM_BY_NAME: Record<string, ConsumableItemDef> = Object
   CONSUMABLE_ITEMS.map((c) => [c.itemName, c]),
 );
 
-/** useId (013–015) → consumable tanımı */
+/** useId (013–020) → consumable tanımı */
 export const CONSUMABLE_USE_MAP: Record<string, ConsumableItemDef> = Object.fromEntries(
   CONSUMABLE_ITEMS.map((c) => [c.useId, c]),
 );
 
 /**
  * Birleşik kullanım ID haritası (owl use 001):
- *   001–012 → Buff item (lootbox, charge sistemi)
- *   013–015 → Consumable item (craft, anlık/süreli etki)
+ *   001–012 → Buff item (lootbox, charge — max 3 aynı tür)
+ *   013–020 → Craft item (yük slotu max 2, anlık yemler hariç)
  */
 export const USE_ID_RANGE = {
   buffMin: '001',
   buffMax: '012',
   consumableMin: '013',
-  consumableMax: '015',
+  consumableMax: '020',
 } as const;
 
-/** Aynı anda aktif olabilecek maksimum consumable sayısı */
+/** Buff charge slotları (aynı türden max 3, diminishing returns) */
+export const MAX_ACTIVE_BUFF_TYPES = 3;
+
+/** Craft item yük slotu — buff'lardan bağımsız, anlık yemler sayılmaz */
 export const MAX_ACTIVE_CONSUMABLES = 2;
 
 // ============================================================

@@ -67,13 +67,16 @@ export async function runUpgrade(
     return;
   }
 
-  const preview = await getUpgradePreview(ctx.prisma, interaction.user.id, main.id, stat, []);  const panelData: UpgradePanelData = {
+  const preview = await getUpgradePreview(ctx.prisma, interaction.user.id, main.id, stat, [], ctx.redis);
+  const panelData: UpgradePanelData = {
     owlName:     main.species,
     owlQuality:  main.quality,
     playerLevel: player.level,
     stat,
     statValue:   preview.statValue,
     chance:      preview.chance,
+    consumableBonus: preview.consumableBonus,
+    downgradeShieldMult: preview.downgradeShieldMult,
     allStats: {
       gaga: main.statGaga, goz: main.statGoz,
       kulak: main.statKulak, kanat: main.statKanat, pence: main.statPence,
@@ -112,7 +115,7 @@ export async function runUpgrade(
       return;
     }
     try {
-      const result = await attemptUpgrade(ctx.prisma, interaction.user.id, main.id, stat, [], 0, ctx.redis);
+      const result = await attemptUpgrade(ctx.prisma, interaction.user.id, main.id, stat, [], ctx.redis);
       const cdMs = result.success ? UPGRADE_COOLDOWN_SUCCESS_MS : UPGRADE_COOLDOWN_FAIL_MS;
       await Promise.all([
         setCooldown(ctx.redis, cooldownKey, cdMs),
@@ -197,7 +200,7 @@ export async function runUpgradeMessage(
     return;
   }
 
-  const preview = await getUpgradePreview(ctx.prisma, message.author.id, main.id, stat, []);
+  const preview = await getUpgradePreview(ctx.prisma, message.author.id, main.id, stat, [], ctx.redis);
   const panelData: UpgradePanelData = {
     owlName:     main.species,
     owlQuality:  main.quality,
@@ -205,6 +208,8 @@ export async function runUpgradeMessage(
     stat,
     statValue:   preview.statValue,
     chance:      preview.chance,
+    consumableBonus: preview.consumableBonus,
+    downgradeShieldMult: preview.downgradeShieldMult,
     allStats: {
       gaga: main.statGaga, goz: main.statGoz,
       kulak: main.statKulak, kanat: main.statKanat, pence: main.statPence,
@@ -241,7 +246,7 @@ export async function runUpgradeMessage(
       return;
     }
     try {
-      const result = await attemptUpgrade(ctx.prisma, message.author.id, main.id, stat, [], 0, ctx.redis);
+      const result = await attemptUpgrade(ctx.prisma, message.author.id, main.id, stat, [], ctx.redis);
       const cdMs = result.success ? UPGRADE_COOLDOWN_SUCCESS_MS : UPGRADE_COOLDOWN_FAIL_MS;
       await Promise.all([
         setCooldown(ctx.redis, upgradeCooldownKey, cdMs),

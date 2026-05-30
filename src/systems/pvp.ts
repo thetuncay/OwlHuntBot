@@ -30,6 +30,7 @@ import { updatePvpStreak, applyStreakXpBonus } from './pvp-streak';
 import { getBuffEffects, drainBuffCharge } from './items';
 import { rollPvpLootboxDrop } from './drops';
 import { applyCoinDeltaInRedis, applyOwlStatUpdate, syncPlayerStateAfterPgWrite, reloadInventoryFromPg } from '../state/player-state';
+import { getConsumableEffectValue, consumeConsumableEffect } from '../utils/use-items';
 
 interface BattleState {
   playerId: string;
@@ -108,26 +109,31 @@ export async function simulatePvP(
     const turnEvents: PvpTurnEvent[] = [];
 
     // Buff etkilerini ve oyuncu prestige seviyelerini al (her oyuncu için ayrı)
-    const [challengerBuffs, defenderBuffs, challenger, defender] = await Promise.all([
+    const [challengerBuffs, defenderBuffs, challenger, defender, consEffects] = await Promise.all([
       getBuffEffects(prisma, session.challengerId, 'pvp'),
       getBuffEffects(prisma, session.defenderId, 'pvp'),
       prisma.player.findUnique({ where: { id: session.challengerId }, select: { prestigeLevel: true } }),
       prisma.player.findUnique({ where: { id: session.defenderId }, select: { prestigeLevel: true } }),
+      redis ? Promise.all([
+        getConsumableEffectValue(redis, session.challengerId, 'pvp_damage_once'),
+        getConsumableEffectValue(redis, session.challengerId, 'pvp_dodge_equip'),
+        getConsumableEffectValue(redis, session.defenderId, 'pvp_damage_once'),
+        getConsumableEffectValue(redis, session.defenderId, 'pvp_dodge_equip'),
+      ]) : Promise.resolve([0, 0, 0, 0] as const),
     ]);
+
+    const [challengerDmgOnce, challengerDodgeEquip, defenderDmgOnce, defenderDodgeEquip] = consEffects;
 
     const left: BattleState = {
       playerId: session.challengerId,
       hp: challengerOwl.hp,
       stamina: challengerOwl.staminaCur,
-      // effectiveness: 100=tam güç, düşükse power azalır
-      // bond: max +%20 güç bonusu (bond 100 = ×1.20)
-      // prestige: stat cap'i artırır
       power: statEffect(challengerOwl.statGaga + challengerOwl.statPence + challengerOwl.statKanat, challenger?.prestigeLevel ?? 0)
         * Math.max(0.1, challengerOwl.effectiveness / 100)
-        * (1 + challengerOwl.bond * 0.002), // bond 100 → ×1.20
+        * (1 + challengerOwl.bond * 0.002),
       hpMax: challengerOwl.hpMax,
-      buffDamageMult: challengerBuffs.pvpDamageMult,
-      buffDodgeBonus: challengerBuffs.pvpDodgeBonus,
+      buffDamageMult: challengerBuffs.pvpDamageMult * (1 + challengerDmgOnce),
+      buffDodgeBonus: challengerBuffs.pvpDodgeBonus + challengerDodgeEquip,
     };
     const right: BattleState = {
       playerId: session.defenderId,
@@ -137,8 +143,8 @@ export async function simulatePvP(
         * Math.max(0.1, defenderOwl.effectiveness / 100)
         * (1 + defenderOwl.bond * 0.002),
       hpMax: defenderOwl.hpMax,
-      buffDamageMult: defenderBuffs.pvpDamageMult,
-      buffDodgeBonus: defenderBuffs.pvpDodgeBonus,
+      buffDamageMult: defenderBuffs.pvpDamageMult * (1 + defenderDmgOnce),
+      buffDodgeBonus: defenderBuffs.pvpDodgeBonus + defenderDodgeEquip,
     };
 
     let turns = 0;
@@ -282,6 +288,14 @@ export async function simulatePvP(
       drainBuffCharge(prisma, winner.playerId, 'pvp'),
       drainBuffCharge(prisma, loser.playerId, 'pvp'),
     ]);
+
+    // Tek kullanımlık Savaş İksiri tüketimi
+    if (redis) {
+      await Promise.all([
+        consumeConsumableEffect(redis, session.challengerId, 'pvp_damage_once'),
+        consumeConsumableEffect(redis, session.defenderId, 'pvp_damage_once'),
+      ]);
+    }
 
     // Liderboard istatistikleri
     await recordPvpWin(prisma, winner.playerId);

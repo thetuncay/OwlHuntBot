@@ -2,6 +2,7 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, type Messa
 import { CRAFTING_RECIPES, DISMANTLE_TABLE } from '../config';
 import { craftItem, dismantleItem } from '../systems/crafting';
 import { successEmbed, failEmbed, infoEmbed } from '../utils/embed';
+import { getPlayerBundle } from '../utils/player-cache';
 import type { CommandContext } from '../types';
 
 /**
@@ -16,10 +17,10 @@ export async function runCraftMessage(
   const userId = message.author.id;
 
   if (args.length === 0) {
-    // Tarif listesini göster — envanter ile karşılaştırmalı
-    const userId = message.author.id;
     const invItems = await ctx.prisma.inventoryItem.findMany({ where: { ownerId: userId } });
     const invMap = new Map(invItems.map(i => [i.itemName, i.quantity]));
+    const bundle = await getPlayerBundle(ctx.redis, ctx.prisma, userId);
+    const playerCoins = bundle?.player.coins ?? 0;
 
     const recipeLines = CRAFTING_RECIPES.map((r, i) => {
       const matLines = r.requiredMaterials.map(m => {
@@ -27,14 +28,14 @@ export async function runCraftMessage(
         const ok = have >= m.quantity;
         return `  ${ok ? '✅' : '❌'} ${m.itemName}: **${have}/${m.quantity}**`;
       });
-      const coinOk = (invMap.get('coin') ?? Infinity) >= r.requiredCoins;
-      const canCraft = r.requiredMaterials.every(m => (invMap.get(m.itemName) ?? 0) >= m.quantity);
+      const coinOk = playerCoins >= r.requiredCoins;
+      const canCraft = coinOk && r.requiredMaterials.every(m => (invMap.get(m.itemName) ?? 0) >= m.quantity);
       const craftTag = canCraft ? ' ✨ *Üretilebilir!*' : '';
       return (
         `**${i + 1}. ${r.emoji} ${r.name}**${craftTag}\n` +
         `└ ${r.description}\n` +
         matLines.join('\n') + '\n' +
-        `  💰 Coin: **${r.requiredCoins}**`
+        `  ${coinOk ? '✅' : '❌'} 💰 Coin: **${playerCoins.toLocaleString('tr-TR')}/${r.requiredCoins.toLocaleString('tr-TR')}**`
       );
     }).join('\n\n');
 
@@ -73,6 +74,8 @@ export async function runCraftSlash(interaction: ChatInputCommandInteraction, ct
 
   const invItems = await ctx.prisma.inventoryItem.findMany({ where: { ownerId: userId } });
   const invMap = new Map(invItems.map((i: any) => [i.itemName, i.quantity]));
+  const bundle = await getPlayerBundle(ctx.redis, ctx.prisma, userId);
+  const playerCoins = bundle?.player.coins ?? 0;
 
   const recipeLines = CRAFTING_RECIPES.map((r, i) => {
     const matLines = r.requiredMaterials.map(m => {
@@ -80,13 +83,14 @@ export async function runCraftSlash(interaction: ChatInputCommandInteraction, ct
       const ok = have >= m.quantity;
       return `  ${ok ? '✅' : '❌'} ${m.itemName}: **${have}/${m.quantity}**`;
     });
-    const canCraft = r.requiredMaterials.every(m => (invMap.get(m.itemName) ?? 0) >= m.quantity);
+    const coinOk = playerCoins >= r.requiredCoins;
+    const canCraft = coinOk && r.requiredMaterials.every(m => (invMap.get(m.itemName) ?? 0) >= m.quantity);
     const craftTag = canCraft ? ' ✨ *Üretilebilir!*' : '';
     return (
       `**${i + 1}. ${r.emoji} ${r.name}**${craftTag}\n` +
       `└ ${r.description}\n` +
       matLines.join('\n') + '\n' +
-      `  💰 Coin: **${r.requiredCoins}**`
+      `  ${coinOk ? '✅' : '❌'} 💰 Coin: **${playerCoins.toLocaleString('tr-TR')}/${r.requiredCoins.toLocaleString('tr-TR')}**`
     );
   }).join('\n\n');
 
@@ -95,17 +99,30 @@ export async function runCraftSlash(interaction: ChatInputCommandInteraction, ct
     'Üretmek istediğin eşyayı seç:\n\n' + recipeLines
   );
 
-  const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
-    CRAFTING_RECIPES.map((r, i) =>
+  const row1 = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    CRAFTING_RECIPES.slice(0, 5).map((r, i) =>
       new ButtonBuilder()
         .setCustomId(`craft_slash:${r.id}`)
         .setLabel(`${i + 1}. ${r.name}`)
         .setEmoji(r.emoji)
-        .setStyle(ButtonStyle.Primary)
-    ).slice(0, 5) // Discord max 5 buton per row
+        .setStyle(ButtonStyle.Primary),
+    ),
   );
+  const row2 = CRAFTING_RECIPES.length > 5
+    ? new ActionRowBuilder<ButtonBuilder>().addComponents(
+        CRAFTING_RECIPES.slice(5).map((r, i) =>
+          new ButtonBuilder()
+            .setCustomId(`craft_slash:${r.id}`)
+            .setLabel(`${i + 6}. ${r.name}`)
+            .setEmoji(r.emoji)
+            .setStyle(ButtonStyle.Primary),
+        ),
+      )
+    : null;
 
-  await interaction.reply({ embeds: [embed], components: [row], flags: 64 });
+  const components = row2 ? [row1, row2] : [row1];
+
+  await interaction.reply({ embeds: [embed], components, flags: 64 });
 
   const collector = interaction.channel?.createMessageComponentCollector({
     componentType: ComponentType.Button,

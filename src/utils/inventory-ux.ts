@@ -101,6 +101,15 @@ const ITEM_EMOJI: Record<string, string> = {
   'Savaş Ruhu':          '⚔️',
   'Savunma Duruşu':      '🛡️',
   'Arena Ustası':        '🏆',
+  // Craft item'ları
+  'Karma Yem':           '🌾',
+  'Bileme Taşı':         '🪨',
+  'Yırtıcı İksiri':      '🧪',
+  'Savaş İksiri':        '⚗️',
+  'Gölge Zırhı':         '🛡️',
+  'Av Trofesi Yağı':     '🫙',
+  'Koruyucu Balmumu':    '🕯️',
+  'Güç Kapsülü':         '💊',
   // Upgrade materyalleri
   'Kemik Tozu':              '🦴',
   'Parlak Tüy':              '🪶',

@@ -520,7 +520,7 @@ Toplam: 2.900💰 + 1.150 XP/gün
 
 🛠️ CRAFTING (owl craft):
 1. Karma Yem: fare×5 + serçe×2 + 100💰 → Stamina +50
-2. Bileme Taşı: Kemik Tozu×10 + Parlak Tüy×5 + 500💰 → Upgrade şansı +%10
+2. Bileme Taşı: Kemik Tozu×10 + Parlak Tüy×5 + 4.500💰 → Upgrade şansı +%10 (min 15 dk aktif)
 3. Yırtıcı İksiri: fare×20 + serçe×10 + 1.000💰 → Hunt catch +%15
 
 ═══════════════════════════════════════════════════════════════

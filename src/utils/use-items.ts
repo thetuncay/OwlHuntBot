@@ -12,8 +12,11 @@ import {
   CONSUMABLE_ITEMS,
   CONSUMABLE_USE_MAP,
   CONSUMABLE_ITEM_BY_NAME,
+  MAX_ACTIVE_CONSUMABLES,
+  MAX_ACTIVE_BUFF_TYPES,
   type BuffItemDef,
   type ConsumableItemDef,
+  type ConsumableGearCategory,
 } from '../config';
 
 /** Eski b001 / c002 formatını 001 / 015 formatına çevirir. */
@@ -66,6 +69,78 @@ export function formatUseId(useId: string): string {
   return useId.padStart(3, '0');
 }
 
+/** Yük slotu kullanan craft item mi? (anlık yemler hariç) */
+export function usesEquipSlot(def: ConsumableItemDef): boolean {
+  return def.durationMs > 0;
+}
+
+const GEAR_LABEL: Record<ConsumableGearCategory, string> = {
+  yem:   '🌾 Yem',
+  iksir: '🧪 İksir',
+  'zırh': '🛡️ Zırh',
+  alet:  '🪨 Alet',
+};
+
+export function formatGearCategory(def: ConsumableItemDef): string {
+  return GEAR_LABEL[def.gearCategory] ?? '📦 Item';
+}
+
+/** use listesi / hata mesajları için yük slot özeti */
+export function formatEquipSlotStatus(activeCount: number): string {
+  return `📦 Yük slotu: **${activeCount}/${MAX_ACTIVE_CONSUMABLES}** *(buff 001–012 ayrı, max ${MAX_ACTIVE_BUFF_TYPES} aynı tür)*`;
+}
+
+/** use embed alanı — tüm effect tipleri */
+export function formatConsumableEffectField(def: ConsumableItemDef): { name: string; value: string } {
+  const mins = def.durationMs > 0 ? Math.round(def.durationMs / 60000) : 0;
+  const slotNote = usesEquipSlot(def) ? ` · yük slotu (${mins} dk)` : '';
+
+  switch (def.effectType) {
+    case 'stamina_restore_once':
+      return { name: '⚡ Etki', value: `Sonraki av sonunda stamina **+${def.effectValue}**${slotNote}` };
+    case 'stamina_boost_once':
+      return { name: '⚡ Etki', value: `Sonraki av sonunda stamina **+${def.effectValue}**${slotNote}` };
+    case 'upgrade_bonus_once':
+      return { name: '⚡ Etki', value: `Upgrade başarı **+${def.effectValue} puan**${slotNote}` };
+    case 'hunt_catch_once':
+      return { name: '⚡ Etki', value: `Sonraki hunt yakalama **+${Math.round(def.effectValue * 100)}%**${slotNote}` };
+    case 'hunt_loot_once':
+      return { name: '⚡ Etki', value: `Sonraki hunt drop **+${Math.round(def.effectValue * 100)}%**${slotNote}` };
+    case 'pvp_damage_once':
+      return { name: '⚡ Etki', value: `Sonraki PvP hasar **+${Math.round(def.effectValue * 100)}%**${slotNote}` };
+    case 'pvp_dodge_equip':
+      return { name: '⚡ Etki', value: `PvP dodge **+${Math.round(def.effectValue * 100)}%**${slotNote}` };
+    case 'downgrade_shield_once':
+      return { name: '⚡ Etki', value: `Downgrade riski **×${def.effectValue}** (yarıya iner)${slotNote}` };
+    default:
+      return { name: '⚡ Etki', value: def.description };
+  }
+}
+export async function getConsumableEffectValue(
+  redis: { get: (key: string) => Promise<string | null> },
+  playerId: string,
+  effectType: ConsumableItemDef['effectType'],
+): Promise<number> {
+  const def = CONSUMABLE_ITEMS.find((c) => c.effectType === effectType && c.durationMs > 0);
+  if (!def) return 0;
+  const val = await redis.get(`${def.redisKey}:${playerId}`);
+  if (!val) return 0;
+  const parsed = parseFloat(val);
+  return Number.isFinite(parsed) ? parsed : def.effectValue;
+}
+
+/** Tek kullanımlık consumable efektini tüket (Redis key sil). */
+export async function consumeConsumableEffect(
+  redis: { del: (...keys: string[]) => Promise<number> },
+  playerId: string,
+  effectType: ConsumableItemDef['effectType'],
+): Promise<boolean> {
+  const def = CONSUMABLE_ITEMS.find((c) => c.effectType === effectType && c.durationMs > 0);
+  if (!def) return false;
+  const deleted = await redis.del(`${def.redisKey}:${playerId}`);
+  return deleted > 0;
+}
+
 /** Aktif süreli consumable efektleri (Redis). */
 export async function getActiveConsumables(
   redis: { get: (key: string) => Promise<string | null>; pttl: (key: string) => Promise<number> },
@@ -110,19 +185,26 @@ export function formatActiveBuffLabel(buffItemId: string, chargeCur: number, cha
 
 /** Kullanılabilir tüm ID'lerin kısa özeti (yardım metni). */
 export function buildUseIdLegend(helpPrefix: string): string {
-  const buffLines = BUFF_ITEMS.map(
-    (b) => `\`${b.useId}\` ${b.emoji} ${b.name} *(buff)*`,
-  );
-  const consLines = CONSUMABLE_ITEMS.map(
-    (c) => `\`${c.useId}\` ${c.emoji} ${c.itemName} *(item)*`,
-  );
+  const buffLines = BUFF_ITEMS.map((b) => `\`${b.useId}\` ${b.emoji} ${b.name}`).join(' · ');
+  const byGear = new Map<ConsumableGearCategory, ConsumableItemDef[]>();
+  for (const c of CONSUMABLE_ITEMS) {
+    if (!byGear.has(c.gearCategory)) byGear.set(c.gearCategory, []);
+    byGear.get(c.gearCategory)!.push(c);
+  }
+  const gearLines = ([ 'yem', 'iksir', 'zırh', 'alet' ] as ConsumableGearCategory[])
+    .filter((g) => byGear.has(g))
+    .map((g) => {
+      const items = byGear.get(g)!.map((c) => `\`${c.useId}\` ${c.emoji} ${c.itemName}`).join(' · ');
+      return `${GEAR_LABEL[g]}: ${items}`;
+    });
+
   return [
-    '**Buff (001–012):** charge ile aktifleşir',
-    buffLines.join(' · '),
+    `**Buff (001–012):** lootbox · charge · max ${MAX_ACTIVE_BUFF_TYPES} aynı tür`,
+    buffLines,
     '',
-    '**Item (013–015):** kullanınca tüketilir',
-    consLines.join(' · '),
+    `**Craft yük (013–020):** \`${helpPrefix} craft\` · min **15 dk** aktif · max **${MAX_ACTIVE_CONSUMABLES}** slot`,
+    ...gearLines,
     '',
-    `> Kullanım: \`${helpPrefix} use 001\``,
+    `> Kullanım: \`${helpPrefix} use 001\` (buff) · \`${helpPrefix} use 014\` (craft item)`,
   ].join('\n');
 }

@@ -1,9 +1,9 @@
 /**
- * owl-use.ts — owl use <id>  (birleşik buff + consumable kullanımı)
+ * owl-use.ts — owl use <id>  (birleşik buff + craft item kullanımı)
  *
  * ID sistemi:
- *   001–012  Buff item (charge)
- *   013–015  Consumable item (craft)
+ *   001–012  Buff (charge, lootbox)
+ *   013–020  Craft item (max 2 yük slotu + anlık yemler)
  */
 
 import { EmbedBuilder, type Message } from 'discord.js';
@@ -15,8 +15,12 @@ import {
   resolveUseEntry,
   formatUseId,
   buildUseIdLegend,
+  getActiveConsumables,
+  formatConsumableEffectField,
+  formatEquipSlotStatus,
+  formatGearCategory,
+  usesEquipSlot,
 } from '../utils/use-items';
-import { getActiveConsumables } from '../utils/use-items';
 
 async function useConsumable(
   message: Message,
@@ -36,12 +40,15 @@ async function useConsumable(
     return;
   }
 
-  if (def.durationMs > 0) {
+  if (usesEquipSlot(def)) {
     const active = await getActiveConsumables(ctx.redis, playerId);
     if (active.length >= MAX_ACTIVE_CONSUMABLES) {
-      const activeNames = active.map((a) => `**${a.def.itemName}**`).join(', ');
+      const activeNames = active
+        .map((a) => `${a.def.emoji} **${a.def.itemName}**`)
+        .join(', ');
       await message.reply(
-        `❌ Aynı anda en fazla **${MAX_ACTIVE_CONSUMABLES} aktif item** olabilir.\n` +
+        `❌ Yük slotu dolu (**${MAX_ACTIVE_CONSUMABLES}/${MAX_ACTIVE_CONSUMABLES}**).\n` +
+        `> Buff'lar (001–012) ayrı çalışır — bunlar craft yük slotunu doldurur.\n` +
         `Şu an aktif: ${activeNames}`,
       );
       return;
@@ -66,51 +73,30 @@ async function useConsumable(
         data: { quantity: { decrement: 1 } },
       });
     }
-
-    if (def.effectType === 'stamina_restore') {
-      const owl = await tx.owl.findFirst({ where: { ownerId: playerId, isMain: true } });
-      if (owl) {
-        const newStamina = Math.min(owl.hpMax, owl.staminaCur + def.effectValue);
-        await tx.owl.update({ where: { id: owl.id }, data: { staminaCur: newStamina } });
-      }
-    }
   });
 
-  if (def.durationMs > 0) {
-    await ctx.redis.set(
-      `${def.redisKey}:${playerId}`,
-      String(def.effectValue),
-      'PX',
-      def.durationMs,
-    );
-  }
+  await ctx.redis.set(
+    `${def.redisKey}:${playerId}`,
+    String(def.effectValue),
+    'PX',
+    def.durationMs,
+  );
 
   await reloadInventoryFromPg(ctx.redis, ctx.prisma, playerId);
 
   const embed = new EmbedBuilder()
     .setColor(0x2ecc71)
-    .setTitle(`${def.emoji} ${def.itemName} Kullanıldı!`)
-    .setDescription(def.description);
+    .setTitle(`${def.emoji} ${def.itemName} Takıldı!`)
+    .setDescription(def.description)
+    .addFields(
+      { name: formatGearCategory(def), value: formatConsumableEffectField(def).value, inline: false },
+    );
 
-  if (def.effectType === 'stamina_restore') {
-    embed.addFields({ name: '⚡ Etki', value: `Baykuşunun staminası **+${def.effectValue}** yenilendi.`, inline: false });
-  } else if (def.effectType === 'upgrade_bonus_once') {
-    const mins = Math.round(def.durationMs / 60000);
-    embed.addFields({
-      name: '⚡ Etki',
-      value: `Bir sonraki upgrade denemesinde **+${def.effectValue} başarı puanı** (${mins} dk geçerli).`,
-      inline: false,
-    });
-  } else if (def.effectType === 'hunt_catch_once') {
-    const mins = Math.round(def.durationMs / 60000);
-    embed.addFields({
-      name: '⚡ Etki',
-      value: `Bir sonraki hunt'ta yakalama şansı **+${Math.round(def.effectValue * 100)}%** (${mins} dk geçerli).`,
-      inline: false,
-    });
-  }
+  const active = await getActiveConsumables(ctx.redis, playerId);
+  embed.setFooter({
+    text: `${formatEquipSlotStatus(active.length)} · \`${helpPrefix} use ${def.useId}\` · min 15 dk aktif`,
+  });
 
-  embed.setFooter({ text: `\`${helpPrefix} use ${def.useId}\` · Item envanterden düşüldü` });
   await message.reply({ embeds: [embed] });
 }
 
@@ -141,7 +127,7 @@ async function useBuff(
         { name: '🆔 ID', value: `\`${def.useId}\``, inline: true },
         { name: '⚠️ Tradeoff', value: def.tradeoff, inline: false },
       )
-      .setFooter({ text: `\`${helpPrefix} use ${def.useId}\` · Charge bitince pasifleşir` });
+      .setFooter({ text: `\`${helpPrefix} use ${def.useId}\` · Buff slotu (craft yükünden ayrı)` });
 
     await message.reply({ embeds: [embed] });
   } catch (err) {
@@ -169,26 +155,32 @@ export async function runUseMessage(
 
     if (buffInv.length === 0 && consInv.length === 0 && activeCons.length === 0) {
       await message.reply(
-        `🎒 **Kullanılabilir item yok.**\n` +
-        `> Lootbox açarak buff, craft ile item üretebilirsin.\n\n` +
+        `🎒 **Kullanılabilir eşya yok.**\n` +
+        `> Lootbox → buff (001–012) · Craft → item (013–020)\n\n` +
         buildUseIdLegend(helpPrefix),
       );
       return;
     }
 
-    const lines: string[] = ['**Kullanılabilir eşyalar:**', ''];
+    const lines: string[] = [
+      '**Kullanılabilir eşyalar**',
+      formatEquipSlotStatus(activeCons.length),
+      '',
+    ];
 
     if (activeCons.length > 0) {
-      lines.push('⚡ **Aktif item efektleri:**');
+      lines.push('📦 **Aktif yük slotları:**');
       for (const { def, expiresAt } of activeCons) {
         const remaining = Math.ceil((expiresAt - Date.now()) / 60000);
-        lines.push(`  \`${def.useId}\` ${def.emoji} **${def.itemName}** — *(${remaining} dk kaldı)*`);
+        lines.push(
+          `  \`${def.useId}\` ${def.emoji} **${def.itemName}** (${formatGearCategory(def)}) — *${remaining} dk*`,
+        );
       }
       lines.push('');
     }
 
     if (buffInv.length > 0) {
-      lines.push('✨ **Buff envanteri** *(use ile aktifleştir)*:');
+      lines.push('✨ **Buff envanteri** *(charge, ayrı sistem)*:');
       for (const { def, quantity } of buffInv) {
         lines.push(`  \`${def.useId}\` ${def.emoji} **${def.name}** ×${quantity} — *${def.rarity}*`);
       }
@@ -196,17 +188,18 @@ export async function runUseMessage(
     }
 
     if (consInv.length > 0) {
-      lines.push('🧪 **Item envanteri** *(use ile tüket)*:');
+      lines.push('🔨 **Craft envanteri** *(use ile tak/kullan)*:');
       for (const item of consInv) {
         const entry = resolveUseEntry(item.itemName);
         const useId = entry?.kind === 'consumable' ? entry.def.useId : '???';
         const emoji = entry?.kind === 'consumable' ? entry.def.emoji : '🧪';
-        lines.push(`  \`${useId}\` ${emoji} **${item.itemName}** ×${item.quantity}`);
+        const gear = entry?.kind === 'consumable' ? formatGearCategory(entry.def) : '';
+        lines.push(`  \`${useId}\` ${emoji} **${item.itemName}** ×${item.quantity} ${gear}`);
       }
       lines.push('');
     }
 
-    lines.push(`> Örnek: \`${helpPrefix} use 001\` (buff) · \`${helpPrefix} use 013\` (item)`);
+    lines.push(`> \`${helpPrefix} use 001\` buff · \`${helpPrefix} use 016\` craft item`);
     await message.reply(lines.join('\n'));
     return;
   }
