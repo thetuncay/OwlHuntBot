@@ -29,7 +29,7 @@ import { recordPvpWin, refreshPowerScore, recordCoinsEarned } from './leaderboar
 import { updatePvpStreak, applyStreakXpBonus } from './pvp-streak';
 import { getBuffEffects, drainBuffCharge } from './items';
 import { rollPvpLootboxDrop } from './drops';
-import { applyCoinDeltaInRedis } from '../state/player-state';
+import { applyCoinDeltaInRedis, applyOwlStatUpdate, syncPlayerStateAfterPgWrite, reloadInventoryFromPg } from '../state/player-state';
 
 interface BattleState {
   playerId: string;
@@ -224,7 +224,9 @@ export async function simulatePvP(
     });
 
   // Streak sistemi — anti-abuse kontrolü dahil
-  const streakResult = await updatePvpStreak(prisma, winner.playerId, loser.playerId);
+  const streakResult = await updatePvpStreak(prisma, winner.playerId, loser.playerId, {
+    skipCoinWrite: !!redis,
+  });
 
   // XP + Bond + Streak coins — transaction içinde atomik yaz
   const winnerXP = applyStreakXpBonus(XP_PVP_WIN, streakResult.xpBonusPct);
@@ -234,13 +236,12 @@ export async function simulatePvP(
     await applyCoinDeltaInRedis(redis, winner.playerId, totalCoinGain, prisma);
   }
 
+  const winnerOwlForBond = winner.playerId === session.challengerId ? challengerOwl : defenderOwl;
+  const newBond = winnerOwlForBond.bond < BOND_MAX
+    ? Math.min(BOND_MAX, winnerOwlForBond.bond + BOND_GAIN_PER_PVP_WIN)
+    : winnerOwlForBond.bond;
+
   await prisma.$transaction(async (tx) => {
-    if (!redis && streakResult.bonusCoins > 0) {
-      await tx.player.update({
-        where: { id: winner.playerId },
-        data: { coins: { increment: streakResult.bonusCoins } },
-      });
-    }
     // XP güncelle
     await tx.player.update({
       where: { id: winner.playerId },
@@ -251,14 +252,23 @@ export async function simulatePvP(
       data: { xp: { increment: XP_PVP_LOSE } },
     });
     // Bond artışı
-    const winnerOwlForBond = winner.playerId === session.challengerId ? challengerOwl : defenderOwl;
     if (winnerOwlForBond.bond < BOND_MAX) {
       await tx.owl.update({
         where: { id: winnerOwlForBond.id },
-        data: { bond: Math.min(BOND_MAX, winnerOwlForBond.bond + BOND_GAIN_PER_PVP_WIN) },
+        data: { bond: newBond },
       });
     }
   });
+
+  if (redis) {
+    if (winnerOwlForBond.bond < BOND_MAX) {
+      await applyOwlStatUpdate(redis, prisma, winner.playerId, winnerOwlForBond.id, { bond: newBond });
+    }
+    await Promise.all([
+      syncPlayerStateAfterPgWrite(redis, prisma, winner.playerId, 'progress'),
+      syncPlayerStateAfterPgWrite(redis, prisma, loser.playerId, 'progress'),
+    ]);
+  }
 
     // Effectiveness uyarısı: %50 altına düştüyse result'a ekle
     const winnerOwlUpdated = await prisma.owl.findFirst({
@@ -287,7 +297,10 @@ export async function simulatePvP(
       select: { level: true },
     });
     if (winnerPlayer) {
-      rollPvpLootboxDrop(prisma, winner.playerId, winnerPlayer.level).catch(() => null);
+      const drop = await rollPvpLootboxDrop(prisma, winner.playerId, winnerPlayer.level);
+      if (redis && drop) {
+        await reloadInventoryFromPg(redis, prisma, winner.playerId);
+      }
     }
 
     return {

@@ -397,19 +397,89 @@ export async function applyCoinDeltaInRedis(
 
 const PCACHE_PLAYER_PREFIX = 'pcache:player:';
 
-/** PG yazimindan sonra Redis state senkronize et (coin veya tam invalidate). */
+/** PG envanterini Redis hash'e yukle (coin dokunulmaz). */
+export async function reloadInventoryFromPg(
+  redis: Redis,
+  prisma: PrismaClient,
+  playerId: string,
+): Promise<void> {
+  const invRows = await prisma.inventoryItem.findMany({
+    where: { ownerId: playerId },
+    select: { itemName: true, itemType: true, rarity: true, quantity: true },
+  });
+  const key = invKey(playerId);
+  const pipeline = redis.pipeline().del(key);
+  if (invRows.length > 0) {
+    const invArgs: string[] = [];
+    for (const row of invRows) {
+      invArgs.push(row.itemName, JSON.stringify({
+        itemType: row.itemType,
+        rarity: row.rarity,
+        quantity: row.quantity,
+      }));
+    }
+    pipeline.hset(key, ...invArgs);
+  }
+  await pipeline.exec();
+  await markDirty(redis, playerId);
+  enqueuePersistPlayer(playerId);
+}
+
+/** PG level/xp alanlarini Redis'e yansit (coin dokunulmaz). */
+export async function refreshPlayerXpInRedis(
+  redis: Redis,
+  prisma: PrismaClient,
+  playerId: string,
+): Promise<void> {
+  const db = await prisma.player.findUnique({
+    where: { id: playerId },
+    select: { level: true, xp: true },
+  });
+  if (!db) return;
+  try {
+    const player = await loadPlayerForMutation(redis, prisma, playerId);
+    player.level = db.level;
+    player.xp = db.xp;
+    await redis.set(playerKey(playerId), JSON.stringify(player));
+    await markDirty(redis, playerId);
+    enqueuePersistPlayer(playerId);
+  } catch {
+    await invalidatePlayerState(redis, playerId);
+  }
+}
+
+/** PG yazimindan sonra Redis state senkronize et. */
 export async function syncPlayerStateAfterPgWrite(
   redis: Redis | undefined,
   prisma: PrismaClient,
   playerId: string,
-  mode: 'coins' | 'full' = 'coins',
+  mode: 'coins' | 'progress' | 'inventory' | 'full' = 'coins',
 ): Promise<void> {
   if (!redis) return;
-  if (mode === 'full') {
-    await invalidatePlayerState(redis, playerId);
-  } else {
-    await refreshPlayerCoinsInRedis(redis, prisma, playerId);
+  switch (mode) {
+    case 'full':
+      await refreshPlayerCoinsInRedis(redis, prisma, playerId);
+      await reloadInventoryFromPg(redis, prisma, playerId);
+      break;
+    case 'inventory':
+      await reloadInventoryFromPg(redis, prisma, playerId);
+      break;
+    case 'progress':
+      await refreshPlayerXpInRedis(redis, prisma, playerId);
+      break;
+    default:
+      await refreshPlayerCoinsInRedis(redis, prisma, playerId);
   }
+}
+
+/** Tam reset sonrasi (prestige/setmain): PG'den yeniden hydrate. */
+export async function rehydratePlayerState(
+  redis: Redis,
+  prisma: PrismaClient,
+  playerId: string,
+): Promise<void> {
+  await invalidatePlayerState(redis, playerId);
+  await hydratePlayerState(redis, prisma, playerId);
 }
 
 /** PG coin yazimindan sonra Redis coin alanini senkronize et. */

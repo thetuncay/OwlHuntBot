@@ -3,7 +3,7 @@ import type { Redis } from 'ioredis';
 import { DISMANTLE_TABLE, CRAFTING_RECIPES } from '../config';
 import { withLock } from '../utils/lock';
 import { trackQuestProgress } from './daily-quests';
-import { syncPlayerStateAfterPgWrite } from '../state/player-state';
+import { applyCoinDeltaInRedis, reloadInventoryFromPg } from '../state/player-state';
 
 /**
  * Bir eşyayı parçalayarak materyal üretir.
@@ -70,7 +70,7 @@ export async function dismantleItem(
 
       return produced;
     }).then(async (produced) => {
-      await syncPlayerStateAfterPgWrite(redis, prisma, playerId, 'full');
+      if (redis) await reloadInventoryFromPg(redis, prisma, playerId);
       return produced;
     });
   });
@@ -142,7 +142,13 @@ export async function craftItem(
 
       return recipe.resultItem;
     }).then(async (result) => {
-      await syncPlayerStateAfterPgWrite(redis, prisma, playerId, 'full');
+      if (redis) {
+        const recipe = CRAFTING_RECIPES.find((r) => r.id === recipeId);
+        if (recipe) {
+          await applyCoinDeltaInRedis(redis, playerId, -recipe.requiredCoins, prisma);
+        }
+        await reloadInventoryFromPg(redis, prisma, playerId);
+      }
       return result;
     });
   });

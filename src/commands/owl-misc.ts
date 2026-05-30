@@ -10,7 +10,7 @@ import { openLootbox, openAllLootboxes, listLootboxInventory, getPityCounts } fr
 import { activateBuff, listBuffInventory } from '../systems/items';
 import type Redis from 'ioredis';
 import type { CommandDefinition } from '../types';
-import { syncPlayerStateAfterPgWrite } from '../state/player-state';
+import { applyCoinDeltaInRedis, reloadInventoryFromPg } from '../state/player-state';
 
 // ─── Paylaşılan sabitler ──────────────────────────────────────────────────────
 
@@ -67,7 +67,8 @@ export async function runSellMessage(
       data:  { coins: { increment: totalCoins } },
     });
   });
-  await syncPlayerStateAfterPgWrite(ctx.redis, ctx.prisma, message.author.id, 'full');
+  await applyCoinDeltaInRedis(ctx.redis, message.author.id, totalCoins, ctx.prisma);
+  await reloadInventoryFromPg(ctx.redis, ctx.prisma, message.author.id);
 
   const player = await ctx.prisma.player.findUnique({
     where:  { id: message.author.id },

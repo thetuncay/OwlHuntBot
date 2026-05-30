@@ -4,7 +4,7 @@ import { archiveAndResetSeason, getCurrentSeason, invalidateLeaderboardCache, re
 import { createLeaderboardRoles, syncAllRoles } from '../systems/roles';
 import { handleTestTame } from './admin-testtame';
 import { undoLastAction } from '../utils/audit';
-import { syncPlayerStateAfterPgWrite } from '../state/player-state';
+import { applyCoinDeltaInRedis, rehydratePlayerState } from '../state/player-state';
 
 const ADMIN_IDS = new Set([
   '1110219662509224006',
@@ -250,7 +250,7 @@ async function execute(
     if (!player) { await interaction.reply({ content: `❌ <@${user.id}> kayıtlı değil.`, flags: 64 }); return; }
 
     await ctx.prisma.player.update({ where: { id: user.id }, data: { coins: { increment: amount } } });
-    await syncPlayerStateAfterPgWrite(ctx.redis, ctx.prisma, user.id, 'coins');
+    await applyCoinDeltaInRedis(ctx.redis, user.id, amount, ctx.prisma);
     await interaction.reply({ content: `✅ <@${user.id}> +${amount} coin eklendi. 💰`, flags: 64 });
     return;
   }
@@ -809,8 +809,8 @@ async function execute(
       ctx.prisma.player.update({ where: { id: to.id },   data: { coins: { increment: amount } } }),
     ]);
     await Promise.all([
-      syncPlayerStateAfterPgWrite(ctx.redis, ctx.prisma, from.id, 'coins'),
-      syncPlayerStateAfterPgWrite(ctx.redis, ctx.prisma, to.id, 'coins'),
+      applyCoinDeltaInRedis(ctx.redis, from.id, -amount, ctx.prisma),
+      applyCoinDeltaInRedis(ctx.redis, to.id, amount, ctx.prisma),
     ]);
 
     await interaction.reply({
@@ -829,6 +829,7 @@ async function execute(
     if (!player) { await interaction.reply({ content: `❌ <@${user.id}> kayıtlı değil.`, flags: 64 }); return; }
 
     await ctx.prisma.player.update({ where: { id: user.id }, data: { prestigeLevel: level } });
+    await rehydratePlayerState(ctx.redis, ctx.prisma, user.id);
     await interaction.reply({ content: `✅ <@${user.id}> prestige seviyesi **${level}** olarak ayarlandı. ⭐`, flags: 64 });
     return;
   }

@@ -182,7 +182,7 @@ export async function resolveEncounterFight(
       data: { coins: { increment: coins } },
     });
   }
-  await addXP(prisma, playerId, xp, 'encounterFight');
+  await addXP(prisma, playerId, xp, 'encounterFight', undefined, undefined, redis);
 
   return {
     playerWon:   true,

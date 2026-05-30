@@ -77,7 +77,7 @@ export async function runPrestigeMessage(
       }
       await i.update({ content: '⏳ İşleniyor...', embeds: [], components: [] });
       try {
-        const { newPrestigeLevel } = await performAscension(ctx.prisma, userId, owlId);
+        const { newPrestigeLevel } = await performAscension(ctx.prisma, userId, owlId, ctx.redis);
         await i.editReply({
           content: '',
           embeds: [successEmbed('🌟 ASCENSION TAMAMLANDI!',
@@ -169,7 +169,7 @@ export async function runPrestigeSlash(interaction: ChatInputCommandInteraction,
       }
       await i.update({ content: '⏳ İşleniyor...', embeds: [], components: [] });
       try {
-        const { newPrestigeLevel } = await performAscension(ctx.prisma, userId, owlId);
+        const { newPrestigeLevel } = await performAscension(ctx.prisma, userId, owlId, ctx.redis);
         await i.editReply({
           content: '',
           embeds: [successEmbed('🌟 ASCENSION TAMAMLANDI!',

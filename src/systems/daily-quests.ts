@@ -3,7 +3,7 @@ import type { Redis } from 'ioredis';
 import { DAILY_QUEST_TYPES, DAILY_QUEST_CONFIG } from '../config';
 import { addXP } from './xp';
 import { withLock } from '../utils/lock';
-import { syncPlayerStateAfterPgWrite } from '../state/player-state';
+import { syncPlayerStateAfterPgWrite, applyCoinDeltaInRedis } from '../state/player-state';
 
 /**
  * Oyuncu için günlük görevleri oluşturur (eğer yoksa).
@@ -84,7 +84,10 @@ export async function claimQuestReward(
 
       return { coins: quest.rewardCoins, xp: quest.rewardXp, levelUp: xpResult.levelUp };
     });
-    await syncPlayerStateAfterPgWrite(redis, prisma, playerId, 'coins');
+    if (redis) {
+      await applyCoinDeltaInRedis(redis, playerId, result.coins, prisma);
+      await syncPlayerStateAfterPgWrite(redis, prisma, playerId, 'progress');
+    }
     return result;
   });
 }

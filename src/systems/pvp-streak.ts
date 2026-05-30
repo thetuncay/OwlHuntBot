@@ -100,6 +100,7 @@ export async function updatePvpStreak(
   prisma: PrismaClient,
   winnerId: string,
   loserId: string,
+  opts?: { skipCoinWrite?: boolean },
 ): Promise<StreakUpdateResult> {
   // Kazanan ve kaybeden + baykuşlarını paralel çek
   const [winner, loser, winnerOwl, loserOwl] = await Promise.all([
@@ -165,7 +166,7 @@ export async function updatePvpStreak(
       data: {
         pvpStreak:     streakCounted ? { increment: 1 } : oldStreak,
         pvpBestStreak: newBest,
-        ...(bonusCoins > 0 ? { coins: { increment: bonusCoins } } : {}),
+        ...(bonusCoins > 0 && !opts?.skipCoinWrite ? { coins: { increment: bonusCoins } } : {}),
       },
     }),
     // Kaybeden: streak sıfırla

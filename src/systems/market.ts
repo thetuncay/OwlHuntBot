@@ -10,7 +10,7 @@ import {
 import { withLock } from '../utils/lock';
 import { trackQuestProgress } from './daily-quests';
 import type { Redis } from 'ioredis';
-import { syncPlayerStateAfterPgWrite } from '../state/player-state';
+import { applyCoinDeltaInRedis, reloadInventoryFromPg } from '../state/player-state';
 
 /**
  * Markette yeni bir ilan oluşturur.
@@ -89,7 +89,7 @@ export async function createListing(
 
       return listing;
     }).then(async (listing) => {
-      await syncPlayerStateAfterPgWrite(redis, prisma, sellerId, 'full');
+      if (redis) await reloadInventoryFromPg(redis, prisma, sellerId);
       return listing;
     });
   });
@@ -164,10 +164,14 @@ export async function buyListing(
 
       return { listing, tax, sellerGain };
     }).then(async (result) => {
-      await Promise.all([
-        syncPlayerStateAfterPgWrite(redis, prisma, buyerId, 'full'),
-        syncPlayerStateAfterPgWrite(redis, prisma, result.listing.sellerId, 'full'),
-      ]);
+      if (redis) {
+        await Promise.all([
+          applyCoinDeltaInRedis(redis, buyerId, -result.listing.price, prisma),
+          applyCoinDeltaInRedis(redis, result.listing.sellerId, result.sellerGain, prisma),
+          reloadInventoryFromPg(redis, prisma, buyerId),
+          reloadInventoryFromPg(redis, prisma, result.listing.sellerId),
+        ]);
+      }
       return result;
     });
   });

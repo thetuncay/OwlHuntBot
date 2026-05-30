@@ -20,6 +20,9 @@ import { recordCoinsEarned } from './leaderboard';
 import { SLOT_TABLE } from '../config';
 import { weightedRandom } from '../utils/rng';
 import {
+  applyCoinDeltaInRedis,
+} from '../state/player-state';
+import {
   PVP_GAMBLE_MIN_BET,
   PVP_GAMBLE_COOLDOWN_MS,
   PVP_GAMBLE_HOUSE_CUT_BASE,
@@ -361,13 +364,34 @@ async function updateLossStreak(
  */
 async function applyRebate(
   prisma: PrismaClient,
+  redis: Redis,
   rebate: PvpRebateResult,
 ): Promise<void> {
   if (rebate.amount <= 0) return;
+  await applyCoinDeltaInRedis(redis, rebate.playerId, rebate.amount, prisma);
   await prisma.player.update({
     where: { id: rebate.playerId },
     data: { coins: { increment: rebate.amount } },
   });
+}
+
+/** Kazanan/kaybeden coin deltalarini Redis hot state'e uygula. */
+async function syncGambleCoinDeltas(
+  redis: Redis,
+  prisma: PrismaClient,
+  winnerId: string | null,
+  loserId: string | null,
+  winnerGain: number,
+  loserLoss: number,
+): Promise<void> {
+  const ops: Promise<unknown>[] = [];
+  if (winnerId && winnerGain !== 0) {
+    ops.push(applyCoinDeltaInRedis(redis, winnerId, winnerGain, prisma));
+  }
+  if (loserId && loserLoss !== 0) {
+    ops.push(applyCoinDeltaInRedis(redis, loserId, -loserLoss, prisma));
+  }
+  if (ops.length) await Promise.all(ops);
 }
 
 /**
@@ -458,7 +482,9 @@ export async function settleCoinFlip(
   ]);
 
   // Rebate varsa uygula
-  if (rebate) await applyRebate(prisma, rebate);
+  if (rebate) await applyRebate(prisma, redis, rebate);
+
+  await syncGambleCoinDeltas(redis, prisma, winnerId, loserId, winnerGain, loserLoss);
 
   // Pair count artır + cooldown set et
   await Promise.all([
@@ -579,8 +605,8 @@ export async function settleSlotRace(
   // Combo bonusu varsa her iki oyuncuya XP ver
   if (comboBonus) {
     await Promise.all([
-      addXP(prisma, challengerId, PVP_SLOT_COMBO_XP_BONUS, 'pvp_slot_combo'),
-      addXP(prisma, defenderId, PVP_SLOT_COMBO_XP_BONUS, 'pvp_slot_combo'),
+      addXP(prisma, challengerId, PVP_SLOT_COMBO_XP_BONUS, 'pvp_slot_combo', undefined, undefined, redis),
+      addXP(prisma, defenderId, PVP_SLOT_COMBO_XP_BONUS, 'pvp_slot_combo', undefined, undefined, redis),
     ]);
   }
 
@@ -588,8 +614,10 @@ export async function settleSlotRace(
   let rebate = null;
   if (winnerId && loserId) {
     rebate = await updateLossStreak(redis, winnerId, loserId, loserLoss);
-    if (rebate) await applyRebate(prisma, rebate);
+    if (rebate) await applyRebate(prisma, redis, rebate);
   }
+
+  await syncGambleCoinDeltas(redis, prisma, winnerId, loserId, winnerGain, loserLoss);
 
   // Pair count + cooldown
   await Promise.all([
@@ -808,9 +836,11 @@ export async function settleBlackjackPro(
   let rebate: PvpRebateResult | null = null;
   if (winnerId && loserId) {
     rebate = await updateLossStreak(redis, winnerId, loserId, loserLoss);
-    if (rebate) await applyRebate(prisma, rebate);
+    if (rebate) await applyRebate(prisma, redis, rebate);
     await recordCoinsEarned(prisma, winnerId, winnerGain, redis).catch(() => null);
   }
+
+  await syncGambleCoinDeltas(redis, prisma, winnerId, loserId, winnerGain, loserLoss);
 
   await Promise.all([
     incrementPairCount(redis, challengerId, defenderId),

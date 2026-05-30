@@ -370,7 +370,7 @@ export async function runSimulatedPvP(
   }
 
   // XP ekle
-  await addXP(prisma, playerId, xpGained, playerWon ? 'pvpWin' : 'pvpLose');
+  await addXP(prisma, playerId, xpGained, playerWon ? 'pvpWin' : 'pvpLose', undefined, undefined, redis);
 
   // Liderboard — sadece kazanınca
   if (playerWon) {
