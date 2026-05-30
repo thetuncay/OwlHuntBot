@@ -25,6 +25,7 @@ import {
   hydratePlayerState,
   reloadInventoryFromPg,
 } from '../state/player-state';
+import { resolveOwlByInput } from '../utils/owl-id';
 
 export type MarketCategory = 'owl' | 'item' | 'buff' | 'material';
 
@@ -234,12 +235,7 @@ export async function createOwlListing(
       throw new Error(`Listeleme ücreti **${listingFee.toLocaleString('tr-TR')}** coin — yetersiz bakiye.`);
     }
 
-    const owl = await prisma.owl.findFirst({
-      where: {
-        ownerId: sellerId,
-        OR: [{ id: owlId }, { id: { startsWith: owlId } }],
-      },
-    });
+    const owl = await resolveOwlByInput(prisma, sellerId, owlId);
     if (!owl) throw new Error('Baykuş bulunamadı.');
     if (owl.isMain) throw new Error('Main baykuşu satışa koyamazsın.');
     if (owl.passiveMode === 'market') throw new Error('Bu baykuş zaten markette.');

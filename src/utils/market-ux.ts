@@ -130,7 +130,7 @@ export function buildMarketHubText(
     '━━━━━━━━━━━━━━━━━━',
     '',
     `⚒️ Sat → \`${prefix} market sell <eşya> <miktar> <fiyat>\``,
-    `🦉 Baykuş → \`${prefix} market sell owl <id> <fiyat>\``,
+    `🦉 Baykuş → \`${prefix} market sell owl <kısa_id> <fiyat>\``,
     `🛍️ Al → \`${prefix} buy <ilanNo>\``,
     `🔍 Ara → \`${prefix} market search <kelime>\``,
     `📋 İlanlarım → \`${prefix} market my\``,

@@ -29,6 +29,8 @@ import {
   buildPurchaseSuccessText,
 } from '../utils/market-ux';
 import type { CommandContext } from '../types';
+import { parseMarketSellItemArgs, resolveInventoryItemName } from '../utils/market-parse';
+import { resolveOwlByInput } from '../utils/owl-id';
 
 const VALID_CATEGORIES = new Set<string>(['owl', 'item', 'buff', 'material']);
 
@@ -59,14 +61,23 @@ async function handleSell(
   reply: (text: string) => Promise<void>,
 ) {
   if (args[0]?.toLowerCase() === 'owl') {
-    const owlId = args[1];
-    const price = parseInt(args[2] ?? '0', 10);
-    if (!owlId || !price) {
-      await reply(`Kullanım: \`${prefix} market sell owl <baykuş_id> <fiyat>\``);
+    const rest = args.slice(1);
+    const price = parseInt(rest[rest.length - 1] ?? '0', 10);
+    const owlIdInput = rest.length >= 2 ? rest.slice(0, -1).join(' ') : rest[0] ?? '';
+    if (!owlIdInput || !price) {
+      await reply(
+        `Kullanım: \`${prefix} market sell owl <kısa_id> <fiyat>\`\n` +
+        `Örn: \`${prefix} market sell owl A1B2C3D4 50000\` · ID için \`${prefix} owls\``,
+      );
       return;
     }
     try {
-      const { listing, listingFee } = await createOwlListing(ctx.prisma, userId, owlId, price, ctx.redis);
+      const owl = await resolveOwlByInput(ctx.prisma, userId, owlIdInput);
+      if (!owl) {
+        await reply(`❌ Baykuş bulunamadı. \`${prefix} owls\` ile kısa ID'yi kontrol et.`);
+        return;
+      }
+      const { listing, listingFee } = await createOwlListing(ctx.prisma, userId, owl.id, price, ctx.redis);
       await reply(buildListingCreatedText(listing, listingFee, prefix));
     } catch (err: any) {
       await reply(`❌ ${err.message}`);
@@ -74,19 +85,26 @@ async function handleSell(
     return;
   }
 
-  const itemName = args[0]?.trim();
-  const qty = parseInt(args[1] ?? '1', 10) || 1;
-  const price = parseInt(args[2] ?? '0', 10);
-  if (!itemName || !price) {
+  const parsed = parseMarketSellItemArgs(args);
+  if (!parsed) {
     await reply(
-      `Kullanım: \`${prefix} market sell <eşya> <miktar> <fiyat>\`\n` +
-      `Baykuş: \`${prefix} market sell owl <id> <fiyat>\``,
+      `Kullanım: \`${prefix} market sell <eşya adı> [miktar] <fiyat>\`\n` +
+      `Örn: \`${prefix} market sell Sessizlik Teli 1 1000\`\n` +
+      `Baykuş: \`${prefix} market sell owl <kısa_id> <fiyat>\``,
     );
     return;
   }
 
   try {
-    const { listing, listingFee } = await createListing(ctx.prisma, userId, itemName, qty, price, ctx.redis);
+    const itemName = await resolveInventoryItemName(ctx.prisma, userId, parsed.itemNameRaw);
+    const { listing, listingFee } = await createListing(
+      ctx.prisma,
+      userId,
+      itemName,
+      parsed.quantity,
+      parsed.price,
+      ctx.redis,
+    );
     await reply(buildListingCreatedText(listing, listingFee, prefix));
   } catch (err: any) {
     await reply(`❌ ${err.message}`);

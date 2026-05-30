@@ -18,6 +18,7 @@ import { formatDuration } from '../utils/format';
 import { successEmbed, warningEmbed, failEmbed } from '../utils/embed';
 import type { CommandDefinition } from '../types';
 import { syncPlayerStateAfterPgWrite, rehydratePlayerState } from '../state/player-state';
+import { formatShortOwlId, resolveOwlByInput } from '../utils/owl-id';
 
 // Prisma Owl modelinin lokal tip tanımı (generate edilmemiş @prisma/client için)
 interface OwlRecord {
@@ -34,7 +35,7 @@ export async function runSetMain(
   ctx: Parameters<CommandDefinition['execute']>[1],
 ): Promise<void> {
   const userId = interaction.user.id;
-  const owlId  = interaction.options.getString('baykus', true);
+  const owlInput = interaction.options.getString('baykus', true);
 
   const cooldown = await checkCooldownRemainingMs(ctx.redis, `cooldown:switch:${userId}`);
   if (cooldown > 0) {
@@ -44,6 +45,25 @@ export async function runSetMain(
     });
     return;
   }
+
+  let resolvedOwl;
+  try {
+    resolvedOwl = await resolveOwlByInput(ctx.prisma, userId, owlInput);
+  } catch (err) {
+    await interaction.reply({
+      embeds: [failEmbed('Hata', err instanceof Error ? err.message : 'Geçersiz baykuş ID.')],
+      flags: 64,
+    });
+    return;
+  }
+  if (!resolvedOwl) {
+    await interaction.reply({
+      embeds: [failEmbed('Hata', 'Baykuş bulunamadı. `/owl owls` ile kısa ID\'yi kontrol et.')],
+      flags: 64,
+    });
+    return;
+  }
+  const owlId = resolvedOwl.id;
 
   await withLock(userId, 'setmain', async () => {
     await ctx.prisma.$transaction(async (tx: any) => {
@@ -94,14 +114,15 @@ export async function runSetMainMessage(
   ctx: Parameters<CommandDefinition['execute']>[1],
   helpPrefix: string,
 ): Promise<void> {
-  const owlId = args[0];
-  if (!owlId) {
+  const userId = message.author.id;
+  const owlInput = args[0];
+  if (!owlInput) {
     const embed = new EmbedBuilder()
       .setColor(0x5865f2)
       .setTitle('🔄 Setmain — Main Baykuş Değiştirme')
       .setDescription('> Envanterindeki başka bir baykuşu main olarak ayarla.')
       .addFields(
-        { name: '📋 Kullanım', value: `\`${helpPrefix} setmain <baykusId>\``, inline: false },
+        { name: '📋 Kullanım', value: `\`${helpPrefix} setmain <kısa_id>\`\nID için \`${helpPrefix} owls\``, inline: false },
         {
           name: '💰 Maliyet',
           value: 'Maliyet = **500** + (tüm baykuşların tier toplamı × **200**)',
@@ -118,17 +139,29 @@ export async function runSetMainMessage(
           inline: false,
         },
       )
-      .setFooter({ text: 'Baykuş ID\'ni öğrenmek için inventory komutunu kullan.' });
+      .setFooter({ text: `Baykuş kısa ID için ${helpPrefix} owls komutunu kullan.` });
     await message.reply({ embeds: [embed] });
     return;
   }
 
-  const userId = message.author.id;
   const cooldown = await checkCooldownRemainingMs(ctx.redis, `cooldown:switch:${userId}`);
   if (cooldown > 0) {
     await message.reply(`⏰ **Switch Cooldown** | ${formatDuration(cooldown)} sonra tekrar deneyebilirsin.`);
     return;
   }
+
+  let resolvedOwl;
+  try {
+    resolvedOwl = await resolveOwlByInput(ctx.prisma, userId, owlInput);
+  } catch (err) {
+    await message.reply(`❌ ${err instanceof Error ? err.message : 'Geçersiz baykuş ID.'}`);
+    return;
+  }
+  if (!resolvedOwl) {
+    await message.reply(`❌ Baykuş bulunamadı. \`${helpPrefix} owls\` ile kısa ID'yi kontrol et.`);
+    return;
+  }
+  const owlId = resolvedOwl.id;
 
   await withLock(userId, 'setmain', async () => {
     await ctx.prisma.$transaction(async (tx: any) => {
@@ -214,7 +247,7 @@ export async function runOwls(
       const hpWarn  = owl.hp / owl.hpMax < 0.3 ? ' ⚠️' : '';
       return (
         `${qEmoji} **${owl.species}**${mainTag}\n` +
-        `> \`ID: ${owl.id}\`\n` +
+        `> \`ID: ${formatShortOwlId(owl.id)}\`\n` +
         `> Tier ${owl.tier} · ${owl.quality} · HP ${owl.hp}/${owl.hpMax}${hpWarn} · Güç ${statSum}\n` +
         `> Gaga:${owl.statGaga} Göz:${owl.statGoz} Kulak:${owl.statKulak} Kanat:${owl.statKanat} Pençe:${owl.statPence}`
       );
@@ -338,7 +371,7 @@ export async function runOwlsMessage(
       const hpWarn  = owl.hp / owl.hpMax < 0.3 ? ' ⚠️' : '';
       return (
         `${qEmoji} **${owl.species}**${mainTag}\n` +
-        `> \`ID: ${owl.id}\`\n` +
+        `> \`ID: ${formatShortOwlId(owl.id)}\`\n` +
         `> Tier ${owl.tier} · ${owl.quality} · HP ${owl.hp}/${owl.hpMax}${hpWarn} · Güç ${statSum}\n` +
         `> Gaga:${owl.statGaga} Göz:${owl.statGoz} Kulak:${owl.statKulak} Kanat:${owl.statKanat} Pençe:${owl.statPence}`
       );
