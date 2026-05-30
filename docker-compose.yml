@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   bot:
     build: .
@@ -40,8 +38,9 @@ services:
     image: redis:7-alpine
     restart: unless-stopped
     command: redis-server --appendonly yes --appendfsync everysec
+    # Host 6379 cogu sunucuda dolu — bot .env: REDIS_URL=redis://localhost:6380
     ports:
-      - '6379:6379'
+      - '6380:6379'
     volumes:
       - redis-data:/data
     healthcheck:
