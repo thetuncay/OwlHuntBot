@@ -23,6 +23,8 @@ logs/*
 # Yedekler
 backups/
 backup_*/
+*.dump
+*.sql.gz
 
 # Hassas dosyalar
 *.pem

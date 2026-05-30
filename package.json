@@ -34,7 +34,8 @@
     "deploy:commands:prod": "node --import tsx dist/deploy-commands.js",
     "migrate:backup": "node --import tsx src/scripts/backup-mongodb.ts",
     "migrate:data": "MIGRATION_CONFIRM=yes node --import tsx src/scripts/migrate-mongodb-to-pg.ts",
-    "migrate:post": "node --import tsx src/scripts/post-migration.ts"
+    "migrate:post": "node --import tsx src/scripts/post-migration.ts",
+    "restore:pg": "bash scripts/restore-postgres.sh"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

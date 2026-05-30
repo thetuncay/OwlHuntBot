@@ -28,10 +28,14 @@ if [ ! -f .env ]; then
   exit 1
 fi
 
-set -a
-# shellcheck disable=SC1091
-source .env
-set +a
+# .env icindeki & karakterleri bash source ile bozulur — node/dotenv ile oku
+load_env_var() {
+  node -e "require('dotenv').config(); const v=process.env['$1']; if(v) process.stdout.write(v)"
+}
+
+DATABASE_URL="$(load_env_var DATABASE_URL)"
+MONGODB_URL="$(load_env_var MONGODB_URL)"
+export DATABASE_URL MONGODB_URL
 
 if [ -z "${DATABASE_URL:-}" ]; then
   echo "HATA: DATABASE_URL tanimli degil"
