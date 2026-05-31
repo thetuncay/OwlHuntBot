@@ -334,10 +334,12 @@ export async function settleBlackjack(
 
 export async function blackjack(prisma: PrismaClient, playerId: string, bet: number, redis?: Redis): Promise<GambleResult> {
   return withLock(playerId, 'financial', async () => {
+    let cachedBundle: Awaited<ReturnType<typeof hydratePlayerState>> = null;
     if (redis) {
       const bundle = await hydratePlayerState(redis, prisma, playerId);
       if (!bundle) throw new Error('Oyuncu bulunamadi.');
       if (bundle.player.coins < bet) throw new Error('Yetersiz bakiye.');
+      cachedBundle = bundle;
     } else {
       const player = await prisma.player.findUnique({ where: { id: playerId } });
       if (!player) throw new Error('Oyuncu bulunamadi.');
@@ -367,8 +369,8 @@ export async function blackjack(prisma: PrismaClient, playerId: string, bet: num
     const gain = win ? Math.floor(bet * payout) - bet : -bet;
 
     if (redis) {
-      const bundle = await hydratePlayerState(redis, prisma, playerId);
-      const player = bundle!.player;
+      const player = cachedBundle?.player;
+      if (!player) throw new Error('Oyuncu bulunamadi.');
       const finalCoins = await applyCoinDeltaInRedis(redis, playerId, gain, prisma);
 
       enqueueDbWrite({

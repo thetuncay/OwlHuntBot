@@ -350,6 +350,10 @@ export async function runOwls(
 
     await i.update({ embeds: [renderEmbed()], components: renderComponents() });
   });
+
+  collector.on('end', () => {
+    msg.edit({ components: [] }).catch(() => null);
+  });
 }
 
 // ─── Prefix: owl owls ─────────────────────────────────────────────────────────
@@ -476,5 +480,9 @@ export async function runOwlsMessage(
     }
 
     await i.update({ embeds: [renderEmbed()], components: renderComponents() });
+  });
+
+  collector.on('end', () => {
+    sent.edit({ components: [] }).catch(() => null);
   });
 }

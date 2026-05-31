@@ -20,6 +20,17 @@ export type CooldownDecision = {
 export const COOLDOWN_CLEAR_CHANNEL = 'cooldown:clear';
 
 const localCooldowns = new Map<string, CooldownEntry>();
+const LOCAL_COOLDOWN_CAP = 50_000;
+
+function enforceCooldownCacheCap(): void {
+  if (localCooldowns.size <= LOCAL_COOLDOWN_CAP) return;
+  // Önce süresi geçenleri at, gerekirse en eski girişi düşür.
+  sweepCooldownCache();
+  if (localCooldowns.size <= LOCAL_COOLDOWN_CAP) return;
+  const oldestKey = localCooldowns.keys().next().value as string | undefined;
+  if (!oldestKey) return;
+  localCooldowns.delete(oldestKey);
+}
 
 function nowMs(): number {
   return Date.now();
@@ -72,6 +83,7 @@ export async function guardCooldown(
       warned: false,
     };
     localCooldowns.set(key, entry);
+  enforceCooldownCacheCap();
     return markWarned(key, entry);
   }
 
@@ -79,6 +91,7 @@ export async function guardCooldown(
     expiresAtMs: nowMs() + cooldownMs,
     warned: false,
   });
+  enforceCooldownCacheCap();
   return toDecision(false, nowMs() + cooldownMs, false);
 }
 
@@ -105,6 +118,7 @@ export async function peekCooldown(
     warned: prev?.warned ?? false,
   };
   localCooldowns.set(key, entry);
+  enforceCooldownCacheCap();
   return markWarned(key, entry);
 }
 
@@ -137,6 +151,7 @@ export async function peekCooldownBounded(
     warned: prev?.warned ?? false,
   };
   localCooldowns.set(key, entry);
+  enforceCooldownCacheCap();
   return markWarned(key, entry);
 }
 
@@ -186,6 +201,7 @@ export async function armCooldown(
     expiresAtMs: nowMs() + cooldownMs,
     warned: false,
   });
+  enforceCooldownCacheCap();
 }
 
 /**

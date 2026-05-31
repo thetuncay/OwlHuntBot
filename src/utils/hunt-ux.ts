@@ -110,6 +110,8 @@ export function compressHuntResult(result: HuntRunResult): CompressedHunt {
       : null,
     isEmpty,
     encounterId: result.encounterId,
+    activeBuffs: result.activeBuffs,
+    activeConsumables: result.activeConsumables,
   };
 }
 

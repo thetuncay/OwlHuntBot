@@ -24,6 +24,7 @@ import {
   XP_FAIL_RATIO,
   XP_RISK_BONUS_RATE,
   BOND_GAIN_PER_HUNT,
+  BUFF_ITEM_MAP,
 } from '../config';
 import type { HuntCatchResult, HuntRunResult, LootboxDrop } from '../types';
 import { catchChance, clamp, huntRolls, spawnScore } from '../utils/math';
@@ -34,18 +35,19 @@ import {
   hydratePlayerState,
   computeXpDelta,
   applyHuntDelta,
+  applyOwlStaminaRecoveryInRedis,
   deductCoinsInRedis,
   buildLevelUpRewards,
   type InventoryDeltaItem,
 } from '../state/player-state';
 import { createEncounter } from './tame';
-import { getBuffEffects, drainBuffCharge } from './items';
+import { getBuffEffects, drainBuffCharge, listActiveBuffs } from './items';
 import { rollHuntLootboxDrop } from './drops';
 import { trackQuestProgress } from './daily-quests';
 import { getBiomeSession, setBiomeSession } from '../utils/biome-session';
 import { parseStoredTraits, resolveTraits, calcTraitEffects } from './traits';
 import { writeAudit } from '../utils/audit';
-import { consumeConsumableEffect, getConsumableEffectValue } from '../utils/use-items';
+import { consumeConsumableEffect, getActiveConsumables, getConsumableEffectValue } from '../utils/use-items';
 import { runDetached } from '../utils/async';
 
 /**
@@ -137,8 +139,9 @@ export async function rollHunt(
   prisma: PrismaClient,
   redis: Redis,
   playerId: string,
-  owlId: string,
-  biomeId = 'b0'
+  owlId?: string,
+  biomeId = 'b0',
+  includeDisplayMeta = false,
 ): Promise<HuntRunResult> {
   return withLock(playerId, 'financial', async () => {
     let bundle = await hydratePlayerState(redis, prisma, playerId);
@@ -154,10 +157,12 @@ export async function rollHunt(
 
     const buffEffects = await getBuffEffects(prisma, playerId, 'hunt');
     const player = bundle.player;
+    const targetOwlId = owlId ?? bundle.mainOwl?.id;
+    if (!targetOwlId) throw new Error('Main baykuş bulunamadı.');
     let owl = bundle.mainOwl;
 
-    if (!owl || owl.id !== owlId) {
-      const dbOwl = await prisma.owl.findUnique({ where: { id: owlId } });
+    if (!owl || owl.id !== targetOwlId) {
+      const dbOwl = await prisma.owl.findUnique({ where: { id: targetOwlId } });
       if (!dbOwl || dbOwl.ownerId !== playerId) throw new Error('Av icin gecersiz baykus.');
       owl = dbOwl as NonNullable<typeof owl>;
     }
@@ -366,7 +371,7 @@ export async function rollHunt(
       huntComboStreak: newStreak,
       noRareStreak: newNoRareStreak,
       bondGain: realCatchCount > 0 ? BOND_GAIN_PER_HUNT : 0,
-      owlId,
+      owlId: targetOwlId,
       inventoryItems,
       levelUp: xpResult.levelUp,
       levelUpRewards,
@@ -405,12 +410,39 @@ export async function rollHunt(
     for (const effectType of ['stamina_restore_once', 'stamina_boost_once'] as const) {
       const amount = await getConsumableEffectValue(redis, playerId, effectType);
       if (amount <= 0) continue;
-      const owlRow = await prisma.owl.findUnique({ where: { id: owlId }, select: { staminaCur: true, hpMax: true } });
-      if (owlRow) {
-        const newStamina = Math.min(owlRow.hpMax, owlRow.staminaCur + amount);
-        await prisma.owl.update({ where: { id: owlId }, data: { staminaCur: newStamina } });
-      }
+      await applyOwlStaminaRecoveryInRedis(redis, prisma, playerId, targetOwlId, amount);
       await consumeConsumableEffect(redis, playerId, effectType);
+    }
+
+    let activeBuffs: HuntRunResult['activeBuffs'] | undefined;
+    let activeConsumables: HuntRunResult['activeConsumables'] | undefined;
+    if (includeDisplayMeta) {
+      try {
+        const rawBuffs = await listActiveBuffs(prisma as any, playerId);
+        activeBuffs = rawBuffs
+          .filter((b) => b.chargeCur > 0 && b.category === 'hunt')
+          .map((b) => ({
+            emoji: BUFF_ITEM_MAP[b.buffItemId]?.emoji ?? '✨',
+            chargeCur: b.chargeCur,
+            chargeMax: b.chargeMax,
+          }));
+
+        const activeCons = await getActiveConsumables(redis, playerId);
+        activeConsumables = activeCons
+          .filter(({ def }) =>
+            def.effectType === 'hunt_catch_once'
+            || def.effectType === 'hunt_loot_once'
+            || def.effectType === 'stamina_restore_once'
+            || def.effectType === 'stamina_boost_once',
+          )
+          .map(({ def, expiresAt }) => ({
+            emoji: def.emoji,
+            name: def.itemName,
+            remainingMs: expiresAt - Date.now(),
+          }));
+      } catch {
+        // UI metasi hunt sonucunu bozmasin.
+      }
     }
 
     return {
@@ -419,6 +451,25 @@ export async function rollHunt(
       injured,
       totalXP,
       levelUp: xpResult.levelUp,
+      playerSnapshot: {
+        level: player.level,
+        prestigeLevel: player.prestigeLevel ?? undefined,
+      },
+      owlSnapshot: {
+        id: owl.id,
+        species: owl.species,
+        tier: owl.tier,
+        quality: owl.quality,
+        hp: owl.hp,
+        hpMax: owl.hpMax,
+        statGoz: owl.statGoz,
+        statKulak: owl.statKulak,
+        statGaga: owl.statGaga,
+        statKanat: owl.statKanat,
+        statPence: owl.statPence,
+      },
+      activeBuffs,
+      activeConsumables,
     };
   });
 }

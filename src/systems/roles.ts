@@ -4,7 +4,7 @@
 // Roller yoksa otomatik olusturulur, ID'ler Redis'e kaydedilir.
 // ============================================================
 
-import { type Client, type Guild, EmbedBuilder } from 'discord.js';
+import { type Client, type Guild, type GuildMember, EmbedBuilder } from 'discord.js';
 import type { PrismaClient } from '@prisma/client';
 import type Redis from 'ioredis';
 import { COLOR_SUCCESS } from '../config';
@@ -165,6 +165,20 @@ export async function syncCategoryRoles(
   prisma: PrismaClient,
   category: LeaderboardCategory,
 ): Promise<void> {
+  const resolveMembers = async (ids: string[]): Promise<Map<string, GuildMember>> => {
+    const map = new Map<string, GuildMember>();
+    await Promise.all(ids.map(async (id) => {
+      const cached = guild.members.cache.get(id);
+      if (cached) {
+        map.set(id, cached);
+        return;
+      }
+      const fetched = await guild.members.fetch(id).catch(() => null);
+      if (fetched) map.set(id, fetched);
+    }));
+    return map;
+  };
+
   // Bu kategoriye ait rol tanimlari
   const defs = ROLE_DEFINITIONS.filter((d) => d.category === category)
     .sort((a, b) => a.rank - b.rank);
@@ -186,8 +200,15 @@ export async function syncCategoryRoles(
 
     const newHolder = lb.entries[def.rank - 1]; // rank 1 → index 0
 
+    const candidateIds = new Set<string>([
+      ...role.members.keys(),
+      ...(newHolder ? [newHolder.playerId] : []),
+    ]);
+    const membersById = await resolveMembers([...candidateIds]);
+
     // Eski sahiplerin rollerini kaldir
-    for (const [memberId, member] of role.members) {
+    for (const [memberId, member] of membersById) {
+      if (!member.roles.cache.has(roleId)) continue;
       if (newHolder && memberId === newHolder.playerId) continue;
       await member.roles.remove(role, `Liderboard güncellendi — ${category} #${def.rank}`)
         .catch(() => null);
@@ -195,7 +216,8 @@ export async function syncCategoryRoles(
 
     // Yeni sahibe rol ver
     if (newHolder) {
-      const member = await guild.members.fetch(newHolder.playerId).catch(() => null);
+      const member = membersById.get(newHolder.playerId)
+        ?? await guild.members.fetch(newHolder.playerId).catch(() => null);
       if (member && !member.roles.cache.has(roleId)) {
         await member.roles.add(role, `Liderboard #${def.rank} — ${category}`)
           .catch(() => null);
@@ -218,8 +240,6 @@ export async function syncAllRoles(
     console.warn(`[Roles] Guild bulunamadi: ${guildId}`);
     return;
   }
-
-  await guild.members.fetch().catch(() => null);
 
   const categories: LeaderboardCategory[] = ['power', 'hunt', 'relic', 'arena', 'wealth'];
   await Promise.allSettled(

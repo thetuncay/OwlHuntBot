@@ -160,6 +160,14 @@ export async function activateBuff(
 // In-memory buff cache: { key → { effects, expiresAt } }
 const buffCache = new Map<string, { effects: BuffEffects; expiresAt: number }>();
 const BUFF_CACHE_TTL_MS = 120_000;
+const BUFF_CACHE_MAX = 10_000;
+
+function enforceBuffCacheCap(): void {
+  if (buffCache.size <= BUFF_CACHE_MAX) return;
+  const oldestKey = buffCache.keys().next().value as string | undefined;
+  if (!oldestKey) return;
+  buffCache.delete(oldestKey);
+}
 
 export async function getBuffEffects(
   prisma: AnyPrisma,
@@ -244,6 +252,7 @@ export async function getBuffEffects(
 
   // Cache'e yaz
   buffCache.set(cacheKey, { effects, expiresAt: Date.now() + BUFF_CACHE_TTL_MS });
+  enforceBuffCacheCap();
 
   return effects;
 }

@@ -34,7 +34,7 @@ function envFlag(name: string, defaultOn = false): boolean {
 }
 
 export function isPerfMetricsEnabled(): boolean {
-  return envFlag('PERF_METRICS', process.env.NODE_ENV !== 'production');
+  return envFlag('PERF_METRICS', false);
 }
 
 export function perfSlowThresholdMs(): number {
@@ -74,6 +74,14 @@ function parseBucket(raw: string | null): BucketStats {
 
 const localSamples = new Map<string, number[]>();
 const LOCAL_SAMPLE_CAP = 120;
+const LOCAL_SAMPLE_KEY_CAP = 2_000;
+
+function enforceLocalSampleKeyCap(): void {
+  if (localSamples.size <= LOCAL_SAMPLE_KEY_CAP) return;
+  const oldestKey = localSamples.keys().next().value as string | undefined;
+  if (!oldestKey) return;
+  localSamples.delete(oldestKey);
+}
 
 export class CommandPerfSpan {
   private readonly t0 = performance.now();
@@ -115,6 +123,7 @@ async function recordSample(
   buf.push(sample.totalMs);
   if (buf.length > LOCAL_SAMPLE_CAP) buf.shift();
   localSamples.set(key, buf);
+  enforceLocalSampleKeyCap();
 
   const minute = Math.floor(Date.now() / 60_000);
   const redisKey = bucketKey(minute);

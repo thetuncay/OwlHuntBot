@@ -9,6 +9,14 @@ import {
   syncPlayerStateAfterPgWrite,
 } from '../state/player-state';
 
+function envFlag(name: string): boolean {
+  const raw = process.env[name];
+  if (!raw) return false;
+  return raw === '1' || raw.toLowerCase() === 'true' || raw.toLowerCase() === 'yes';
+}
+
+const XP_LOG_ENABLED = envFlag('XP_LOG');
+
 /**
  * Oyuncuya XP ekler, level-up durumunu hesaplar ve sonucu dondurur.
  * Opsiyonel olarak mevcut player verisi geçilebilir — DB sorgusu azaltır.
@@ -141,7 +149,9 @@ export async function addXP(
     };
   }
 
-  console.info(`[XP] ${playerId} kaynak=${source} +${gainedXP} XP (Lv ${oldLevel} -> ${currentLevel})`);
+  if (XP_LOG_ENABLED) {
+    console.info(`[XP] ${playerId} kaynak=${source} +${gainedXP} XP (Lv ${oldLevel} -> ${currentLevel})`);
+  }
 
   if (redis) {
     if (totalLevelUpCoins > 0) {

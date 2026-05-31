@@ -26,6 +26,11 @@ import {
 import { safeReply } from './utils/safe-reply';
 import { RUNTIME } from './config/runtime';
 import {
+  consumeDroppedTelemetryCount,
+  flushCommandEvents,
+  telemetryQueueSize,
+} from './utils/command-telemetry';
+import {
   logCommandError,
   shouldNotifyUserOnDiscord,
   SpamBlockedError,
@@ -147,6 +152,15 @@ async function bootstrap(): Promise<void> {
       trackInterval(() => logLocalPerfSummary(), perfSummaryIntervalMs());
     }
   });
+
+  // Prefix telemetry'i batch insert ile yaz (hot-path DB yazimini azaltir).
+  trackInterval(async () => {
+    await flushCommandEvents(prisma).catch(() => null);
+    const dropped = consumeDroppedTelemetryCount();
+    if (dropped > 0) {
+      console.warn(`[Telemetry] Kuyruk tasmasi nedeniyle ${dropped} olay drop edildi`);
+    }
+  }, 5_000);
 
   // Yakalanmayan Discord client hatalarını logla, crash'e izin verme
   client.on('error', (error) => {
@@ -379,6 +393,13 @@ trackInterval(() => {
 registerGracefulShutdown([
   () => client.destroy(),
   async () => { await cooldownSubscriber?.quit().catch(() => null); },
+  async () => {
+    await flushCommandEvents(prisma).catch(() => null);
+    const pending = telemetryQueueSize();
+    if (pending > 0) {
+      console.warn(`[Telemetry] Kapatma sonrasi kuyrukta kalan olay: ${pending}`);
+    }
+  },
   async () => { await redis.quit(); },
   () => prisma.$disconnect(),
 ], 'Bot');

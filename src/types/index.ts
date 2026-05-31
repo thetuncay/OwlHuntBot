@@ -57,6 +57,29 @@ export interface HuntRunResult {
   injured: HuntCatchResult[];
   totalXP: number;
   levelUp?: LevelUpResult;
+  /** Side-effect ve follow-up için oyuncu snapshot'ı */
+  playerSnapshot?: {
+    level: number;
+    prestigeLevel?: number;
+  };
+  /** Side-effect ve follow-up için main owl snapshot'ı */
+  owlSnapshot?: {
+    id: string;
+    species: string;
+    tier: number;
+    quality: string;
+    hp: number;
+    hpMax: number;
+    statGoz: number;
+    statKulak: number;
+    statGaga: number;
+    statKanat: number;
+    statPence: number;
+  };
+  /** Aktif buff satiri (hunt mesajinda) */
+  activeBuffs?: { emoji: string; chargeCur: number; chargeMax: number }[];
+  /** Aktif consumable satiri (hunt mesajinda) */
+  activeConsumables?: { emoji: string; name: string; remainingMs: number }[];
   /** Av sonrası oluşan encounter ID (varsa) */
   encounterId?: string;
   /** Encounter kritik yol dışı — caller UI öncesi await eder */

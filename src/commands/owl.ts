@@ -191,14 +191,6 @@ export async function handleOwlTextCommand(
   const args      = parts.slice(1);
   const helpPrefix = (guildPrefix ?? (await getGuildPrefix(ctx.redis, message.guildId ?? ''))) || 'owl';
 
-  if (message.guildId) {
-    logCommandEvent(ctx.prisma, {
-      userId: message.author.id,
-      guildId: message.guildId,
-      command: sub,
-    });
-  }
-
   // Kayıt gerektirmeyen komutlar
   if (sub === 'yardim' || sub === 'yardım') {
     await message.reply({ embeds: [buildHelpEmbed(helpPrefix)] });
@@ -212,6 +204,14 @@ export async function handleOwlTextCommand(
   // Diğer tüm komutlar kayıt gerektirir
   const ready = await ensureRegisteredForMessage(message, ctx);
   if (!ready) return sub;
+
+  if (message.guildId) {
+    logCommandEvent(ctx.prisma, {
+      userId: message.author.id,
+      guildId: message.guildId,
+      command: sub,
+    });
+  }
 
   switch (sub) {
     case 'hunt':      await runHuntMessage(message, ctx);                          break;

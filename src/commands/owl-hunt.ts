@@ -50,10 +50,6 @@ import {
   shouldNotifyUserOnDiscord,
   userErrorMessage,
 } from '../utils/command-error';
-import { listActiveBuffs } from '../systems/items';
-import { BUFF_ITEM_MAP } from '../config';
-import { getActiveConsumables } from '../utils/use-items';
-import { hydratePlayerState } from '../state/player-state';
 import { getGuildPrefix } from '../utils/prefix';
 import type { CachedOwlData } from '../utils/player-cache';
 import {
@@ -277,6 +273,11 @@ export async function runHunt(
           await clearBiomeSession(ctx.redis, userId);
           await li.update({ content: `🚪 **${biome.name}** bölgesinden çıktın.`, embeds: [], components: [] });
         });
+        leaveCollector.on('end', (_, reason) => {
+          if (reason === 'time') {
+            panelMsg.edit({ content: '⏰ Bölge süresi doldu, otomatik çıkış yapıldı.', embeds: [], components: [] }).catch(() => null);
+          }
+        });
       } catch {
         // panelLock collector.on('end') ile temizlenir
       }
@@ -301,14 +302,8 @@ export async function runHunt(
 
   await interaction.deferReply({ flags: 64 });
 
-  const bundle = await hydratePlayerState(ctx.redis, ctx.prisma, userId);
-  if (!bundle || !bundle.mainOwl) {
-    await interaction.editReply({ content: '❌ **Hata** | Main baykuş bulunamadı.' });
-    return;
-  }
-
   try {
-    const result = await rollHunt(ctx.prisma, ctx.redis, userId, bundle.mainOwl.id, session.biomeId);
+    const result = await rollHunt(ctx.prisma, ctx.redis, userId, undefined, session.biomeId);
     await armCooldown(ctx.redis, huntCooldownKey(userId), HUNT_COOLDOWN_MS);
     const compressed = compressHuntResult(result);
     const name = interaction.member && 'displayName' in interaction.member
@@ -320,15 +315,17 @@ export async function runHunt(
 
     await interaction.editReply({ content: buildFinalMessage(name, compressed, prefix) });
 
-    spawnHuntFollowUp(
-      { followUp: interaction.followUp.bind(interaction) },
-      ctx,
-      userId,
-      bundle.player,
-      bundle.mainOwl,
-      result.catches.some((c) => c.critical),
-      prefix,
-    );
+    if (result.playerSnapshot && result.owlSnapshot) {
+      spawnHuntFollowUp(
+        { followUp: interaction.followUp.bind(interaction) },
+        ctx,
+        userId,
+        result.playerSnapshot,
+        result.owlSnapshot as CachedOwlData,
+        result.catches.some((c) => c.critical),
+        prefix,
+      );
+    }
   } catch (err: any) {
     // Biyom süresi dolmuşsa oturumu temizle
     if (err.message?.includes('biyom') || err.message?.includes('coin')) {
@@ -456,45 +453,13 @@ export async function runHuntMessage(
   );
   if (!canHunt) return;
 
-  const bundle = await hydratePlayerState(ctx.redis, ctx.prisma, userId);
-  if (!bundle || !bundle.mainOwl) {
-    await message.reply('❌ **Hata** | Main baykuş bulunamadı.');
-    return;
-  }
-
   let loadingMsg: Awaited<ReturnType<typeof safeReply>> | null = null;
   try {
     loadingMsg = await safeReply(message, '🦅 **Avlanıyor...**');
-    const result = await rollHunt(ctx.prisma, ctx.redis, userId, bundle.mainOwl.id, session.biomeId);
+    const result = await rollHunt(ctx.prisma, ctx.redis, userId, undefined, session.biomeId, true);
     await armCooldown(ctx.redis, huntCooldownKey(userId), HUNT_COOLDOWN_MS);
     const compressed = compressHuntResult(result);
     const name = message.member?.displayName ?? message.author.username;
-
-    // Aktif hunt buff'larını çek — hunt mesajında göster (senkron, animasyondan önce)
-    try {
-      const rawBuffs = await listActiveBuffs(ctx.prisma as any, userId);
-      compressed.activeBuffs = rawBuffs
-        .filter((b) => b.chargeCur > 0 && b.category === 'hunt')
-        .map((b) => ({
-          emoji: BUFF_ITEM_MAP[b.buffItemId]?.emoji ?? '✨',
-          chargeCur: b.chargeCur,
-          chargeMax: b.chargeMax,
-        }));
-
-      const activeCons = await getActiveConsumables(ctx.redis, userId);
-      compressed.activeConsumables = activeCons
-        .filter(({ def }) =>
-          def.effectType === 'hunt_catch_once'
-          || def.effectType === 'hunt_loot_once'
-          || def.effectType === 'stamina_restore_once'
-          || def.effectType === 'stamina_boost_once',
-        )
-        .map(({ def, expiresAt }) => ({
-          emoji: def.emoji,
-          name: def.itemName,
-          remainingMs: expiresAt - Date.now(),
-        }));
-    } catch { /* hata hunt'u engellemesin */ }
 
     const prefix = message.guildId
       ? await getGuildPrefix(ctx.redis, message.guildId)
@@ -502,15 +467,17 @@ export async function runHuntMessage(
     const finalText = buildFinalMessage(name, compressed, prefix);
     await loadingMsg.edit(finalText).catch(() => safeReply(message, finalText));
 
-    spawnHuntFollowUp(
-      { reply: (payload: unknown) => safeReply(message, payload as Parameters<typeof safeReply>[1]) },
-      ctx,
-      userId,
-      bundle.player,
-      bundle.mainOwl,
-      result.catches.some((c) => c.critical),
-      prefix,
-    );
+    if (result.playerSnapshot && result.owlSnapshot) {
+      spawnHuntFollowUp(
+        { reply: (payload: unknown) => safeReply(message, payload as Parameters<typeof safeReply>[1]) },
+        ctx,
+        userId,
+        result.playerSnapshot,
+        result.owlSnapshot as CachedOwlData,
+        result.catches.some((c) => c.critical),
+        prefix,
+      );
+    }
   } catch (err: any) {
     if (err.message?.includes('biyom') || err.message?.includes('coin')) {
       await clearBiomeSession(ctx.redis, userId);

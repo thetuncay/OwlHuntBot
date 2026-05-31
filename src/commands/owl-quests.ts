@@ -74,6 +74,7 @@ export async function runQuestsMessage(
 
       try {
         const reward = await claimQuestReward(ctx.prisma, userId, questId, ctx.redis);
+        collector.stop('claimed');
         await i.update({
           content: `🎉 **Görev Ödülü Alındı!**\nKazancın: **${reward.coins}** 💰 ve **${reward.xp}** XP${reward.levelUp ? '\n🆙 **LEVEL UP!**' : ''}\n💡 ${formatFlowHint(getOwOFlowHints().afterQuests, prefix)}`,
           embeds: [],
@@ -82,6 +83,11 @@ export async function runQuestsMessage(
       } catch (err: any) {
         await i.reply({ content: `❌ ${err.message}`, flags: 64 });
       }
+    });
+
+    collector.on('end', (_, reason) => {
+      if (reason === 'claimed') return;
+      sent.edit({ components: [] }).catch(() => null);
     });
   }
 }
@@ -152,6 +158,7 @@ export async function runQuestsSlash(interaction: ChatInputCommandInteraction, c
 
       try {
         const reward = await claimQuestReward(ctx.prisma, userId, questId, ctx.redis);
+        collector.stop('claimed');
         await i.update({
           content: `🎉 **Görev Ödülü Alındı!**\nKazancın: **${reward.coins}** 💰 ve **${reward.xp}** XP${reward.levelUp ? '\n🆙 **LEVEL UP!**' : ''}\n💡 ${formatFlowHint(getOwOFlowHints().afterQuests, slashPrefix)}`,
           embeds: [],
@@ -160,6 +167,11 @@ export async function runQuestsSlash(interaction: ChatInputCommandInteraction, c
       } catch (err: any) {
         await i.reply({ content: `❌ ${err.message}`, flags: 64 });
       }
+    });
+
+    collector.on('end', (_, reason) => {
+      if (reason === 'claimed') return;
+      interaction.editReply({ components: [] }).catch(() => null);
     });
   }
 }

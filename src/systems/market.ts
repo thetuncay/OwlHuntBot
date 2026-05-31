@@ -20,12 +20,14 @@ import { withLock } from '../utils/lock';
 import { trackQuestProgress } from './daily-quests';
 import type { Redis } from 'ioredis';
 import {
+  addInventoryItemInRedis,
   applyCoinDeltaInRedis,
   deductCoinsInRedis,
   hydratePlayerState,
   reloadInventoryFromPg,
 } from '../state/player-state';
 import { resolveOwlByInput } from '../utils/owl-id';
+import { enqueueDbWrite } from '../utils/db-queue';
 
 export type MarketCategory = 'owl' | 'item' | 'buff' | 'material';
 
@@ -358,8 +360,8 @@ async function computeRiskScore(
   return { score: Math.min(100, score), factors };
 }
 
-async function refreshMarketAnalytics(
-  tx: Prisma.TransactionClient,
+export async function refreshMarketAnalytics(
+  tx: Prisma.TransactionClient | PrismaClient,
   itemId: string,
   itemName: string,
   lastSalePrice: number,
@@ -538,8 +540,6 @@ export async function buyListing(
         });
       }
 
-      await refreshMarketAnalytics(tx, listing.itemId, listing.itemName, listing.price);
-
       const sold = await tx.marketListing.update({
         where: { id: listing.id },
         data: {
@@ -552,13 +552,30 @@ export async function buyListing(
       return { listing: sold, tax, sellerGain, sale, riskScore: score };
     });
 
+    enqueueDbWrite({
+      type: 'refreshMarketAnalytics',
+      itemId: result.listing.itemId,
+      itemName: result.listing.itemName,
+      lastSalePrice: result.listing.price,
+    });
+
     if (redis) {
-      await Promise.all([
+      const jobs: Promise<unknown>[] = [
         applyCoinDeltaInRedis(redis, buyerId, -result.listing.price, prisma),
         applyCoinDeltaInRedis(redis, result.listing.sellerId, result.sellerGain, prisma),
-        reloadInventoryFromPg(redis, prisma, buyerId),
-        reloadInventoryFromPg(redis, prisma, result.listing.sellerId),
-      ]);
+      ];
+      if (result.listing.marketCategory !== 'owl') {
+        jobs.push(addInventoryItemInRedis(
+          redis,
+          buyerId,
+          result.listing.itemName,
+          result.listing.itemType,
+          result.listing.rarity,
+          result.listing.quantity,
+          prisma,
+        ));
+      }
+      await Promise.all(jobs);
     }
     return result;
   });

@@ -304,10 +304,7 @@ export async function applyHuntDelta(
   playerId: string,
   delta: HuntStateDelta,
 ): Promise<CachedPlayerData> {
-  await loadPlayerForMutation(redis, prisma, playerId);
-  const rawPlayer = await redis.get(playerKey(playerId));
-  if (!rawPlayer) throw new Error('Oyuncu state bulunamadi — hydrate gerekli.');
-  const player = JSON.parse(rawPlayer) as CachedPlayerData;
+  const player = await loadPlayerForMutation(redis, prisma, playerId);
 
   player.xp = delta.newXp;
   player.level = delta.newLevel;
@@ -349,67 +346,62 @@ export async function applyHuntDelta(
     }
   }
 
-  for (const item of delta.inventoryItems) {
-    const existingRaw = await redis.hget(invKey(playerId), item.itemName);
-    if (existingRaw) {
-      const existing = JSON.parse(existingRaw) as { itemType: string; rarity: string; quantity: number };
-      existing.quantity += item.quantity;
-      pipeline.hset(invKey(playerId), item.itemName, JSON.stringify(existing));
-    } else {
-      pipeline.hset(
-        invKey(playerId),
-        item.itemName,
-        JSON.stringify({ itemType: item.itemType, rarity: item.rarity, quantity: item.quantity }),
-      );
+  // Envanter mutasyonlarini tek map'te topla, Redis'ten tek HMGET ile oku.
+  const itemDeltas = new Map<string, { itemType: string; rarity: string; quantity: number }>();
+  const addItemDelta = (itemName: string, itemType: string, rarity: string, quantity: number): void => {
+    if (quantity <= 0) return;
+    const existing = itemDeltas.get(itemName);
+    if (existing) {
+      existing.quantity += quantity;
+      return;
     }
+    itemDeltas.set(itemName, { itemType, rarity, quantity });
+  };
+
+  for (const item of delta.inventoryItems) {
+    addItemDelta(item.itemName, item.itemType, item.rarity, item.quantity);
   }
 
   if (delta.levelUpRewards) {
     for (const reward of delta.levelUpRewards) {
       if (reward.item) {
-        const meta = reward.item;
-        const existingRaw = await redis.hget(invKey(playerId), meta.itemName);
-        if (existingRaw) {
-          const existing = JSON.parse(existingRaw);
-          existing.quantity += meta.quantity;
-          pipeline.hset(invKey(playerId), meta.itemName, JSON.stringify(existing));
-        } else {
-          pipeline.hset(invKey(playerId), meta.itemName, JSON.stringify({
-            itemType: meta.itemType,
-            rarity: meta.rarity,
-            quantity: meta.quantity,
-          }));
-        }
+        addItemDelta(
+          reward.item.itemName,
+          reward.item.itemType,
+          reward.item.rarity,
+          reward.item.quantity,
+        );
       }
       if (reward.lootbox) {
-        const name = reward.lootbox.name;
-        const existingRaw = await redis.hget(invKey(playerId), name);
-        if (existingRaw) {
-          const existing = JSON.parse(existingRaw);
-          existing.quantity += reward.lootbox.quantity;
-          pipeline.hset(invKey(playerId), name, JSON.stringify(existing));
-        } else {
-          pipeline.hset(invKey(playerId), name, JSON.stringify({
-            itemType: 'Lootbox',
-            rarity: 'Rare',
-            quantity: reward.lootbox.quantity,
-          }));
-        }
+        addItemDelta(reward.lootbox.name, 'Lootbox', 'Rare', reward.lootbox.quantity);
       }
       if (reward.lootbox2) {
-        const name = reward.lootbox2.name;
-        const existingRaw = await redis.hget(invKey(playerId), name);
-        if (existingRaw) {
-          const existing = JSON.parse(existingRaw);
-          existing.quantity += reward.lootbox2.quantity;
-          pipeline.hset(invKey(playerId), name, JSON.stringify(existing));
-        } else {
-          pipeline.hset(invKey(playerId), name, JSON.stringify({
-            itemType: 'Lootbox',
-            rarity: 'Rare',
-            quantity: reward.lootbox2.quantity,
-          }));
-        }
+        addItemDelta(reward.lootbox2.name, 'Lootbox', 'Rare', reward.lootbox2.quantity);
+      }
+    }
+  }
+
+  const itemNames = [...itemDeltas.keys()];
+  if (itemNames.length > 0) {
+    const existingRows = await redis.hmget(invKey(playerId), ...itemNames);
+    for (let i = 0; i < itemNames.length; i++) {
+      const itemName = itemNames[i]!;
+      const deltaItem = itemDeltas.get(itemName)!;
+      const existingRaw = existingRows[i];
+      if (existingRaw) {
+        const existing = JSON.parse(existingRaw) as { itemType: string; rarity: string; quantity: number };
+        existing.quantity += deltaItem.quantity;
+        pipeline.hset(invKey(playerId), itemName, JSON.stringify(existing));
+      } else {
+        pipeline.hset(
+          invKey(playerId),
+          itemName,
+          JSON.stringify({
+            itemType: deltaItem.itemType,
+            rarity: deltaItem.rarity,
+            quantity: deltaItem.quantity,
+          }),
+        );
       }
     }
   }
@@ -794,6 +786,41 @@ export async function applyOwlStatUpdate(
   if (!raw) return;
   const owl = JSON.parse(raw) as CachedOwlData;
   Object.assign(owl, updates);
+  await redis.set(owlKey(owlId), JSON.stringify(owl));
+  await markDirty(redis, playerId);
+  enqueuePersistPlayer(playerId);
+}
+
+/** Hunt consumable sonrası stamina yenileme — Redis-first. */
+export async function applyOwlStaminaRecoveryInRedis(
+  redis: Redis,
+  prisma: PrismaClient,
+  playerId: string,
+  owlId: string,
+  amount: number,
+): Promise<void> {
+  if (amount <= 0) return;
+  await loadPlayerForMutation(redis, prisma, playerId);
+  let raw = await redis.get(owlKey(owlId));
+  if (!raw) {
+    const dbOwl = await prisma.owl.findUnique({
+      where: { id: owlId },
+      select: {
+        id: true, ownerId: true, species: true, tier: true, bond: true,
+        statGaga: true, statGoz: true, statKulak: true, statKanat: true, statPence: true,
+        quality: true, hp: true, hpMax: true, staminaCur: true,
+        isMain: true, effectiveness: true, traits: true,
+      },
+    });
+    if (dbOwl) {
+      await redis.set(owlKey(owlId), JSON.stringify(dbOwl));
+      raw = JSON.stringify(dbOwl);
+    }
+  }
+  if (!raw) return;
+
+  const owl = JSON.parse(raw) as CachedOwlData;
+  owl.staminaCur = Math.min(owl.hpMax, owl.staminaCur + amount);
   await redis.set(owlKey(owlId), JSON.stringify(owl));
   await markDirty(redis, playerId);
   enqueuePersistPlayer(playerId);

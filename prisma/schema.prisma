@@ -74,6 +74,9 @@ model Player {
   @@index([totalPvpWins])
   @@index([totalCoinsEarned])
   @@index([totalXP])
+  @@index([updatedAt])
+  @@index([level, xp])
+  @@index([coins])
 }
 
 // Aktif buff kayitlari — oyuncunun kullandigı geçici buff'lar
@@ -267,6 +270,7 @@ model MarketSale {
   soldAt         DateTime @default(now())
 
   @@index([itemId])
+  @@index([itemId, soldAt])
   @@index([itemName])
   @@index([sellerId, buyerId])
   @@index([soldAt])
@@ -318,6 +322,7 @@ model DailyQuest {
   player Player @relation(fields: [playerId], references: [id])
 
   @@index([playerId])
+  @@index([playerId, type, resetAt])
 }
 
 model AuditLog {

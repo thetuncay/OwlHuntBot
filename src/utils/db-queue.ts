@@ -106,13 +106,21 @@ export interface PersistPlayerJob {
   priority: number;
 }
 
+export interface RefreshMarketAnalyticsJob {
+  type: 'refreshMarketAnalytics';
+  itemId: string;
+  itemName: string;
+  lastSalePrice: number;
+}
+
 export type DbWriteJob =
   | UpdatePlayerJob
   | UpdateOwlJob
   | UpsertInventoryJob
   | RecordStatsJob
   | RecordPityJob
-  | PersistPlayerJob;
+  | PersistPlayerJob
+  | RefreshMarketAnalyticsJob;
 
 const PERSIST_DEBOUNCE_MS = Number.parseInt(process.env.PERSIST_DEBOUNCE_MS ?? '2500', 10);
 const PITY_TTL_SECONDS = Number.parseInt(process.env.PITY_TTL_SECONDS ?? String(90 * 24 * 60 * 60), 10);
@@ -217,7 +225,7 @@ async function processJob(job: Job<DbWriteJob>): Promise<void> {
       break;
 
     case 'recordStats': {
-      await prismaRef.player.update({
+      const updatedPlayer = await prismaRef.player.update({
         where: { id: data.playerId },
         data: {
           totalHunts: { increment: data.hunts },
@@ -225,23 +233,16 @@ async function processJob(job: Job<DbWriteJob>): Promise<void> {
         },
       });
       const { refreshPowerScore } = await import('../systems/leaderboard.js');
-      // Always update lb:hunt with new totalHunts
-      const updatedPlayer = await prismaRef.player.findUnique({
-        where: { id: data.playerId },
-        select: { totalHunts: true, powerScore: true },
-      });
-      if (updatedPlayer) {
-        let powerScore = updatedPlayer.powerScore;
-        if (data.rareFinds > 0) {
-          // refreshPowerScore updates DB and returns new score
-          powerScore = await refreshPowerScore(prismaRef, data.playerId);
-        }
-        // Pipeline: batch lb:hunt and lb:power ZADD into a single round-trip
-        const pipeline = redis.pipeline();
-        pipeline.zadd(`lb:hunt`, updatedPlayer.totalHunts, data.playerId);
-        pipeline.zadd(`lb:power`, powerScore, data.playerId);
-        await pipeline.exec();
+      let powerScore = updatedPlayer.powerScore;
+      if (data.rareFinds > 0) {
+        // refreshPowerScore updates DB and returns new score
+        powerScore = await refreshPowerScore(prismaRef, data.playerId);
       }
+      // Pipeline: batch lb:hunt and lb:power ZADD into a single round-trip
+      const pipeline = redis.pipeline();
+      pipeline.zadd(`lb:hunt`, updatedPlayer.totalHunts, data.playerId);
+      pipeline.zadd(`lb:power`, powerScore, data.playerId);
+      await pipeline.exec();
       break;
     }
 
@@ -259,6 +260,12 @@ async function processJob(job: Job<DbWriteJob>): Promise<void> {
     case 'persistPlayer': {
       const { persistPlayerSnapshot } = await import('../state/player-state.js');
       await persistPlayerSnapshot(prismaRef, redis, data.playerId);
+      break;
+    }
+
+    case 'refreshMarketAnalytics': {
+      const { refreshMarketAnalytics } = await import('../systems/market.js');
+      await refreshMarketAnalytics(prismaRef, data.itemId, data.itemName, data.lastSalePrice);
       break;
     }
 
@@ -335,7 +342,8 @@ export function enqueueDbWriteBulk(jobs: DbWriteJob[]): void {
 export function enqueuePersistPlayer(playerId: string, priority = 0): void {
   const job: PersistPlayerJob = { type: 'persistPlayer', playerId, priority };
   if (!queue) {
-    console.warn('[Queue] Producer yok, persist atlandi:', playerId);
+    console.warn('[Queue] Producer yok, persist fallback calisiyor:', playerId);
+    void processFallback(job);
     return;
   }
   queue.add(job.type, job, {
