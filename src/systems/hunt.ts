@@ -53,6 +53,7 @@ import {
   getConsumableEffectValues,
 } from '../utils/use-items';
 import { runDetached } from '../utils/async';
+import { beginHuntHotPathMetrics } from '../utils/hunt-hotpath-metrics';
 
 /**
  * Hunt sonrasi encounter + lootbox — kullanici cevabini BEKLEMEZ.
@@ -179,24 +180,28 @@ export async function rollHunt(
   includeDisplayMeta = false,
 ): Promise<HuntRunResult> {
   return withLock(playerId, 'financial', async () => {
-    let bundle = await hydratePlayerState(redis, prisma, playerId, { includeInventory: false });
+    const metrics = beginHuntHotPathMetrics();
+    try {
+    let bundle = await hydratePlayerState(redis, prisma, playerId, { includeInventory: false, metrics });
     if (!bundle) {
+      metrics?.addPgWrite();
       await prisma.player.upsert({
         where: { id: playerId },
         create: { id: playerId },
         update: {},
       });
-      bundle = await hydratePlayerState(redis, prisma, playerId, { includeInventory: false });
+      bundle = await hydratePlayerState(redis, prisma, playerId, { includeInventory: false, metrics });
     }
     if (!bundle) throw new Error('Oyuncu olusturulamadi.');
 
-    const buffEffects = await getBuffEffects(prisma, playerId, 'hunt');
+    const buffEffects = await getBuffEffects(prisma, playerId, 'hunt', metrics);
     const player = bundle.player;
     const targetOwlId = owlId ?? bundle.mainOwl?.id;
     if (!targetOwlId) throw new Error('Main baykuş bulunamadı.');
     let owl = bundle.mainOwl;
 
     if (!owl || owl.id !== targetOwlId) {
+      metrics?.addPgRead();
       const dbOwl = await prisma.owl.findUnique({ where: { id: targetOwlId } });
       if (!dbOwl || dbOwl.ownerId !== playerId) throw new Error('Av icin gecersiz baykus.');
       owl = dbOwl as NonNullable<typeof owl>;
@@ -210,6 +215,7 @@ export async function rollHunt(
     }
 
     if (safeBiome.entryCost > 0) {
+      metrics?.addRedisRead();
       const existingSession = await getBiomeSession(redis, playerId);
       const isNewEntry = !existingSession || existingSession.biomeId !== biomeId;
       if (isNewEntry) {
@@ -219,8 +225,9 @@ export async function rollHunt(
             `Sahip olduğun: **${player.coins}** 💰`,
           );
         }
-        await deductCoinsInRedis(redis, playerId, safeBiome.entryCost, prisma);
+        await deductCoinsInRedis(redis, playerId, safeBiome.entryCost, prisma, metrics);
         player.coins -= safeBiome.entryCost;
+        metrics?.addRedisWrite();
         await setBiomeSession(redis, playerId, biomeId);
       }
     }
@@ -259,7 +266,7 @@ export async function rollHunt(
       'hunt_loot_once',
       'stamina_restore_once',
       'stamina_boost_once',
-    ]);
+    ], metrics);
     const consumableCatchBonus = consumableBonuses.hunt_catch_once ?? 0;
     const consumableLootBonus = consumableBonuses.hunt_loot_once ?? 0;
     const staminaRestoreAmount = consumableBonuses.stamina_restore_once ?? 0;
@@ -334,6 +341,7 @@ export async function rollHunt(
     }
 
     // ── XP Hesaplama ─────────────────────────────────────────────────────────
+    metrics?.beginRewardCalc();
     const successXP = catches.reduce((sum, item) => {
       const riskBonus = item.difficulty >= HUNT_HIGH_TIER_THRESHOLD ? item.xp * XP_RISK_BONUS_RATE : 0;
       return sum + item.xp + Math.round(riskBonus);
@@ -386,6 +394,7 @@ export async function rollHunt(
     const levelUpRewards = xpResult.levelUp
       ? buildLevelUpRewards(xpResult.levelUp.oldLevel, xpResult.levelUp.newLevel)
       : undefined;
+    metrics?.endRewardCalc();
 
     const auditBefore: Record<string, unknown> = {
       coins: player.coins,
@@ -407,7 +416,7 @@ export async function rollHunt(
       inventoryItems,
       levelUp: xpResult.levelUp,
       levelUpRewards,
-    });
+    }, metrics);
 
     const auditAfter: Record<string, unknown> = {
       coins: player.coins,
@@ -428,6 +437,7 @@ export async function rollHunt(
         hunts: catches.length,
         rareFinds: rareSuccesses,
       }]);
+      metrics?.addPersistence();
     }
     runDetached('hunt-drain-buff-charge', () => drainBuffCharge(prisma, playerId, 'hunt'));
 
@@ -439,21 +449,22 @@ export async function rollHunt(
 
     // Yem item'ları — av sonunda stamina yenile
     if (staminaRestoreAmount > 0) {
-      await applyOwlStaminaRecoveryInRedis(redis, prisma, playerId, targetOwlId, staminaRestoreAmount);
+      await applyOwlStaminaRecoveryInRedis(redis, prisma, playerId, targetOwlId, staminaRestoreAmount, metrics);
       consumablesToConsume.push('stamina_restore_once');
     }
     if (staminaBoostAmount > 0) {
-      await applyOwlStaminaRecoveryInRedis(redis, prisma, playerId, targetOwlId, staminaBoostAmount);
+      await applyOwlStaminaRecoveryInRedis(redis, prisma, playerId, targetOwlId, staminaBoostAmount, metrics);
       consumablesToConsume.push('stamina_boost_once');
     }
     if (consumablesToConsume.length > 0) {
-      await consumeConsumableEffects(redis, playerId, consumablesToConsume);
+      await consumeConsumableEffects(redis, playerId, consumablesToConsume, metrics);
     }
 
     let activeBuffs: HuntRunResult['activeBuffs'] | undefined;
     let activeConsumables: HuntRunResult['activeConsumables'] | undefined;
     if (includeDisplayMeta) {
       try {
+        metrics?.addPgRead();
         const rawBuffs = await listActiveBuffs(prisma as any, playerId);
         activeBuffs = rawBuffs
           .filter((b) => b.chargeCur > 0 && b.category === 'hunt')
@@ -463,6 +474,7 @@ export async function rollHunt(
             chargeMax: b.chargeMax,
           }));
 
+        metrics?.addRedisRead(8);
         const activeCons = await getActiveConsumables(redis, playerId);
         activeConsumables = activeCons
           .filter(({ def }) =>
@@ -507,5 +519,8 @@ export async function rollHunt(
       activeBuffs,
       activeConsumables,
     };
+    } finally {
+      metrics?.finish();
+    }
   });
 }

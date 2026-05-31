@@ -26,6 +26,7 @@ import {
   PVP_BUFF_DAMAGE_MULT_MAX,
   PVP_BUFF_DODGE_BONUS_MAX,
 } from '../config';
+import type { HuntHotPathMetricsCollector } from '../utils/hunt-hotpath-metrics';
 import type { ActiveBuff, BuffEffects, BuffUseResult } from '../types';
 import { clamp } from '../utils/math';
 import { withLock } from '../utils/lock';
@@ -173,13 +174,16 @@ export async function getBuffEffects(
   prisma: AnyPrisma,
   playerId: string,
   category: 'hunt' | 'upgrade' | 'pvp',
+  metrics?: HuntHotPathMetricsCollector | null,
 ): Promise<BuffEffects> {
   // Cache kontrolü
   const cacheKey = `${playerId}:${category}`;
   const cached = buffCache.get(cacheKey);
   if (cached && cached.expiresAt > Date.now()) {
+    metrics?.addCacheHit();
     return cached.effects;
   }
+  metrics?.addCacheMiss();
 
   const effects: BuffEffects = {
     catchBonus:      0,
@@ -195,6 +199,7 @@ export async function getBuffEffects(
     where: { playerId, category, chargeCur: { gt: 0 } },
     orderBy: { createdAt: 'asc' },
   });
+  metrics?.addPgRead();
 
   if (buffs.length === 0) return effects;
 

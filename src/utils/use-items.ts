@@ -18,6 +18,7 @@ import {
   type ConsumableItemDef,
   type ConsumableGearCategory,
 } from '../config';
+import type { HuntHotPathMetricsCollector } from './hunt-hotpath-metrics';
 
 /** Eski b001 / c002 formatını 001 / 015 formatına çevirir. */
 const LEGACY_CONSUMABLE_MAP: Record<string, string> = {
@@ -137,6 +138,7 @@ export async function getConsumableEffectValues(
   },
   playerId: string,
   effectTypes: ConsumableItemDef['effectType'][],
+  metrics?: HuntHotPathMetricsCollector | null,
 ): Promise<Record<string, number>> {
   const out: Record<string, number> = {};
   const defs = effectTypes
@@ -153,6 +155,7 @@ export async function getConsumableEffectValues(
     for (const { def } of defs) {
       p.get(`${def.redisKey}:${playerId}`);
     }
+    metrics?.addRedisRead(defs.length);
     const rows = await p.exec();
     const safeRows = rows ?? [];
     for (let i = 0; i < defs.length; i++) {
@@ -171,6 +174,7 @@ export async function getConsumableEffectValues(
   }
 
   const vals = await Promise.all(defs.map(({ def }) => redis.get(`${def.redisKey}:${playerId}`)));
+  metrics?.addRedisRead(defs.length);
   for (let i = 0; i < defs.length; i++) {
     const effectType = defs[i]!.effectType;
     const val = vals[i];
@@ -201,12 +205,14 @@ export async function consumeConsumableEffects(
   redis: { del: (...keys: string[]) => Promise<number> },
   playerId: string,
   effectTypes: ConsumableItemDef['effectType'][],
+  metrics?: HuntHotPathMetricsCollector | null,
 ): Promise<number> {
   const keys = effectTypes
     .map((effectType) => CONSUMABLE_ITEMS.find((c) => c.effectType === effectType && c.durationMs > 0))
     .filter((def): def is ConsumableItemDef => Boolean(def))
     .map((def) => `${def.redisKey}:${playerId}`);
   if (keys.length === 0) return 0;
+  metrics?.addRedisWrite(1);
   return redis.del(...keys);
 }
 

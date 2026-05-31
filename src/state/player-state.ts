@@ -11,6 +11,7 @@ import { PRESTIGE_XP_BONUS_PER_LEVEL, getLevelUpReward } from '../config';
 import type { XpApplyResult, LevelUpResult } from '../types';
 import type { CachedOwlData, CachedPlayerData } from '../utils/player-cache';
 import { enqueueDbWrite, enqueuePersistPlayer } from '../utils/db-queue';
+import type { HuntHotPathMetricsCollector } from '../utils/hunt-hotpath-metrics';
 
 const HUNT_APPLY_LUA = `
 local current = redis.call('GET', KEYS[1])
@@ -63,6 +64,7 @@ export interface PlayerStateBundle {
 
 export interface HydratePlayerStateOptions {
   includeInventory?: boolean;
+  metrics?: HuntHotPathMetricsCollector | null;
 }
 
 function playerKey(id: string): string {
@@ -85,6 +87,7 @@ async function touchPlayerStateTtl(
   redis: Redis,
   playerId: string,
   mainOwlId?: string | null,
+  metrics?: HuntHotPathMetricsCollector | null,
 ): Promise<void> {
   const pipeline = redis.pipeline();
   pipeline.expire(playerKey(playerId), STATE_TTL_SECONDS);
@@ -93,6 +96,7 @@ async function touchPlayerStateTtl(
   if (mainOwlId) {
     pipeline.expire(owlKey(mainOwlId), STATE_TTL_SECONDS);
   }
+  metrics?.addRedisWrite(3 + (mainOwlId ? 1 : 0));
   await pipeline.exec();
 }
 
@@ -135,8 +139,10 @@ async function ensureMainOwlInBundle(
   prisma: PrismaClient,
   playerId: string,
   player: CachedPlayerData,
+  metrics?: HuntHotPathMetricsCollector | null,
 ): Promise<CachedOwlData | null> {
   if (player.mainOwlId) {
+    metrics?.addRedisRead();
     const cached = await redis.get(owlKey(player.mainOwlId));
     if (cached) return JSON.parse(cached) as CachedOwlData;
   }
@@ -144,25 +150,30 @@ async function ensureMainOwlInBundle(
   let dbOwl = player.mainOwlId
     ? await prisma.owl.findUnique({ where: { id: player.mainOwlId }, select: MAIN_OWL_SELECT })
     : null;
+  if (player.mainOwlId) metrics?.addPgRead();
   if (!dbOwl || dbOwl.ownerId !== playerId) {
     dbOwl = await prisma.owl.findFirst({
       where: { ownerId: playerId, isMain: true },
       select: MAIN_OWL_SELECT,
     });
+    metrics?.addPgRead();
   }
   if (!dbOwl) return null;
 
   const owl = dbOwl as CachedOwlData;
+  metrics?.addRedisWrite();
   await redis.set(owlKey(owl.id), JSON.stringify(owl));
 
   if (player.mainOwlId !== owl.id) {
     player.mainOwlId = owl.id;
+    metrics?.addRedisWrite();
     await redis.set(playerKey(playerId), JSON.stringify(player));
     enqueueDbWrite({
       type: 'updatePlayer',
       playerId,
       data: { mainOwlId: owl.id },
     });
+    metrics?.addPersistence();
   }
 
   return owl;
@@ -176,17 +187,24 @@ export async function hydratePlayerState(
   options?: HydratePlayerStateOptions,
 ): Promise<PlayerStateBundle | null> {
   const includeInventory = options?.includeInventory ?? true;
+  const metrics = options?.metrics;
+  metrics?.addRedisRead();
   const hydrated = await redis.get(hydratedKey(playerId));
   if (hydrated === '1') {
+    metrics?.addRedisRead();
     const rawPlayer = await redis.get(playerKey(playerId));
     if (!rawPlayer) {
+      metrics?.addRedisWrite();
       await redis.del(hydratedKey(playerId));
     } else {
+      metrics?.addCacheHit();
       const player = JSON.parse(rawPlayer) as CachedPlayerData;
-      const mainOwl = await ensureMainOwlInBundle(redis, prisma, playerId, player);
+      const mainOwl = await ensureMainOwlInBundle(redis, prisma, playerId, player, metrics);
       return { player, mainOwl };
     }
   }
+  metrics?.addCacheMiss();
+  metrics?.addHydration();
 
   const [dbPlayer, mainOwlRow] = await Promise.all([
     prisma.player.findUnique({
@@ -204,6 +222,7 @@ export async function hydratePlayerState(
       select: MAIN_OWL_SELECT,
     }),
   ]);
+  metrics?.addPgRead(2);
 
   if (!dbPlayer) return null;
 
@@ -239,6 +258,7 @@ export async function hydratePlayerState(
       where: { ownerId: playerId },
       select: { itemName: true, itemType: true, rarity: true, quantity: true },
     });
+    metrics?.addPgRead();
     if (invRows.length > 0) {
       const invArgs: string[] = [];
       for (const row of invRows) {
@@ -254,6 +274,7 @@ export async function hydratePlayerState(
     }
   }
 
+  metrics?.addRedisWrite(2 + (mainOwl ? 2 : 0) + (includeInventory ? 3 : 0));
   await pipeline.exec();
   return { player, mainOwl };
 }
@@ -311,8 +332,9 @@ export async function applyHuntDelta(
   prisma: PrismaClient,
   playerId: string,
   delta: HuntStateDelta,
+  metrics?: HuntHotPathMetricsCollector | null,
 ): Promise<CachedPlayerData> {
-  const player = await loadPlayerForMutation(redis, prisma, playerId);
+  const player = await loadPlayerForMutation(redis, prisma, playerId, metrics);
 
   player.xp = delta.newXp;
   player.level = delta.newLevel;
@@ -331,6 +353,7 @@ export async function applyHuntDelta(
   const pipeline = redis.pipeline();
 
   if (delta.bondGain > 0 && delta.owlId) {
+    metrics?.addRedisRead();
     let rawOwl = await redis.get(owlKey(delta.owlId));
     if (!rawOwl) {
       const dbOwl = await prisma.owl.findUnique({
@@ -342,6 +365,7 @@ export async function applyHuntDelta(
           isMain: true, effectiveness: true, traits: true,
         },
       });
+      metrics?.addPgRead();
       if (dbOwl) {
         rawOwl = JSON.stringify(dbOwl);
       }
@@ -390,6 +414,7 @@ export async function applyHuntDelta(
 
   const itemNames = [...itemDeltas.keys()];
   if (itemNames.length > 0) {
+    metrics?.addRedisRead(1);
     const existingRows = await redis.hmget(invKey(playerId), ...itemNames);
     for (let i = 0; i < itemNames.length; i++) {
       const itemName = itemNames[i]!;
@@ -413,12 +438,15 @@ export async function applyHuntDelta(
     }
   }
 
+  metrics?.addRedisWrite(1 + itemNames.length + 2);
   await pipeline.exec();
+  metrics?.addRedisWrite(1);
   await markDirty(redis, playerId);
 
   // Player JSON — Lua ile atomik SET (tek round-trip)
+  metrics?.addRedisWrite(1);
   await redis.eval(HUNT_APPLY_LUA, 1, playerKey(playerId), JSON.stringify(player));
-  await touchPlayerStateTtl(redis, playerId, delta.owlId);
+  await touchPlayerStateTtl(redis, playerId, delta.owlId, metrics);
 
   if (delta.totalXPGain > 0) {
     enqueueDbWrite({
@@ -426,9 +454,11 @@ export async function applyHuntDelta(
       playerId,
       data: { totalXP: { increment: delta.totalXPGain } },
     });
+    metrics?.addPersistence();
   }
 
   enqueuePersistPlayer(playerId, delta.levelUp ? 1 : 0);
+  metrics?.addPersistence();
   return player;
 }
 
@@ -437,11 +467,13 @@ async function loadPlayerForMutation(
   redis: Redis,
   prisma: PrismaClient | undefined,
   playerId: string,
+  metrics?: HuntHotPathMetricsCollector | null,
 ): Promise<CachedPlayerData> {
+  metrics?.addRedisRead();
   const raw = await redis.get(playerKey(playerId));
   if (raw) return JSON.parse(raw) as CachedPlayerData;
   if (!prisma) throw new Error('Oyuncu state bulunamadi.');
-  const bundle = await hydratePlayerState(redis, prisma, playerId, { includeInventory: false });
+  const bundle = await hydratePlayerState(redis, prisma, playerId, { includeInventory: false, metrics });
   if (!bundle) throw new Error('Oyuncu bulunamadi.');
   return bundle.player;
 }
@@ -452,14 +484,18 @@ export async function deductCoinsInRedis(
   playerId: string,
   amount: number,
   prisma?: PrismaClient,
+  metrics?: HuntHotPathMetricsCollector | null,
 ): Promise<number> {
-  const player = await loadPlayerForMutation(redis, prisma, playerId);
+  const player = await loadPlayerForMutation(redis, prisma, playerId, metrics);
   if (player.coins < amount) throw new Error('Yetersiz coin.');
   player.coins -= amount;
+  metrics?.addRedisWrite();
   await redis.set(playerKey(playerId), JSON.stringify(player));
+  metrics?.addRedisWrite(1);
   await markDirty(redis, playerId);
   await touchPlayerStateTtl(redis, playerId, player.mainOwlId);
   enqueuePersistPlayer(playerId);
+  metrics?.addPersistence();
   return player.coins;
 }
 
@@ -474,7 +510,7 @@ export async function applyCoinDeltaInRedis(
   player.coins = Math.max(0, player.coins + delta);
   await redis.set(playerKey(playerId), JSON.stringify(player));
   await markDirty(redis, playerId);
-  await touchPlayerStateTtl(redis, playerId, player.mainOwlId);
+    await touchPlayerStateTtl(redis, playerId, player.mainOwlId);
   enqueuePersistPlayer(playerId);
   return player.coins;
 }
@@ -805,9 +841,11 @@ export async function applyOwlStaminaRecoveryInRedis(
   playerId: string,
   owlId: string,
   amount: number,
+  metrics?: HuntHotPathMetricsCollector | null,
 ): Promise<void> {
   if (amount <= 0) return;
-  await loadPlayerForMutation(redis, prisma, playerId);
+  await loadPlayerForMutation(redis, prisma, playerId, metrics);
+  metrics?.addRedisRead();
   let raw = await redis.get(owlKey(owlId));
   if (!raw) {
     const dbOwl = await prisma.owl.findUnique({
@@ -819,7 +857,9 @@ export async function applyOwlStaminaRecoveryInRedis(
         isMain: true, effectiveness: true, traits: true,
       },
     });
+    metrics?.addPgRead();
     if (dbOwl) {
+      metrics?.addRedisWrite();
       await redis.set(owlKey(owlId), JSON.stringify(dbOwl));
       raw = JSON.stringify(dbOwl);
     }
@@ -828,7 +868,10 @@ export async function applyOwlStaminaRecoveryInRedis(
 
   const owl = JSON.parse(raw) as CachedOwlData;
   owl.staminaCur = Math.min(owl.hpMax, owl.staminaCur + amount);
+  metrics?.addRedisWrite();
   await redis.set(owlKey(owlId), JSON.stringify(owl));
+  metrics?.addRedisWrite(1);
   await markDirty(redis, playerId);
   enqueuePersistPlayer(playerId);
+  metrics?.addPersistence();
 }
