@@ -30,6 +30,9 @@ else
   echo "UYARI: Health henuz hazir degil. Log: docker compose logs -f bot"
 fi
 
+echo "==> Discord slash komutlari (opsiyonel, ilk kurulumda bir kez)..."
+docker compose exec -T bot bun run src/deploy-commands.ts 2>/dev/null || echo "(Atlandi — bot henuz hazir degilse sonra tekrar calistir)"
+
 echo ""
 echo "Log izle:  cd ${APP_DIR} && docker compose logs -f bot"
 echo "Durdur:    cd ${APP_DIR} && docker compose down"
