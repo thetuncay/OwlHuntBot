@@ -332,12 +332,14 @@ export function enqueuePersistPlayer(playerId: string, priority = 0): void {
     return;
   }
   queue.add(job.type, job, {
-    jobId: `persist:${playerId}`,
+    // BullMQ custom jobId icinde ':' kullanilamaz (Redis key ayirici).
+    jobId: `persist-${playerId}`,
     delay: PERSIST_DEBOUNCE_MS,
     priority: priority > 0 ? 1 : 10,
     removeOnComplete: true,
     removeOnFail: false,
   }).catch((err) => {
     console.error('[Queue] Persist enqueue hatasi:', err.message);
+    void processFallback(job);
   });
 }

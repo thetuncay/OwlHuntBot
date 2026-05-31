@@ -10,20 +10,23 @@ echo "=== OwlHuntBot Guncelleme ==="
 bash scripts/ensure-pnpm.sh
 
 if [ -d .git ]; then
-  echo "[1/5] Git pull..."
+  echo "[1/6] Git pull..."
   git pull --ff-only
 fi
 
-echo "[2/5] Bagimliliklar..."
+echo "[2/6] Bagimliliklar..."
 pnpm install --frozen-lockfile
 
-echo "[3/5] Prisma client..."
+echo "[3/6] Prisma migrate..."
+pnpm db:migrate
+
+echo "[4/6] Prisma client..."
 pnpm prisma:generate
 
-echo "[4/5] Derleme..."
+echo "[5/6] Derleme..."
 pnpm build
 
-echo "[5/5] PM2 restart..."
+echo "[6/6] PM2 restart..."
 if pm2 describe owlhuntbot-shard >/dev/null 2>&1; then
   pm2 restart owlhuntbot-shard owlhuntbot-worker --update-env
 else
