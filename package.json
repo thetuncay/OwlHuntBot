@@ -39,6 +39,8 @@
     "migrate:data": "MIGRATION_CONFIRM=yes node --import tsx src/scripts/migrate-mongodb-to-pg.ts",
     "migrate:post": "node --import tsx src/scripts/post-migration.ts",
     "analyze:owo": "tsx scripts/analyze-owo-data.ts",
+    "perf:report": "tsx scripts/perf-report.ts",
+    "profile:cpu": "node --cpu-prof --import tsx dist/index.js",
     "restore:pg": "bash scripts/restore-postgres.sh"
   },
   "dependencies": {

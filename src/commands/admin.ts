@@ -127,6 +127,7 @@ const data = new SlashCommandBuilder()
   // ── sys grubu ─────────────────────────────────────────────────────────────
   .addSubcommandGroup((g) => g.setName('sys').setDescription('Sistem yönetimi')
     .addSubcommand((s) => s.setName('info').setDescription('Sunucu istatistikleri'))
+    .addSubcommand((s) => s.setName('perf').setDescription('Komut performans raporu (son 5 dk)'))
     .addSubcommand((s) => s.setName('maintenance').setDescription('Bakım modunu aç/kapat'))
     .addSubcommand((s) => s.setName('broadcast').setDescription('Tüm oyunculara duyuru gönder')
       .addStringOption((o) => o.setName('baslik').setDescription('Embed başlığı').setRequired(true))
@@ -366,6 +367,14 @@ async function execute(
     const user = interaction.options.getUser('kullanici', true);
     await ctx.redis.del(`cooldown:upgrade:${user.id}`);
     await interaction.reply({ content: `✅ <@${user.id}> upgrade cooldown temizlendi. ⏰`, flags: 64 });
+    return;
+  }
+
+  // ── sys/perf ───────────────────────────────────────────────────────────────
+  if (grp === 'sys' && sub === 'perf') {
+    const { buildPerfReport } = await import('../utils/perf-metrics.js');
+    const report = await buildPerfReport(ctx.redis, 5);
+    await interaction.reply({ content: report, flags: 64 });
     return;
   }
 

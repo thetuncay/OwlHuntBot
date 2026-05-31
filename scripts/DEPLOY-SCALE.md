@@ -45,14 +45,33 @@ docker exec -it $(docker ps -qf name=postgres) psql -U postgres -d owlhuntbot -c
   "SELECT count(*) FROM pg_stat_activity WHERE datname='owlhuntbot';"
 ```
 
-## 5. Stres testi (manuel)
+## 5. Performans olcumu
 
-- 5-10 kullanici ile ard arda `owl hunt`
+```bash
+# .env — olcum oturumu icin (production'da gecici ac)
+PERF_METRICS=1
+PERF_SLOW_MS=2000
+PERF_SUMMARY_INTERVAL_SECONDS=60
+
+pnpm build && pm2 restart owlhuntbot-shard
+```
+
+- PM2 log: her 60 sn `[Perf] Ozet` + yavas komutlarda `[Perf] SLOW`
+- Discord: `/admin sys perf` (son 5 dk Redis bucket)
+- CLI: `pnpm perf:report` veya `pnpm perf:report 10` (son 10 dk)
+- Derin profil (tek process, gelistirme): `pnpm build && pnpm profile:cpu` → `.cpuprofile` Chrome DevTools
+
+**Yorumlama:** `wait` yuksek → kuyruk (MAX_CONCURRENT_COMMANDS) veya DB pool beklemesi; `handler` yuksek → hunt/DB/Redis is mantigi.
+
+## 6. Stres testi (manuel)
+
+- 5-10 kullanici ile ard arda `owl hunt` (PERF_METRICS=1 iken)
 - Beklenen: hunt cevabi <500ms (encounter followUp ayri gelir)
+- `/admin sys perf`: `prefix:hunt` avg wait/handler ayir
 - `pg_stat_activity` active count spike etmemeli
 - Worker logunda `persistPlayer` joblari gorulmeli
 
-## 6. Sorun giderme
+## 7. Sorun giderme
 
 | Belirti | Kontrol |
 |---------|---------|

@@ -17,10 +17,10 @@ export function buildHelpEmbed(prefix: string): EmbedBuilder {
   const avSection = [
     `\`${p} hunt\` · \`${p} h\` — Baykuşunu avlanmaya gönder`,
     `\`${p} tame <id>\` · \`${p} t\` — Yabani baykuşu evcilleştir`,
-    `\`${p} stats\` · \`${p} s\` — Baykuş istatistiklerini gör`,
+    `\`${p} stats\` · \`${p} st\` — Baykuş istatistiklerini gör`,
     `\`${p} owls\` — Tüm baykuşlarını listele`,
     `\`${p} inventory\` · \`${p} inv\` — Envanterini kontrol et`,
-    `\`${p} sell\` · \`${p} sell all\` — Avladıklarını sat`,
+    `\`${p} sell\` · \`${p} s\` — Avladıklarını sat`,
     `\`${p} zoo\` · \`${p} z\` — Hayvanat bahçeni gör`,
     `\`${p} upgrade <stat>\` · \`${p} up\` — Stat geliştir`,
     `\`${p} setmain <id>\` · \`${p} sm\` — Main baykuşu değiştir`,
@@ -57,30 +57,32 @@ export function buildHelpEmbed(prefix: string): EmbedBuilder {
     `💡 Anlamadığın bir şey mi var? Hemen sor!`,
   ].join('\n');
 
-  const eşyaSection = [
+  const eşyaKutuSection = [
     `\`${p} sk\` — 1 silah kutusu aç`,
     `\`${p} sk all\` — tüm silah kutularını aç`,
     `\`${p} ek\` — 1 eşya kutusu aç`,
     `\`${p} ek all\` — tüm eşya kutularını aç`,
     `\`${p} aç\` — kutu envanterini gör`,
-    `\`${p} craft\` — Crafting menüsünü aç, eşya üret`,
-    `\`${p} dismantle <eşya> [miktar]\` — Eşyayı parçala, materyal kazan`,
-    `\`${p} market\` — Global marketplace (serbest piyasa)`,
-    `\`${p} market owl/item/buff/material [sayfa]\` — Kategori tara`,
-    `\`${p} market sell <eşya adı> [miktar] <fiyat>\` — İlan aç (%1 listeleme ücreti)`,
-    `\`${p} market sell owl <kısa_id> <fiyat>\` — Baykuş sat (\`${p} owls\` ile ID)`,
-    `\`${p} buy <ilanNo>\` · \`${p} market al <ilanNo>\` — Satın al (%5 vergi)`,
-    `\`${p} market search <kelime>\` — Ara`,
-    `\`${p} market info <ilanNo>\` — Piyasa bilgisi + detay`,
-    `\`${p} market my\` — Aktif ilanların (max 5)`,
-    `\`${p} market cancel <ilanNo>\` — İlan iptal`,
-    `\`${p} msell <eşya> <miktar> <fiyat>\` — market sell kısayolu`,
     `\`${p} craft\` — Craft menüsü (8 tarif)`,
     `\`${p} craftinfo <id>\` — Tarif detayı (013–020)`,
     `\`${p} craft <id>\` — Belirli tarifi üret`,
-    `\`${p} use <id>\` · \`${p} u <id>\` — Buff (001–012) veya craft item (013–020)`,
+    `\`${p} dismantle <eşya> [miktar]\` — Eşyayı parçala`,
+    `\`${p} use <id>\` · \`${p} u <id>\` — Buff (001–012) veya craft item`,
     `\`${p} use\` — Yük slotlarını gör (max 2 craft item)`,
     `\`${p} buffs\` — Tüm buff rehberini gör`,
+  ].join('\n');
+
+  const marketSection = [
+    `\`${p} market\` — Global marketplace`,
+    `\`${p} market owl/item/buff/material [sayfa]\` — Kategori tara`,
+    `\`${p} market sell <eşya> [miktar] <fiyat>\` — İlan aç (%1 ücret)`,
+    `\`${p} market sell owl <kısa_id> <fiyat>\` — Baykuş sat`,
+    `\`${p} buy <ilanNo>\` · \`${p} market al <ilanNo>\` — Satın al (%5 vergi)`,
+    `\`${p} market search <kelime>\` — Ara`,
+    `\`${p} market info <ilanNo>\` — Piyasa detayı`,
+    `\`${p} market my\` — Aktif ilanların (max 5)`,
+    `\`${p} market cancel <ilanNo>\` — İlan iptal`,
+    `\`${p} msell <eşya> <miktar> <fiyat>\` — market sell kısayolu`,
   ].join('\n');
 
   const ipucuSection = [
@@ -109,7 +111,8 @@ export function buildHelpEmbed(prefix: string): EmbedBuilder {
       { name: '⚔️ PvP', value: pvpSection, inline: false },
       { name: '🎲 Kumar', value: kumarSection, inline: false },
       { name: '💰 Ekonomi & Görevler', value: ekonomiSection, inline: false },
-      { name: '🎒 Eşya & Market', value: eşyaSection, inline: false },
+      { name: '🎒 Eşya & Craft', value: eşyaKutuSection, inline: false },
+      { name: '🏪 Market', value: marketSection, inline: false },
       { name: '🔄 OwO Geçiş', value: owoSection, inline: false },
       { name: '💡 İpuçları', value: ipucuSection, inline: false },
     )

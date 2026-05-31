@@ -17,6 +17,12 @@ import { isShard0 } from './utils/shard';
 import { initDbQueueProducer } from './utils/db-queue';
 import { consumeRoleSyncFlag } from './jobs/background-jobs';
 import { registerGracefulShutdown, trackInterval } from './utils/shutdown';
+import {
+  beginCommandPerf,
+  isPerfMetricsEnabled,
+  logLocalPerfSummary,
+  perfSummaryIntervalMs,
+} from './utils/perf-metrics';
 
 const env = parseBotEnv();
 
@@ -31,6 +37,14 @@ function isExpectedUserError(error: unknown): boolean {
     msg.includes('beklemelisin') ||
     msg.includes('Tekrar avlanmak')
   );
+}
+
+function formatUserFacingError(error: unknown): string {
+  if (!(error instanceof Error)) return 'Bir seyler ters gitti, islem geri alindi.';
+  if (error.message.includes('Received one or more errors')) {
+    return 'Bot mesaji Discord sinirini asti. Yonetici deploy guncellemesi gerekebilir.';
+  }
+  return error.message;
 }
 
 const dbUrl = resolveDatabaseUrl('bot');
@@ -113,6 +127,10 @@ async function bootstrap(): Promise<void> {
     console.info(`Bot baglandi: ${readyClient.user.tag}`);
     console.info(`Yuklu komut sayisi: ${commandMap.size}`);
     console.info(`Guild: ${env.GUILD_ID}`);
+    if (isPerfMetricsEnabled()) {
+      console.info('[Perf] Metrikler acik — ozet log + /admin sys perf');
+      trackInterval(() => logLocalPerfSummary(), perfSummaryIntervalMs());
+    }
   });
 
   // Yakalanmayan Discord client hatalarını logla, crash'e izin verme
@@ -147,13 +165,24 @@ async function bootstrap(): Promise<void> {
     if (!command) return;
 
     let releaseSlot: (() => Promise<void>) | null = null;
+    const perf = beginCommandPerf();
+    const owlSub =
+      interaction.commandName === 'owl'
+        ? interaction.options.getSubcommand(false)
+        : null;
+    const perfCommand = owlSub ? `owl:${owlSub}` : interaction.commandName;
+    let perfOk = true;
+    let perfError: string | undefined;
     try {
       releaseSlot = await acquireCommandSlot(redis);
       await enforceAntiSpam(redis, interaction.user.id);
+      perf.markQueueDone();
       await command.execute(interaction, { prisma, redis });
     } catch (error) {
       // Unknown interaction (10062) = token süresi dolmuş, sessizce geç
       if ((error as any)?.code === 10062) return;
+      perfOk = false;
+      perfError = error instanceof Error ? error.message : String(error);
       console.error('[Interaction Error]', error);
       try {
         if (interaction.replied || interaction.deferred) {
@@ -171,6 +200,12 @@ async function bootstrap(): Promise<void> {
         // Yanıt gönderilemedi, sessizce geç
       }
     } finally {
+      await perf.finish(redis, {
+        command: perfCommand,
+        source: 'slash',
+        ok: perfOk,
+        error: perfError,
+      }).catch(() => null);
       await releaseSlot?.().catch(() => null);
     }
   });
@@ -217,31 +252,56 @@ async function bootstrap(): Promise<void> {
     // Liderboard: owl top [kategori] veya owl lb [kategori]
     if (firstWord === 'top' || firstWord === 'lb' || firstWord === 'liderboard' || firstWord === 'leaderboard') {
       let releaseSlot: (() => Promise<void>) | null = null;
+      const perf = beginCommandPerf();
+      let perfOk = true;
+      let perfError: string | undefined;
       try {
         releaseSlot = await acquireCommandSlot(redis);
         await enforceAntiSpam(redis, message.author.id);
+        perf.markQueueDone();
         await handleTopTextCommand(message, parts.slice(1), { prisma, redis });
       } catch (error) {
+        perfOk = false;
+        perfError = error instanceof Error ? error.message : String(error);
         const msg = error instanceof Error ? error.message : 'Bir hata olustu.';
         await message.reply(`❌ ${msg}`);
       } finally {
+        await perf.finish(redis, {
+          command: 'top',
+          source: 'prefix',
+          ok: perfOk,
+          error: perfError,
+        }).catch(() => null);
         await releaseSlot?.().catch(() => null);
       }
       return;
     }
 
     let releaseSlot: (() => Promise<void>) | null = null;
+    const perf = beginCommandPerf();
+    let perfCommand = parts[0]?.toLowerCase() ?? 'owl';
+    let perfOk = true;
+    let perfError: string | undefined;
     try {
       releaseSlot = await acquireCommandSlot(redis);
       await enforceAntiSpam(redis, message.author.id);
-      await handleOwlTextCommand(message, parts, { prisma, redis });
+      perf.markQueueDone();
+      perfCommand = await handleOwlTextCommand(message, parts, { prisma, redis });
     } catch (error) {
+      perfOk = false;
+      perfError = error instanceof Error ? error.message : String(error);
       if (!isExpectedUserError(error)) {
         console.error('[Message Command Error]', error);
       }
-      const errorMsg = error instanceof Error ? error.message : 'Bir seyler ters gitti, islem geri alindi.';
+      const errorMsg = formatUserFacingError(error);
       await message.reply(`❌ **Hata** | ${errorMsg}`);
     } finally {
+      await perf.finish(redis, {
+        command: perfCommand,
+        source: 'prefix',
+        ok: perfOk,
+        error: perfError,
+      }).catch(() => null);
       await releaseSlot?.().catch(() => null);
     }
   });

@@ -6,7 +6,8 @@ import type { OwOInsights } from '../data/owo-types';
 
 const OWO_ALIASES: Record<string, string> = (insights as OwOInsights).owoToOwlAliases;
 
-const OWO_GLUED_CMD = /^(h|b|s|c|z|cf|bj|slot|daily|cash|sell|hunt|battle|lb|inv|pray|wc|owo|quests|duel)(\s|$)/i;
+const OWO_GLUED_CMD =
+  /^(h|b|s|c|z|cf|bj|slot|daily|cash|sell|hunt|battle|lb|inv|pray|wc|owo|quests|duel|yardim|yardım|help|y|stats|st|stat|owls|upgrade|up|tame|t|vs|prefix|craft|market|buy|buffs|soru|top|prestige|sk|ek|use|u|msell|dismantle|craftinfo|ver|give|wc|ec|ac|aç|buff|gems|gem|item|i|pf|q|money|leaderboard|liderboard)(\s|$)/iu;
 
 /** Guild prefix ile yapışık OwO komutlarını ayırır: wh → h, wdaily → daily */
 export function stripGluedPrefix(content: string, guildPrefix: string): string {

@@ -24,6 +24,33 @@ export function applyQuickView(embed: EmbedBuilder, quickView: QuickView): Embed
 }
 
 /**
+ * Discord embed alan sınırlarını doğrular (test / geliştirme).
+ */
+export function assertEmbedLimits(embed: EmbedBuilder): void {
+  const data = embed.toJSON();
+  let total =
+    (data.title?.length ?? 0) +
+    (data.description?.length ?? 0) +
+    (data.footer?.text?.length ?? 0);
+
+  for (const field of data.fields ?? []) {
+    const nameLen = field.name?.length ?? 0;
+    const valueLen = field.value?.length ?? 0;
+    total += nameLen + valueLen;
+    if (nameLen > 256) {
+      throw new Error(`Embed field name too long (${nameLen}): ${field.name}`);
+    }
+    if (valueLen > 1024) {
+      throw new Error(`Embed field value too long (${valueLen}): ${field.name}`);
+    }
+  }
+
+  if (total > 6000) {
+    throw new Error(`Embed total too long (${total})`);
+  }
+}
+
+/**
  * Basarili islem embed'i uretir.
  */
 export function successEmbed(title: string, description: string, quickView?: QuickView): EmbedBuilder {

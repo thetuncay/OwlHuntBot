@@ -163,7 +163,7 @@ export async function handleOwlTextCommand(
   message: Message,
   parts: string[],
   ctx: Parameters<CommandDefinition['execute']>[1],
-): Promise<void> {
+): Promise<string> {
   const rawSub    = (parts[0] ?? '').toLowerCase();
   const sub       = ALIASES[rawSub] ?? rawSub;
   const args      = parts.slice(1);
@@ -180,16 +180,16 @@ export async function handleOwlTextCommand(
   // Kayıt gerektirmeyen komutlar
   if (sub === 'yardim' || sub === 'yardım') {
     await message.reply({ embeds: [buildHelpEmbed(helpPrefix)] });
-    return;
+    return sub;
   }
   if (sub === 'prefix') {
     await runPrefixMessage(message, args, ctx);
-    return;
+    return sub;
   }
 
   // Diğer tüm komutlar kayıt gerektirir
   const ready = await ensureRegisteredForMessage(message, ctx);
-  if (!ready) return;
+  if (!ready) return sub;
 
   switch (sub) {
     case 'hunt':      await runHuntMessage(message, ctx);                          break;
@@ -227,6 +227,8 @@ export async function handleOwlTextCommand(
       await message.reply({ embeds: [buildUnknownCommandEmbed(helpPrefix, rawSub, suggestion)] });
     }
   }
+
+  return sub;
 }
 
 export default { data, execute } satisfies CommandDefinition;
