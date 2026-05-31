@@ -17,7 +17,10 @@ fi
 echo "[2/6] Bagimliliklar..."
 pnpm install --frozen-lockfile
 
-echo "[3/6] Prisma migrate..."
+echo "[3/6] Prisma migrate (dogrudan Postgres)..."
+if pm2 describe owlhuntbot-shard >/dev/null 2>&1; then
+  pm2 stop owlhuntbot-shard owlhuntbot-worker 2>/dev/null || true
+fi
 pnpm db:migrate
 
 echo "[4/6] Prisma client..."

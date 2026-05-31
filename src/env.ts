@@ -107,3 +107,54 @@ export function describeDatabaseUrl(url: string): string {
 export function resolveDatabaseUrl(mode: 'bot' | 'worker'): string {
   return appendPoolParams(process.env.DATABASE_URL ?? '', mode);
 }
+
+/**
+ * Prisma migrate deploy icin dogrudan PostgreSQL URL'si.
+ * PgBouncer (transaction mode) advisory lock desteklemez — migrate her zaman
+ * Postgres'e direkt baglanmali.
+ */
+export function resolveMigrateDatabaseUrl(): string {
+  const direct = process.env.DIRECT_DATABASE_URL?.trim();
+  if (direct) return normalizeDatabaseUrl(direct);
+
+  const url = normalizeDatabaseUrl(process.env.DATABASE_URL ?? '');
+  if (!url) {
+    throw new Error('DATABASE_URL veya DIRECT_DATABASE_URL tanimli olmali.');
+  }
+
+  const postgresHost = process.env.POSTGRES_HOST?.trim() || '127.0.0.1';
+  const postgresPort = process.env.POSTGRES_PORT?.trim() || '5432';
+
+  const qIndex = url.indexOf('?');
+  const basePart = qIndex >= 0 ? url.slice(0, qIndex) : url;
+  const params = new URLSearchParams(qIndex >= 0 ? url.slice(qIndex + 1) : '');
+  params.delete('pgbouncer');
+  params.delete('connection_limit');
+
+  let base = basePart;
+  try {
+    const parsed = new URL(base.replace(/^postgresql:/, 'http:'));
+    const needsDirect =
+      usesPgBouncer(url) ||
+      parsed.hostname === 'pgbouncer' ||
+      parsed.port === '6432';
+
+    if (needsDirect) {
+      parsed.hostname = postgresHost;
+      parsed.port = postgresPort;
+      const user = parsed.username ? decodeURIComponent(parsed.username) : '';
+      const pass = parsed.password ? decodeURIComponent(parsed.password) : '';
+      const auth = user
+        ? `${encodeURIComponent(user)}${pass ? `:${encodeURIComponent(pass)}` : ''}@`
+        : '';
+      base = `postgresql://${auth}${parsed.hostname}:${parsed.port}${parsed.pathname}`;
+    }
+  } catch {
+    base = base
+      .replace(':6432/', `:${postgresPort}/`)
+      .replace('@pgbouncer:', `@${postgresHost}:`);
+  }
+
+  const qs = params.toString();
+  return qs ? `${base}?${qs}` : base;
+}
