@@ -108,6 +108,55 @@ export async function peekCooldown(
 }
 
 /**
+ * peekCooldown + anormal uzun TTL temizligi.
+ * maxRemainingMs ustundeki key'ler bug sayilir ve silinir.
+ */
+export async function peekCooldownBounded(
+  redis: Redis,
+  key: string,
+  maxRemainingMs: number,
+): Promise<CooldownDecision> {
+  const decision = await peekCooldown(redis, key);
+  if (!decision.active) return decision;
+  if (decision.remainingMs <= maxRemainingMs) return decision;
+  await clearCooldown(redis, key);
+  return toDecision(false, 0, false);
+}
+
+/**
+ * Pattern ile eslesen cooldown key'lerinde anormal TTL'leri temizler.
+ */
+export async function purgeCooldownsAboveMax(
+  redis: Redis,
+  pattern: string,
+  maxRemainingMs: number,
+): Promise<number> {
+  let cursor = '0';
+  let purged = 0;
+  do {
+    const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', pattern, 'COUNT', 200);
+    cursor = nextCursor;
+    if (keys.length === 0) continue;
+
+    const pipeline = redis.pipeline();
+    for (const key of keys) pipeline.pttl(key);
+    const results = await pipeline.exec();
+    if (!results) continue;
+
+    for (let i = 0; i < keys.length; i++) {
+      const key = keys[i]!;
+      const entry = results[i];
+      const ttlMs = entry && !entry[0] ? Math.max(0, entry[1] as number) : 0;
+      if (ttlMs <= maxRemainingMs) continue;
+      await clearCooldown(redis, key);
+      purged++;
+    }
+  } while (cursor !== '0');
+
+  return purged;
+}
+
+/**
  * İşlem başarıyla tamamlandığında cooldown'u başlatır.
  */
 export async function armCooldown(

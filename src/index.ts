@@ -34,8 +34,10 @@ import {
 import {
   COOLDOWN_CLEAR_CHANNEL,
   handleCooldownClearSignal,
+  purgeCooldownsAboveMax,
   sweepCooldownCache,
 } from './middleware/cooldown-manager';
+import { HUNT_COOLDOWN_MAX_REMAINING_MS } from './config';
 
 const env = parseBotEnv();
 
@@ -115,6 +117,17 @@ async function bootstrap(): Promise<void> {
     if (channel !== COOLDOWN_CLEAR_CHANNEL) return;
     handleCooldownClearSignal(key);
   });
+
+  if (isShard0()) {
+    const purgedHuntCooldowns = await purgeCooldownsAboveMax(
+      redis,
+      'cooldown:hunt:*',
+      HUNT_COOLDOWN_MAX_REMAINING_MS,
+    );
+    if (purgedHuntCooldowns > 0) {
+      console.info(`[Cooldown] ${purgedHuntCooldowns} anormal hunt cooldown temizlendi`);
+    }
+  }
 
   await prisma.$connect();
   console.info(`PostgreSQL connected (${describeDatabaseUrl(dbUrl)})`);

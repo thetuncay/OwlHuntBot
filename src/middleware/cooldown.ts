@@ -1,5 +1,13 @@
 import type { Redis } from 'ioredis';
 
+/** Tek bir cooldown anahtarina yazilabilecek mutlak ust sinir (1 saat). */
+export const MAX_COOLDOWN_TTL_MS = 60 * 60 * 1000;
+
+function clampCooldownMs(cooldownMs: number): number {
+  if (!Number.isFinite(cooldownMs) || cooldownMs <= 0) return 0;
+  return Math.min(Math.floor(cooldownMs), MAX_COOLDOWN_TTL_MS);
+}
+
 // Lua script: atomik check-and-set
 // Tek round-trip ile hem kontrol hem set yapar
 // Döner: 0 = cooldown yok (set edildi), >0 = kalan ms
@@ -27,8 +35,10 @@ export async function getCooldownRemainingMs(
   key: string,
   cooldownMs: number,
 ): Promise<number> {
+  const safeMs = clampCooldownMs(cooldownMs);
+  if (safeMs <= 0) return 0;
   try {
-    const result = await redis.eval(COOLDOWN_LUA, 1, key, String(cooldownMs)) as number;
+    const result = await redis.eval(COOLDOWN_LUA, 1, key, String(safeMs)) as number;
     return Math.max(0, result);
   } catch {
     // Redis down GÜVENLİK FİX: Flood'u engellemek için hata fırlat
@@ -59,8 +69,10 @@ export async function setCooldown(
   key: string,
   cooldownMs: number,
 ): Promise<void> {
+  const safeMs = clampCooldownMs(cooldownMs);
+  if (safeMs <= 0) return;
   try {
-    await redis.set(key, '1', 'PX', cooldownMs);
+    await redis.set(key, '1', 'PX', safeMs);
   } catch {
     // Redis down → sessizce geç
   }

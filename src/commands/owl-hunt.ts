@@ -15,8 +15,8 @@ import {
   ComponentType,
   EmbedBuilder,
 } from 'discord.js';
-import { HUNT_COOLDOWN_MS, BIOMES, BIOME_SESSION_TTL_MS } from '../config';
-import { armCooldown, clearCooldown, peekCooldown } from '../middleware/cooldown-manager';
+import { HUNT_COOLDOWN_MS, HUNT_COOLDOWN_MAX_REMAINING_MS, BIOMES, BIOME_SESSION_TTL_MS } from '../config';
+import { armCooldown, peekCooldownBounded } from '../middleware/cooldown-manager';
 import { rollHunt, runHuntSideEffects } from '../systems/hunt';
 import {
   getBiomeSession,
@@ -71,6 +71,27 @@ import type { CommandDefinition } from '../types';
 import type { Message } from 'discord.js';
 
 const BIOME_PANEL_LOCK_MS = 30_000;
+
+function huntCooldownKey(userId: string): string {
+  return `cooldown:hunt:${userId}`;
+}
+
+/** true = hunt devam edebilir, false = cooldown/spam engeli */
+async function enforceHuntCooldown(
+  redis: Parameters<CommandDefinition['execute']>[1]['redis'],
+  userId: string,
+  notify: (content: string) => Promise<void>,
+): Promise<boolean> {
+  const cooldown = await peekCooldownBounded(
+    redis,
+    huntCooldownKey(userId),
+    HUNT_COOLDOWN_MAX_REMAINING_MS,
+  );
+  if (!cooldown.active) return true;
+  if (!cooldown.notify) return false;
+  await notify(buildCooldownMessage(cooldown.expiresAtMs, 'Tekrar avlanabilirsin'));
+  return false;
+}
 
 // ─── Biyom seçim embed'i ─────────────────────────────────────────────────────
 
@@ -252,8 +273,8 @@ export async function runHunt(
           await clearBiomeSession(ctx.redis, userId);
           await li.update({ content: `🚪 **${biome.name}** bölgesinden çıktın.`, embeds: [], components: [] });
         });
-      } finally {
-        await ctx.redis.del(panelLockKey).catch(() => null);
+      } catch {
+        // panelLock collector.on('end') ile temizlenir
       }
     });
 
@@ -267,32 +288,24 @@ export async function runHunt(
   }
 
   // ── Aktif biyom var — cooldown kontrolü ve hunt ───────────────────────────
-  const cooldownKey = `cooldown:hunt:${userId}`;
-  const cooldown = await peekCooldown(ctx.redis, cooldownKey);
-  if (cooldown.active) {
-    if (cooldown.remainingMs > HUNT_COOLDOWN_MS * 8) {
-      await clearCooldown(ctx.redis, cooldownKey);
-      return;
-    }
-    if (!cooldown.notify) return;
-    await interaction.reply({
-      content: buildCooldownMessage(cooldown.expiresAtMs, 'Tekrar avlanabilirsin'),
-      flags: 64,
-    });
-    return;
-  }
+  const canHunt = await enforceHuntCooldown(
+    ctx.redis,
+    userId,
+    async (content) => { await interaction.reply({ content, flags: 64 }); },
+  );
+  if (!canHunt) return;
+
+  await interaction.deferReply({ flags: 64 });
 
   const bundle = await hydratePlayerState(ctx.redis, ctx.prisma, userId);
   if (!bundle || !bundle.mainOwl) {
-    await interaction.reply({ content: '❌ **Hata** | Main baykuş bulunamadı.', flags: 64 });
+    await interaction.editReply({ content: '❌ **Hata** | Main baykuş bulunamadı.' });
     return;
   }
 
-  await armCooldown(ctx.redis, cooldownKey, HUNT_COOLDOWN_MS);
-  await interaction.deferReply({ flags: 64 });
-
   try {
     const result = await rollHunt(ctx.prisma, ctx.redis, userId, bundle.mainOwl.id, session.biomeId);
+    await armCooldown(ctx.redis, huntCooldownKey(userId), HUNT_COOLDOWN_MS);
     const compressed = compressHuntResult(result);
     const name = interaction.member && 'displayName' in interaction.member
       ? (interaction.member as { displayName: string }).displayName
@@ -417,8 +430,8 @@ export async function runHuntMessage(
             biomeMsg.edit({ content: '⏰ Bölge süresi doldu, otomatik çıkış yapıldı.', embeds: [], components: [] }).catch(() => null);
           }
         });
-      } finally {
-        await ctx.redis.del(panelLockKey).catch(() => null);
+      } catch {
+        // panelLock collector.on('end') ile temizlenir
       }
     });
 
@@ -432,17 +445,12 @@ export async function runHuntMessage(
   }
 
   // ── Aktif biyom var — cooldown kontrolü ve hunt ───────────────────────────
-  const cooldownKey = `cooldown:hunt:${userId}`;
-  const cooldown = await peekCooldown(ctx.redis, cooldownKey);
-  if (cooldown.active) {
-    if (cooldown.remainingMs > HUNT_COOLDOWN_MS * 8) {
-      await clearCooldown(ctx.redis, cooldownKey);
-      return;
-    }
-    if (!cooldown.notify) return;
-    await message.reply(buildCooldownMessage(cooldown.expiresAtMs, 'Tekrar avlanabilirsin'));
-    return;
-  }
+  const canHunt = await enforceHuntCooldown(
+    ctx.redis,
+    userId,
+    async (content) => { await message.reply(content); },
+  );
+  if (!canHunt) return;
 
   const bundle = await hydratePlayerState(ctx.redis, ctx.prisma, userId);
   if (!bundle || !bundle.mainOwl) {
@@ -450,11 +458,11 @@ export async function runHuntMessage(
     return;
   }
 
-  await armCooldown(ctx.redis, cooldownKey, HUNT_COOLDOWN_MS);
   let loadingMsg: Awaited<ReturnType<typeof safeReply>> | null = null;
   try {
     loadingMsg = await safeReply(message, '🦅 **Avlanıyor...**');
     const result = await rollHunt(ctx.prisma, ctx.redis, userId, bundle.mainOwl.id, session.biomeId);
+    await armCooldown(ctx.redis, huntCooldownKey(userId), HUNT_COOLDOWN_MS);
     const compressed = compressHuntResult(result);
     const name = message.member?.displayName ?? message.author.username;
 
