@@ -9,7 +9,7 @@ export const redis = new Redis(redisUrl, {
   // Backoff: 50ms → 2000ms arası üstel artış
   retryStrategy: (times: number) => Math.min(times * 50, 2000),
   // Komut zaman aşımı: 3 saniye — takılı kalan komutları serbest bırakır
-  commandTimeout: 3000,
+  commandTimeout: parseInt(process.env.REDIS_COMMAND_TIMEOUT_MS ?? '5000', 10),
   // Bağlantı havuzu: tek bağlantı yeterli (ioredis multiplexing yapar)
   // lazyConnect: true ile ilk komuta kadar bağlanmayı ertele
   lazyConnect: false,

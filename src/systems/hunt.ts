@@ -481,11 +481,7 @@ export async function rollHunt(
     // Player cache'i invalidate et — veri değişti, sonraki komut taze çeksin
     invalidatePlayerCache(redis, playerId).catch(() => null);
 
-    // Lootbox ve encounter sonuçlarını paralel bekle (UI için gerekli)
-    const [lootboxDrops, encounterId] = await Promise.all([
-      lootboxDropsPromise,
-      encounterPromise,
-    ]);
+    const lootboxDrops = await lootboxDropsPromise;
 
     return {
       catches,
@@ -493,7 +489,7 @@ export async function rollHunt(
       injured,
       totalXP,
       levelUp: xpResult.levelUp,
-      encounterId: encounterId ?? undefined,
+      resolveEncounter: encounterPromise,
       lootboxDrops: lootboxDrops.length > 0 ? lootboxDrops : undefined,
     };
   });

@@ -58,9 +58,7 @@ export async function runSellMessage(
   const totalCount = toSell.reduce((sum, i) => sum + i.quantity, 0);
 
   await ctx.prisma.$transaction(async (tx) => {
-    for (const item of toSell) {
-      await tx.inventoryItem.delete({ where: { id: item.id } });
-    }
+    await tx.inventoryItem.deleteMany({ where: { id: { in: toSell.map((i) => i.id) } } });
     await tx.player.update({
       where: { id: message.author.id },
       data:  { coins: { increment: totalCoins } },

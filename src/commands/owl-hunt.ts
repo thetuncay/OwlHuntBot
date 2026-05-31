@@ -43,7 +43,8 @@ import {
   buildTameFinalRow,
   calcFinalTameChance,
 } from '../utils/tame-ux';
-import { animateHuntInteraction, animateHuntMessage, buildFinalMessage, compressHuntResult } from '../utils/hunt-ux';
+import { animateHuntInteraction, buildFinalMessage, compressHuntResult } from '../utils/hunt-ux';
+import { safeReply } from '../utils/safe-reply';
 import { listActiveBuffs } from '../systems/items';
 import { BUFF_ITEM_MAP, CONSUMABLE_ITEMS } from '../config';
 import { getPlayerBundle } from '../utils/player-cache';
@@ -376,48 +377,66 @@ export async function runHuntMessage(
   }
 
   try {
+    const sent = await safeReply(message, '🦅 **Avlanıyor...**');
     const result = await rollHunt(ctx.prisma, ctx.redis, userId, bundle.mainOwl.id, session.biomeId);
-    const compressed = compressHuntResult(result);
     const name = message.member?.displayName ?? message.author.username;
 
-    // Aktif hunt buff'larını çek — hunt mesajında göster (senkron, animasyondan önce)
-    try {
-      const rawBuffs = await listActiveBuffs(ctx.prisma as any, userId);
-      compressed.activeBuffs = rawBuffs
-        .filter((b) => b.chargeCur > 0 && b.category === 'hunt')
-        .map((b) => ({
-          emoji: BUFF_ITEM_MAP[b.buffItemId]?.emoji ?? '✨',
-          chargeCur: b.chargeCur,
-          chargeMax: b.chargeMax,
-        }));
-
-      // Aktif consumable item'ları da göster
+    const buffPromise = listActiveBuffs(ctx.prisma as any, userId).catch(() => []);
+    const consumablePromise = (async () => {
       const consumables: { emoji: string; name: string; remainingMs: number }[] = [];
-      for (const def of CONSUMABLE_ITEMS) {
-        if (def.durationMs === 0) continue;
-        const key = `${def.redisKey}:${userId}`;
-        const val = await ctx.redis.get(key);
-        if (val) {
-          const ttl = await ctx.redis.pttl(key);
-          consumables.push({ emoji: def.emoji, name: def.itemName, remainingMs: ttl });
-        }
+      const activeDefs = CONSUMABLE_ITEMS.filter((d) => d.durationMs > 0);
+      if (activeDefs.length === 0) return consumables;
+      const pipeline = ctx.redis.pipeline();
+      for (const def of activeDefs) {
+        pipeline.get(`${def.redisKey}:${userId}`);
+        pipeline.pttl(`${def.redisKey}:${userId}`);
       }
-      compressed.activeConsumables = consumables;
-    } catch { /* hata hunt'u engellemesin */ }
+      const rows = await pipeline.exec();
+      if (!rows) return consumables;
+      for (let i = 0; i < activeDefs.length; i++) {
+        const val = rows[i * 2]?.[1] as string | null;
+        if (!val) continue;
+        const ttl = rows[i * 2 + 1]?.[1] as number;
+        const def = activeDefs[i]!;
+        consumables.push({ emoji: def.emoji, name: def.itemName, remainingMs: ttl });
+      }
+      return consumables;
+    })();
 
-    await animateHuntMessage(message, name, compressed);
+    const [rawBuffs, consumables, encounterId] = await Promise.all([
+      buffPromise,
+      consumablePromise,
+      result.resolveEncounter ?? Promise.resolve(result.encounterId ?? null),
+    ]);
 
-    if (compressed.encounterId) {
+    const compressed = compressHuntResult({
+      ...result,
+      encounterId: encounterId ?? undefined,
+    });
+    compressed.activeBuffs = rawBuffs
+      .filter((b) => b.chargeCur > 0 && b.category === 'hunt')
+      .map((b) => ({
+        emoji: BUFF_ITEM_MAP[b.buffItemId]?.emoji ?? '✨',
+        chargeCur: b.chargeCur,
+        chargeMax: b.chargeMax,
+      }));
+    compressed.activeConsumables = consumables;
+
+    await sent.edit(buildFinalMessage(name, compressed)).catch(() =>
+      safeReply(message, buildFinalMessage(name, compressed)),
+    );
+
+    if (encounterId) {
       await sendEncounterMessage(
-        { reply: message.reply.bind(message) },
-        ctx, userId, compressed.encounterId, bundle.mainOwl,
+        { reply: (payload: unknown) => safeReply(message, payload as Parameters<typeof safeReply>[1]) },
+        ctx, userId, encounterId, bundle.mainOwl,
       );
     }
   } catch (err: any) {
     if (err.message?.includes('biyom') || err.message?.includes('coin')) {
       await clearBiomeSession(ctx.redis, userId);
     }
-    await message.reply({ content: `❌ **Hata** | ${err.message}` });
+    await safeReply(message, { content: `❌ **Hata** | ${err.message}` });
   }
 }
 

@@ -16,6 +16,7 @@ import {
 } from '../utils/inventory-ux';
 import type { CommandDefinition } from '../types';
 import type { Message } from 'discord.js';
+import { safeReply } from '../utils/safe-reply';
 
 // ─── Slash: /owl inventory ────────────────────────────────────────────────────
 
@@ -119,6 +120,7 @@ export async function runInventoryMessage(
   ctx: Parameters<CommandDefinition['execute']>[1],
 ): Promise<void> {
   const playerId = message.author.id;
+  const sent = await safeReply(message, '🎒 **Envanter yükleniyor...**');
   const player   = await ctx.prisma.player.findUnique({ where: { id: playerId } });
   if (!player) throw new Error('Oyuncu bulunamadi.');
 
@@ -172,7 +174,9 @@ export async function runInventoryMessage(
   );
 
   const components = totalPages > 1 ? [renderRow()] : [];
-  const sent = await message.reply({ content: renderText(), components });
+  await sent.edit({ content: renderText(), components }).catch(() =>
+    safeReply(message, { content: renderText(), components }),
+  );
 
   if (totalPages <= 1) return;
 

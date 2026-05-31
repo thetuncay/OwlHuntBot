@@ -8,6 +8,7 @@ import { failEmbed } from '../utils/embed';
 import type { CommandDefinition } from '../types';
 import type { Message } from 'discord.js';
 import { getPlayerBundle } from '../utils/player-cache';
+import { safeReply } from '../utils/safe-reply';
 
 // ─── Slash: /owl stats ────────────────────────────────────────────────────────
 
@@ -56,12 +57,13 @@ export async function runStatsMessage(
   ctx: Parameters<CommandDefinition['execute']>[1],
 ): Promise<void> {
   const deep = (args[0] ?? '').toLowerCase() === 'deep';
+  const sent = await safeReply(message, '📊 **İstatistikler yükleniyor...**');
 
   const bundle = await getPlayerBundle(ctx.redis, ctx.prisma, message.author.id);
   const player = bundle?.player;
   const owl = bundle?.mainOwl;
   if (!player || !owl) {
-    await message.reply(`❌ **Hata** | Main baykus bulunamadi.`);
+    await sent.edit('❌ **Hata** | Main baykus bulunamadi.').catch(() => null);
     return;
   }
 
@@ -85,5 +87,7 @@ export async function runStatsMessage(
     prestigeLevel: player.prestigeLevel || 0
   };
 
-  await message.reply({ embeds: [buildOwlStatsEmbed(owlData, playerData, deep)] });
+  await sent.edit({ embeds: [buildOwlStatsEmbed(owlData, playerData, deep)] }).catch(() =>
+    safeReply(message, { embeds: [buildOwlStatsEmbed(owlData, playerData, deep)] }),
+  );
 }

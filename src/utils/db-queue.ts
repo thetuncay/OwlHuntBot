@@ -30,6 +30,7 @@
 import { Queue, Worker, type Job } from 'bullmq';
 import type { PrismaClient } from '@prisma/client';
 import { redis } from './redis.js';
+import { RUNTIME } from '../config/runtime.js';
 
 const QUEUE_NAME = 'db-writes';
 const REDIS_URL = process.env.REDIS_URL ?? 'redis://localhost:6379';
@@ -123,14 +124,14 @@ export function initDbQueue(prisma: PrismaClient): void {
     defaultJobOptions: {
       attempts: 3,
       backoff: { type: 'exponential', delay: 1000 }, // 1s, 2s, 4s
-      removeOnComplete: { count: 100 },  // Son 100 başarılı job'ı tut
-      removeOnFail: { count: 50 },       // Son 50 başarısız job'ı tut
+      removeOnComplete: { count: 500 },
+      removeOnFail: { count: 200 },
     },
   });
 
   worker = new Worker(QUEUE_NAME, processJob, {
     connection,
-    concurrency: 5,  // Aynı anda max 5 DB yazma işlemi
+    concurrency: RUNTIME.dbQueueConcurrency,
   });
 
   worker.on('failed', (job, err) => {

@@ -1,27 +1,71 @@
 version: '3.8'
 
+# VDS MAX — 12 GB / 6 CPU (~%98)
+# bot + postgres + pgbouncer + redis + nginx
+
 services:
   bot:
     build: .
     restart: unless-stopped
     env_file: .env
+    environment:
+      DATABASE_URL: postgresql://postgres@pgbouncer:5432/owlhuntbot?pgbouncer=true&connection_limit=200&pool_timeout=45&connect_timeout=15
+      REDIS_URL: redis://redis:6379
+    mem_limit: 5376m
+    cpus: '3.5'
     depends_on:
-      postgres:
-        condition: service_healthy
+      pgbouncer:
+        condition: service_started
       redis:
         condition: service_healthy
     ports:
       - '3000:3000'
 
+  pgbouncer:
+    image: edoburu/pgbouncer:v1.23.1-p2
+    restart: unless-stopped
+    mem_limit: 256m
+    cpus: '0.25'
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_NAME: owlhuntbot
+      AUTH_TYPE: trust
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: 1000
+      DEFAULT_POOL_SIZE: 100
+      MIN_POOL_SIZE: 30
+      RESERVE_POOL_SIZE: 20
+      SERVER_RESET_QUERY: DISCARD ALL
+    ports:
+      - '6432:5432'
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
+    mem_limit: 3840m
+    cpus: '1.5'
+    shm_size: 512m
     environment:
       POSTGRES_DB: owlhuntbot
       POSTGRES_USER: postgres
       POSTGRES_HOST_AUTH_METHOD: trust
     command: >
       postgres
+      -c max_connections=500
+      -c shared_buffers=1792MB
+      -c effective_cache_size=3500MB
+      -c work_mem=128MB
+      -c maintenance_work_mem=768MB
+      -c random_page_cost=1.1
+      -c effective_io_concurrency=200
+      -c max_parallel_workers_per_gather=3
+      -c max_parallel_workers=4
+      -c max_worker_processes=6
       -c wal_level=replica
       -c archive_mode=on
       -c archive_command='cp %p /var/lib/postgresql/wal_archive/%f'
@@ -39,7 +83,18 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
-    command: redis-server --appendonly yes --appendfsync everysec
+    mem_limit: 2560m
+    cpus: '1.0'
+    command: >
+      redis-server
+      --appendonly yes
+      --appendfsync everysec
+      --maxmemory 2400mb
+      --maxmemory-policy allkeys-lru
+      --tcp-backlog 2048
+      --io-threads 6
+      --io-threads-do-reads yes
+      --hz 100
     ports:
       - '6379:6379'
     volumes:
@@ -53,6 +108,8 @@ services:
   nginx:
     image: nginx:alpine
     restart: unless-stopped
+    mem_limit: 128m
+    cpus: '0.1'
     ports:
       - '80:80'
     volumes:

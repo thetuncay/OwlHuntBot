@@ -936,7 +936,7 @@ export const COLOR_WARNING = 0xf1c40f;
 
 // --- LOCK & RATE LIMIT ---
 export const LOCK_TTL_SECONDS = 5;   // 15s → 5s: hunt ~200ms, pvp ~500ms, upgrade ~300ms için yeterli margin
-export const COMMAND_RATE_LIMIT_TOKENS = 12;
+export const COMMAND_RATE_LIMIT_TOKENS = 24;
 export const COMMAND_RATE_LIMIT_WINDOW_SECONDS = 10;
 export const SPAM_MUTE_SECONDS = 15;
 
@@ -954,7 +954,7 @@ export const POWER_WEIGHT_RARE  = 80;    // Her nadir bulgu 80 puan
 export const SEASON_TYPE: 'weekly' | 'monthly' = 'weekly';  // 'weekly' | 'monthly'
 
 // --- LIDERBOARD CACHE (saniye) ---
-export const LEADERBOARD_CACHE_TTL = 600;  // 120s → 600s: 10 dakika cache, yüksek yük altında DB spike önler
+export const LEADERBOARD_CACHE_TTL = 1800;  // 30 dk — MAX VDS profili
 export const LEADERBOARD_TOP_N     = 10;   // Gosterilecek max oyuncu
 
 // --- OZEL ROLLER (Discord Role ID'leri) ---

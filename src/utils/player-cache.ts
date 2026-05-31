@@ -12,15 +12,15 @@
  *   - Graceful degradation: Redis down → DB'den çek, hata verme
  *
  * TTL seçimi:
- *   15 saniye — hunt cooldown 10s, bu yüzden aynı oyuncu
- *   arka arkaya hunt atsa bile cache geçerli kalır.
+ *   30 saniye — hunt cooldown 7s; VDS'te daha az DB round-trip
  *   Coin/XP gibi kritik veriler için invalidate zorunlu.
  */
 
 import type { Redis } from 'ioredis';
 import type { PrismaClient } from '@prisma/client';
+import { RUNTIME } from '../config/runtime';
 
-const PLAYER_CACHE_TTL_S = 15;
+const PLAYER_CACHE_TTL_S = RUNTIME.playerCacheTtlSec;
 const CACHE_PREFIX = 'pcache:';
 
 export interface CachedPlayerData {

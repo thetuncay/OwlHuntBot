@@ -59,6 +59,8 @@ export interface HuntRunResult {
   levelUp?: LevelUpResult;
   /** Av sonrası oluşan encounter ID (varsa) */
   encounterId?: string;
+  /** Encounter kritik yol dışı — caller UI öncesi await eder */
+  resolveEncounter?: Promise<string | null>;
   /** Bu avda düşen lootbox'lar (varsa) */
   lootboxDrops?: LootboxDrop[];
 }

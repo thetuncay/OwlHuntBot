@@ -159,7 +159,7 @@ export async function activateBuff(
 
 // In-memory buff cache: { key → { effects, expiresAt } }
 const buffCache = new Map<string, { effects: BuffEffects; expiresAt: number }>();
-const BUFF_CACHE_TTL_MS = 30_000; // 30 saniye
+const BUFF_CACHE_TTL_MS = 120_000;
 
 export async function getBuffEffects(
   prisma: AnyPrisma,

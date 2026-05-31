@@ -12,12 +12,14 @@ import { handleRegistrationButton, isRegistrationButton } from './systems/onboar
 import { archiveAndResetSeason } from './systems/leaderboard';
 import { syncAllRoles } from './systems/roles';
 import { handleTopTextCommand } from './commands/leaderboard';
+import { safeReply } from './utils/safe-reply';
 import { addXP } from './systems/xp';
 import { initDbQueue, closeDbQueue } from './utils/db-queue';
 import { cleanupExpiredListings } from './systems/market';
 import { dailyMaintenance } from './systems/economy';
 import { cleanupOldAuditLogs } from './utils/audit';
 import { isShard0 } from './utils/shard';
+import { RUNTIME } from './config/runtime';
 
 const envSchema = z.object({
   DISCORD_TOKEN: z.string().min(1),
@@ -34,7 +36,7 @@ function appendPoolParams(url: string): string {
   // .env'de zaten connection_limit ve pool_timeout varsa tekrar ekleme
   if (url.includes('connection_limit') || url.includes('pool_timeout')) return url;
   const separator = url.includes('?') ? '&' : '?';
-  return `${url}${separator}connection_limit=50&pool_timeout=15&connect_timeout=10`;
+  return `${url}${separator}connection_limit=${RUNTIME.dbConnectionLimit}&pool_timeout=${RUNTIME.dbPoolTimeoutSec}&connect_timeout=10`;
 }
 
 const prisma = new PrismaClient({
@@ -46,9 +48,9 @@ const client = new Client({
   // kanalları bellekte tutar. Yüksek sunucu sayısında bu bellek sızıntısına yol açar.
   // makeCache: sadece ihtiyaç duyulan miktarı tut.
   makeCache: Options.cacheWithLimits({
-    MessageManager:    50,   // Kanal başına max 50 mesaj (varsayılan: sınırsız)
-    GuildMemberManager: 200, // Guild başına max 200 üye (komutlar user ID ile çalışır, üye listesi gerekmez)
-    UserManager:       500,  // Global max 500 kullanıcı objesi
+    MessageManager:     RUNTIME.discordCacheMessages,
+    GuildMemberManager: RUNTIME.discordCacheMembers,
+    UserManager:        RUNTIME.discordCacheUsers,
     ReactionManager:   0,    // Reaksiyon cache'i tamamen kapat (kullanılmıyor)
     GuildEmojiManager: 0,    // Emoji cache'i kapat (kullanılmıyor)
     StageInstanceManager: 0,
@@ -58,7 +60,7 @@ const client = new Client({
   sweepers: {
     messages: {
       interval: 300,    // Her 5 dakikada bir tara
-      lifetime: 600,    // 10 dakikadan eski mesajları sil
+      lifetime: RUNTIME.discordMessageSweepLifetimeSec,
     },
     users: {
       interval: 3_600,  // Her saatte bir tara
@@ -206,7 +208,7 @@ async function bootstrap(): Promise<void> {
     }
 
     if (!commandText) {
-      await message.reply('❌ **Komut eksik** | Ornek: owl yardim');
+      await safeReply(message, '❌ **Komut eksik** | Ornek: owl yardim');
       return;
     }
 
@@ -220,7 +222,7 @@ async function bootstrap(): Promise<void> {
         await handleTopTextCommand(message, parts.slice(1), { prisma, redis });
       } catch (error) {
         const msg = error instanceof Error ? error.message : 'Bir hata olustu.';
-        await message.reply(`❌ ${msg}`);
+        await safeReply(message, `❌ ${msg}`);
       }
       return;
     }
@@ -231,7 +233,7 @@ async function bootstrap(): Promise<void> {
     } catch (error) {
       console.error('[Message Command Error]', error);
       const errorMsg = error instanceof Error ? error.message : 'Bir seyler ters gitti, islem geri alindi.';
-      await message.reply(`❌ **Hata** | ${errorMsg}`);
+      await safeReply(message, `❌ **Hata** | ${errorMsg}`);
     }
   });
 
@@ -357,7 +359,7 @@ async function runDailyMaintenance(): Promise<void> {
     if (players.length === 0) return;
 
     // 100'er batch — Atlas M0'da büyük paralel yük önlenir
-    const BATCH_SIZE = 100;
+    const BATCH_SIZE = RUNTIME.maintenanceBatchSize;
     let processed = 0;
     for (let i = 0; i < players.length; i += BATCH_SIZE) {
       const batch = players.slice(i, i + BATCH_SIZE);
