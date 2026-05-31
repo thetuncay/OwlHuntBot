@@ -141,15 +141,22 @@ export async function clearCooldownPattern(
   redis: Redis,
   pattern: string,
 ): Promise<number> {
-  const keys = await redis.keys(pattern);
-  if (keys.length === 0) return 0;
+  let cursor = '0';
+  let cleared = 0;
+  do {
+    const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', pattern, 'COUNT', 200);
+    cursor = nextCursor;
+    if (keys.length === 0) continue;
+    await redis.del(...keys);
+    cleared += keys.length;
+    for (const key of keys) {
+      localCooldowns.delete(key);
+      await redis.publish(COOLDOWN_CLEAR_CHANNEL, key).catch(() => null);
+    }
+  } while (cursor !== '0');
 
-  await redis.del(...keys);
-  for (const key of keys) {
-    localCooldowns.delete(key);
-    await redis.publish(COOLDOWN_CLEAR_CHANNEL, key).catch(() => null);
-  }
-  return keys.length;
+  if (cleared === 0) return 0;
+  return cleared;
 }
 
 /**

@@ -16,7 +16,7 @@ import {
   EmbedBuilder,
 } from 'discord.js';
 import { HUNT_COOLDOWN_MS, BIOMES, BIOME_SESSION_TTL_MS } from '../config';
-import { clearCooldown, guardCooldown } from '../middleware/cooldown-manager';
+import { armCooldown, clearCooldown, peekCooldown } from '../middleware/cooldown-manager';
 import { rollHunt, runHuntSideEffects } from '../systems/hunt';
 import {
   getBiomeSession,
@@ -208,14 +208,15 @@ export async function runHunt(
       components: [buildBiomeSelectRow(playerLevel)],
       flags: 64,
     });
+    const panelMsg = await interaction.fetchReply();
 
-    const collector = interaction.channel?.createMessageComponentCollector({
+    const collector = panelMsg.createMessageComponentCollector({
       componentType: ComponentType.Button,
       time: 30_000,
       filter: (i) => i.user.id === userId && i.customId.startsWith('biome_select:'),
     });
 
-    collector?.on('collect', async (i) => {
+    collector.on('collect', async (i) => {
       try {
         collector.stop();
         const biomeId = i.customId.split(':')[1] ?? 'b0';
@@ -241,12 +242,12 @@ export async function runHunt(
         });
 
         // Çıkış butonu collector'ı
-        const leaveCollector = interaction.channel?.createMessageComponentCollector({
+        const leaveCollector = panelMsg.createMessageComponentCollector({
           componentType: ComponentType.Button,
           time: BIOME_SESSION_TTL_MS,
           filter: (li) => li.user.id === userId && li.customId === 'biome_leave',
         });
-        leaveCollector?.on('collect', async (li) => {
+        leaveCollector.on('collect', async (li) => {
           leaveCollector.stop();
           await clearBiomeSession(ctx.redis, userId);
           await li.update({ content: `🚪 **${biome.name}** bölgesinden çıktın.`, embeds: [], components: [] });
@@ -256,7 +257,7 @@ export async function runHunt(
       }
     });
 
-    collector?.on('end', (_, reason) => {
+    collector.on('end', (_, reason) => {
       ctx.redis.del(panelLockKey).catch(() => null);
       if (reason === 'time') {
         interaction.editReply({ content: '⏰ Seçim süresi doldu.', embeds: [], components: [] }).catch(() => null);
@@ -267,7 +268,7 @@ export async function runHunt(
 
   // ── Aktif biyom var — cooldown kontrolü ve hunt ───────────────────────────
   const cooldownKey = `cooldown:hunt:${userId}`;
-  const cooldown = await guardCooldown(ctx.redis, cooldownKey, HUNT_COOLDOWN_MS);
+  const cooldown = await peekCooldown(ctx.redis, cooldownKey);
   if (cooldown.active) {
     if (cooldown.remainingMs > HUNT_COOLDOWN_MS * 8) {
       await clearCooldown(ctx.redis, cooldownKey);
@@ -287,6 +288,7 @@ export async function runHunt(
     return;
   }
 
+  await armCooldown(ctx.redis, cooldownKey, HUNT_COOLDOWN_MS);
   await interaction.deferReply({ flags: 64 });
 
   try {
@@ -431,7 +433,7 @@ export async function runHuntMessage(
 
   // ── Aktif biyom var — cooldown kontrolü ve hunt ───────────────────────────
   const cooldownKey = `cooldown:hunt:${userId}`;
-  const cooldown = await guardCooldown(ctx.redis, cooldownKey, HUNT_COOLDOWN_MS);
+  const cooldown = await peekCooldown(ctx.redis, cooldownKey);
   if (cooldown.active) {
     if (cooldown.remainingMs > HUNT_COOLDOWN_MS * 8) {
       await clearCooldown(ctx.redis, cooldownKey);
@@ -448,6 +450,7 @@ export async function runHuntMessage(
     return;
   }
 
+  await armCooldown(ctx.redis, cooldownKey, HUNT_COOLDOWN_MS);
   let loadingMsg: Awaited<ReturnType<typeof safeReply>> | null = null;
   try {
     loadingMsg = await safeReply(message, '🦅 **Avlanıyor...**');

@@ -113,14 +113,15 @@ export async function runCraftSlash(interaction: ChatInputCommandInteraction, ct
   const components = row2 ? [row1, row2] : [row1];
 
   await interaction.reply({ content: text, components, flags: 64 });
+  const replyMsg = await interaction.fetchReply();
 
-  const collector = interaction.channel?.createMessageComponentCollector({
+  const collector = replyMsg.createMessageComponentCollector({
     componentType: ComponentType.Button,
     time: 30_000,
     filter: (i) => i.user.id === userId && i.customId.startsWith('craft_slash:'),
   });
 
-  collector?.on('collect', async (i) => {
+  collector.on('collect', async (i) => {
     const recipeId = i.customId.split(':')[1];
     if (!recipeId) return;
     collector.stop();
@@ -142,7 +143,7 @@ export async function runCraftSlash(interaction: ChatInputCommandInteraction, ct
     }
   });
 
-  collector?.on('end', (_, reason) => {
+  collector.on('end', (_, reason) => {
     if (reason === 'time') {
       interaction.editReply({ content: '⏰ Süre doldu.', components: [] }).catch(() => null);
     }

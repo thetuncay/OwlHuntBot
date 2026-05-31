@@ -26,7 +26,8 @@ import {
   type LootboxTier,
 } from '../config';
 import type { LootboxDrop } from '../types';
-import { enqueueDbWrite, enqueueDbWriteBulk } from '../utils/db-queue';
+import { enqueueDbWrite } from '../utils/db-queue';
+import { addInventoryItemInRedis } from '../state/player-state';
 
 // ── SABİTLER ─────────────────────────────────────────────────────────────────
 
@@ -163,14 +164,15 @@ export async function rollHuntLootboxDrop(
 
       const lootboxDef = LOOTBOX_DEF_MAP[def.id];
       if (lootboxDef) {
-        enqueueDbWriteBulk([{
-          type:     'upsertInventory',
+        await addInventoryItemInRedis(
+          redis,
           playerId,
-          itemName: lootboxDef.name,
-          itemType: 'Kutu',
-          rarity:   'Common',
-          quantity: 1,
-        }]);
+          lootboxDef.name,
+          'Kutu',
+          'Common',
+          1,
+          prisma,
+        );
       }
 
       drops.push({ lootboxId: def.id, lootboxName: def.name, emoji: def.emoji });
@@ -276,14 +278,15 @@ export async function rollEncounterFightLootboxDrop(
 
       const lootboxDef = LOOTBOX_DEF_MAP[def.id];
       if (lootboxDef) {
-        enqueueDbWriteBulk([{
-          type:     'upsertInventory',
+        await addInventoryItemInRedis(
+          redis,
           playerId,
-          itemName: lootboxDef.name,
-          itemType: 'Kutu',
-          rarity:   'Common',
-          quantity: 1,
-        }]);
+          lootboxDef.name,
+          'Kutu',
+          'Common',
+          1,
+          prisma,
+        );
       }
 
       return { lootboxId: def.id, lootboxName: def.name, emoji: def.emoji };

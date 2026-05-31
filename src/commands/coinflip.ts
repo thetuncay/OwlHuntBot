@@ -2,9 +2,10 @@ import { SlashCommandBuilder } from 'discord.js';
 import { coinFlip } from '../systems/gambling';
 import type { CommandDefinition } from '../types';
 import { failEmbed } from '../utils/embed';
-import { guardCooldown } from '../middleware/cooldown-manager';
+import { armCooldown, peekCooldown } from '../middleware/cooldown-manager';
 import { GAMBLE_COINFLIP_COOLDOWN_MS } from '../config';
 import { buildCooldownMessage } from '../utils/command-error';
+import { sleep } from '../utils/async';
 
 const data = new SlashCommandBuilder()
   .setName('coinflip')
@@ -18,10 +19,6 @@ const data = new SlashCommandBuilder()
       .addChoices({ name: 'Heads', value: 'heads' }, { name: 'Tails', value: 'tails' }),
   );
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 /**
  * /coinflip komutunu calistirir.
  */
@@ -32,7 +29,7 @@ async function execute(
   try {
     const userId      = interaction.user.id;
     const cooldownKey = `cooldown:coinflip:${userId}`;
-    const cooldown = await guardCooldown(ctx.redis, cooldownKey, GAMBLE_COINFLIP_COOLDOWN_MS);
+    const cooldown = await peekCooldown(ctx.redis, cooldownKey);
     if (cooldown.active) {
       if (!cooldown.notify) return;
       await interaction.reply({
@@ -50,6 +47,7 @@ async function execute(
 
     // Sonucu ÖNCE belirle
     const result = await coinFlip(ctx.prisma, interaction.user.id, bet, ctx.redis);
+    await armCooldown(ctx.redis, cooldownKey, GAMBLE_COINFLIP_COOLDOWN_MS);
     await interaction.editReply({
       content: `${interaction.user.username} spent 💎 ${bet} and chose **${choice}**\nThe coin spins...`,
     });

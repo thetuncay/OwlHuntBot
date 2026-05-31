@@ -184,11 +184,12 @@ export async function handleOwlTextCommand(
   message: Message,
   parts: string[],
   ctx: Parameters<CommandDefinition['execute']>[1],
+  guildPrefix?: string,
 ): Promise<string> {
   const rawSub    = (parts[0] ?? '').toLowerCase();
   const sub       = ALIASES[rawSub] ?? rawSub;
   const args      = parts.slice(1);
-  const helpPrefix = (await getGuildPrefix(ctx.redis, message.guildId ?? '')) || 'owl';
+  const helpPrefix = (guildPrefix ?? (await getGuildPrefix(ctx.redis, message.guildId ?? ''))) || 'owl';
 
   if (message.guildId) {
     logCommandEvent(ctx.prisma, {

@@ -11,7 +11,7 @@ import {
 } from 'discord.js';
 import { SIM_PVP_COOLDOWN_MS } from '../config';
 import { checkKeysPipelined } from '../middleware/cooldown';
-import { guardCooldown } from '../middleware/cooldown-manager';
+import { armCooldown, peekCooldown } from '../middleware/cooldown-manager';
 import { simulatePvP, startPvP } from '../systems/pvp';
 import { runSimulatedPvP } from '../systems/pvp-sim';
 import {
@@ -19,7 +19,6 @@ import {
   animatePvPMessage,
   animateSimPvPInteraction,
   animateSimPvPMessage,
-  buildResultScreen,
 } from '../utils/pvp-ux';
 import type { PvpBattleData } from '../utils/pvp-ux';
 import { failEmbed } from '../utils/embed';
@@ -130,7 +129,6 @@ export async function runVs(
         streak:          result.streak,
       };
 
-      await interaction.editReply({ content: buildResultScreen(battleData) });
       animatePvPInteraction(interaction, battleData).catch(() => {});
     } catch (error) {
       const errMsg = error instanceof Error ? error.message : 'Bir hata oluştu.';
@@ -157,7 +155,7 @@ export async function runDuel(
 ): Promise<void> {
   const userId = interaction.user.id;
   const cooldownKey = `cooldown:duel:${userId}`;
-  const cooldown = await guardCooldown(ctx.redis, cooldownKey, SIM_PVP_COOLDOWN_MS);
+  const cooldown = await peekCooldown(ctx.redis, cooldownKey);
   if (cooldown.active) {
     if (!cooldown.notify) return;
     await interaction.reply({
@@ -188,6 +186,7 @@ export async function runDuel(
     : interaction.user.username;
 
   await animateSimPvPInteraction(interaction, userId, playerName, mainOwl.hpMax, result);
+  await armCooldown(ctx.redis, cooldownKey, SIM_PVP_COOLDOWN_MS);
 }
 
 // ─── Prefix: owl vs ───────────────────────────────────────────────────────────
@@ -298,7 +297,6 @@ export async function runVsMessage(
         streak:          result.streak,
       };
 
-      await sent.edit({ content: buildResultScreen(battleData), components: [] });
       animatePvPMessage(sent, battleData).catch(() => {});
     } catch (error) {
       const errMsg = error instanceof Error ? error.message : 'Bir hata oluştu.';
@@ -325,7 +323,7 @@ export async function runDuelMessage(
 ): Promise<void> {
   const userId = message.author.id;
   const cooldownKey = `cooldown:duel:${userId}`;
-  const cooldown = await guardCooldown(ctx.redis, cooldownKey, SIM_PVP_COOLDOWN_MS);
+  const cooldown = await peekCooldown(ctx.redis, cooldownKey);
   if (cooldown.active) {
     if (!cooldown.notify) return;
     await message.reply(buildCooldownMessage(cooldown.expiresAtMs, 'Tekrar duel atabilirsin'));
@@ -350,4 +348,5 @@ export async function runDuelMessage(
   const playerName = message.member?.displayName ?? message.author.username;
 
   await animateSimPvPMessage(sent, userId, playerName, mainOwl.hpMax, result);
+  await armCooldown(ctx.redis, cooldownKey, SIM_PVP_COOLDOWN_MS);
 }

@@ -132,20 +132,21 @@ export async function runQuestsSlash(interaction: ChatInputCommandInteraction, c
     }
   });
 
-  const sent = await interaction.reply({
+  await interaction.reply({
     embeds: [embed],
     components: row.components.length > 0 ? [row] : [],
     flags: 64
   });
+  const sent = await interaction.fetchReply();
 
   if (row.components.length > 0) {
-    const collector = interaction.channel?.createMessageComponentCollector({
+    const collector = sent.createMessageComponentCollector({
       componentType: ComponentType.Button,
       time: 60000,
       filter: (i) => i.user.id === userId && i.customId.startsWith('claim_quest_slash:')
     });
 
-    collector?.on('collect', async (i) => {
+    collector.on('collect', async (i) => {
       const questId = i.customId.split(':')[1];
       if (!questId) return;
 

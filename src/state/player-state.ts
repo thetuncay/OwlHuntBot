@@ -27,6 +27,7 @@ const OWL_PREFIX = 'state:owl:';
 const INV_PREFIX = 'state:inv:';
 const DIRTY_PREFIX = 'state:dirty:';
 const DIRTY_SET = 'state:dirty:set';
+const STATE_TTL_SECONDS = Number.parseInt(process.env.STATE_TTL_SECONDS ?? String(7 * 24 * 60 * 60), 10);
 
 export interface InventoryDeltaItem {
   itemName: string;
@@ -74,6 +75,21 @@ function invKey(playerId: string): string {
 
 function hydratedKey(playerId: string): string {
   return `${HYDRATED_PREFIX}${playerId}`;
+}
+
+async function touchPlayerStateTtl(
+  redis: Redis,
+  playerId: string,
+  mainOwlId?: string | null,
+): Promise<void> {
+  const pipeline = redis.pipeline();
+  pipeline.expire(playerKey(playerId), STATE_TTL_SECONDS);
+  pipeline.expire(hydratedKey(playerId), STATE_TTL_SECONDS);
+  pipeline.expire(invKey(playerId), STATE_TTL_SECONDS);
+  if (mainOwlId) {
+    pipeline.expire(owlKey(mainOwlId), STATE_TTL_SECONDS);
+  }
+  await pipeline.exec();
 }
 
 export async function markDirty(redis: Redis, playerId: string): Promise<void> {
@@ -205,8 +221,11 @@ export async function hydratePlayerState(
   const pipeline = redis.pipeline();
   pipeline.set(playerKey(playerId), JSON.stringify(player));
   pipeline.set(hydratedKey(playerId), '1');
+  pipeline.expire(playerKey(playerId), STATE_TTL_SECONDS);
+  pipeline.expire(hydratedKey(playerId), STATE_TTL_SECONDS);
   if (mainOwl) {
     pipeline.set(owlKey(mainOwl.id), JSON.stringify(mainOwl));
+    pipeline.expire(owlKey(mainOwl.id), STATE_TTL_SECONDS);
   }
 
   const invRows = await prisma.inventoryItem.findMany({
@@ -224,6 +243,7 @@ export async function hydratePlayerState(
     }
     pipeline.del(invKey(playerId));
     pipeline.hset(invKey(playerId), ...invArgs);
+    pipeline.expire(invKey(playerId), STATE_TTL_SECONDS);
   }
 
   await pipeline.exec();
@@ -399,6 +419,7 @@ export async function applyHuntDelta(
 
   // Player JSON — Lua ile atomik SET (tek round-trip)
   await redis.eval(HUNT_APPLY_LUA, 1, playerKey(playerId), JSON.stringify(player));
+  await touchPlayerStateTtl(redis, playerId, delta.owlId);
 
   if (delta.totalXPGain > 0) {
     enqueueDbWrite({
@@ -438,6 +459,7 @@ export async function deductCoinsInRedis(
   player.coins -= amount;
   await redis.set(playerKey(playerId), JSON.stringify(player));
   await markDirty(redis, playerId);
+  await touchPlayerStateTtl(redis, playerId, player.mainOwlId);
   enqueuePersistPlayer(playerId);
   return player.coins;
 }
@@ -453,8 +475,38 @@ export async function applyCoinDeltaInRedis(
   player.coins = Math.max(0, player.coins + delta);
   await redis.set(playerKey(playerId), JSON.stringify(player));
   await markDirty(redis, playerId);
+  await touchPlayerStateTtl(redis, playerId, player.mainOwlId);
   enqueuePersistPlayer(playerId);
   return player.coins;
+}
+
+/** Redis-first envanter artisi (lootbox/drop gibi pathler). */
+export async function addInventoryItemInRedis(
+  redis: Redis,
+  playerId: string,
+  itemName: string,
+  itemType: string,
+  rarity: string,
+  quantity: number,
+  prisma?: PrismaClient,
+): Promise<void> {
+  if (quantity <= 0) return;
+  // Oyuncu state'i yoksa once hydrate et (tek write-path'i koru).
+  await loadPlayerForMutation(redis, prisma, playerId);
+  const key = invKey(playerId);
+  const existingRaw = await redis.hget(key, itemName);
+  if (existingRaw) {
+    const existing = JSON.parse(existingRaw) as { itemType: string; rarity: string; quantity: number };
+    existing.quantity += quantity;
+    await redis.hset(key, itemName, JSON.stringify(existing));
+  } else {
+    await redis.hset(key, itemName, JSON.stringify({ itemType, rarity, quantity }));
+  }
+  await markDirty(redis, playerId);
+  const rawPlayer = await redis.get(playerKey(playerId));
+  const player = rawPlayer ? (JSON.parse(rawPlayer) as CachedPlayerData) : null;
+  await touchPlayerStateTtl(redis, playerId, player?.mainOwlId);
+  enqueuePersistPlayer(playerId);
 }
 
 const PCACHE_PLAYER_PREFIX = 'pcache:player:';
@@ -482,8 +534,12 @@ export async function reloadInventoryFromPg(
     }
     pipeline.hset(key, ...invArgs);
   }
+  pipeline.expire(key, STATE_TTL_SECONDS);
   await pipeline.exec();
   await markDirty(redis, playerId);
+  const rawPlayer = await redis.get(playerKey(playerId));
+  const player = rawPlayer ? (JSON.parse(rawPlayer) as CachedPlayerData) : null;
+  await touchPlayerStateTtl(redis, playerId, player?.mainOwlId);
   enqueuePersistPlayer(playerId);
 }
 
@@ -504,6 +560,7 @@ export async function refreshPlayerXpInRedis(
     player.xp = db.xp;
     await redis.set(playerKey(playerId), JSON.stringify(player));
     await markDirty(redis, playerId);
+    await touchPlayerStateTtl(redis, playerId, player.mainOwlId);
     enqueuePersistPlayer(playerId);
   } catch {
     await invalidatePlayerState(redis, playerId);
@@ -560,6 +617,7 @@ export async function refreshPlayerCoinsInRedis(
     player.coins = db.coins;
     await redis.set(playerKey(playerId), JSON.stringify(player));
     await markDirty(redis, playerId);
+    await touchPlayerStateTtl(redis, playerId, player.mainOwlId);
     enqueuePersistPlayer(playerId);
   } catch {
     await invalidatePlayerState(redis, playerId);
@@ -568,8 +626,12 @@ export async function refreshPlayerCoinsInRedis(
 
 /** Redis hot state + eski pcache temizle — sonraki okuma PG'den hydrate eder. */
 export async function invalidatePlayerState(redis: Redis, playerId: string): Promise<void> {
+  const rawPlayer = await redis.get(playerKey(playerId));
+  const player = rawPlayer ? (JSON.parse(rawPlayer) as CachedPlayerData) : null;
   await redis.del(
     playerKey(playerId),
+    invKey(playerId),
+    ...(player?.mainOwlId ? [owlKey(player.mainOwlId)] : []),
     hydratedKey(playerId),
     `${PCACHE_PLAYER_PREFIX}${playerId}`,
   );

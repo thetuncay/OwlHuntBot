@@ -46,6 +46,7 @@ import { getBiomeSession, setBiomeSession } from '../utils/biome-session';
 import { parseStoredTraits, resolveTraits, calcTraitEffects } from './traits';
 import { writeAudit } from '../utils/audit';
 import { consumeConsumableEffect, getConsumableEffectValue } from '../utils/use-items';
+import { runDetached } from '../utils/async';
 
 /**
  * Hunt sonrasi encounter + lootbox — kullanici cevabini BEKLEMEZ.
@@ -379,11 +380,11 @@ export async function rollHunt(
       noRareStreak: newNoRareStreak,
       gainedXP: xpResult.gainedXP,
     };
-    writeAudit(prisma, playerId, 'hunt', auditBefore, auditAfter).catch(console.error);
+    runDetached('hunt-audit', () => writeAudit(prisma, playerId, 'hunt', auditBefore, auditAfter));
 
     const rareSuccesses = catches.filter((c) => c.difficulty >= HUNT_HIGH_TIER_THRESHOLD).length;
     if (catches.length > 0 || rareSuccesses > 0) {
-      trackQuestProgress(prisma, playerId, 'hunt', catches.length).catch(() => null);
+      runDetached('hunt-quest-progress', () => trackQuestProgress(prisma, playerId, 'hunt', catches.length));
       enqueueDbWriteBulk([{
         type: 'recordStats',
         playerId,
@@ -391,7 +392,7 @@ export async function rollHunt(
         rareFinds: rareSuccesses,
       }]);
     }
-    drainBuffCharge(prisma, playerId, 'hunt').catch(() => null);
+    runDetached('hunt-drain-buff-charge', () => drainBuffCharge(prisma, playerId, 'hunt'));
 
     if (consumableCatchBonus > 0) {
       await consumeConsumableEffect(redis, playerId, 'hunt_catch_once');

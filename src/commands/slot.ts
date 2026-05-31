@@ -2,9 +2,10 @@ import { SlashCommandBuilder } from 'discord.js';
 import { slot } from '../systems/gambling';
 import type { CommandDefinition } from '../types';
 import { failEmbed } from '../utils/embed';
-import { guardCooldown } from '../middleware/cooldown-manager';
+import { armCooldown, peekCooldown } from '../middleware/cooldown-manager';
 import { GAMBLE_SLOT_COOLDOWN_MS } from '../config';
 import { buildCooldownMessage } from '../utils/command-error';
+import { sleep } from '../utils/async';
 
 const data = new SlashCommandBuilder()
   .setName('slot')
@@ -12,10 +13,6 @@ const data = new SlashCommandBuilder()
   .addIntegerOption((opt) => opt.setName('bet').setDescription('Bahis miktari').setRequired(true));
 
 const SLOT_SYMBOLS = ['🍒', '🍋', '🍊', '🍇', '🍉', '💎', '⭐', '🔔'];
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 function randomSymbols(): string[] {
   return [
@@ -39,7 +36,7 @@ async function execute(
   try {
     const userId      = interaction.user.id;
     const cooldownKey = `cooldown:slot:${userId}`;
-    const cooldown = await guardCooldown(ctx.redis, cooldownKey, GAMBLE_SLOT_COOLDOWN_MS);
+    const cooldown = await peekCooldown(ctx.redis, cooldownKey);
     if (cooldown.active) {
       if (!cooldown.notify) return;
       await interaction.reply({
@@ -50,12 +47,14 @@ async function execute(
     }
 
     const bet = interaction.options.getInteger('bet', true);
-    
+
+    // İlk mesajı hızlıca ack et (10062 riskini düşür).
+    await interaction.deferReply({ flags: 64 });
+
     // Sonucu ÖNCE belirle
     const result = await slot(ctx.prisma, interaction.user.id, bet, ctx.redis);
-    
-    // İlk mesaj: spinning (ephemeral)
-    await interaction.deferReply({ flags: 64 });
+    await armCooldown(ctx.redis, cooldownKey, GAMBLE_SLOT_COOLDOWN_MS);
+
     await interaction.editReply({ content: `${interaction.user.username} bet 💎 ${bet}\n\n${renderSlot(['❓', '❓', '❓'])}` });
     
     // Animasyon: 5 spin

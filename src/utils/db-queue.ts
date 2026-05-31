@@ -115,6 +115,7 @@ export type DbWriteJob =
   | PersistPlayerJob;
 
 const PERSIST_DEBOUNCE_MS = Number.parseInt(process.env.PERSIST_DEBOUNCE_MS ?? '2500', 10);
+const PITY_TTL_SECONDS = Number.parseInt(process.env.PITY_TTL_SECONDS ?? String(90 * 24 * 60 * 60), 10);
 
 // ── Queue instance ────────────────────────────────────────────────────────────
 
@@ -122,6 +123,11 @@ let queue: Queue | null = null;
 let worker: Worker | null = null;
 let prismaRef: PrismaClient | null = null;
 let consumerStarted = false;
+
+/** Producer process'te fallback yazim icin Prisma referansi enjekte et. */
+export function setDbQueuePrisma(prisma: PrismaClient): void {
+  prismaRef = prisma;
+}
 
 /** Bot process: sadece kuyruk ureticisi (Worker yok). */
 export function initDbQueueProducer(): void {
@@ -245,6 +251,7 @@ async function processJob(job: Job<DbWriteJob>): Promise<void> {
         await redis.del(pityKey);
       } else {
         await redis.incrby(pityKey, data.increment);
+        await redis.expire(pityKey, PITY_TTL_SECONDS);
       }
       break;
     }

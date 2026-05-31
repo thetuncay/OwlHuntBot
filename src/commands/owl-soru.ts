@@ -18,7 +18,7 @@
 
 import { EmbedBuilder, type Message } from 'discord.js';
 import { askGameQuestion } from '../systems/ai-qa';
-import { guardCooldown } from '../middleware/cooldown-manager';
+import { armCooldown, peekCooldown } from '../middleware/cooldown-manager';
 import type { CommandDefinition } from '../types';
 import { buildCooldownMessage } from '../utils/command-error';
 
@@ -58,7 +58,7 @@ export async function runSoruMessage(
 
   // Cooldown kontrolü
   const cooldownKey = `cooldown:soru:${message.author.id}`;
-  const cooldown = await guardCooldown(ctx.redis, cooldownKey, SORU_COOLDOWN_MS);
+  const cooldown = await peekCooldown(ctx.redis, cooldownKey);
   if (cooldown.active) {
     if (!cooldown.notify) return;
     await message.reply(buildCooldownMessage(cooldown.expiresAtMs, 'Tekrar soru sorabilirsin'));
@@ -86,6 +86,7 @@ export async function runSoruMessage(
       .setTimestamp();
 
     await message.reply({ embeds: [embed] });
+    await armCooldown(ctx.redis, cooldownKey, SORU_COOLDOWN_MS);
 
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : 'Bir hata oluştu.';

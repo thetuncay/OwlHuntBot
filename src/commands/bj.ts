@@ -9,7 +9,7 @@ import {
 import { settleBlackjack } from '../systems/gambling';
 import type { CommandDefinition, CommandContext } from '../types';
 import { failEmbed } from '../utils/embed';
-import { guardCooldown } from '../middleware/cooldown-manager';
+import { armCooldown, peekCooldown } from '../middleware/cooldown-manager';
 import { GAMBLE_BJ_COOLDOWN_MS } from '../config';
 import { recordCoinsEarned } from '../systems/leaderboard';
 import { buildCooldownMessage } from '../utils/command-error';
@@ -255,7 +255,7 @@ async function execute(
   try {
     const userId      = interaction.user.id;
     const cooldownKey = `cooldown:bj:${userId}`;
-    const cooldown = await guardCooldown(ctx.redis, cooldownKey, GAMBLE_BJ_COOLDOWN_MS);
+    const cooldown = await peekCooldown(ctx.redis, cooldownKey);
     if (cooldown.active) {
       if (!cooldown.notify) return;
       await interaction.reply({
@@ -292,6 +292,7 @@ async function execute(
     if (isBlackjack(playerHand)) {
       const result = await settleBlackjack(ctx.prisma, interaction.user.id, bet, 'win', ctx.redis);
       if (result.deltaCoins > 0) recordCoinsEarned(ctx.prisma, interaction.user.id, result.deltaCoins, ctx.redis).catch(() => null);
+      await armCooldown(ctx.redis, cooldownKey, GAMBLE_BJ_COOLDOWN_MS);
       await interaction.deferReply({ flags: 64 });
       await interaction.editReply({
         content: buildScreen({
@@ -305,6 +306,7 @@ async function execute(
 
     // ── İlk mesaj ─────────────────────────────────────────────────────────────
     await interaction.deferReply({ flags: 64 });
+    await armCooldown(ctx.redis, cooldownKey, GAMBLE_BJ_COOLDOWN_MS);
     await interaction.editReply({
       content: buildScreen({
         username, bet, playerHand, dealerHand,
@@ -426,7 +428,7 @@ export async function handleBjTextCommand(
 ): Promise<void> {
   const userId      = message.author.id;
   const cooldownKey = `cooldown:bj:${userId}`;
-  const cooldown = await guardCooldown(ctx.redis, cooldownKey, GAMBLE_BJ_COOLDOWN_MS);
+  const cooldown = await peekCooldown(ctx.redis, cooldownKey);
   if (cooldown.active) {
     if (!cooldown.notify) return;
     await message.reply(buildCooldownMessage(cooldown.expiresAtMs, 'Tekrar blackjack oynayabilirsin'));
@@ -449,6 +451,7 @@ export async function handleBjTextCommand(
   if (isBlackjack(playerHand)) {
     const result = await settleBlackjack(ctx.prisma, userId, bet, 'win', ctx.redis);
     if (result.deltaCoins > 0) recordCoinsEarned(ctx.prisma, userId, result.deltaCoins, ctx.redis).catch(() => null);
+    await armCooldown(ctx.redis, cooldownKey, GAMBLE_BJ_COOLDOWN_MS);
     await message.reply(
       buildScreen({
         username, bet, playerHand, dealerHand,
@@ -459,6 +462,7 @@ export async function handleBjTextCommand(
     return;
   }
 
+  await armCooldown(ctx.redis, cooldownKey, GAMBLE_BJ_COOLDOWN_MS);
   const sent = await message.reply({
     content: buildScreen({
       username, bet, playerHand, dealerHand,

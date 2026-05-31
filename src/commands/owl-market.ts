@@ -296,14 +296,15 @@ export async function runMarketSlash(interaction: ChatInputCommandInteraction, c
   );
 
   await interaction.editReply({ content: text, components: [row] });
+  const replyMsg = await interaction.fetchReply();
 
-  const collector = interaction.channel?.createMessageComponentCollector({
+  const collector = replyMsg.createMessageComponentCollector({
     componentType: ComponentType.Button,
     time: 60_000,
     filter: (i) => i.user.id === userId && i.customId.startsWith('market_cat:'),
   });
 
-  collector?.on('collect', async (i) => {
+  collector.on('collect', async (i) => {
     const cat = i.customId.split(':')[1] as MarketCategory;
     await i.deferUpdate();
     const { listings, total, page, totalPages } = await fetchListings(ctx.prisma, { category: cat });
@@ -318,10 +319,10 @@ export async function runMarketSlash(interaction: ChatInputCommandInteraction, c
       }),
       components: [],
     });
-    collector.stop();
+    collector.stop('done');
   });
 
-  collector?.on('end', (_, reason) => {
+  collector.on('end', (_, reason) => {
     if (reason === 'time') {
       interaction.editReply({ components: [] }).catch(() => null);
     }

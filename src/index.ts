@@ -14,7 +14,7 @@ import { handleTopTextCommand } from './commands/leaderboard';
 import { handleRegistrationButton, isRegistrationButton } from './systems/onboarding';
 import { syncAllRoles } from './systems/roles';
 import { isShard0 } from './utils/shard';
-import { initDbQueueProducer } from './utils/db-queue';
+import { initDbQueueProducer, setDbQueuePrisma } from './utils/db-queue';
 import { consumeRoleSyncFlag } from './jobs/background-jobs';
 import { registerGracefulShutdown, trackInterval } from './utils/shutdown';
 import {
@@ -120,6 +120,7 @@ async function bootstrap(): Promise<void> {
   console.info(`PostgreSQL connected (${describeDatabaseUrl(dbUrl)})`);
 
   // DB kuyruk ureticisi — consumer ayri worker process'te
+  setDbQueuePrisma(prisma);
   initDbQueueProducer();
 
   await loadCommands();
@@ -238,6 +239,8 @@ async function bootstrap(): Promise<void> {
     if (message.author.bot || !message.guildId) return;
     const content = message.content.trim();
     if (!content) return;
+    // Prefix sadece alfanumerik oldugu icin bu filtre Redis get'i azaltir.
+    if (!/^[a-z0-9]/i.test(content)) return;
 
     const guildPrefix = await getGuildPrefix(redis, message.guildId);
     const glued = stripGluedPrefix(content, guildPrefix);
@@ -317,7 +320,7 @@ async function bootstrap(): Promise<void> {
       await enforceAntiSpam(redis, message.author.id, message.author.displayName);
       releaseSlot = await acquireCommandSlot(redis);
       perf.markQueueDone();
-      perfCommand = await handleOwlTextCommand(message, parts, { prisma, redis });
+      perfCommand = await handleOwlTextCommand(message, parts, { prisma, redis }, guildPrefix);
     } catch (error) {
       perfOk = false;
       perfError = error instanceof Error ? error.message : String(error);
