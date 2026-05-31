@@ -26,7 +26,7 @@ export async function runTransfer(
   if (cooldown.active) {
     if (!cooldown.notify) return;
     await interaction.reply({
-      content: buildCooldownMessage(cooldown.expiresAtMs, 'Tekrar transfer yapabilirsin'),
+      content: buildCooldownMessage(cooldown.remainingMs, 'Tekrar transfer yapabilirsin'),
       flags: 64,
     });
     return;
@@ -89,7 +89,7 @@ export async function runTransferMessage(
   const cooldown = await peekCooldown(ctx.redis, cooldownKey);
   if (cooldown.active) {
     if (!cooldown.notify) return;
-    await message.reply(buildCooldownMessage(cooldown.expiresAtMs, 'Tekrar transfer yapabilirsin'));
+    await message.reply(buildCooldownMessage(cooldown.remainingMs, 'Tekrar transfer yapabilirsin'));
     return;
   }
 

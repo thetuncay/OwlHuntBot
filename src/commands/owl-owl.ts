@@ -53,7 +53,7 @@ export async function runSetMain(
   if (cooldown.active) {
     if (!cooldown.notify) return;
     await interaction.reply({
-      content: buildCooldownMessage(cooldown.expiresAtMs, 'Switch tekrar kullanilabilir'),
+      content: buildCooldownMessage(cooldown.remainingMs, 'Switch tekrar kullanilabilir'),
       flags: 64,
     });
     return;
@@ -160,7 +160,7 @@ export async function runSetMainMessage(
   const cooldown = await peekCooldown(ctx.redis, `cooldown:switch:${userId}`);
   if (cooldown.active) {
     if (!cooldown.notify) return;
-    await message.reply(buildCooldownMessage(cooldown.expiresAtMs, 'Switch tekrar kullanilabilir'));
+    await message.reply(buildCooldownMessage(cooldown.remainingMs, 'Switch tekrar kullanilabilir'));
     return;
   }
 
@@ -312,7 +312,7 @@ export async function runOwls(
         if (cooldown.active) {
           if (!cooldown.notify) return;
           await i.reply({
-            content: buildCooldownMessage(cooldown.expiresAtMs, 'Switch tekrar kullanilabilir'),
+            content: buildCooldownMessage(cooldown.remainingMs, 'Switch tekrar kullanilabilir'),
             flags: 64,
           });
           return;
@@ -440,7 +440,7 @@ export async function runOwlsMessage(
         if (cooldown.active) {
           if (!cooldown.notify) return;
           await i.reply({
-            content: buildCooldownMessage(cooldown.expiresAtMs, 'Switch tekrar kullanilabilir'),
+            content: buildCooldownMessage(cooldown.remainingMs, 'Switch tekrar kullanilabilir'),
             flags: 64,
           });
           return;

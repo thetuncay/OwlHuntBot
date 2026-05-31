@@ -33,7 +33,7 @@ async function execute(
     if (cooldown.active) {
       if (!cooldown.notify) return;
       await interaction.reply({
-        content: buildCooldownMessage(cooldown.expiresAtMs, 'Tekrar coinflip kullanabilirsin'),
+        content: buildCooldownMessage(cooldown.remainingMs, 'Tekrar coinflip kullanabilirsin'),
         flags: 64,
       });
       return;

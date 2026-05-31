@@ -40,7 +40,7 @@ async function execute(
     if (cooldown.active) {
       if (!cooldown.notify) return;
       await interaction.reply({
-        content: buildCooldownMessage(cooldown.expiresAtMs, 'Tekrar slot oynayabilirsin'),
+        content: buildCooldownMessage(cooldown.remainingMs, 'Tekrar slot oynayabilirsin'),
         flags: 64,
       });
       return;

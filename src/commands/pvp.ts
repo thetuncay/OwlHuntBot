@@ -358,7 +358,7 @@ async function runInviteFlow(
   if (challengerCooldown.active) {
     if (!challengerCooldown.notify) return;
     await message.reply(
-      buildCooldownMessage(challengerCooldown.expiresAtMs, 'Tekrar PvP kumar daveti atabilirsin'),
+      buildCooldownMessage(challengerCooldown.remainingMs, 'Tekrar PvP kumar daveti atabilirsin'),
     );
     return;
   }
@@ -367,7 +367,7 @@ async function runInviteFlow(
   if (defenderCooldown.active) {
     if (!defenderCooldown.notify) return;
     await message.reply(
-      buildCooldownMessage(defenderCooldown.expiresAtMs, `${defenderName} tekrar PvP kumar oynayabilir`),
+      buildCooldownMessage(defenderCooldown.remainingMs, `${defenderName} tekrar PvP kumar oynayabilir`),
     );
     return;
   }

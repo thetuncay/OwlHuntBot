@@ -61,7 +61,7 @@ export async function runSoruMessage(
   const cooldown = await peekCooldown(ctx.redis, cooldownKey);
   if (cooldown.active) {
     if (!cooldown.notify) return;
-    await message.reply(buildCooldownMessage(cooldown.expiresAtMs, 'Tekrar soru sorabilirsin'));
+    await message.reply(buildCooldownMessage(cooldown.remainingMs, 'Tekrar soru sorabilirsin'));
     return;
   }
 

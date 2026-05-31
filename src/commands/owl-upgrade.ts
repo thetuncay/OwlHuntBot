@@ -40,7 +40,7 @@ export async function runUpgrade(
   if (cooldown.active) {
     if (!cooldown.notify) return;
     await interaction.reply({
-      content: buildCooldownMessage(cooldown.expiresAtMs, 'Tekrar upgrade deneyebilirsin'),
+      content: buildCooldownMessage(cooldown.remainingMs, 'Tekrar upgrade deneyebilirsin'),
       flags: 64,
     });
     return;
@@ -178,7 +178,7 @@ export async function runUpgradeMessage(
   const cooldown = await peekCooldown(ctx.redis, upgradeCooldownKey);
   if (cooldown.active) {
     if (!cooldown.notify) return;
-    await message.reply(buildCooldownMessage(cooldown.expiresAtMs, 'Tekrar upgrade deneyebilirsin'));
+    await message.reply(buildCooldownMessage(cooldown.remainingMs, 'Tekrar upgrade deneyebilirsin'));
     return;
   }
 

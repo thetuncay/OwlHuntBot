@@ -1,4 +1,4 @@
-import { discordRelativeTimestamp, discordTimestampFromMs } from './discord-time';
+import { discordCountdownFromRemainingMs, discordRelativeTimestamp } from './discord-time';
 
 /** Spam susturmasi — silent=true iken Discord'a yanit yok, komut islenmez. */
 export class SpamBlockedError extends Error {
@@ -26,21 +26,12 @@ export function buildSpamMuteMessage(displayName: string, secondsUntil: number):
   return `⏱️ | **${displayName}**, Lutfen yavasla~ Cok hizlisin :c Komutu tekrar dene ${when}`;
 }
 
-/** Tek seferlik cooldown uyarisi — OwO stili <t:R> (Discord client geri sayimi gunceller). */
+/** Tek seferlik cooldown — OwO stili canli geri sayim. Sadece Redis PTTL (ms) kullan. */
 export function buildCooldownMessage(
-  expiresAtMs: number,
+  remainingMs: number,
   label = 'bu komutu kullanabilirsin',
-  remainingMsOverride?: number,
 ): string {
-  let remainingMs = remainingMsOverride ?? Math.max(0, expiresAtMs - Date.now());
-
-  // Yanlislikla unix saniye (10 hane) expiresAtMs olarak geldiyse duzelt
-  if (remainingMsOverride === undefined && expiresAtMs > 0 && expiresAtMs < 1_000_000_000_000) {
-    remainingMs = Math.max(0, expiresAtMs * 1000 - Date.now());
-  }
-
-  remainingMs = Math.max(1_000, remainingMs);
-  return `⏰ ${label} ${discordTimestampFromMs(Date.now() + remainingMs)}`;
+  return `⏰ ${label} ${discordCountdownFromRemainingMs(remainingMs)}`;
 }
 
 /** Kullaniciya Discord'da gosterilecek beklenen mesajlar (oyun kurallari, cooldown, spam). */

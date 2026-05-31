@@ -72,6 +72,8 @@ export async function setCooldown(
   const safeMs = clampCooldownMs(cooldownMs);
   if (safeMs <= 0) return;
   try {
+    // Eski EX/PX key formatlarini temizle — her zaman taze PX yaz
+    await redis.del(key);
     await redis.set(key, '1', 'PX', safeMs);
   } catch {
     // Redis down → sessizce geç

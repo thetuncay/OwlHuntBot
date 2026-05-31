@@ -89,11 +89,7 @@ async function enforceHuntCooldown(
   );
   if (!cooldown.active) return true;
   if (!cooldown.notify) return false;
-  await notify(buildCooldownMessage(
-    cooldown.expiresAtMs,
-    'Tekrar avlanabilirsin',
-    cooldown.remainingMs,
-  ));
+  await notify(buildCooldownMessage(cooldown.remainingMs, 'Tekrar avlanabilirsin'));
   return false;
 }
 

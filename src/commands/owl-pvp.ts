@@ -159,7 +159,7 @@ export async function runDuel(
   if (cooldown.active) {
     if (!cooldown.notify) return;
     await interaction.reply({
-      content: buildCooldownMessage(cooldown.expiresAtMs, 'Tekrar duel atabilirsin'),
+      content: buildCooldownMessage(cooldown.remainingMs, 'Tekrar duel atabilirsin'),
       flags: 64,
     });
     return;
@@ -326,7 +326,7 @@ export async function runDuelMessage(
   const cooldown = await peekCooldown(ctx.redis, cooldownKey);
   if (cooldown.active) {
     if (!cooldown.notify) return;
-    await message.reply(buildCooldownMessage(cooldown.expiresAtMs, 'Tekrar duel atabilirsin'));
+    await message.reply(buildCooldownMessage(cooldown.remainingMs, 'Tekrar duel atabilirsin'));
     return;
   }
 

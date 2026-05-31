@@ -259,7 +259,7 @@ async function execute(
     if (cooldown.active) {
       if (!cooldown.notify) return;
       await interaction.reply({
-        content: buildCooldownMessage(cooldown.expiresAtMs, 'Tekrar blackjack oynayabilirsin'),
+        content: buildCooldownMessage(cooldown.remainingMs, 'Tekrar blackjack oynayabilirsin'),
         flags: 64,
       });
       return;
@@ -431,7 +431,7 @@ export async function handleBjTextCommand(
   const cooldown = await peekCooldown(ctx.redis, cooldownKey);
   if (cooldown.active) {
     if (!cooldown.notify) return;
-    await message.reply(buildCooldownMessage(cooldown.expiresAtMs, 'Tekrar blackjack oynayabilirsin'));
+    await message.reply(buildCooldownMessage(cooldown.remainingMs, 'Tekrar blackjack oynayabilirsin'));
     return;
   }
 
