@@ -16,7 +16,7 @@ import {
   EmbedBuilder,
 } from 'discord.js';
 import { HUNT_COOLDOWN_MS, BIOMES, BIOME_SESSION_TTL_MS } from '../config';
-import { guardCooldown } from '../middleware/cooldown-manager';
+import { clearCooldown, guardCooldown } from '../middleware/cooldown-manager';
 import { rollHunt, runHuntSideEffects } from '../systems/hunt';
 import {
   getBiomeSession,
@@ -69,6 +69,8 @@ import { resolveEncounterFight, estimateEncounterFightRewards } from '../systems
 import { parseStoredTraits } from '../systems/traits';
 import type { CommandDefinition } from '../types';
 import type { Message } from 'discord.js';
+
+const BIOME_PANEL_LOCK_MS = 30_000;
 
 // ─── Biyom seçim embed'i ─────────────────────────────────────────────────────
 
@@ -190,6 +192,10 @@ export async function runHunt(
   const session = await getBiomeSession(ctx.redis, userId);
 
   if (!session) {
+    const panelLockKey = `hunt:biome_panel:${userId}`;
+    const panelLock = await ctx.redis.set(panelLockKey, '1', 'PX', BIOME_PANEL_LOCK_MS, 'NX');
+    if (!panelLock) return;
+
     // Oyuncu seviyesini çek — kilitli biyomları göstermek için
     const playerLevel = (await ctx.prisma.player.findUnique({
       where: { id: userId },
@@ -210,43 +216,48 @@ export async function runHunt(
     });
 
     collector?.on('collect', async (i) => {
-      collector.stop();
-      const biomeId = i.customId.split(':')[1] ?? 'b0';
-      const biome = BIOMES.find(b => b.id === biomeId);
-      if (!biome) return;
+      try {
+        collector.stop();
+        const biomeId = i.customId.split(':')[1] ?? 'b0';
+        const biome = BIOMES.find(b => b.id === biomeId);
+        if (!biome) return;
 
-      // ÖNEMLİ: Seviye kontrolü ÖNCE yapılmalı (coin kesilmeden)
-      if (playerLevel < biome.minLevel) {
+        // ÖNEMLİ: Seviye kontrolü ÖNCE yapılmalı (coin kesilmeden)
+        if (playerLevel < biome.minLevel) {
+          await i.update({
+            content: `❌ **${biome.name}** bölgesine girmek için en az **Lv.${biome.minLevel}** olmalısın. Senin seviye: **Lv.${playerLevel}**`,
+            embeds: [], components: [],
+          });
+          return;
+        }
+
+        // Giriş ücreti rollHunt içinde hunt lock altında atomik kesilir.
+        // Burada coin kesmiyoruz — double-charge ve race condition önlenir.
+
+        const newSession = await setBiomeSession(ctx.redis, userId, biomeId);
         await i.update({
-          content: `❌ **${biome.name}** bölgesine girmek için en az **Lv.${biome.minLevel}** olmalısın. Senin seviye: **Lv.${playerLevel}**`,
-          embeds: [], components: [],
+          embeds: [buildActiveBiomeEmbed(biomeId, formatSessionRemaining(newSession))],
+          components: [buildActiveBiomeRow()],
         });
-        return;
+
+        // Çıkış butonu collector'ı
+        const leaveCollector = interaction.channel?.createMessageComponentCollector({
+          componentType: ComponentType.Button,
+          time: BIOME_SESSION_TTL_MS,
+          filter: (li) => li.user.id === userId && li.customId === 'biome_leave',
+        });
+        leaveCollector?.on('collect', async (li) => {
+          leaveCollector.stop();
+          await clearBiomeSession(ctx.redis, userId);
+          await li.update({ content: `🚪 **${biome.name}** bölgesinden çıktın.`, embeds: [], components: [] });
+        });
+      } finally {
+        await ctx.redis.del(panelLockKey).catch(() => null);
       }
-
-      // Giriş ücreti rollHunt içinde hunt lock altında atomik kesilir.
-      // Burada coin kesmiyoruz — double-charge ve race condition önlenir.
-
-      const newSession = await setBiomeSession(ctx.redis, userId, biomeId);
-      await i.update({
-        embeds: [buildActiveBiomeEmbed(biomeId, formatSessionRemaining(newSession))],
-        components: [buildActiveBiomeRow()],
-      });
-
-      // Çıkış butonu collector'ı
-      const leaveCollector = interaction.channel?.createMessageComponentCollector({
-        componentType: ComponentType.Button,
-        time: BIOME_SESSION_TTL_MS,
-        filter: (li) => li.user.id === userId && li.customId === 'biome_leave',
-      });
-      leaveCollector?.on('collect', async (li) => {
-        leaveCollector.stop();
-        await clearBiomeSession(ctx.redis, userId);
-        await li.update({ content: `🚪 **${biome.name}** bölgesinden çıktın.`, embeds: [], components: [] });
-      });
     });
 
     collector?.on('end', (_, reason) => {
+      ctx.redis.del(panelLockKey).catch(() => null);
       if (reason === 'time') {
         interaction.editReply({ content: '⏰ Seçim süresi doldu.', embeds: [], components: [] }).catch(() => null);
       }
@@ -258,6 +269,10 @@ export async function runHunt(
   const cooldownKey = `cooldown:hunt:${userId}`;
   const cooldown = await guardCooldown(ctx.redis, cooldownKey, HUNT_COOLDOWN_MS);
   if (cooldown.active) {
+    if (cooldown.remainingMs > HUNT_COOLDOWN_MS * 8) {
+      await clearCooldown(ctx.redis, cooldownKey);
+      return;
+    }
     if (!cooldown.notify) return;
     await interaction.reply({
       content: buildCooldownMessage(cooldown.expiresAtMs, 'Tekrar avlanabilirsin'),
@@ -336,6 +351,10 @@ export async function runHuntMessage(
   const session = await getBiomeSession(ctx.redis, userId);
 
   if (!session) {
+    const panelLockKey = `hunt:biome_panel:${userId}`;
+    const panelLock = await ctx.redis.set(panelLockKey, '1', 'PX', BIOME_PANEL_LOCK_MS, 'NX');
+    if (!panelLock) return;
+
     // Oyuncu seviyesini çek — kilitli biyomları göstermek için
     const playerLevel = (await ctx.prisma.player.findUnique({
       where: { id: userId },
@@ -355,49 +374,54 @@ export async function runHuntMessage(
     });
 
     collector.on('collect', async (i) => {
-      collector.stop();
-      const biomeId = i.customId.split(':')[1] ?? 'b0';
-      const biome = BIOMES.find(b => b.id === biomeId);
-      if (!biome) return;
+      try {
+        collector.stop();
+        const biomeId = i.customId.split(':')[1] ?? 'b0';
+        const biome = BIOMES.find(b => b.id === biomeId);
+        if (!biome) return;
 
-      // ÖNEMLİ: Seviye kontrolü ÖNCE yapılmalı (coin kesilmeden)
-      if (playerLevel < biome.minLevel) {
-        await i.update({
-          content: `❌ **${biome.name}** bölgesine girmek için en az **Lv.${biome.minLevel}** olmalısın. Senin seviye: **Lv.${playerLevel}**`,
-          embeds: [], components: [],
-        });
-        return;
-      }
-
-      // Giriş ücreti rollHunt içinde hunt lock altında atomik kesilir.
-      // Burada coin kesmiyoruz — double-charge ve race condition önlenir.
-
-      const newSession = await setBiomeSession(ctx.redis, userId, biomeId);
-      await i.update({
-        embeds: [buildActiveBiomeEmbed(biomeId, formatSessionRemaining(newSession))],
-        components: [buildActiveBiomeRow()],
-      });
-
-      // Çıkış butonu collector'ı (30 dk boyunca dinle)
-      const leaveCollector = biomeMsg.createMessageComponentCollector({
-        componentType: ComponentType.Button,
-        time: BIOME_SESSION_TTL_MS,
-        filter: (li) => li.user.id === userId && li.customId === 'biome_leave',
-      });
-      leaveCollector.on('collect', async (li) => {
-        leaveCollector.stop();
-        await clearBiomeSession(ctx.redis, userId);
-        await li.update({ content: `🚪 **${biome.name}** bölgesinden çıktın.`, embeds: [], components: [] });
-      });
-      leaveCollector.on('end', (_, reason) => {
-        if (reason === 'time') {
-          // 30 dk doldu, mesajı güncelle
-          biomeMsg.edit({ content: '⏰ Bölge süresi doldu, otomatik çıkış yapıldı.', embeds: [], components: [] }).catch(() => null);
+        // ÖNEMLİ: Seviye kontrolü ÖNCE yapılmalı (coin kesilmeden)
+        if (playerLevel < biome.minLevel) {
+          await i.update({
+            content: `❌ **${biome.name}** bölgesine girmek için en az **Lv.${biome.minLevel}** olmalısın. Senin seviye: **Lv.${playerLevel}**`,
+            embeds: [], components: [],
+          });
+          return;
         }
-      });
+
+        // Giriş ücreti rollHunt içinde hunt lock altında atomik kesilir.
+        // Burada coin kesmiyoruz — double-charge ve race condition önlenir.
+
+        const newSession = await setBiomeSession(ctx.redis, userId, biomeId);
+        await i.update({
+          embeds: [buildActiveBiomeEmbed(biomeId, formatSessionRemaining(newSession))],
+          components: [buildActiveBiomeRow()],
+        });
+
+        // Çıkış butonu collector'ı (30 dk boyunca dinle)
+        const leaveCollector = biomeMsg.createMessageComponentCollector({
+          componentType: ComponentType.Button,
+          time: BIOME_SESSION_TTL_MS,
+          filter: (li) => li.user.id === userId && li.customId === 'biome_leave',
+        });
+        leaveCollector.on('collect', async (li) => {
+          leaveCollector.stop();
+          await clearBiomeSession(ctx.redis, userId);
+          await li.update({ content: `🚪 **${biome.name}** bölgesinden çıktın.`, embeds: [], components: [] });
+        });
+        leaveCollector.on('end', (_, reason) => {
+          if (reason === 'time') {
+            // 30 dk doldu, mesajı güncelle
+            biomeMsg.edit({ content: '⏰ Bölge süresi doldu, otomatik çıkış yapıldı.', embeds: [], components: [] }).catch(() => null);
+          }
+        });
+      } finally {
+        await ctx.redis.del(panelLockKey).catch(() => null);
+      }
     });
 
     collector.on('end', (_, reason) => {
+      ctx.redis.del(panelLockKey).catch(() => null);
       if (reason === 'time') {
         biomeMsg.edit({ content: '⏰ Seçim süresi doldu.', embeds: [], components: [] }).catch(() => null);
       }
@@ -409,6 +433,10 @@ export async function runHuntMessage(
   const cooldownKey = `cooldown:hunt:${userId}`;
   const cooldown = await guardCooldown(ctx.redis, cooldownKey, HUNT_COOLDOWN_MS);
   if (cooldown.active) {
+    if (cooldown.remainingMs > HUNT_COOLDOWN_MS * 8) {
+      await clearCooldown(ctx.redis, cooldownKey);
+      return;
+    }
     if (!cooldown.notify) return;
     await message.reply(buildCooldownMessage(cooldown.expiresAtMs, 'Tekrar avlanabilirsin'));
     return;

@@ -128,7 +128,7 @@ export const XP_RISK_BONUS_RATE = 0.5;
 // --- HUNT ---
 export const HUNT_ROLL_BASE = 3;
 export const HUNT_ROLL_PER_LEVEL = 5;
-export const HUNT_COOLDOWN_MS = 7 * 1000; // 7 saniye
+export const HUNT_COOLDOWN_MS = 15 * 1000; // 15 saniye
 export const HUNT_CRITICAL_RATE = 10;
 export const HUNT_INJURY_RATE = 5;
 export const HUNT_HIGH_TIER_THRESHOLD = 7;
