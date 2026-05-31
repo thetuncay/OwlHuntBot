@@ -4,6 +4,7 @@ import { archiveAndResetSeason, getCurrentSeason, invalidateLeaderboardCache, re
 import { createLeaderboardRoles, syncAllRoles } from '../systems/roles';
 import { handleTestTame } from './admin-testtame';
 import { undoLastAction } from '../utils/audit';
+import { applyCoinDeltaInRedis, rehydratePlayerState } from '../state/player-state';
 
 const ADMIN_IDS = new Set([
   '1110219662509224006',
@@ -126,6 +127,7 @@ const data = new SlashCommandBuilder()
   // ── sys grubu ─────────────────────────────────────────────────────────────
   .addSubcommandGroup((g) => g.setName('sys').setDescription('Sistem yönetimi')
     .addSubcommand((s) => s.setName('info').setDescription('Sunucu istatistikleri'))
+    .addSubcommand((s) => s.setName('perf').setDescription('Komut performans raporu (son 5 dk)'))
     .addSubcommand((s) => s.setName('maintenance').setDescription('Bakım modunu aç/kapat'))
     .addSubcommand((s) => s.setName('broadcast').setDescription('Tüm oyunculara duyuru gönder')
       .addStringOption((o) => o.setName('baslik').setDescription('Embed başlığı').setRequired(true))
@@ -249,6 +251,7 @@ async function execute(
     if (!player) { await interaction.reply({ content: `❌ <@${user.id}> kayıtlı değil.`, flags: 64 }); return; }
 
     await ctx.prisma.player.update({ where: { id: user.id }, data: { coins: { increment: amount } } });
+    await applyCoinDeltaInRedis(ctx.redis, user.id, amount, ctx.prisma);
     await interaction.reply({ content: `✅ <@${user.id}> +${amount} coin eklendi. 💰`, flags: 64 });
     return;
   }
@@ -364,6 +367,14 @@ async function execute(
     const user = interaction.options.getUser('kullanici', true);
     await ctx.redis.del(`cooldown:upgrade:${user.id}`);
     await interaction.reply({ content: `✅ <@${user.id}> upgrade cooldown temizlendi. ⏰`, flags: 64 });
+    return;
+  }
+
+  // ── sys/perf ───────────────────────────────────────────────────────────────
+  if (grp === 'sys' && sub === 'perf') {
+    const { buildPerfReport } = await import('../utils/perf-metrics.js');
+    const report = await buildPerfReport(ctx.redis, 5);
+    await interaction.reply({ content: report, flags: 64 });
     return;
   }
 
@@ -806,6 +817,10 @@ async function execute(
       ctx.prisma.player.update({ where: { id: from.id }, data: { coins: { decrement: amount } } }),
       ctx.prisma.player.update({ where: { id: to.id },   data: { coins: { increment: amount } } }),
     ]);
+    await Promise.all([
+      applyCoinDeltaInRedis(ctx.redis, from.id, -amount, ctx.prisma),
+      applyCoinDeltaInRedis(ctx.redis, to.id, amount, ctx.prisma),
+    ]);
 
     await interaction.reply({
       content: `✅ <@${from.id}> → <@${to.id}> arası **${amount.toLocaleString('tr-TR')} coin** aktarıldı.`,
@@ -823,6 +838,7 @@ async function execute(
     if (!player) { await interaction.reply({ content: `❌ <@${user.id}> kayıtlı değil.`, flags: 64 }); return; }
 
     await ctx.prisma.player.update({ where: { id: user.id }, data: { prestigeLevel: level } });
+    await rehydratePlayerState(ctx.redis, ctx.prisma, user.id);
     await interaction.reply({ content: `✅ <@${user.id}> prestige seviyesi **${level}** olarak ayarlandı. ⭐`, flags: 64 });
     return;
   }

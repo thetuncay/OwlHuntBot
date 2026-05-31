@@ -4,18 +4,29 @@
   "private": true,
   "description": "Production-ready BaykusBot with TypeScript, Prisma, Redis and Discord.js",
   "license": "UNLICENSED",
+  "packageManager": "pnpm@9.15.9",
   "engines": {
-    "node": ">=20.0.0",
-    "pnpm": ">=9.0.0"
+    "node": ">=20.0.0 <23.0.0",
+    "pnpm": ">=9.0.0 <10.0.0",
+    "npm": ">=10.0.0"
   },
   "scripts": {
     "test": "vitest --run",
     "test:watch": "vitest",
     "dev": "tsx watch src/index.ts",
-    "build": "tsc -p tsconfig.json",
-    "start": "node dist/index.js",
-    "start:shard": "node dist/shard.js",
+    "build": "prisma generate && tsc -p tsconfig.json",
+    "db:migrate": "prisma migrate deploy",
+    "db:setup": "prisma migrate deploy && prisma generate",
+    "start:worker": "node --import tsx dist/worker.js",
+    "postinstall": "prisma generate",
+    "start": "node --import tsx dist/shard.js",
+    "start:single": "node --import tsx dist/index.js",
+    "start:shard": "node --import tsx dist/shard.js",
     "shard:dev": "tsx src/shard.ts",
+    "pm2:start": "pm2 start ecosystem.config.js",
+    "pm2:stop": "pm2 stop owlhuntbot-shard owlhuntbot-worker",
+    "pm2:restart": "pm2 restart owlhuntbot-shard owlhuntbot-worker",
+    "pm2:logs": "pm2 logs owlhuntbot-shard owlhuntbot-worker",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
@@ -23,16 +34,25 @@
     "prisma:generate": "prisma generate",
     "prisma:db:push": "prisma db push",
     "deploy:commands": "tsx src/deploy-commands.ts",
-    "deploy:commands:prod": "node dist/deploy-commands.js"
+    "deploy:commands:prod": "node --import tsx dist/deploy-commands.js",
+    "migrate:backup": "node --import tsx src/scripts/backup-mongodb.ts",
+    "migrate:data": "MIGRATION_CONFIRM=yes node --import tsx src/scripts/migrate-mongodb-to-pg.ts",
+    "migrate:post": "node --import tsx src/scripts/post-migration.ts",
+    "analyze:owo": "tsx scripts/analyze-owo-data.ts",
+    "perf:report": "tsx scripts/perf-report.ts",
+    "profile:cpu": "node --cpu-prof --import tsx dist/index.js",
+    "restore:pg": "bash scripts/restore-postgres.sh"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "@prisma/client": "^6.6.0",
     "bullmq": "^5.76.5",
     "discord.js": "^14.18.0",
+    "dotenv": "^16.6.1",
     "groq-sdk": "^1.2.0",
     "ioredis": "^5.6.1",
     "mongodb": "^7.2.0",
+    "tsx": "^4.19.4",
     "zod": "^3.24.3"
   },
   "devDependencies": {
@@ -46,7 +66,6 @@
     "fast-check": "^4.8.0",
     "prettier": "^3.5.3",
     "prisma": "^6.6.0",
-    "tsx": "^4.19.4",
     "typescript": "^5.8.3",
     "vitest": "^4.1.6"
   }

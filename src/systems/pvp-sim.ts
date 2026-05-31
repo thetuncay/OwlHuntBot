@@ -41,6 +41,7 @@ import {
 } from './pvp-streak';
 import type { PvpTurnEvent } from '../utils/pvp-ux';
 import { weightedRandom } from '../utils/rng';
+import { applyCoinDeltaInRedis } from '../state/player-state';
 
 // ── Tipler ───────────────────────────────────────────────────────────────────
 
@@ -359,13 +360,17 @@ export async function runSimulatedPvP(
       pvpBestStreak: newBest,
       pvpCount:      { increment: 1 },
       ...(playerWon
-        ? { pvpStreakLoss: 0, coins: { increment: cappedCoins } }
+        ? { pvpStreakLoss: 0, ...(redis ? {} : { coins: { increment: cappedCoins } }) }
         : { pvpStreakLoss: { increment: 1 } }),
     },
   });
 
+  if (playerWon && cappedCoins > 0 && redis) {
+    await applyCoinDeltaInRedis(redis, playerId, cappedCoins, prisma);
+  }
+
   // XP ekle
-  await addXP(prisma, playerId, xpGained, playerWon ? 'pvpWin' : 'pvpLose');
+  await addXP(prisma, playerId, xpGained, playerWon ? 'pvpWin' : 'pvpLose', undefined, undefined, redis);
 
   // Liderboard — sadece kazanınca
   if (playerWon) {

@@ -24,6 +24,7 @@ import {
   TRANSFER_TAX_BRACKETS,
 } from '../config';
 import { withLock } from '../utils/lock';
+import { applyCoinDeltaInRedis, reloadInventoryFromPg } from '../state/player-state';
 
 // ── TİPLER ───────────────────────────────────────────────────────────────────
 
@@ -200,6 +201,10 @@ export async function transferCoins(
 
     // Cooldown lock body içinde set edilir — crash window ortadan kalkar
     await setTransferCooldown(redis, senderId);
+    await Promise.all([
+      applyCoinDeltaInRedis(redis, senderId, -amount, prisma),
+      applyCoinDeltaInRedis(redis, receiverId, result.received, prisma),
+    ]);
     return result;
   });
 }

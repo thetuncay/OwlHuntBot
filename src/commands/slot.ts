@@ -53,7 +53,7 @@ async function execute(
     await setCooldown(ctx.redis, cooldownKey, GAMBLE_SLOT_COOLDOWN_MS);
 
     // Sonucu ÖNCE belirle
-    const result = await slot(ctx.prisma, interaction.user.id, bet);
+    const result = await slot(ctx.prisma, interaction.user.id, bet, ctx.redis);
     
     // İlk mesaj: spinning (ephemeral)
     await interaction.deferReply({ flags: 64 });

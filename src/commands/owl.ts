@@ -28,15 +28,16 @@ import { runStats, runStatsMessage } from './owl-stats';
 import { runUpgrade, runUpgradeMessage } from './owl-upgrade';
 import { runTame, runTameMessage } from './owl-tame';
 import { runTransfer, runTransferMessage } from './owl-transfer';
-import { runSellMessage, runZooMessage, runCashMessage, runPrefixMessage, runPrefix, runAcMessage, runSkMessage, runEkMessage, runBuffMessage, runBuffsMessage } from './owl-misc';
-import { runCraftMessage, runDismantleMessage, runCraftSlash, runDismantleSlash } from './owl-crafting';
-import { runItemMessage } from './owl-item';
-import { runMarketMessage, runMarketSlash } from './owl-market';
+import { runSellMessage, runZooMessage, runCashMessage, runPrefixMessage, runPrefix, runAcMessage, runSkMessage, runEkMessage, runBuffsMessage } from './owl-misc';
+import { runCraftMessage, runCraftInfoMessage, runDismantleMessage, runCraftSlash, runDismantleSlash } from './owl-crafting';
+import { runUseMessage } from './owl-use';
+import { runMarketMessage, runMarketSlash, runBuyMessage, runMarketSellMessage } from './owl-market';
 import { runPrestigeMessage, runPrestigeSlash } from './owl-prestige';
 import { runQuestsMessage, runQuestsSlash } from './owl-quests';
 import { runSoruMessage } from './owl-soru';
 import { ALIASES, TEXT_SUBCOMMANDS, findClosest, buildUnknownCommandEmbed } from './owl-utils';
 import { runPvpCoinFlip, runPvpSlot, runPvpBlackjack } from './pvp';
+import { logCommandEvent } from '../utils/command-telemetry';
 
 // ─── Slash komut tanımı ───────────────────────────────────────────────────────
 
@@ -162,25 +163,33 @@ export async function handleOwlTextCommand(
   message: Message,
   parts: string[],
   ctx: Parameters<CommandDefinition['execute']>[1],
-): Promise<void> {
+): Promise<string> {
   const rawSub    = (parts[0] ?? '').toLowerCase();
   const sub       = ALIASES[rawSub] ?? rawSub;
   const args      = parts.slice(1);
   const helpPrefix = (await getGuildPrefix(ctx.redis, message.guildId ?? '')) || 'owl';
 
+  if (message.guildId) {
+    logCommandEvent(ctx.prisma, {
+      userId: message.author.id,
+      guildId: message.guildId,
+      command: sub,
+    });
+  }
+
   // Kayıt gerektirmeyen komutlar
   if (sub === 'yardim' || sub === 'yardım') {
     await message.reply({ embeds: [buildHelpEmbed(helpPrefix)] });
-    return;
+    return sub;
   }
   if (sub === 'prefix') {
     await runPrefixMessage(message, args, ctx);
-    return;
+    return sub;
   }
 
   // Diğer tüm komutlar kayıt gerektirir
   const ready = await ensureRegisteredForMessage(message, ctx);
-  if (!ready) return;
+  if (!ready) return sub;
 
   switch (sub) {
     case 'hunt':      await runHuntMessage(message, ctx);                          break;
@@ -202,12 +211,14 @@ export async function handleOwlTextCommand(
     case 'aç':        await runAcMessage(message, args, ctx, helpPrefix);    break;
     case 'sk':        await runSkMessage(message, args, ctx, helpPrefix);    break;
     case 'ek':        await runEkMessage(message, args, ctx, helpPrefix);    break;
-    case 'buff':      await runBuffMessage(message, args, ctx, helpPrefix);   break;
+    case 'use':       await runUseMessage(message, args, ctx, helpPrefix);     break;
     case 'buffs':     await runBuffsMessage(message, args, helpPrefix);        break;
-    case 'item':      await runItemMessage(message, args, ctx, helpPrefix);    break;
     case 'craft':     await runCraftMessage(message, args, ctx, helpPrefix);   break;
+    case 'craftinfo': await runCraftInfoMessage(message, args, ctx, helpPrefix); break;
     case 'dismantle': await runDismantleMessage(message, args, ctx, helpPrefix); break;
     case 'market':    await runMarketMessage(message, args, ctx, helpPrefix); break;
+    case 'buy':       await runBuyMessage(message, args, ctx);                break;
+    case 'msell':     await runMarketSellMessage(message, args, ctx, helpPrefix); break;
     case 'prestige':  await runPrestigeMessage(message, args, ctx, helpPrefix); break;
     case 'quests':    await runQuestsMessage(message, args, ctx, helpPrefix); break;
     case 'soru':      await runSoruMessage(message, args, ctx, helpPrefix);   break;
@@ -216,6 +227,8 @@ export async function handleOwlTextCommand(
       await message.reply({ embeds: [buildUnknownCommandEmbed(helpPrefix, rawSub, suggestion)] });
     }
   }
+
+  return sub;
 }
 
 export default { data, execute } satisfies CommandDefinition;

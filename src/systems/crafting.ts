@@ -1,7 +1,9 @@
 import type { PrismaClient } from '@prisma/client';
+import type { Redis } from 'ioredis';
 import { DISMANTLE_TABLE, CRAFTING_RECIPES } from '../config';
 import { withLock } from '../utils/lock';
 import { trackQuestProgress } from './daily-quests';
+import { hydratePlayerState, deductCoinsInRedis, reloadInventoryFromPg } from '../state/player-state';
 
 /**
  * Bir eşyayı parçalayarak materyal üretir.
@@ -10,7 +12,8 @@ export async function dismantleItem(
   prisma: PrismaClient,
   playerId: string,
   itemName: string,
-  quantity = 1
+  quantity = 1,
+  redis?: Redis,
 ) {
   return withLock(playerId, 'dismantle', async () => {
     return prisma.$transaction(async (tx) => {
@@ -66,6 +69,9 @@ export async function dismantleItem(
       }
 
       return produced;
+    }).then(async (produced) => {
+      if (redis) await reloadInventoryFromPg(redis, prisma, playerId);
+      return produced;
     });
   });
 }
@@ -76,11 +82,16 @@ export async function dismantleItem(
 export async function craftItem(
   prisma: PrismaClient,
   playerId: string,
-  recipeId: string
+  recipeId: string,
+  redis?: Redis,
 ) {
   return withLock(playerId, 'craft', async () => {
     const recipe = CRAFTING_RECIPES.find(r => r.id === recipeId);
     if (!recipe) throw new Error('Tarif bulunamadı.');
+
+    if (redis) {
+      await hydratePlayerState(redis, prisma, playerId);
+    }
 
     return prisma.$transaction(async (tx) => {
       const player = await tx.player.findUnique({
@@ -102,11 +113,15 @@ export async function craftItem(
         }
       }
 
-      // Coin tüketimi
-      await tx.player.update({
-        where: { id: playerId },
-        data: { coins: { decrement: recipe.requiredCoins } }
-      });
+      // Coin tüketimi (Redis-first — upgrade ile aynı pattern)
+      if (redis) {
+        await deductCoinsInRedis(redis, playerId, recipe.requiredCoins, prisma);
+      } else {
+        await tx.player.update({
+          where: { id: playerId },
+          data: { coins: { decrement: recipe.requiredCoins } }
+        });
+      }
 
       // Materyal tüketimi
       for (const mat of recipe.requiredMaterials) {
@@ -115,6 +130,11 @@ export async function craftItem(
           data: { quantity: { decrement: mat.quantity } }
         });
       }
+
+      // Sıfır kalan satırları temizle
+      await tx.inventoryItem.deleteMany({
+        where: { ownerId: playerId, quantity: { lte: 0 } },
+      });
 
       // Sonuç üretimi
       await tx.inventoryItem.upsert({
@@ -134,6 +154,11 @@ export async function craftItem(
       trackQuestProgress(tx as any, playerId, 'craft').catch(() => null);
 
       return recipe.resultItem;
+    }).then(async (result) => {
+      if (redis) {
+        await reloadInventoryFromPg(redis, prisma, playerId);
+      }
+      return result;
     });
   });
 }

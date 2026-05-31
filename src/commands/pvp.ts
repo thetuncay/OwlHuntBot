@@ -737,7 +737,7 @@ export async function runPvpCoinFlip(
     const bet = parseInt(betRaw, 10);
     const { coinFlip } = await import('../systems/gambling.js');
     try {
-      const result = await coinFlip(ctx.prisma, message.author.id, bet);
+      const result = await coinFlip(ctx.prisma, message.author.id, bet, ctx.redis);
       const frames = ['🪙', '🔄', '🪙', '🔄', '🪙'];
       const sent = await message.reply(`🪙 **${bet}** 💰 yatırdı...\nPara dönüyor...`);
       for (const frame of frames) {
@@ -791,7 +791,7 @@ export async function runPvpSlot(
     const SYMBOLS = ['🍒', '🍋', '🍊', '🍇', '🍉', '💎', '⭐', '🔔'];
     const rand = () => SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)]!;
     try {
-      const result = await slot(ctx.prisma, message.author.id, bet);
+      const result = await slot(ctx.prisma, message.author.id, bet, ctx.redis);
       const sent = await message.reply(`**═══ SLOTS ═══**\n| ❓ | ❓ | ❓ |`);
       for (let i = 0; i < 5; i++) {
         await new Promise((r) => setTimeout(r, 250));

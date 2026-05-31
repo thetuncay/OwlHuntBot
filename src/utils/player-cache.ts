@@ -1,24 +1,15 @@
 /**
- * player-cache.ts — Oyuncu + main baykuş verisi için Redis cache
+ * player-cache.ts — Oyuncu + main baykuş okuma
  *
- * Neden gerekli:
- *   Her hunt/pvp/upgrade komutunda player + owl DB'den çekilir.
- *   Atlas M0'da her round-trip ~50-200ms. 10 eş zamanlı kullanıcıda
- *   bu sorgular DB bağlantı havuzunu doldurur ve kuyruk oluşur.
- *
- * Strateji:
- *   - Okuma: Redis'te varsa DB'ye gitme (15s TTL)
- *   - Yazma: DB güncellendikten sonra cache'i invalidate et
- *   - Graceful degradation: Redis down → DB'den çek, hata verme
- *
- * TTL seçimi:
- *   30 saniye — hunt cooldown 7s; VDS'te daha az DB round-trip
- *   Coin/XP gibi kritik veriler için invalidate zorunlu.
+ * Hunt hot path: state:player:* (player-state.ts)
+ * Komut okuması (stats/upgrade/…): önce atomik pcache bundle — eski davranış;
+ *   mainOwl her zaman player ile birlikte cache'lenir (ayrı owl key'e güvenilmez).
  */
 
 import type { Redis } from 'ioredis';
 import type { PrismaClient } from '@prisma/client';
 import { RUNTIME } from '../config/runtime';
+import { hydratePlayerState } from '../state/player-state';
 
 const PLAYER_CACHE_TTL_S = RUNTIME.playerCacheTtlSec;
 const CACHE_PREFIX = 'pcache:';
@@ -31,10 +22,11 @@ export interface CachedPlayerData {
   huntComboStreak: number;
   noRareStreak: number;
   mainOwlId: string | null;
-  // YENİ: günlük lootbox drop takibi
   dailyLootboxDrops: number;
-  lastLootboxDropDate: string | null; // ISO 8601 string
+  lastLootboxDropDate: string | null;
   prestigeLevel?: number;
+  gambleStreakWins?: number;
+  gambleStreakLosses?: number;
 }
 
 export interface CachedOwlData {
@@ -62,106 +54,65 @@ export interface CachedPlayerBundle {
   mainOwl: CachedOwlData | null;
 }
 
-function playerKey(playerId: string): string {
+function pcacheKey(playerId: string): string {
   return `${CACHE_PREFIX}player:${playerId}`;
 }
 
-/**
- * Oyuncu + main baykuş verisini Redis'ten okur.
- * Cache miss → null döner (çağrıcı DB'den çeker).
- */
+/** Atomik bundle okuma — mainOwl player JSON'undan ayrı değil, tek key. */
 export async function getCachedPlayerBundle(
   redis: Redis,
   playerId: string,
 ): Promise<CachedPlayerBundle | null> {
   try {
-    const raw = await redis.get(playerKey(playerId));
+    const raw = await redis.get(pcacheKey(playerId));
     if (!raw) return null;
-    return JSON.parse(raw) as CachedPlayerBundle;
+    const bundle = JSON.parse(raw) as CachedPlayerBundle;
+    if (!bundle.mainOwl) return null;
+    return bundle;
   } catch {
     return null;
   }
 }
 
-/**
- * Oyuncu + main baykuş verisini Redis'e yazar.
- * DB'den taze veri çekildikten sonra çağrılır.
- */
 export async function setCachedPlayerBundle(
   redis: Redis,
   playerId: string,
   bundle: CachedPlayerBundle,
 ): Promise<void> {
+  if (!bundle.mainOwl) return;
   try {
-    await redis.set(playerKey(playerId), JSON.stringify(bundle), 'EX', PLAYER_CACHE_TTL_S);
+    await redis.set(pcacheKey(playerId), JSON.stringify(bundle), 'EX', PLAYER_CACHE_TTL_S);
   } catch {
-    // Redis down → sessizce geç
+    // Redis down — sessizce geç
   }
 }
 
-/**
- * Oyuncu cache'ini siler.
- * Player veya owl güncellemesinden sonra çağrılmalı.
- */
+/** Sadece pcache bundle sil — hunt hot state (state:player) korunur. */
 export async function invalidatePlayerCache(
   redis: Redis,
   playerId: string,
 ): Promise<void> {
   try {
-    await redis.del(playerKey(playerId));
+    await redis.del(pcacheKey(playerId));
   } catch {
-    // Redis down → sessizce geç
+    // Redis down — sessizce geç
   }
 }
 
 /**
- * Oyuncu + main baykuş verisini cache'den veya DB'den çeker.
- * Cache hit → 0 DB round-trip.
- * Cache miss → DB'den çeker ve cache'e yazar.
- *
- * Kullanım: hunt, pvp, upgrade gibi sık çağrılan komutlarda
- * player + owl çiftini tek seferde almak için.
+ * Oyuncu + main baykuş — önce atomik pcache, miss'te hydrate (PG fallback + mainOwl garantisi).
  */
 export async function getPlayerBundle(
   redis: Redis,
   prisma: PrismaClient,
   playerId: string,
 ): Promise<CachedPlayerBundle | null> {
-  // 1. Cache'den dene
   const cached = await getCachedPlayerBundle(redis, playerId);
   if (cached) return cached;
 
-  // 2. DB'den çek
-  const [player, mainOwl] = await Promise.all([
-    prisma.player.findUnique({
-      where: { id: playerId },
-      select: {
-        id: true, level: true, xp: true, coins: true,
-        huntComboStreak: true, noRareStreak: true, mainOwlId: true,
-        dailyLootboxDrops: true, lastLootboxDropDate: true,
-        prestigeLevel: true,
-      },
-    }),
-    prisma.owl.findFirst({
-      where: { ownerId: playerId, isMain: true },
-      select: {
-        id: true, ownerId: true, species: true, tier: true, bond: true,
-        statGaga: true, statGoz: true, statKulak: true, statKanat: true, statPence: true,
-        quality: true, hp: true, hpMax: true, staminaCur: true,
-        isMain: true, effectiveness: true, traits: true,
-      },
-    }),
-  ]);
-
-  if (!player) return null;
-
-  const bundle: CachedPlayerBundle = {
-    player: player as CachedPlayerData,
-    mainOwl: mainOwl as CachedOwlData | null,
-  };
-
-  // 3. Cache'e yaz (fire-and-forget)
-  setCachedPlayerBundle(redis, playerId, bundle).catch(() => null);
-
+  const bundle = await hydratePlayerState(redis, prisma, playerId);
+  if (bundle?.mainOwl) {
+    setCachedPlayerBundle(redis, playerId, bundle).catch(() => null);
+  }
   return bundle;
 }

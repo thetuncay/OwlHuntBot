@@ -2,45 +2,56 @@ import { PrismaClient } from '@prisma/client';
 import { Client, Collection, Events, GatewayIntentBits, Options, Sweepers } from 'discord.js';
 import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import { z } from 'zod';
 import type { CommandDefinition } from './types';
+import { parseBotEnv, resolveDatabaseUrl, describeDatabaseUrl } from './env';
 import { redis, assertRedisConnection } from './utils/redis';
 import { enforceAntiSpam } from './middleware/antiSpam';
+import { acquireCommandSlot } from './middleware/load-shed';
 import { getGuildPrefix } from './utils/prefix';
+import { stripGluedPrefix } from './utils/owo-command';
 import { handleOwlTextCommand } from './commands/owl';
-import { handleRegistrationButton, isRegistrationButton } from './systems/onboarding';
-import { archiveAndResetSeason } from './systems/leaderboard';
-import { syncAllRoles } from './systems/roles';
 import { handleTopTextCommand } from './commands/leaderboard';
-import { safeReply } from './utils/safe-reply';
-import { addXP } from './systems/xp';
-import { initDbQueue, closeDbQueue } from './utils/db-queue';
-import { cleanupExpiredListings } from './systems/market';
-import { dailyMaintenance } from './systems/economy';
-import { cleanupOldAuditLogs } from './utils/audit';
+import { handleRegistrationButton, isRegistrationButton } from './systems/onboarding';
+import { syncAllRoles } from './systems/roles';
 import { isShard0 } from './utils/shard';
+import { initDbQueueProducer } from './utils/db-queue';
+import { consumeRoleSyncFlag } from './jobs/background-jobs';
+import { registerGracefulShutdown, trackInterval } from './utils/shutdown';
+import {
+  beginCommandPerf,
+  isPerfMetricsEnabled,
+  logLocalPerfSummary,
+  perfSummaryIntervalMs,
+} from './utils/perf-metrics';
+import { safeReply } from './utils/safe-reply';
 import { RUNTIME } from './config/runtime';
 
-const envSchema = z.object({
-  DISCORD_TOKEN: z.string().min(1),
-  CLIENT_ID: z.string().min(1),
-  GUILD_ID: z.string().min(1),
-  DATABASE_URL: z.string().min(1),
-  REDIS_URL: z.string().min(1),
-  NODE_ENV: z.string().min(1),
-});
+const env = parseBotEnv();
 
-const env = envSchema.parse(process.env);
-
-function appendPoolParams(url: string): string {
-  // .env'de zaten connection_limit ve pool_timeout varsa tekrar ekleme
-  if (url.includes('connection_limit') || url.includes('pool_timeout')) return url;
-  const separator = url.includes('?') ? '&' : '?';
-  return `${url}${separator}connection_limit=${RUNTIME.dbConnectionLimit}&pool_timeout=${RUNTIME.dbPoolTimeoutSec}&connect_timeout=10`;
+/** Kullaniciya gosterilen beklenen hatalar — PM2 logunu kirletmez. */
+function isExpectedUserError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  const msg = error.message;
+  return (
+    msg.includes('hizli komut') ||
+    msg.includes('Spam algilandi') ||
+    msg.includes('yoğun') ||
+    msg.includes('beklemelisin') ||
+    msg.includes('Tekrar avlanmak')
+  );
 }
 
+function formatUserFacingError(error: unknown): string {
+  if (!(error instanceof Error)) return 'Bir seyler ters gitti, islem geri alindi.';
+  if (error.message.includes('Received one or more errors')) {
+    return 'Bot mesaji Discord sinirini asti. Yonetici deploy guncellemesi gerekebilir.';
+  }
+  return error.message;
+}
+
+const dbUrl = resolveDatabaseUrl('bot');
 const prisma = new PrismaClient({
-  datasources: { db: { url: appendPoolParams(process.env.DATABASE_URL!) } },
+  datasources: { db: { url: dbUrl } },
 });
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
@@ -107,10 +118,10 @@ async function bootstrap(): Promise<void> {
   await assertRedisConnection();
   console.info('Redis connected');
   await prisma.$connect();
-  console.info('PostgreSQL connected');
+  console.info(`PostgreSQL connected (${describeDatabaseUrl(dbUrl)})`);
 
-  // DB write queue başlat — kullanıcı cevapları DB yazmasını beklemez
-  initDbQueue(prisma);
+  // DB kuyruk ureticisi — consumer ayri worker process'te
+  initDbQueueProducer();
 
   await loadCommands();
 
@@ -118,6 +129,10 @@ async function bootstrap(): Promise<void> {
     console.info(`Bot baglandi: ${readyClient.user.tag}`);
     console.info(`Yuklu komut sayisi: ${commandMap.size}`);
     console.info(`Guild: ${env.GUILD_ID}`);
+    if (isPerfMetricsEnabled()) {
+      console.info('[Perf] Metrikler acik — ozet log + /admin sys perf');
+      trackInterval(() => logLocalPerfSummary(), perfSummaryIntervalMs());
+    }
   });
 
   // Yakalanmayan Discord client hatalarını logla, crash'e izin verme
@@ -151,12 +166,25 @@ async function bootstrap(): Promise<void> {
     const command = commandMap.get(interaction.commandName);
     if (!command) return;
 
+    let releaseSlot: (() => Promise<void>) | null = null;
+    const perf = beginCommandPerf();
+    const owlSub =
+      interaction.commandName === 'owl'
+        ? interaction.options.getSubcommand(false)
+        : null;
+    const perfCommand = owlSub ? `owl:${owlSub}` : interaction.commandName;
+    let perfOk = true;
+    let perfError: string | undefined;
     try {
+      releaseSlot = await acquireCommandSlot(redis);
       await enforceAntiSpam(redis, interaction.user.id);
+      perf.markQueueDone();
       await command.execute(interaction, { prisma, redis });
     } catch (error) {
       // Unknown interaction (10062) = token süresi dolmuş, sessizce geç
       if ((error as any)?.code === 10062) return;
+      perfOk = false;
+      perfError = error instanceof Error ? error.message : String(error);
       console.error('[Interaction Error]', error);
       try {
         if (interaction.replied || interaction.deferred) {
@@ -173,6 +201,14 @@ async function bootstrap(): Promise<void> {
       } catch {
         // Yanıt gönderilemedi, sessizce geç
       }
+    } finally {
+      await perf.finish(redis, {
+        command: perfCommand,
+        source: 'slash',
+        ok: perfOk,
+        error: perfError,
+      }).catch(() => null);
+      await releaseSlot?.().catch(() => null);
     }
   });
 
@@ -182,27 +218,27 @@ async function bootstrap(): Promise<void> {
     if (!content) return;
 
     const guildPrefix = await getGuildPrefix(redis, message.guildId);
-    const lowered = content.toLowerCase();
+    const glued = stripGluedPrefix(content, guildPrefix);
+    const lowered = glued.toLowerCase();
     const defaultPrefix = 'owl ';
     const customPrefix = `${guildPrefix} `;
-    // Boşluksuz kısaltma: "wh" → "w h", "wc" → "w c" vb.
-    // Prefix tek harf veya kısa kelimeyse boşluksuz kullanım da desteklenir
     const shortPrefix = guildPrefix.length <= 3 ? guildPrefix : null;
     let commandText: string;
 
     if (lowered.startsWith(defaultPrefix)) {
-      commandText = content.slice(defaultPrefix.length).trim();
+      commandText = glued.slice(defaultPrefix.length).trim();
     } else if (lowered.startsWith(customPrefix)) {
-      commandText = content.slice(customPrefix.length).trim();
+      commandText = glued.slice(customPrefix.length).trim();
     } else if (shortPrefix && lowered.startsWith(shortPrefix) && lowered.length > shortPrefix.length) {
-      // Boşluksuz: "wh" → commandText = "h", "wbj" → "bj 100" değil sadece "bj"
-      // Sadece tek karakter kısaltmalar için çalışır: wh, ws, wc, wd, wz vb.
-      const afterPrefix = content.slice(shortPrefix.length).trim();
+      const afterPrefix = glued.slice(shortPrefix.length).trim();
       if (afterPrefix.length > 0) {
         commandText = afterPrefix;
       } else {
         return;
       }
+    } else if (glued !== content) {
+      // stripGluedPrefix zaten wh/wdaily → h/daily ayırdı
+      commandText = glued;
     } else {
       return;
     }
@@ -217,207 +253,84 @@ async function bootstrap(): Promise<void> {
 
     // Liderboard: owl top [kategori] veya owl lb [kategori]
     if (firstWord === 'top' || firstWord === 'lb' || firstWord === 'liderboard' || firstWord === 'leaderboard') {
+      let releaseSlot: (() => Promise<void>) | null = null;
+      const perf = beginCommandPerf();
+      let perfOk = true;
+      let perfError: string | undefined;
       try {
+        releaseSlot = await acquireCommandSlot(redis);
         await enforceAntiSpam(redis, message.author.id);
+        perf.markQueueDone();
         await handleTopTextCommand(message, parts.slice(1), { prisma, redis });
       } catch (error) {
+        perfOk = false;
+        perfError = error instanceof Error ? error.message : String(error);
         const msg = error instanceof Error ? error.message : 'Bir hata olustu.';
         await safeReply(message, `❌ ${msg}`);
+      } finally {
+        await perf.finish(redis, {
+          command: 'top',
+          source: 'prefix',
+          ok: perfOk,
+          error: perfError,
+        }).catch(() => null);
+        await releaseSlot?.().catch(() => null);
       }
       return;
     }
 
+    let releaseSlot: (() => Promise<void>) | null = null;
+    const perf = beginCommandPerf();
+    let perfCommand = parts[0]?.toLowerCase() ?? 'owl';
+    let perfOk = true;
+    let perfError: string | undefined;
     try {
+      releaseSlot = await acquireCommandSlot(redis);
       await enforceAntiSpam(redis, message.author.id);
-      await handleOwlTextCommand(message, parts, { prisma, redis });
+      perf.markQueueDone();
+      perfCommand = await handleOwlTextCommand(message, parts, { prisma, redis });
     } catch (error) {
-      console.error('[Message Command Error]', error);
-      const errorMsg = error instanceof Error ? error.message : 'Bir seyler ters gitti, islem geri alindi.';
+      perfOk = false;
+      perfError = error instanceof Error ? error.message : String(error);
+      if (!isExpectedUserError(error)) {
+        console.error('[Message Command Error]', error);
+      }
+      const errorMsg = formatUserFacingError(error);
       await safeReply(message, `❌ **Hata** | ${errorMsg}`);
+    } finally {
+      await perf.finish(redis, {
+        command: perfCommand,
+        source: 'prefix',
+        ok: perfOk,
+        error: perfError,
+      }).catch(() => null);
+      await releaseSlot?.().catch(() => null);
     }
   });
 
   await client.login(env.DISCORD_TOKEN);
 }
 
-// --- SEZON ZAMANLAYICI ---
-
-/**
- * Sezon bitis tarihini kontrol eder ve gerekirse arsivler.
- * Her saat basinda calisir.
- */
-async function checkSeasonRollover(): Promise<void> {
-  // Sezon rollover yalnızca shard 0'da çalışır — çift yazma önlenir
+// Worker sezon rollover sonrasi rol sync istegi birakir — shard 0 isler
+trackInterval(async () => {
   if (!isShard0()) return;
-
+  const pending = await consumeRoleSyncFlag(redis);
+  if (!pending) return;
   try {
-    const season = await prisma.season.findUnique({ where: { id: 'current' } });
-    const now = new Date();
-
-    if (!season || now >= season.endsAt) {
-      const archivedId = await archiveAndResetSeason(prisma, redis);
-      console.info(`[Season] Sezon tamamlandi ve arsivlendi: ${archivedId}`);
-
-      // Eski audit loglarını temizle
-      cleanupOldAuditLogs(prisma)
-        .then((count) => console.info(`[Season] ${count} eski AuditLog kaydı silindi.`))
-        .catch((err) => console.error('[Season] AuditLog temizleme hatasi:', err));
-
-      // Rolleri senkronize et
-      await syncAllRoles(client, env.GUILD_ID, prisma, redis);
-    }
+    await syncAllRoles(client, env.GUILD_ID, prisma, redis);
   } catch (err) {
-    console.error('[Season] Rollover hatasi:', err);
+    console.error('[Roles] Shard role sync hatasi:', err);
   }
-}
+}, 60_000);
 
-/**
- * Training modundaki baykuşlara saatlik XP verir.
- * Her saat başında checkSeasonRollover ile birlikte çalışır.
- */
-async function applyPassiveTrainingXP(): Promise<void> {
-  try {
-    // training modundaki tüm baykuşları bul
-    const trainingOwls = await prisma.owl.findMany({
-      where: { passiveMode: 'training', isMain: false },
-      select: { id: true, ownerId: true },
-    });
-    if (trainingOwls.length === 0) return;
+registerGracefulShutdown([
+  () => client.destroy(),
+  async () => { await redis.quit(); },
+  () => prisma.$disconnect(),
+], 'Bot');
 
-    // Her baykuşun sahibine XP ver (fire-and-forget, hata saatlik döngüyü durdurmasın)
-    await Promise.allSettled(
-      trainingOwls.map((owl) =>
-        addXP(prisma, owl.ownerId, 5, 'passiveTraining'),
-      ),
-    );
-    console.info(`[Passive] ${trainingOwls.length} training baykusu icin XP verildi.`);
-  } catch (err) {
-    console.error('[Passive] Training XP hatasi:', err);
-  }
-}
-
-// Her saat basinda sezon kontrolu + passive training XP
-setInterval(() => {
-  void checkSeasonRollover();
-  void applyPassiveTrainingXP();
-}, 60 * 60 * 1000);
-// Baslangicta da kontrol et
-setTimeout(() => { void checkSeasonRollover(); }, 5000);
-
-// --- ORPHAN BOT PLAYER CLEANUP ---
-// Tame mini-PvP sırasında oluşturulan `wild:*` bot oyuncuları
-// encounter kapandıktan sonra DB'de kalıyor. Günde bir kez temizle.
-async function cleanupOrphanBotPlayers(): Promise<void> {
-  try {
-    // 24 saatten eski, ID'si "wild:" ile başlayan bot oyuncuları sil
-    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    const orphans = await prisma.player.findMany({
-      where: {
-        id: { startsWith: 'wild:' },
-        createdAt: { lt: cutoff },
-      },
-      select: { id: true },
-    });
-    if (orphans.length === 0) return;
-    const ids = orphans.map((p) => p.id);
-    // İlişkili kayıtları paralel sil (tüm foreign key relation'ları)
-    await Promise.all([
-      prisma.pvpSession.deleteMany({
-        where: { OR: [{ challengerId: { in: ids } }, { defenderId: { in: ids } }] },
-      }),
-      prisma.seasonArchive.deleteMany({ where: { playerId: { in: ids } } }),
-      prisma.playerBuff.deleteMany({ where: { playerId: { in: ids } } }),
-      prisma.encounter.deleteMany({ where: { playerId: { in: ids } } }),
-      prisma.inventoryItem.deleteMany({ where: { ownerId: { in: ids } } }),
-      prisma.playerRegistration.deleteMany({ where: { userId: { in: ids } } }),
-    ]);
-    await prisma.owl.deleteMany({ where: { ownerId: { in: ids } } });
-    await prisma.player.deleteMany({ where: { id: { in: ids } } });
-    console.info(`[Cleanup] ${ids.length} orphan bot oyuncu temizlendi.`);
-  } catch (err) {
-    console.error('[Cleanup] Orphan cleanup hatasi:', err);
-  }
-}
-
-// Günde bir kez orphan cleanup (24 saat)
-setInterval(() => { void cleanupOrphanBotPlayers(); }, 24 * 60 * 60 * 1000);
-// Başlangıçta 30 saniye sonra çalıştır
-setTimeout(() => { void cleanupOrphanBotPlayers(); }, 30_000);
-
-// --- GÜNLÜK BAKIM (MAINTENANCE) ---
-// WHY: dailyMaintenance() fonksiyonu economy.ts'de tanımlıydı ama hiç çağrılmıyordu.
-// Baykuşlar hiç yıpranmıyor, effectiveness asla düşmüyor, repair sink çalışmıyordu.
-// Gece yarısı (UTC 00:00) tüm aktif oyuncular için bakım çalıştırılır.
-// Batch işleme: 100'er gruplar halinde — büyük sunucularda timeout önlenir.
-async function runDailyMaintenance(): Promise<void> {
-  try {
-    const players = await prisma.player.findMany({
-      select: { id: true },
-      // Sadece son 7 günde aktif olan oyuncular — inaktif hesaplar için gereksiz yük yok
-      where: { updatedAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } },
-    });
-    if (players.length === 0) return;
-
-    // 100'er batch — Atlas M0'da büyük paralel yük önlenir
-    const BATCH_SIZE = RUNTIME.maintenanceBatchSize;
-    let processed = 0;
-    for (let i = 0; i < players.length; i += BATCH_SIZE) {
-      const batch = players.slice(i, i + BATCH_SIZE);
-      await Promise.allSettled(
-        batch.map((p) => dailyMaintenance(prisma, p.id)),
-      );
-      processed += batch.length;
-    }
-    console.info(`[Maintenance] ${processed} oyuncu için günlük bakım tamamlandı.`);
-  } catch (err) {
-    console.error('[Maintenance] Günlük bakım hatası:', err);
-  }
-}
-
-// Gece yarısı UTC'de çalıştır
-function scheduleNextMaintenance(): void {
-  const now = new Date();
-  const nextMidnight = new Date(now);
-  nextMidnight.setUTCHours(24, 0, 0, 0); // Bir sonraki UTC gece yarısı
-  const msUntilMidnight = nextMidnight.getTime() - now.getTime();
-
-  setTimeout(() => {
-    void runDailyMaintenance();
-    // Sonraki gün için tekrar planla
-    setInterval(() => { void runDailyMaintenance(); }, 24 * 60 * 60 * 1000);
-  }, msUntilMidnight);
-
-  console.info(`[Maintenance] Sonraki bakım: ${nextMidnight.toISOString()} (${Math.round(msUntilMidnight / 60000)} dakika sonra)`);
-}
-scheduleNextMaintenance();
-
-// --- MARKET EXPIRED LISTING CLEANUP ---
-// Süresi dolan ilanları temizle ve eşyaları satıcılara iade et.
-// Her 10 dakikada bir çalışır — 48 saatlik TTL ile orantılı.
-async function runMarketCleanup(): Promise<void> {
-  try {
-    const count = await cleanupExpiredListings(prisma);
-    if (count > 0) {
-      console.info(`[Market] ${count} süresi dolmuş ilan temizlendi.`);
-    }
-  } catch (err) {
-    console.error('[Market] Cleanup hatası:', err);
-  }
-}
-setInterval(() => { void runMarketCleanup(); }, 10 * 60 * 1000);
-// Başlangıçta 60 saniye sonra çalıştır
-setTimeout(() => { void runMarketCleanup(); }, 60_000);
-
-async function shutdown() {
-  console.info('Bot kapatiliyor...');
-  await closeDbQueue();
-  await client.destroy();
-  await redis.quit();
-  await prisma.$disconnect();
-  process.exit(0);
-}
-
-process.on('SIGTERM', shutdown);
-process.on('SIGINT', shutdown);
-
-void bootstrap();
+void bootstrap().catch((err) => {
+  console.error('[Bootstrap] Baslatma basarisiz:', err instanceof Error ? err.message : err);
+  console.error('[Bootstrap] Redis/PostgreSQL kontrol: docker compose up -d postgres redis');
+  process.exit(1);
+});

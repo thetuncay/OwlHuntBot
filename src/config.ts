@@ -712,7 +712,6 @@ export const UPGRADE_ITEM_BONUS: Record<string, number> = {
   'Orman Yankısı': 5,
   'Kırık Av Zinciri': 4,
   'Gölge Tüyü': 2,
-  'Bileme Taşı': 10,
 };
 
 export const TAME_ITEM_BONUS: Record<string, number> = {
@@ -753,95 +752,239 @@ export const CRAFTING_RECIPES: CraftingRecipe[] = [
     id: 'c000',
     name: 'Besleyici Karma Yem',
     emoji: '🌾',
-    description: 'Baykuşun enerjisini yeniler (Stamina +50).',
+    description: 'Av sonunda stamina +50.',
     requiredMaterials: [
       { itemName: 'fare', quantity: 5 },
       { itemName: 'serce', quantity: 2 },
     ],
-    requiredCoins: 100,
+    requiredCoins: 1500,
     resultItem: { itemName: 'Karma Yem', itemType: 'Consumable', rarity: 'Common', quantity: 1 },
   },
   {
     id: 'c001',
     name: 'Gelişmiş Gaga Bileme Taşı',
     emoji: '🪨',
-    description: 'Gaga upgrade başarı şansını %10 artırır (tek kullanım).',
+    description: 'Upgrade başarı şansı +10 puan.',
     requiredMaterials: [
       { itemName: 'Kemik Tozu', quantity: 10 },
       { itemName: 'Parlak Tüy', quantity: 5 },
     ],
-    requiredCoins: 500,
+    requiredCoins: 4500,
     resultItem: { itemName: 'Bileme Taşı', itemType: 'Consumable', rarity: 'Uncommon', quantity: 1 },
   },
   {
     id: 'c002',
     name: 'Yırtıcı İksiri',
     emoji: '🧪',
-    description: 'Bir sonraki hunt\'ta yakalama şansını %15 artırır (tek kullanım).',
+    description: 'Sonraki av yakalama şansı +15%.',
     requiredMaterials: [
       { itemName: 'fare', quantity: 20 },
       { itemName: 'serce', quantity: 10 },
     ],
-    requiredCoins: 1000,
+    requiredCoins: 6500,
     resultItem: { itemName: 'Yırtıcı İksiri', itemType: 'Consumable', rarity: 'Rare', quantity: 1 },
+  },
+  {
+    id: 'c003',
+    name: 'Savaş İksiri',
+    emoji: '⚗️',
+    description: 'Sonraki PvP maçında hasar +12%.',
+    requiredMaterials: [
+      { itemName: 'Yırtıcı Pençe Parçası', quantity: 3 },
+      { itemName: 'Kemik Tozu', quantity: 8 },
+    ],
+    requiredCoins: 6000,
+    resultItem: { itemName: 'Savaş İksiri', itemType: 'Consumable', rarity: 'Rare', quantity: 1 },
+  },
+  {
+    id: 'c004',
+    name: 'Gölge Zırhı',
+    emoji: '🛡️',
+    description: 'PvP dodge şansı +10%.',
+    requiredMaterials: [
+      { itemName: 'Gölge Tüyü', quantity: 2 },
+      { itemName: 'Sessizlik Teli', quantity: 4 },
+    ],
+    requiredCoins: 7000,
+    resultItem: { itemName: 'Gölge Zırhı', itemType: 'Consumable', rarity: 'Epic', quantity: 1 },
+  },
+  {
+    id: 'c005',
+    name: 'Av Trofesi Yağı',
+    emoji: '🫙',
+    description: 'Sonraki av drop şansı +30%.',
+    requiredMaterials: [
+      { itemName: 'bildircin', quantity: 8 },
+      { itemName: 'Av Gözü Kristali', quantity: 2 },
+    ],
+    requiredCoins: 3500,
+    resultItem: { itemName: 'Av Trofesi Yağı', itemType: 'Consumable', rarity: 'Uncommon', quantity: 1 },
+  },
+  {
+    id: 'c006',
+    name: 'Koruyucu Balmumu',
+    emoji: '🕯️',
+    description: 'Upgrade downgrade riski yarıya iner.',
+    requiredMaterials: [
+      { itemName: 'Orman Yankısı', quantity: 2 },
+      { itemName: 'Kırık Av Zinciri', quantity: 5 },
+    ],
+    requiredCoins: 5500,
+    resultItem: { itemName: 'Koruyucu Balmumu', itemType: 'Consumable', rarity: 'Rare', quantity: 1 },
+  },
+  {
+    id: 'c007',
+    name: 'Güç Kapsülü',
+    emoji: '💊',
+    description: 'Av sonunda stamina +80.',
+    requiredMaterials: [
+      { itemName: 'hamster', quantity: 6 },
+      { itemName: 'kostebek', quantity: 3 },
+    ],
+    requiredCoins: 2000,
+    resultItem: { itemName: 'Güç Kapsülü', itemType: 'Consumable', rarity: 'Common', quantity: 1 },
   },
 ];
 
 // ============================================================
 // CONSUMABLE ITEM SİSTEMİ
 // ============================================================
-// Crafting ile üretilen tek kullanımlık item'lar.
-// Buff'lardan farklı: charge sistemi yok, kullanınca anında etki eder ve silinir.
-// Max 2 aktif consumable slot (buff'lardan bağımsız).
+// Crafting ile üretilen takılabilir item'lar (min 15 dk aktif).
+// Buff'lardan (001–012, charge) bağımsız: max 2 aktif yük slotu.
 // ============================================================
 
+/** Craft item minimum aktif süre (ms) */
+export const CONSUMABLE_MIN_DURATION_MS = 15 * 60 * 1000;
+
+export type ConsumableGearCategory = 'yem' | 'iksir' | 'zırh' | 'alet';
+
+export type ConsumableEffectType =
+  | 'stamina_restore_once'
+  | 'stamina_boost_once'
+  | 'upgrade_bonus_once'
+  | 'hunt_catch_once'
+  | 'hunt_loot_once'
+  | 'pvp_damage_once'
+  | 'pvp_dodge_equip'
+  | 'downgrade_shield_once';
+
 export interface ConsumableItemDef {
-  /** Crafting recipe ID ile eşleşir (c000, c001...) */
+  /** Internal ID (crafting recipe ile eşleşir) */
   id:          string;
+  /** Oyuncu komutu: owl use 013 */
+  useId:       string;
   /** Envanterdeki item adı */
   itemName:    string;
   emoji:       string;
+  /** yem / iksir / zırh / alet — yük slotu UI kategorisi */
+  gearCategory: ConsumableGearCategory;
   description: string;
   /** Etki tipi */
-  effectType:  'stamina_restore' | 'upgrade_bonus_once' | 'hunt_catch_once';
+  effectType:  ConsumableEffectType;
   /** Etki değeri */
   effectValue: number;
   /** Redis'te saklanacak key prefix */
   redisKey:    string;
-  /** Etkinin süresi (ms) — 0 ise anlık */
+  /** Etkinin süresi (ms) — min 15 dk, yük slotu kullanır */
   durationMs:  number;
 }
 
 export const CONSUMABLE_ITEMS: ConsumableItemDef[] = [
   {
-    id:          'c000',
-    itemName:    'Karma Yem',
-    emoji:       '🌾',
-    description: 'Baykuşun staminasını 50 puan yeniler.',
-    effectType:  'stamina_restore',
-    effectValue: 50,
-    redisKey:    'consumable:stamina',
-    durationMs:  0, // anlık
+    id:           'c000',
+    useId:        '013',
+    itemName:     'Karma Yem',
+    emoji:        '🌾',
+    gearCategory: 'yem',
+    description:  'Av sonunda stamina +50.',
+    effectType:   'stamina_restore_once',
+    effectValue:  50,
+    redisKey:     'consumable:stamina',
+    durationMs:   CONSUMABLE_MIN_DURATION_MS,
   },
   {
-    id:          'c001',
-    itemName:    'Bileme Taşı',
-    emoji:       '🪨',
-    description: 'Bir sonraki upgrade denemesinde başarı şansı +10 puan artar.',
-    effectType:  'upgrade_bonus_once',
-    effectValue: 10,
-    redisKey:    'consumable:upgrade_bonus',
-    durationMs:  30 * 60 * 1000, // 30 dakika
+    id:           'c001',
+    useId:        '014',
+    itemName:     'Bileme Taşı',
+    emoji:        '🪨',
+    gearCategory: 'alet',
+    description:  'Upgrade başarı şansı +10 puan.',
+    effectType:   'upgrade_bonus_once',
+    effectValue:  10,
+    redisKey:     'consumable:upgrade_bonus',
+    durationMs:   20 * 60 * 1000,
   },
   {
-    id:          'c002',
-    itemName:    'Yırtıcı İksiri',
-    emoji:       '🧪',
-    description: 'Bir sonraki hunt\'ta yakalama şansı +15% artar.',
-    effectType:  'hunt_catch_once',
-    effectValue: 0.15,
-    redisKey:    'consumable:hunt_catch',
-    durationMs:  60 * 60 * 1000, // 1 saat
+    id:           'c002',
+    useId:        '015',
+    itemName:     'Yırtıcı İksiri',
+    emoji:        '🧪',
+    gearCategory: 'iksir',
+    description:  'Sonraki av yakalama şansı +15%.',
+    effectType:   'hunt_catch_once',
+    effectValue:  0.15,
+    redisKey:     'consumable:hunt_catch',
+    durationMs:   30 * 60 * 1000,
+  },
+  {
+    id:           'c003',
+    useId:        '016',
+    itemName:     'Savaş İksiri',
+    emoji:        '⚗️',
+    gearCategory: 'iksir',
+    description:  'Sonraki PvP maçında hasar +12%.',
+    effectType:   'pvp_damage_once',
+    effectValue:  0.12,
+    redisKey:     'consumable:pvp_damage',
+    durationMs:   30 * 60 * 1000,
+  },
+  {
+    id:           'c004',
+    useId:        '017',
+    itemName:     'Gölge Zırhı',
+    emoji:        '🛡️',
+    gearCategory: 'zırh',
+    description:  'PvP dodge şansı +10%.',
+    effectType:   'pvp_dodge_equip',
+    effectValue:  0.10,
+    redisKey:     'consumable:pvp_dodge',
+    durationMs:   45 * 60 * 1000,
+  },
+  {
+    id:           'c005',
+    useId:        '018',
+    itemName:     'Av Trofesi Yağı',
+    emoji:        '🫙',
+    gearCategory: 'iksir',
+    description:  'Sonraki av drop şansı +30%.',
+    effectType:   'hunt_loot_once',
+    effectValue:  0.30,
+    redisKey:     'consumable:hunt_loot',
+    durationMs:   20 * 60 * 1000,
+  },
+  {
+    id:           'c006',
+    useId:        '019',
+    itemName:     'Koruyucu Balmumu',
+    emoji:        '🕯️',
+    gearCategory: 'alet',
+    description:  'Upgrade downgrade riski yarıya iner.',
+    effectType:   'downgrade_shield_once',
+    effectValue:  0.50,
+    redisKey:     'consumable:downgrade_shield',
+    durationMs:   25 * 60 * 1000,
+  },
+  {
+    id:           'c007',
+    useId:        '020',
+    itemName:     'Güç Kapsülü',
+    emoji:        '💊',
+    gearCategory: 'yem',
+    description:  'Av sonunda stamina +80.',
+    effectType:   'stamina_boost_once',
+    effectValue:  80,
+    redisKey:     'consumable:power_capsule',
+    durationMs:   20 * 60 * 1000,
   },
 ];
 
@@ -853,7 +996,27 @@ export const CONSUMABLE_ITEM_BY_NAME: Record<string, ConsumableItemDef> = Object
   CONSUMABLE_ITEMS.map((c) => [c.itemName, c]),
 );
 
-/** Aynı anda aktif olabilecek maksimum consumable sayısı */
+/** useId (013–020) → consumable tanımı */
+export const CONSUMABLE_USE_MAP: Record<string, ConsumableItemDef> = Object.fromEntries(
+  CONSUMABLE_ITEMS.map((c) => [c.useId, c]),
+);
+
+/**
+ * Birleşik kullanım ID haritası (owl use 001):
+ *   001–012 → Buff item (lootbox, charge — max 3 aynı tür)
+ *   013–020 → Craft item (yük slotu max 2, anlık yemler hariç)
+ */
+export const USE_ID_RANGE = {
+  buffMin: '001',
+  buffMax: '012',
+  consumableMin: '013',
+  consumableMax: '020',
+} as const;
+
+/** Buff charge slotları (aynı türden max 3, diminishing returns) */
+export const MAX_ACTIVE_BUFF_TYPES = 3;
+
+/** Craft item yük slotu — buff'lardan bağımsız, anlık yemler sayılmaz */
 export const MAX_ACTIVE_CONSUMABLES = 2;
 
 // ============================================================
@@ -936,9 +1099,11 @@ export const COLOR_WARNING = 0xf1c40f;
 
 // --- LOCK & RATE LIMIT ---
 export const LOCK_TTL_SECONDS = 5;   // 15s → 5s: hunt ~200ms, pvp ~500ms, upgrade ~300ms için yeterli margin
-export const COMMAND_RATE_LIMIT_TOKENS = 24;
-export const COMMAND_RATE_LIMIT_WINDOW_SECONDS = 10;
-export const SPAM_MUTE_SECONDS = 15;
+export const COMMAND_RATE_LIMIT_TOKENS = Number.parseInt(process.env.COMMAND_RATE_LIMIT_TOKENS ?? '24', 10);
+export const COMMAND_RATE_LIMIT_WINDOW_SECONDS = Number.parseInt(process.env.COMMAND_RATE_LIMIT_WINDOW_SECONDS ?? '10', 10);
+export const SPAM_MUTE_SECONDS = Number.parseInt(process.env.SPAM_MUTE_SECONDS ?? '15', 10);
+export const MAX_CONCURRENT_COMMANDS = Number.parseInt(process.env.MAX_CONCURRENT_COMMANDS ?? '40', 10);
+export const COMMAND_GATE_TTL_SECONDS = Number.parseInt(process.env.COMMAND_GATE_TTL_SECONDS ?? '15', 10);
 
 // ============================================================
 // LIDERBOARD SISTEMI
@@ -1072,7 +1237,7 @@ export const SIM_PVP_LOSE_XP    = 10;   // Kaybetme XP (sıfır değil)
 export const SIM_PVP_COOLDOWN_MS = HUNT_COOLDOWN_MS;  // Hunt ile aynı
 
 // Günlük bot duel coin kazanç üst sınırı — aşıldığında coin ödülü 0'a düşer, XP etkilenmez
-export const DUEL_DAILY_COIN_CAP = 500;
+export const DUEL_DAILY_COIN_CAP = 800;
 
 // Sahte oyuncu isimleri havuzu
 export const SIM_PVP_FAKE_NAMES: string[] = [
@@ -1111,6 +1276,8 @@ export type BuffItemRarity   = 'Common' | 'Rare' | 'Epic' | 'Legendary';
 
 export interface BuffItemDef {
   id:          string;
+  /** Oyuncunun kullandığı kısa ID: 001–012 */
+  useId:       string;
   name:        string;
   emoji:       string;
   description: string;
@@ -1148,6 +1315,7 @@ export const BUFF_ITEMS: BuffItemDef[] = [
   // ── HUNT BUFF'LARI ────────────────────────────────────────────────────────
   {
     id:           'b001',
+    useId:        '001',
     name:         'Keskin Nişan',
     emoji:        '🎯',
     description:  'Aktif olduğu sürece yakalama şansı artar.',
@@ -1157,12 +1325,13 @@ export const BUFF_ITEMS: BuffItemDef[] = [
     huntCost:     1,
     pvpCost:      0,
     upgradeCost:  0,
-    effectValue:  0.25,  // +25% catch
+    effectValue:  0.25,
     effectType:   'catch_bonus',
     tradeoff:     'Charge bitince pasifleşir, item kaybolmaz.',
   },
   {
     id:           'b002',
+    useId:        '002',
     name:         'Av Kokusu',
     emoji:        '🌿',
     description:  'Aktif olduğu sürece item drop şansı artar.',
@@ -1172,12 +1341,13 @@ export const BUFF_ITEMS: BuffItemDef[] = [
     huntCost:     1,
     pvpCost:      0,
     upgradeCost:  0,
-    effectValue:  1.90,  // +90% drop
+    effectValue:  1.90,
     effectType:   'loot_mult',
     tradeoff:     'Charge bitince pasifleşir.',
   },
   {
     id:           'b003',
+    useId:        '003',
     name:         'Nadir İz',
     emoji:        '🔮',
     description:  'Aktif olduğu sürece nadir av drop şansı artar.',
@@ -1187,12 +1357,13 @@ export const BUFF_ITEMS: BuffItemDef[] = [
     huntCost:     1,
     pvpCost:      0,
     upgradeCost:  0,
-    effectValue:  0.35,  // +35% nadir drop
+    effectValue:  0.35,
     effectType:   'rare_drop_bonus',
     tradeoff:     'Güçlü ama Rare, charge daha az.',
   },
   {
     id:           'b004',
+    useId:        '004',
     name:         'Orman Ruhu',
     emoji:        '🌲',
     description:  'Aktif olduğu sürece yakalama ve drop şansı hafifçe artar.',
@@ -1202,12 +1373,13 @@ export const BUFF_ITEMS: BuffItemDef[] = [
     huntCost:     1,
     pvpCost:      0,
     upgradeCost:  0,
-    effectValue:  0.20,  // +20% catch + %40 loot
+    effectValue:  0.20,
     effectType:   'catch_bonus',
     tradeoff:     'Çift etki, uzun ömür.',
   },
   {
     id:           'b005',
+    useId:        '005',
     name:         'Yıldız Tüy',
     emoji:        '⭐',
     description:  'Aktif olduğu sürece tüm drop şansları büyük ölçüde artar.',
@@ -1217,12 +1389,13 @@ export const BUFF_ITEMS: BuffItemDef[] = [
     huntCost:     1,
     pvpCost:      0,
     upgradeCost:  0,
-    effectValue:  2.80,  // +180% drop
+    effectValue:  2.80,
     effectType:   'loot_mult',
     tradeoff:     'Çok güçlü ama Epic, charge az.',
   },
   {
     id:           'b006',
+    useId:        '006',
     name:         'Efsane Av Ruhu',
     emoji:        '🦅',
     description:  'Aktif olduğu sürece yakalama ve nadir drop şansı maksimum artar.',
@@ -1232,7 +1405,7 @@ export const BUFF_ITEMS: BuffItemDef[] = [
     huntCost:     1,
     pvpCost:      0,
     upgradeCost:  0,
-    effectValue:  0.45,  // +45% catch
+    effectValue:  0.45,
     effectType:   'catch_bonus',
     tradeoff:     'En güçlü hunt buff, ama çok az charge.',
   },
@@ -1240,6 +1413,7 @@ export const BUFF_ITEMS: BuffItemDef[] = [
   // ── UPGRADE BUFF'LARI ─────────────────────────────────────────────────────
   {
     id:           'b007',
+    useId:        '007',
     name:         'Berrak Zihin',
     emoji:        '💡',
     description:  'Aktif olduğu sürece upgrade başarı şansı artar.',
@@ -1249,12 +1423,13 @@ export const BUFF_ITEMS: BuffItemDef[] = [
     huntCost:     0,
     pvpCost:      0,
     upgradeCost:  1,
-    effectValue:  15,    // +15 puan (eskiden +8)
+    effectValue:  15,
     effectType:   'upgrade_bonus',
     tradeoff:     'Charge bitince pasifleşir.',
   },
   {
     id:           'b008',
+    useId:        '008',
     name:         'Koruyucu Talisman',
     emoji:        '🛡️',
     description:  'Aktif olduğu sürece başarısız upgrade\'de stat düşme şansı azalır.',
@@ -1264,12 +1439,13 @@ export const BUFF_ITEMS: BuffItemDef[] = [
     huntCost:     0,
     pvpCost:      0,
     upgradeCost:  1,
-    effectValue:  0.2,   // downgrade şansı %80 azalır (eskiden %50)
+    effectValue:  0.2,
     effectType:   'downgrade_shield',
     tradeoff:     'Neredeyse tam koruma.',
   },
   {
     id:           'b009',
+    useId:        '009',
     name:         'Usta Eli',
     emoji:        '🔨',
     description:  'Aktif olduğu sürece upgrade başarı şansı önemli ölçüde artar.',
@@ -1279,7 +1455,7 @@ export const BUFF_ITEMS: BuffItemDef[] = [
     huntCost:     0,
     pvpCost:      0,
     upgradeCost:  1,
-    effectValue:  28,    // +28 puan (eskiden +15)
+    effectValue:  28,
     effectType:   'upgrade_bonus',
     tradeoff:     'Güçlü ama Epic, charge az.',
   },
@@ -1287,6 +1463,7 @@ export const BUFF_ITEMS: BuffItemDef[] = [
   // ── PVP BUFF'LARI ─────────────────────────────────────────────────────────
   {
     id:           'b010',
+    useId:        '010',
     name:         'Savaş Ruhu',
     emoji:        '⚔️',
     description:  'Aktif olduğu sürece PvP hasarı artar.',
@@ -1296,12 +1473,13 @@ export const BUFF_ITEMS: BuffItemDef[] = [
     huntCost:     0,
     pvpCost:      1,
     upgradeCost:  0,
-    effectValue:  1.18,  // +18% hasar (eskiden +8%)
+    effectValue:  1.18,
     effectType:   'pvp_damage_mult',
     tradeoff:     'Belirgin etki, uzun ömür.',
   },
   {
     id:           'b011',
+    useId:        '011',
     name:         'Savunma Duruşu',
     emoji:        '🛡️',
     description:  'Aktif olduğu sürece PvP dodge şansı artar.',
@@ -1311,12 +1489,13 @@ export const BUFF_ITEMS: BuffItemDef[] = [
     huntCost:     0,
     pvpCost:      1,
     upgradeCost:  0,
-    effectValue:  0.18,  // +18% dodge (eskiden +8%)
+    effectValue:  0.18,
     effectType:   'pvp_dodge_bonus',
     tradeoff:     'Sadece dodge, hasar artmaz.',
   },
   {
     id:           'b012',
+    useId:        '012',
     name:         'Arena Ustası',
     emoji:        '🏆',
     description:  'Aktif olduğu sürece hem PvP hasarı hem dodge artar.',
@@ -1326,7 +1505,7 @@ export const BUFF_ITEMS: BuffItemDef[] = [
     huntCost:     0,
     pvpCost:      1,
     upgradeCost:  0,
-    effectValue:  1.25,  // +25% hasar & +15% dodge (eskiden +12%/+6%)
+    effectValue:  1.25,
     effectType:   'pvp_damage_mult',
     tradeoff:     'En güçlü PvP buff, ama az charge.',
   },
@@ -1335,6 +1514,11 @@ export const BUFF_ITEMS: BuffItemDef[] = [
 // Buff item ID → tanım hızlı erişim haritası
 export const BUFF_ITEM_MAP: Record<string, BuffItemDef> = Object.fromEntries(
   BUFF_ITEMS.map((b) => [b.id, b]),
+);
+
+// useId → tanım haritası (001, 002... ile erişim)
+export const BUFF_ITEM_USE_MAP: Record<string, BuffItemDef> = Object.fromEntries(
+  BUFF_ITEMS.map((b) => [b.useId, b]),
 );
 
 // ── DİMİNİSHİNG RETURNS ──────────────────────────────────────────────────────
@@ -1421,6 +1605,12 @@ export const LOOTBOX_PVP_WIN_CHANCE: Record<LootboxTier, number> = {
   Eşya:   4,    // %4
 };
 
+// Encounter savaş kazanma lootbox şansı (tame'den yüksek — savaş ana ödül yolu)
+export const LOOTBOX_ENCOUNTER_FIGHT_CHANCE: Record<LootboxTier, number> = {
+  Silah:  10,
+  Eşya:   20,
+};
+
 // Encounter kazanmada (tame başarısı) lootbox şansı
 export const LOOTBOX_ENCOUNTER_WIN_CHANCE: Record<LootboxTier, number> = {
   Silah:  5,    // %5
@@ -1438,11 +1628,14 @@ export const PVP_BUFF_DODGE_BONUS_MAX = 0.12;   // max +12% dodge
 
 // --- MARKET SİSTEMİ ---
 export const MARKET_MIN_LEVEL = 15;
-export const MARKET_TAX_RATE = 0.10; // %10 vergi
-export const MARKET_LISTING_LIMIT_DAILY = 5;
+export const MARKET_TAX_RATE = 0.05; // %5 satış vergisi
+export const MARKET_LISTING_FEE_RATE = 0.01; // %1 listeleme ücreti (iade edilmez)
+export const MARKET_MAX_ACTIVE_LISTINGS = 5;
 export const MARKET_LISTING_DURATION_MS = 48 * 60 * 60 * 1000; // 48 saat
-export const MARKET_MIN_PRICE = 50;
-export const MARKET_MAX_PRICE = 100000;
+export const MARKET_PAGE_SIZE = 8;
+export const MARKET_SUSPICIOUS_THRESHOLD = 50;
+/** @deprecated Günlük limit yerine MARKET_MAX_ACTIVE_LISTINGS kullanılır */
+export const MARKET_LISTING_LIMIT_DAILY = 5;
 
 // --- PRESTIGE SİSTEMİ ---
 export const PRESTIGE_MIN_STAT_AVG = 80; // Ortalama stat 80+ olmalı
@@ -1453,10 +1646,10 @@ export const PRESTIGE_STAT_CAP_BONUS_PER_LEVEL = 2; // Her prestige seviyesi iç
 // --- GÖREV SİSTEMİ ---
 export const DAILY_QUEST_TYPES = ['hunt', 'craft', 'tame', 'market'] as const;
 export const DAILY_QUEST_CONFIG = {
-  hunt:   { target: 10, rewardCoins: 500,  rewardXp: 200, label: '10 Hayvan Avla' },
-  craft:  { target: 3,  rewardCoins: 800,  rewardXp: 300, label: '3 Eşya Craft Et' },
-  tame:   { target: 1,  rewardCoins: 1200, rewardXp: 500, label: '1 Baykuş Evcilleştir' },
-  market: { target: 2,  rewardCoins: 400,  rewardXp: 150, label: 'Markete 2 İlan Koy' },
+  hunt:   { target: 10, rewardCoins: 990,  rewardXp: 200, label: '10 Hayvan Avla' },
+  craft:  { target: 3,  rewardCoins: 1080, rewardXp: 300, label: '3 Eşya Craft Et' },
+  tame:   { target: 1,  rewardCoins: 1440, rewardXp: 500, label: '1 Baykuş Evcilleştir' },
+  market: { target: 2,  rewardCoins: 990,  rewardXp: 150, label: 'Markete 2 İlan Koy' },
 };
 
 /** Gönderici için minimum oyuncu seviyesi */

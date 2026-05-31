@@ -17,10 +17,10 @@ export function buildHelpEmbed(prefix: string): EmbedBuilder {
   const avSection = [
     `\`${p} hunt\` · \`${p} h\` — Baykuşunu avlanmaya gönder`,
     `\`${p} tame <id>\` · \`${p} t\` — Yabani baykuşu evcilleştir`,
-    `\`${p} stats\` · \`${p} s\` — Baykuş istatistiklerini gör`,
+    `\`${p} stats\` · \`${p} st\` — Baykuş istatistiklerini gör`,
     `\`${p} owls\` — Tüm baykuşlarını listele`,
     `\`${p} inventory\` · \`${p} inv\` — Envanterini kontrol et`,
-    `\`${p} sell\` · \`${p} sell all\` — Avladıklarını sat`,
+    `\`${p} sell\` · \`${p} s\` — Avladıklarını sat`,
     `\`${p} zoo\` · \`${p} z\` — Hayvanat bahçeni gör`,
     `\`${p} upgrade <stat>\` · \`${p} up\` — Stat geliştir`,
     `\`${p} setmain <id>\` · \`${p} sm\` — Main baykuşu değiştir`,
@@ -57,20 +57,32 @@ export function buildHelpEmbed(prefix: string): EmbedBuilder {
     `💡 Anlamadığın bir şey mi var? Hemen sor!`,
   ].join('\n');
 
-  const eşyaSection = [
+  const eşyaKutuSection = [
     `\`${p} sk\` — 1 silah kutusu aç`,
     `\`${p} sk all\` — tüm silah kutularını aç`,
     `\`${p} ek\` — 1 eşya kutusu aç`,
     `\`${p} ek all\` — tüm eşya kutularını aç`,
     `\`${p} aç\` — kutu envanterini gör`,
-    `\`${p} craft\` — Crafting menüsünü aç, eşya üret`,
-    `\`${p} dismantle <eşya> [miktar]\` — Eşyayı parçala, materyal kazan`,
-    `\`${p} market\` — Global marketi görüntüle`,
-    `\`${p} market sat <eşya> <miktar> <fiyat>\` — Markete eşya koy`,
-    `\`${p} market al <ilan_id>\` — Marketten eşya satın al`,
-    `\`${p} buff\` — Aktif buff item'larını gör`,
-    `\`${p} buff <item adı>\` — Buff item aktifleştir`,
+    `\`${p} craft\` — Craft menüsü (8 tarif)`,
+    `\`${p} craftinfo <id>\` — Tarif detayı (013–020)`,
+    `\`${p} craft <id>\` — Belirli tarifi üret`,
+    `\`${p} dismantle <eşya> [miktar]\` — Eşyayı parçala`,
+    `\`${p} use <id>\` · \`${p} u <id>\` — Buff (001–012) veya craft item`,
+    `\`${p} use\` — Yük slotlarını gör (max 2 craft item)`,
     `\`${p} buffs\` — Tüm buff rehberini gör`,
+  ].join('\n');
+
+  const marketSection = [
+    `\`${p} market\` — Global marketplace`,
+    `\`${p} market owl/item/buff/material [sayfa]\` — Kategori tara`,
+    `\`${p} market sell <eşya> [miktar] <fiyat>\` — İlan aç (%1 ücret)`,
+    `\`${p} market sell owl <kısa_id> <fiyat>\` — Baykuş sat`,
+    `\`${p} buy <ilanNo>\` · \`${p} market al <ilanNo>\` — Satın al (%5 vergi)`,
+    `\`${p} market search <kelime>\` — Ara`,
+    `\`${p} market info <ilanNo>\` — Piyasa detayı`,
+    `\`${p} market my\` — Aktif ilanların (max 5)`,
+    `\`${p} market cancel <ilanNo>\` — İlan iptal`,
+    `\`${p} msell <eşya> <miktar> <fiyat>\` — market sell kısayolu`,
   ].join('\n');
 
   const ipucuSection = [
@@ -80,6 +92,13 @@ export function buildHelpEmbed(prefix: string): EmbedBuilder {
     `• \`${p} upgrade\` yazınca bağımlılık sistemi gösterilir`,
     `• Lootbox hunt, PvP ve encounter'dan otomatik düşer`,
     `• Prestige için oyuncu Lv.30+ ve baykuş ort. stat 80+ gerekir`,
+  ].join('\n');
+
+  const owoSection = [
+    `**OwO'dan geçiyorsan** — aynı alışkanlıklar:`,
+    `\`${p} h\` av · \`${p} b\` duel · \`${p} s\` sat · \`${p} daily\` → \`${p} quests\``,
+    `\`${p} cf\` · \`${p} bj\` · \`${p} slot\` kumar · \`${p} cash\` bakiye`,
+    `Stats için \`${p} st\` (OwO'daki \`s\` artık satış)`,
   ].join('\n');
 
   return new EmbedBuilder()
@@ -92,7 +111,9 @@ export function buildHelpEmbed(prefix: string): EmbedBuilder {
       { name: '⚔️ PvP', value: pvpSection, inline: false },
       { name: '🎲 Kumar', value: kumarSection, inline: false },
       { name: '💰 Ekonomi & Görevler', value: ekonomiSection, inline: false },
-      { name: '🎒 Eşya & Market', value: eşyaSection, inline: false },
+      { name: '🎒 Eşya & Craft', value: eşyaKutuSection, inline: false },
+      { name: '🏪 Market', value: marketSection, inline: false },
+      { name: '🔄 OwO Geçiş', value: owoSection, inline: false },
       { name: '💡 İpuçları', value: ipucuSection, inline: false },
     )
     .setFooter({ text: `Tüm komutlar ${p} <komut> formatında çalışır` });

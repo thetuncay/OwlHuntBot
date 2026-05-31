@@ -50,7 +50,7 @@ async function execute(
     await interaction.deferReply({ flags: 64 });
 
     // Sonucu ÖNCE belirle
-    const result = await coinFlip(ctx.prisma, interaction.user.id, bet);
+    const result = await coinFlip(ctx.prisma, interaction.user.id, bet, ctx.redis);
     await interaction.editReply({
       content: `${interaction.user.username} spent 💎 ${bet} and chose **${choice}**\nThe coin spins...`,
     });

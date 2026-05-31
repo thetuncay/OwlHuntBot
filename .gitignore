@@ -1,24 +1,36 @@
 # Bağımlılıklar
 node_modules/
 
-.env
-.env.example
-
 # Build çıktısı
 dist/
 
 # Ortam değişkenleri (asla commit edilmemeli)
 .env
+.env.local
+.env.*.local
+!.env.example
 
-# PostgreSQL veri dosyaları (binary DB dosyaları — repo'ya ait değil)
+# PostgreSQL veri dosyaları
 .pgdata/
 *.pgdata/
 pg_log/
 .pglog.txt
 
-# PM2 logları
-logs/
-*.log
+# PM2 logları (içerik commit edilmez, klasör yapısı .gitkeep ile korunur)
+logs/*
+!logs/.gitkeep
+
+# Yedekler
+backups/
+backup_*/
+*.dump
+*.sql.gz
+
+# Hassas dosyalar
+*.pem
+*.key
+credentials.json
+*.p12
 
 # OS dosyaları
 .DS_Store
@@ -35,3 +47,4 @@ Thumbs.db
 baykusbot@*
 pnpm
 tsx
+server_log.txt

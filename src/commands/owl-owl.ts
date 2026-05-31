@@ -17,6 +17,8 @@ import { withLock } from '../utils/lock';
 import { formatDuration } from '../utils/format';
 import { successEmbed, warningEmbed, failEmbed } from '../utils/embed';
 import type { CommandDefinition } from '../types';
+import { syncPlayerStateAfterPgWrite, rehydratePlayerState } from '../state/player-state';
+import { formatShortOwlId, resolveOwlByInput } from '../utils/owl-id';
 
 // Prisma Owl modelinin lokal tip tanımı (generate edilmemiş @prisma/client için)
 interface OwlRecord {
@@ -26,6 +28,18 @@ interface OwlRecord {
   effectiveness: number; createdAt: Date; passiveMode: string; traits: unknown;
 }
 
+function calcSwitchFee(owls: { tier: number }[]): number {
+  return switchCost(owls.reduce((s, o) => s + o.tier, 0));
+}
+
+function formatSwitchFee(owls: { tier: number }[]): string {
+  return calcSwitchFee(owls).toLocaleString('tr-TR');
+}
+
+function owlsListHeader(owls: { tier: number }[]): string {
+  return `💰 Main değiştirme ücreti: **${formatSwitchFee(owls)}** coin\n\n`;
+}
+
 // ─── Slash: /owl setmain ──────────────────────────────────────────────────────
 
 export async function runSetMain(
@@ -33,7 +47,7 @@ export async function runSetMain(
   ctx: Parameters<CommandDefinition['execute']>[1],
 ): Promise<void> {
   const userId = interaction.user.id;
-  const owlId  = interaction.options.getString('baykus', true);
+  const owlInput = interaction.options.getString('baykus', true);
 
   const cooldown = await checkCooldownRemainingMs(ctx.redis, `cooldown:switch:${userId}`);
   if (cooldown > 0) {
@@ -43,6 +57,25 @@ export async function runSetMain(
     });
     return;
   }
+
+  let resolvedOwl;
+  try {
+    resolvedOwl = await resolveOwlByInput(ctx.prisma, userId, owlInput);
+  } catch (err) {
+    await interaction.reply({
+      embeds: [failEmbed('Hata', err instanceof Error ? err.message : 'Geçersiz baykuş ID.')],
+      flags: 64,
+    });
+    return;
+  }
+  if (!resolvedOwl) {
+    await interaction.reply({
+      embeds: [failEmbed('Hata', 'Baykuş bulunamadı. `/owl owls` ile kısa ID\'yi kontrol et.')],
+      flags: 64,
+    });
+    return;
+  }
+  const owlId = resolvedOwl.id;
 
   await withLock(userId, 'setmain', async () => {
     await ctx.prisma.$transaction(async (tx: any) => {
@@ -80,6 +113,7 @@ export async function runSetMain(
   });
 
   // Cooldown sadece başarılı işlemden sonra set edilir
+  await rehydratePlayerState(ctx.redis, ctx.prisma, userId);
   await setCooldown(ctx.redis, `cooldown:switch:${userId}`, SWITCH_COOLDOWN_MS);
   await interaction.reply({ embeds: [successEmbed('Main Degisti', 'Yeni main baykus aktif. 🦉')], flags: 64 });
 }
@@ -92,17 +126,18 @@ export async function runSetMainMessage(
   ctx: Parameters<CommandDefinition['execute']>[1],
   helpPrefix: string,
 ): Promise<void> {
-  const owlId = args[0];
-  if (!owlId) {
+  const userId = message.author.id;
+  const owlInput = args[0];
+  if (!owlInput) {
     const embed = new EmbedBuilder()
       .setColor(0x5865f2)
       .setTitle('🔄 Setmain — Main Baykuş Değiştirme')
       .setDescription('> Envanterindeki başka bir baykuşu main olarak ayarla.')
       .addFields(
-        { name: '📋 Kullanım', value: `\`${helpPrefix} setmain <baykusId>\``, inline: false },
+        { name: '📋 Kullanım', value: `\`${helpPrefix} setmain <kısa_id>\`\nID için \`${helpPrefix} owls\``, inline: false },
         {
           name: '💰 Maliyet',
-          value: 'Maliyet = **500** + (tüm baykuşların tier toplamı × **200**)',
+          value: 'Maliyet = **1.000** + (tüm baykuşların tier toplamı × **400**)',
           inline: false,
         },
         {
@@ -116,17 +151,29 @@ export async function runSetMainMessage(
           inline: false,
         },
       )
-      .setFooter({ text: 'Baykuş ID\'ni öğrenmek için inventory komutunu kullan.' });
+      .setFooter({ text: `Baykuş kısa ID için ${helpPrefix} owls komutunu kullan.` });
     await message.reply({ embeds: [embed] });
     return;
   }
 
-  const userId = message.author.id;
   const cooldown = await checkCooldownRemainingMs(ctx.redis, `cooldown:switch:${userId}`);
   if (cooldown > 0) {
     await message.reply(`⏰ **Switch Cooldown** | ${formatDuration(cooldown)} sonra tekrar deneyebilirsin.`);
     return;
   }
+
+  let resolvedOwl;
+  try {
+    resolvedOwl = await resolveOwlByInput(ctx.prisma, userId, owlInput);
+  } catch (err) {
+    await message.reply(`❌ ${err instanceof Error ? err.message : 'Geçersiz baykuş ID.'}`);
+    return;
+  }
+  if (!resolvedOwl) {
+    await message.reply(`❌ Baykuş bulunamadı. \`${helpPrefix} owls\` ile kısa ID'yi kontrol et.`);
+    return;
+  }
+  const owlId = resolvedOwl.id;
 
   await withLock(userId, 'setmain', async () => {
     await ctx.prisma.$transaction(async (tx: any) => {
@@ -164,6 +211,7 @@ export async function runSetMainMessage(
   });
 
   // Cooldown sadece başarılı işlemden sonra set edilir
+  await rehydratePlayerState(ctx.redis, ctx.prisma, userId);
   await setCooldown(ctx.redis, `cooldown:switch:${userId}`, SWITCH_COOLDOWN_MS);
   await message.reply(`✅ **Main Degisti** | Yeni main baykus aktif. 🦉`);
 }
@@ -211,7 +259,7 @@ export async function runOwls(
       const hpWarn  = owl.hp / owl.hpMax < 0.3 ? ' ⚠️' : '';
       return (
         `${qEmoji} **${owl.species}**${mainTag}\n` +
-        `> \`ID: ${owl.id}\`\n` +
+        `> \`ID: ${formatShortOwlId(owl.id)}\`\n` +
         `> Tier ${owl.tier} · ${owl.quality} · HP ${owl.hp}/${owl.hpMax}${hpWarn} · Güç ${statSum}\n` +
         `> Gaga:${owl.statGaga} Göz:${owl.statGoz} Kulak:${owl.statKulak} Kanat:${owl.statKanat} Pençe:${owl.statPence}`
       );
@@ -219,17 +267,18 @@ export async function runOwls(
     return new EmbedBuilder()
       .setColor(0x5865f2)
       .setTitle(`🦉 ${username}'in Baykuşları`)
-      .setDescription(lines.join('\n\n') || '*Bu sayfada baykuş yok.*')
+      .setDescription(owlsListHeader(currentOwls) + (lines.join('\n\n') || '*Bu sayfada baykuş yok.*'))
       .setFooter({ text: totalPages > 1 ? `${currentOwls.length} baykuş · Sayfa ${page + 1}/${totalPages}` : `${currentOwls.length} baykuş` });
   };
 
   const renderComponents = () => {
     const pageOwls = currentOwls.slice(page * OWLS_PER_PAGE, (page + 1) * OWLS_PER_PAGE);
+    const feeLabel = formatSwitchFee(currentOwls);
     const rows: ActionRowBuilder<ButtonBuilder>[] = pageOwls.map((owl) =>
       new ActionRowBuilder<ButtonBuilder>().addComponents(
         owl.isMain
           ? new ButtonBuilder().setCustomId('setmain_noop').setLabel('✅ Main').setStyle(ButtonStyle.Success).setDisabled(true)
-          : new ButtonBuilder().setCustomId(`setmain:${owl.id}`).setLabel('⭐ Main Yap').setStyle(ButtonStyle.Primary),
+          : new ButtonBuilder().setCustomId(`setmain:${owl.id}`).setLabel(`⭐ Main Yap · ${feeLabel}💰`).setStyle(ButtonStyle.Primary),
       ),
     );
     if (totalPages > 1) {
@@ -282,6 +331,7 @@ export async function runOwls(
           });
         });
         // Cooldown sadece başarılı işlemden sonra set edilir
+        await rehydratePlayerState(ctx.redis, ctx.prisma, userId);
         await setCooldown(ctx.redis, `cooldown:switch:${userId}`, SWITCH_COOLDOWN_MS);
         // Listeyi güncelle
         currentOwls = currentOwls.map((o) => ({ ...o, isMain: o.id === targetOwlId }));
@@ -334,7 +384,7 @@ export async function runOwlsMessage(
       const hpWarn  = owl.hp / owl.hpMax < 0.3 ? ' ⚠️' : '';
       return (
         `${qEmoji} **${owl.species}**${mainTag}\n` +
-        `> \`ID: ${owl.id}\`\n` +
+        `> \`ID: ${formatShortOwlId(owl.id)}\`\n` +
         `> Tier ${owl.tier} · ${owl.quality} · HP ${owl.hp}/${owl.hpMax}${hpWarn} · Güç ${statSum}\n` +
         `> Gaga:${owl.statGaga} Göz:${owl.statGoz} Kulak:${owl.statKulak} Kanat:${owl.statKanat} Pençe:${owl.statPence}`
       );
@@ -342,17 +392,18 @@ export async function runOwlsMessage(
     return new EmbedBuilder()
       .setColor(0x5865f2)
       .setTitle(`🦉 ${name}'in Baykuşları`)
-      .setDescription(lines.join('\n\n') || '*Bu sayfada baykuş yok.*')
+      .setDescription(owlsListHeader(currentOwls) + (lines.join('\n\n') || '*Bu sayfada baykuş yok.*'))
       .setFooter({ text: totalPages > 1 ? `${currentOwls.length} baykuş · Sayfa ${page + 1}/${totalPages}` : `${currentOwls.length} baykuş` });
   };
 
   const renderComponents = () => {
     const pageOwls = currentOwls.slice(page * OWLS_PER_PAGE, (page + 1) * OWLS_PER_PAGE);
+    const feeLabel = formatSwitchFee(currentOwls);
     const rows: ActionRowBuilder<ButtonBuilder>[] = pageOwls.map((owl) =>
       new ActionRowBuilder<ButtonBuilder>().addComponents(
         owl.isMain
           ? new ButtonBuilder().setCustomId('setmain_noop').setLabel('✅ Main').setStyle(ButtonStyle.Success).setDisabled(true)
-          : new ButtonBuilder().setCustomId(`setmain:${owl.id}`).setLabel('⭐ Main Yap').setStyle(ButtonStyle.Primary),
+          : new ButtonBuilder().setCustomId(`setmain:${owl.id}`).setLabel(`⭐ Main Yap · ${feeLabel}💰`).setStyle(ButtonStyle.Primary),
       ),
     );
     if (totalPages > 1) {
@@ -404,6 +455,7 @@ export async function runOwlsMessage(
           });
         });
         // Cooldown sadece başarılı işlemden sonra set edilir
+        await rehydratePlayerState(ctx.redis, ctx.prisma, userId);
         await setCooldown(ctx.redis, `cooldown:switch:${userId}`, SWITCH_COOLDOWN_MS);
         currentOwls = currentOwls.map((o) => ({ ...o, isMain: o.id === targetOwlId }));
       } catch (err) {

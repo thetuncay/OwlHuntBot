@@ -20,7 +20,7 @@ import {
   ButtonStyle,
   EmbedBuilder,
 } from 'discord.js';
-import { BUFF_ITEM_MAP, BUFF_ITEMS as BUFF_ITEMS_REF, CRAFTING_RECIPES } from '../config';
+import { BUFF_ITEM_MAP, BUFF_ITEMS as BUFF_ITEMS_REF, CONSUMABLE_ITEM_BY_NAME } from '../config';
 import {
   COLORS,
   RARITY_BADGE,
@@ -101,6 +101,15 @@ const ITEM_EMOJI: Record<string, string> = {
   'Savaş Ruhu':          '⚔️',
   'Savunma Duruşu':      '🛡️',
   'Arena Ustası':        '🏆',
+  // Craft item'ları
+  'Karma Yem':           '🌾',
+  'Bileme Taşı':         '🪨',
+  'Yırtıcı İksiri':      '🧪',
+  'Savaş İksiri':        '⚗️',
+  'Gölge Zırhı':         '🛡️',
+  'Av Trofesi Yağı':     '🫙',
+  'Koruyucu Balmumu':    '🕯️',
+  'Güç Kapsülü':         '💊',
   // Upgrade materyalleri
   'Kemik Tozu':              '🦴',
   'Parlak Tüy':              '🪶',
@@ -423,7 +432,14 @@ export function buildItemDetailEmbed(item: InventoryItem): EmbedBuilder {
 
   const usageHint =
     item.itemType === 'Kutu'     ? '`owl aç <kutu>` ile açabilirsin.' :
-    item.itemType === 'Buff'     ? '`owl buff <item>` ile aktifleştirebilirsin.' :
+    item.itemType === 'Buff'     ? (() => {
+      const def = BUFF_ITEMS_REF.find((b) => b.name === item.itemName);
+      return def ? `\`owl use ${def.useId}\` ile aktifleştirebilirsin.` : '`owl use <id>` ile aktifleştirebilirsin.';
+    })() :
+    item.itemType === 'Consumable' ? (() => {
+      const def = CONSUMABLE_ITEM_BY_NAME[item.itemName];
+      return def ? `\`owl use ${def.useId}\` ile kullanabilirsin.` : '`owl use <id>` ile kullanabilirsin.';
+    })() :
     item.itemType === 'Materyal' ? '`owl upgrade` sırasında otomatik kullanılır.' :
     item.itemType === 'Av'       ? '`owl sell` ile satabilirsin.' :
     '';
@@ -565,9 +581,10 @@ export function buildInventoryText(data: InventoryRenderData): string {
       const def    = BUFF_ITEM_MAP[b.buffItemId];
       const emoji  = def?.emoji ?? '✨';
       const name   = def?.name  ?? b.buffItemId;
+      const useId  = def?.useId ?? '???';
       const bar    = chargeBar(b.chargeCur, b.chargeMax, 10);
       const status = chargeDot(b.chargeCur, b.chargeMax);
-      lines.push(`${emoji} **${name}**`);
+      lines.push(`\`${useId}\` ${emoji} **${name}**`);
       lines.push(`┗ ${status} \`${bar}\` **${b.chargeCur}**/${b.chargeMax}`);
     }
     lines.push('');
@@ -611,18 +628,16 @@ export function buildInventoryText(data: InventoryRenderData): string {
         const emoji = itemEmoji(item.itemName);
         if (cat === 'Buff') {
           const buffDef = BUFF_ITEMS_REF.find((b: any) => b.name === item.itemName);
-          const buffId  = buffDef ? buffDef.id : null;
+          const useId   = buffDef?.useId ?? String(globalIdx).padStart(3, '0');
           const effectHint = buffDef ? ` *(${buffDef.category} · ${buffDef.chargeMax} charge)*` : '';
-          const idStr = buffId ? `\`${buffId}\`` : `\`${String(globalIdx).padStart(3, '0')}\``;
           globalIdx++;
-          lines.push(`  ${idStr} ${emoji} **${item.itemName}** ×${item.quantity}${effectHint}`);
+          lines.push(`  \`${useId}\` ${emoji} **${item.itemName}** ×${item.quantity}${effectHint}`);
         } else if (cat === 'Consumable') {
-          // Crafting item — c001, c002 formatında ID göster
-          const recipe = CRAFTING_RECIPES.find(r => r.resultItem.itemName === item.itemName);
-          const idStr = recipe ? `\`${recipe.id}\`` : `\`${String(globalIdx).padStart(3, '0')}\``;
-          const hint = recipe ? ` *(${recipe.description})*` : '';
+          const consDef = CONSUMABLE_ITEM_BY_NAME[item.itemName];
+          const useId   = consDef?.useId ?? String(globalIdx).padStart(3, '0');
+          const hint = consDef ? ` *(${consDef.description})*` : '';
           globalIdx++;
-          lines.push(`  ${idStr} ${emoji} **${item.itemName}** ×${item.quantity}${hint}`);
+          lines.push(`  \`${useId}\` ${emoji} **${item.itemName}** ×${item.quantity}${hint}`);
         } else {
           const id = String(globalIdx++).padStart(3, '0');
           lines.push(`  \`${id}\` ${emoji} **${item.itemName}** ×${item.quantity}`);

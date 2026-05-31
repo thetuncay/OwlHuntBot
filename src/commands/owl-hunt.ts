@@ -17,7 +17,7 @@ import {
 } from 'discord.js';
 import { HUNT_COOLDOWN_MS, BIOMES, BIOME_SESSION_TTL_MS } from '../config';
 import { getCooldownRemainingMs } from '../middleware/cooldown';
-import { rollHunt } from '../systems/hunt';
+import { rollHunt, runHuntSideEffects } from '../systems/hunt';
 import {
   getBiomeSession,
   setBiomeSession,
@@ -43,11 +43,14 @@ import {
   buildTameFinalRow,
   calcFinalTameChance,
 } from '../utils/tame-ux';
-import { animateHuntInteraction, buildFinalMessage, compressHuntResult } from '../utils/hunt-ux';
+import { animateHuntMessage, buildFinalMessage, compressHuntResult } from '../utils/hunt-ux';
 import { safeReply } from '../utils/safe-reply';
 import { listActiveBuffs } from '../systems/items';
-import { BUFF_ITEM_MAP, CONSUMABLE_ITEMS } from '../config';
-import { getPlayerBundle } from '../utils/player-cache';
+import { BUFF_ITEM_MAP } from '../config';
+import { getActiveConsumables } from '../utils/use-items';
+import { hydratePlayerState } from '../state/player-state';
+import { getGuildPrefix } from '../utils/prefix';
+import type { CachedOwlData } from '../utils/player-cache';
 import {
   buildEncounterEmbed,
   buildEncounterActionRow,
@@ -56,7 +59,7 @@ import {
   buildEncounterTimeoutEmbed,
 } from '../utils/encounter-ux';
 import type { EncounterOwlData, PlayerOwlData } from '../utils/encounter-ux';
-import { resolveEncounterFight } from '../systems/encounter-fight';
+import { resolveEncounterFight, estimateEncounterFightRewards } from '../systems/encounter-fight';
 import { parseStoredTraits } from '../systems/traits';
 import type { CommandDefinition } from '../types';
 import type { Message } from 'discord.js';
@@ -142,6 +145,31 @@ function buildActiveBiomeRow(): ActionRowBuilder<ButtonBuilder> {
       .setEmoji('🚪')
       .setStyle(ButtonStyle.Danger)
   );
+}
+
+// ─── Hunt sonrasi async encounter ────────────────────────────────────────────
+
+function spawnHuntFollowUp(
+  sender: { followUp?: Function; reply?: Function },
+  ctx: Parameters<CommandDefinition['execute']>[1],
+  userId: string,
+  player: { level: number; prestigeLevel?: number },
+  mainOwl: CachedOwlData,
+  hasCritical: boolean,
+  prefix = 'w',
+): void {
+  void runHuntSideEffects(ctx.prisma, ctx.redis, userId, player, {
+    tier: mainOwl.tier,
+    statGoz: mainOwl.statGoz,
+    statKulak: mainOwl.statKulak,
+    statGaga: mainOwl.statGaga,
+    statKanat: mainOwl.statKanat,
+    statPence: mainOwl.statPence,
+  }, hasCritical).then(({ encounterId }) => {
+    if (encounterId) {
+      void sendEncounterMessage(sender, ctx, userId, encounterId, mainOwl, prefix);
+    }
+  }).catch(() => null);
 }
 
 // ─── Slash: /owl hunt ─────────────────────────────────────────────────────────
@@ -231,7 +259,7 @@ export async function runHunt(
     return;
   }
 
-  const bundle = await getPlayerBundle(ctx.redis, ctx.prisma, userId);
+  const bundle = await hydratePlayerState(ctx.redis, ctx.prisma, userId);
   if (!bundle || !bundle.mainOwl) {
     await interaction.reply({ content: '❌ **Hata** | Main baykuş bulunamadı.', flags: 64 });
     return;
@@ -245,16 +273,21 @@ export async function runHunt(
     const name = interaction.member && 'displayName' in interaction.member
       ? (interaction.member as { displayName: string }).displayName
       : interaction.user.username;
+    const prefix = interaction.guildId
+      ? await getGuildPrefix(ctx.redis, interaction.guildId)
+      : 'w';
 
-    await interaction.editReply({ content: buildFinalMessage(name, compressed) });
-    animateHuntInteraction({ editReply: interaction.editReply.bind(interaction) }, name, compressed).catch(() => {});
+    await interaction.editReply({ content: buildFinalMessage(name, compressed, prefix) });
 
-    if (compressed.encounterId) {
-      await sendEncounterMessage(
-        { followUp: interaction.followUp.bind(interaction) },
-        ctx, userId, compressed.encounterId, bundle.mainOwl,
-      );
-    }
+    spawnHuntFollowUp(
+      { followUp: interaction.followUp.bind(interaction) },
+      ctx,
+      userId,
+      bundle.player,
+      bundle.mainOwl,
+      result.catches.some((c) => c.critical),
+      prefix,
+    );
   } catch (err: any) {
     // Biyom süresi dolmuşsa oturumu temizle
     if (err.message?.includes('biyom') || err.message?.includes('coin')) {
@@ -370,7 +403,7 @@ export async function runHuntMessage(
     return;
   }
 
-  const bundle = await getPlayerBundle(ctx.redis, ctx.prisma, userId);
+  const bundle = await hydratePlayerState(ctx.redis, ctx.prisma, userId);
   if (!bundle || !bundle.mainOwl) {
     await message.reply('❌ **Hata** | Main baykuş bulunamadı.');
     return;
@@ -379,59 +412,50 @@ export async function runHuntMessage(
   try {
     const sent = await safeReply(message, '🦅 **Avlanıyor...**');
     const result = await rollHunt(ctx.prisma, ctx.redis, userId, bundle.mainOwl.id, session.biomeId);
+    const compressed = compressHuntResult(result);
     const name = message.member?.displayName ?? message.author.username;
 
-    const buffPromise = listActiveBuffs(ctx.prisma as any, userId).catch(() => []);
-    const consumablePromise = (async () => {
-      const consumables: { emoji: string; name: string; remainingMs: number }[] = [];
-      const activeDefs = CONSUMABLE_ITEMS.filter((d) => d.durationMs > 0);
-      if (activeDefs.length === 0) return consumables;
-      const pipeline = ctx.redis.pipeline();
-      for (const def of activeDefs) {
-        pipeline.get(`${def.redisKey}:${userId}`);
-        pipeline.pttl(`${def.redisKey}:${userId}`);
-      }
-      const rows = await pipeline.exec();
-      if (!rows) return consumables;
-      for (let i = 0; i < activeDefs.length; i++) {
-        const val = rows[i * 2]?.[1] as string | null;
-        if (!val) continue;
-        const ttl = rows[i * 2 + 1]?.[1] as number;
-        const def = activeDefs[i]!;
-        consumables.push({ emoji: def.emoji, name: def.itemName, remainingMs: ttl });
-      }
-      return consumables;
-    })();
+    // Aktif hunt buff'larını çek — hunt mesajında göster (senkron, animasyondan önce)
+    try {
+      const rawBuffs = await listActiveBuffs(ctx.prisma as any, userId);
+      compressed.activeBuffs = rawBuffs
+        .filter((b) => b.chargeCur > 0 && b.category === 'hunt')
+        .map((b) => ({
+          emoji: BUFF_ITEM_MAP[b.buffItemId]?.emoji ?? '✨',
+          chargeCur: b.chargeCur,
+          chargeMax: b.chargeMax,
+        }));
 
-    const [rawBuffs, consumables, encounterId] = await Promise.all([
-      buffPromise,
-      consumablePromise,
-      result.resolveEncounter ?? Promise.resolve(result.encounterId ?? null),
-    ]);
+      const activeCons = await getActiveConsumables(ctx.redis, userId);
+      compressed.activeConsumables = activeCons
+        .filter(({ def }) =>
+          def.effectType === 'hunt_catch_once'
+          || def.effectType === 'hunt_loot_once'
+          || def.effectType === 'stamina_restore_once'
+          || def.effectType === 'stamina_boost_once',
+        )
+        .map(({ def, expiresAt }) => ({
+          emoji: def.emoji,
+          name: def.itemName,
+          remainingMs: expiresAt - Date.now(),
+        }));
+    } catch { /* hata hunt'u engellemesin */ }
 
-    const compressed = compressHuntResult({
-      ...result,
-      encounterId: encounterId ?? undefined,
-    });
-    compressed.activeBuffs = rawBuffs
-      .filter((b) => b.chargeCur > 0 && b.category === 'hunt')
-      .map((b) => ({
-        emoji: BUFF_ITEM_MAP[b.buffItemId]?.emoji ?? '✨',
-        chargeCur: b.chargeCur,
-        chargeMax: b.chargeMax,
-      }));
-    compressed.activeConsumables = consumables;
+    const prefix = message.guildId
+      ? await getGuildPrefix(ctx.redis, message.guildId)
+      : 'w';
+    const finalText = buildFinalMessage(name, compressed, prefix);
+    await sent.edit(finalText).catch(() => safeReply(message, finalText));
 
-    await sent.edit(buildFinalMessage(name, compressed)).catch(() =>
-      safeReply(message, buildFinalMessage(name, compressed)),
+    spawnHuntFollowUp(
+      { reply: (payload: unknown) => safeReply(message, payload as Parameters<typeof safeReply>[1]) },
+      ctx,
+      userId,
+      bundle.player,
+      bundle.mainOwl,
+      result.catches.some((c) => c.critical),
+      prefix,
     );
-
-    if (encounterId) {
-      await sendEncounterMessage(
-        { reply: (payload: unknown) => safeReply(message, payload as Parameters<typeof safeReply>[1]) },
-        ctx, userId, encounterId, bundle.mainOwl,
-      );
-    }
   } catch (err: any) {
     if (err.message?.includes('biyom') || err.message?.includes('coin')) {
       await clearBiomeSession(ctx.redis, userId);
@@ -452,6 +476,7 @@ export async function sendEncounterMessage(
     statGaga: number; statGoz: number; statKulak: number;
     statKanat: number; statPence: number; hp: number; hpMax: number;
   },
+  prefix = 'w',
 ): Promise<void> {
   const encounter = await ctx.prisma.encounter.findFirst({
     where: { id: encounterId, playerId: userId },
@@ -490,7 +515,17 @@ export async function sendEncounterMessage(
     hpMax:     playerOwl.hpMax,
   };
 
-  const embed = buildEncounterEmbed(wildData, playerData);
+  const sumStats = (d: EncounterOwlData | PlayerOwlData) =>
+    d.statGaga + d.statGoz + d.statKulak + d.statKanat + d.statPence;
+
+  const fightPreview = estimateEncounterFightRewards(
+    wildData.tier,
+    wildData.quality,
+    sumStats(playerData),
+    sumStats(wildData),
+  );
+
+  const embed = buildEncounterEmbed(wildData, playerData, fightPreview, prefix);
   const row   = buildEncounterActionRow(encounterId);
 
   const sendFn = sender.followUp ?? sender.reply;
@@ -669,7 +704,7 @@ export async function sendEncounterMessage(
     if (action === 'enc_fight') {
       await i.deferUpdate();
       try {
-        const fightResult = await resolveEncounterFight(ctx.prisma, userId, eid);
+        const fightResult = await resolveEncounterFight(ctx.prisma, userId, eid, ctx.redis);
         await i.editReply({ embeds: [buildEncounterFightEmbed(fightResult)], components: [] });
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Bir hata oluştu.';

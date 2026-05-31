@@ -1,0 +1,458 @@
+{
+  "generatedAt": "2026-05-30T20:30:33.780Z",
+  "sourceGuildId": "1350212663044472974",
+  "summary": {
+    "commandRecords": 20666,
+    "playerRecords": 130,
+    "rewardRecords": 1506,
+    "sequenceRecords": 247
+  },
+  "topCommands": [
+    {
+      "key": "owo",
+      "count": 3258
+    },
+    {
+      "key": "h",
+      "count": 2294
+    },
+    {
+      "key": "b",
+      "count": 1519
+    },
+    {
+      "key": "s",
+      "count": 1513
+    },
+    {
+      "key": "cf",
+      "count": 1182
+    },
+    {
+      "key": "ah",
+      "count": 1067
+    },
+    {
+      "key": "cash",
+      "count": 492
+    },
+    {
+      "key": "daily",
+      "count": 437
+    },
+    {
+      "key": "bj",
+      "count": 404
+    },
+    {
+      "key": "z",
+      "count": 170
+    },
+    {
+      "key": "wc",
+      "count": 164
+    },
+    {
+      "key": "lb",
+      "count": 152
+    },
+    {
+      "key": "sell",
+      "count": 144
+    },
+    {
+      "key": "owoh",
+      "count": 144
+    },
+    {
+      "key": "sac",
+      "count": 75
+    },
+    {
+      "key": "inv",
+      "count": 69
+    },
+    {
+      "key": "ya",
+      "count": 65
+    },
+    {
+      "key": "oha",
+      "count": 60
+    },
+    {
+      "key": "hb",
+      "count": 54
+    },
+    {
+      "key": "w",
+      "count": 47
+    },
+    {
+      "key": "<@812067074205155350>",
+      "count": 46
+    },
+    {
+      "key": "shop",
+      "count": 45
+    },
+    {
+      "key": "ben",
+      "count": 45
+    },
+    {
+      "key": "bu",
+      "count": 35
+    },
+    {
+      "key": "lan",
+      "count": 34
+    }
+  ],
+  "topBigrams": [
+    {
+      "key": "hunt → hunt",
+      "count": 284
+    },
+    {
+      "key": "cf → cf",
+      "count": 180
+    },
+    {
+      "key": "hunt → sell",
+      "count": 163
+    },
+    {
+      "key": "b → b",
+      "count": 149
+    },
+    {
+      "key": "sell → weapon",
+      "count": 142
+    },
+    {
+      "key": "weapon → hunt",
+      "count": 134
+    },
+    {
+      "key": "sell → sell",
+      "count": 80
+    },
+    {
+      "key": "bj → bj",
+      "count": 67
+    },
+    {
+      "key": "b → h",
+      "count": 46
+    },
+    {
+      "key": "h → b",
+      "count": 44
+    },
+    {
+      "key": "bj → cf",
+      "count": 44
+    },
+    {
+      "key": "cf → cash",
+      "count": 40
+    },
+    {
+      "key": "cf → bj",
+      "count": 39
+    },
+    {
+      "key": "b → pray",
+      "count": 39
+    },
+    {
+      "key": "b → xp",
+      "count": 35
+    }
+  ],
+  "topSequences": [
+    {
+      "key": "daily → cash",
+      "count": 6
+    },
+    {
+      "key": "sell → sell → sell → sell → sell",
+      "count": 5
+    },
+    {
+      "key": "daily → bj",
+      "count": 5
+    },
+    {
+      "key": "b → xp",
+      "count": 5
+    },
+    {
+      "key": "daily → cf",
+      "count": 3
+    },
+    {
+      "key": "b → h",
+      "count": 3
+    },
+    {
+      "key": "b → daily",
+      "count": 3
+    },
+    {
+      "key": "b → b",
+      "count": 3
+    },
+    {
+      "key": "bj → bj",
+      "count": 2
+    },
+    {
+      "key": "cf → cf → cf → cf",
+      "count": 2
+    }
+  ],
+  "playerTypes": [
+    {
+      "key": "inactive",
+      "count": 121
+    },
+    {
+      "key": "passive_player",
+      "count": 9
+    }
+  ],
+  "mostUsedByPlayers": [
+    {
+      "key": "cf",
+      "count": 18
+    },
+    {
+      "key": "cash",
+      "count": 9
+    },
+    {
+      "key": "daily",
+      "count": 6
+    },
+    {
+      "key": "bj",
+      "count": 6
+    },
+    {
+      "key": "sell",
+      "count": 6
+    },
+    {
+      "key": "top",
+      "count": 4
+    },
+    {
+      "key": "all",
+      "count": 4
+    },
+    {
+      "key": "pray",
+      "count": 2
+    },
+    {
+      "key": "money",
+      "count": 2
+    },
+    {
+      "key": "h",
+      "count": 2
+    },
+    {
+      "key": "hunt",
+      "count": 2
+    },
+    {
+      "key": "team",
+      "count": 1
+    },
+    {
+      "key": "weapon",
+      "count": 1
+    },
+    {
+      "key": "hb",
+      "count": 1
+    },
+    {
+      "key": "autohunt",
+      "count": 1
+    }
+  ],
+  "peakHoursUtc": [
+    {
+      "key": "12",
+      "count": 2141
+    },
+    {
+      "key": "23",
+      "count": 1582
+    },
+    {
+      "key": "18",
+      "count": 1518
+    },
+    {
+      "key": "13",
+      "count": 1409
+    },
+    {
+      "key": "14",
+      "count": 1288
+    },
+    {
+      "key": "0",
+      "count": 1262
+    },
+    {
+      "key": "16",
+      "count": 1194
+    },
+    {
+      "key": "15",
+      "count": 1148
+    }
+  ],
+  "rewardStats": {
+    "cash": {
+      "count": 154,
+      "median": 101527,
+      "max": 3870809
+    },
+    "cf": {
+      "count": 7,
+      "median": 104378,
+      "max": 521556
+    },
+    "cf1": {
+      "count": 1,
+      "median": 104378,
+      "max": 104378
+    },
+    "bj": {
+      "count": 3,
+      "median": 318565,
+      "max": 5000000
+    },
+    "balance": {
+      "count": 2,
+      "median": 712853,
+      "max": 1425706
+    },
+    "money": {
+      "count": 17,
+      "median": 1835908,
+      "max": 6250000
+    },
+    "cowoncy": {
+      "count": 4,
+      "median": 20940,
+      "max": 54340
+    },
+    "autohunt": {
+      "count": 1,
+      "median": 69705,
+      "max": 69705
+    },
+    "hunt": {
+      "count": 4,
+      "median": 3909739,
+      "max": 4250116
+    },
+    "gelşyordu": {
+      "count": 1,
+      "median": 0,
+      "max": 0
+    },
+    "sell": {
+      "count": 5,
+      "median": 503992,
+      "max": 503992
+    },
+    "cah": {
+      "count": 1,
+      "median": 1663734,
+      "max": 1663734
+    },
+    "c": {
+      "count": 1,
+      "median": 357379,
+      "max": 357379
+    },
+    "currency": {
+      "count": 3,
+      "median": 4214,
+      "max": 51959
+    },
+    "moneyh": {
+      "count": 1,
+      "median": 502490,
+      "max": 502490
+    },
+    "mıney": {
+      "count": 1,
+      "median": 752490,
+      "max": 752490
+    },
+    "amina": {
+      "count": 1,
+      "median": 8433295,
+      "max": 8433295
+    },
+    "cahs": {
+      "count": 1,
+      "median": 542862,
+      "max": 542862
+    }
+  },
+  "economyRecommendations": {
+    "owoDailyMedianCowoncy": 5000,
+    "suggestedQuestTotalCoins": 4500,
+    "suggestedDAILY_QUEST_CONFIG": {
+      "hunt": 990,
+      "craft": 1080,
+      "tame": 1440,
+      "market": 990
+    },
+    "suggestedDUEL_DAILY_COIN_CAP": 208756,
+    "encounterFightMinCoins": 600
+  },
+  "flowHints": {
+    "huntLoop": "Sırada: `{p} sell` · `{p} duel` · `{p} hunt`",
+    "afterDaily": "daily → cf",
+    "afterQuests": "Görevler bitti → `{p} cf` veya `{p} hunt`",
+    "encounterLoop": "OwO `b` = `{p} duel` · Loot için encounter'da **Savaş**"
+  },
+  "owoToOwlAliases": {
+    "h": "hunt",
+    "wh": "hunt",
+    "hunt": "hunt",
+    "b": "duel",
+    "wb": "duel",
+    "battle": "duel",
+    "s": "sell",
+    "ws": "sell",
+    "sell": "sell",
+    "st": "stats",
+    "stats": "stats",
+    "daily": "quests",
+    "wdaily": "quests",
+    "cash": "cash",
+    "c": "cash",
+    "money": "cash",
+    "cf": "cf",
+    "slot": "slot",
+    "bj": "bj",
+    "top": "lb",
+    "lb": "lb",
+    "pray": "buffs",
+    "use": "use",
+    "u": "use"
+  }
+}

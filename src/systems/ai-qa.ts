@@ -116,8 +116,9 @@ const FALLBACK_RESPONSES: Record<string, string> = {
    - Göl Kenarı: Kolay yakalama
    - Derin Orman: Nadir hayvan + materyal
 
-2. **Daily Quest** (2.900💰/gün)
+2. **Daily Quest** (~4.500💰/gün — OwO daily karşılığı)
    - 10 av, 3 craft, 1 tame, 2 market ilanı
+   - \`w quests\` veya OwO alışkanlığı \`w daily\`
 
 3. **Market Satışı**
    - Nadir materyaller sat
@@ -181,6 +182,19 @@ const FALLBACK_RESPONSES: Record<string, string> = {
 4. Mini-PvP'yi kazan (+10 bonus)
 
 **Başarısız olursa:** Max 3 deneme hakkın var`,
+
+  'owo|wh|wdaily|cowoncy': `🔄 **OwO'dan OwlHunt'a:**
+
+| OwO | OwlHunt |
+|-----|---------|
+| \`wh\` / \`h\` | \`w hunt\` |
+| \`wb\` / \`b\` | \`w duel\` |
+| \`ws\` / \`s\` | \`w sell\` (stat: \`w st\`) |
+| \`daily\` | \`w quests\` (~4500💰/gün) |
+| \`cf\` \`bj\` \`slot\` | aynı |
+| \`cash\` | \`w cash\` |
+
+OwO'daki \`h b s\` döngüsü: av → duel → sat.`,
 };
 
 function getFallbackResponse(question: string): string {
@@ -365,6 +379,15 @@ Cevapların açıklayıcı ve yardımcı olsun (maksimum 800 karakter). Emoji ku
 📋 TEMEL OYUN DÖNGÜSÜ:
 Hunt (av) → Sell (sat) → Upgrade (geliştir) → Tame (evcilleştir) → Prestige (yüksel)
 
+🔄 OwO GEÇİŞ SÖZLÜĞÜ (prefix \`w\` örneği):
+• OwO \`wh\` / \`h\` → \`w hunt\` (av)
+• OwO \`wb\` / \`b\` / battle → \`w duel\` (bot savaşı; loot için encounter'da Savaş)
+• OwO \`ws\` / \`s\` / sell → \`w sell\` (satış) — stats için \`w st\`
+• OwO \`daily\` / \`wdaily\` → \`w quests\` (günlük görev + ~4500 coin)
+• OwO \`cf\` / \`bj\` / \`slot\` → aynı kumar komutları
+• OwO \`cash\` → \`w cash\` · OwO \`top\` → \`w lb\`
+• Klasik döngü: \`h → b → s\` = \`hunt → duel → sell\`
+
 ═══════════════════════════════════════════════════════════════
 
 🦉 BAYKUŞ TÜRLERİ (Tier 8→1, güçten zayıfa):
@@ -520,22 +543,28 @@ Toplam: 2.900💰 + 1.150 XP/gün
 
 🛠️ CRAFTING (owl craft):
 1. Karma Yem: fare×5 + serçe×2 + 100💰 → Stamina +50
-2. Bileme Taşı: Kemik Tozu×10 + Parlak Tüy×5 + 500💰 → Upgrade şansı +%10
+2. Bileme Taşı: Kemik Tozu×10 + Parlak Tüy×5 + 4.500💰 → Upgrade şansı +%10 (min 15 dk aktif)
 3. Yırtıcı İksiri: fare×20 + serçe×10 + 1.000💰 → Hunt catch +%15
 
 ═══════════════════════════════════════════════════════════════
 
 🛒 MARKET (owl market):
-Minimum Lv.15 gerekli.
-- Satış vergisi: %10 (yakılır)
+Serbest piyasa — fiyat sınırı yok. Minimum Lv.15 gerekli.
+- Listeleme ücreti: %1 (iade edilmez)
+- Satış vergisi: %5 (coin sink)
 - İlan süresi: 48 saat
-- Günlük limit: 5 ilan
-- Fiyat aralığı: 50-100.000💰
+- Aktif ilan limiti: 5
+- Escrow: ilan açılınca eşya oyuncudan alınır
 
 Komutlar:
-- owl market → İlanları listele
-- owl market sat <eşya> <miktar> <fiyat>
-- owl market al <ilan_id>
+- owl market → Ana hub + son satışlar
+- owl market owl/item/buff/material [sayfa]
+- owl market sell <eşya> <miktar> <fiyat>
+- owl market sell owl <id> <fiyat>
+- owl buy <ilanNo> / owl market al <ilanNo>
+- owl market search <kelime>
+- owl market info <ilanNo> → piyasa analitiği
+- owl market my / owl market cancel <ilanNo>
 
 ═══════════════════════════════════════════════════════════════
 

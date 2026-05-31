@@ -231,7 +231,7 @@ async function runDealerTurn(opts: {
   else if (pv < dv)  { outcomeType = 'lose';        settleOutcome = 'lose'; }
   else               { outcomeType = 'tie';         settleOutcome = 'tie'; }
 
-  const result = await settleBlackjack(ctx.prisma, userId, bet, settleOutcome);
+  const result = await settleBlackjack(ctx.prisma, userId, bet, settleOutcome, ctx.redis);
   if (settleOutcome === 'win' && result.deltaCoins > 0) {
     recordCoinsEarned(ctx.prisma, userId, result.deltaCoins, ctx.redis).catch(() => null);
   }
@@ -291,7 +291,7 @@ async function execute(
 
     // ── Anında Blackjack ──────────────────────────────────────────────────────
     if (isBlackjack(playerHand)) {
-      const result = await settleBlackjack(ctx.prisma, interaction.user.id, bet, 'win');
+      const result = await settleBlackjack(ctx.prisma, interaction.user.id, bet, 'win', ctx.redis);
       if (result.deltaCoins > 0) recordCoinsEarned(ctx.prisma, interaction.user.id, result.deltaCoins, ctx.redis).catch(() => null);
       await interaction.deferReply({ flags: 64 });
       await interaction.editReply({
@@ -339,7 +339,7 @@ async function execute(
         if (pv > 21) {
           // Bust
           collector.stop('bust');
-          const result = await settleBlackjack(ctx.prisma, interaction.user.id, bet, 'lose');
+          const result = await settleBlackjack(ctx.prisma, interaction.user.id, bet, 'lose', ctx.redis);
           await i.update({
             content: buildScreen({
               username, bet, playerHand, dealerHand,
@@ -450,7 +450,7 @@ export async function handleBjTextCommand(
 
   // Anında Blackjack
   if (isBlackjack(playerHand)) {
-    const result = await settleBlackjack(ctx.prisma, userId, bet, 'win');
+    const result = await settleBlackjack(ctx.prisma, userId, bet, 'win', ctx.redis);
     if (result.deltaCoins > 0) recordCoinsEarned(ctx.prisma, userId, result.deltaCoins, ctx.redis).catch(() => null);
     await message.reply(
       buildScreen({
@@ -488,7 +488,7 @@ export async function handleBjTextCommand(
 
       if (pv > 21) {
         collector.stop('bust');
-        const result = await settleBlackjack(ctx.prisma, userId, bet, 'lose');
+        const result = await settleBlackjack(ctx.prisma, userId, bet, 'lose', ctx.redis);
         await i.update({
           content: buildScreen({
             username, bet, playerHand, dealerHand,

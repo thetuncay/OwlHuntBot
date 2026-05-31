@@ -1,112 +1,230 @@
 // ============================================================
-// encounter-fight.ts — Encounter Savaş Sistemi
+// encounter-fight.ts — Encounter Savaş Sistemi + Loot
 //
-// Oyuncu "Savaş" seçeneğini seçtiğinde çalışır.
-// Sonuç önceden hesaplanır (hızlı sistem — Discord timeout yok).
-//
-// Denge kuralları:
-//   - Ödül düşman tier'ına ve güç farkına göre ölçeklenir
-//   - Güçlü oyuncu zayıf düşmana karşı daha az ödül alır (hidden scaling)
-//   - Kaybedince sadece encounter kapanır, ceza yok (uzaklaş ile aynı)
-//   - Kazanınca coin + XP ödülü
+// Savaş kazanma ana ödül yolu: coin, XP, materyal, buff, kutu.
+// Ödüller düşman tier / kalite / gücüne göre ölçeklenir.
 // ============================================================
 
 import type { PrismaClient } from '@prisma/client';
+import type { Redis } from 'ioredis';
+import {
+  BUFF_ITEMS,
+  HUNT_ITEM_DROPS,
+  type BuffItemDef,
+} from '../config';
 import { statEffect } from '../utils/math';
 import { addXP } from './xp';
-import type { EncounterFightResult } from '../utils/encounter-ux';
+import { rollEncounterFightLootboxDrop } from './drops';
+import { applyCoinDeltaInRedis, reloadInventoryFromPg } from '../state/player-state';
+import type { EncounterFightLootItem, EncounterFightResult } from '../utils/encounter-ux';
 
-// ─── ÖDÜL TABLOSU ─────────────────────────────────────────────────────────────
-// Tier'a gore base oduller (tier 1 = en guclu = en yuksek odul)
+const FIGHT_MIN_COINS = 600;
+
 const FIGHT_BASE_COINS: Record<number, number> = {
-  1: 180, 2: 140, 3: 110, 4: 85,
-  5: 65,  6: 50,  7: 38,  8: 28,
+  1: 480, 2: 390, 3: 315, 4: 255,
+  5: 195, 6: 150, 7: 112, 8: 82,
 };
 
 const FIGHT_BASE_XP: Record<number, number> = {
-  1: 90, 2: 70, 3: 55, 4: 42,
-  5: 32, 6: 24, 7: 18, 8: 12,
+  1: 160, 2: 130, 3: 105, 4: 85,
+  5: 65,  6: 50,  7: 38,  8: 28,
 };
 
-// ─── KAZANMA ŞANSI HESABI ─────────────────────────────────────────────────────
+const QUALITY_FIGHT_MULT: Record<string, number> = {
+  Trash:    0.75,
+  Common:   1.0,
+  Good:     1.15,
+  Rare:     1.35,
+  Elite:    1.6,
+  'God Roll': 2.0,
+};
 
-/**
- * Oyuncunun savaşı kazanma şansını hesaplar.
- *
- * Temel formül:
- *   winChance = 50 + (playerPower - enemyPower) * 0.35
- *
- * Clamp: %20 - %85
- *   - Hiçbir zaman garantili kazanma veya kaybetme yok
- *   - Güçlü oyuncu zayıf düşmana karşı max %85 şansa sahip
- *   - Zayıf oyuncu güçlü düşmana karşı min %20 şansa sahip
- *
- * Hidden scaling:
- *   Oyuncunun toplam gücü çok yüksekse düşman gücü gizlice artırılır.
- *   Bu sayede farming önlenir.
- */
+const BUFF_RARITY_WEIGHT: Record<string, number> = {
+  Common:   50,
+  Uncommon: 30,
+  Rare:     14,
+  Epic:     5,
+  Legendary: 1,
+};
+
 function calcWinChance(
   playerPower: number,
-  enemyPower:  number,
+  enemyPower: number,
   playerLevel: number,
 ): number {
-  // Gizli ölçekleme: yüksek seviyeli oyuncular için düşman gücü artırılır
-  // Level 20'den itibaren devreye girer, her level +0.5% düşman güç bonusu
   const hiddenScaling = Math.max(0, (playerLevel - 20) * 0.005);
   const scaledEnemyPower = enemyPower * (1 + hiddenScaling);
-
   const raw = 50 + (playerPower - scaledEnemyPower) * 0.35;
   return Math.min(85, Math.max(20, raw));
 }
 
-// ─── ÖDÜL HESABI ──────────────────────────────────────────────────────────────
-
-/**
- * Kazanma ödülünü hesaplar.
- *
- * Güç farkı büyükse (oyuncu çok güçlü) ödül azalır — farming önleme.
- * Güç farkı küçükse veya düşman güçlüyse ödül artar — risk/ödül dengesi.
- */
-function calcReward(
+function calcCoinXpReward(
   baseCoin: number,
-  baseXP:   number,
+  baseXP: number,
   playerPower: number,
-  enemyPower:  number,
+  enemyPower: number,
+  qualityMult: number,
 ): { coins: number; xp: number } {
   const powerRatio = enemyPower / Math.max(1, playerPower);
-
-  // powerRatio > 1 = düşman güçlü → ödül artar (max x1.5)
-  // powerRatio < 0.5 = düşman çok zayıf → ödül azalır (min x0.5)
-  const rewardMult = Math.min(1.5, Math.max(0.5, powerRatio));
-
+  const rewardMult = Math.min(1.6, Math.max(0.55, powerRatio));
   return {
-    coins: Math.round(baseCoin * rewardMult),
-    xp:    Math.round(baseXP   * rewardMult),
+    coins: Math.max(FIGHT_MIN_COINS, Math.round(baseCoin * rewardMult * qualityMult)),
+    xp:    Math.round(baseXP   * rewardMult * qualityMult),
   };
 }
 
-// ─── ANA FONKSİYON ────────────────────────────────────────────────────────────
+function tierToDifficulty(tier: number): number {
+  return Math.max(1, Math.min(8, 9 - tier));
+}
 
-/**
- * Encounter savaşını simüle eder ve sonucu döndürür.
- *
- * @param prisma   - Prisma client
- * @param playerId - Oyuncu ID
- * @param encounterId - Encounter ID
- * @returns EncounterFightResult
- */
+function pickWeightedMaterial(tier: number, qualityMult: number): EncounterFightLootItem | null {
+  const diff = tierToDifficulty(tier);
+  const pool = HUNT_ITEM_DROPS.filter((d) => d.minDifficulty <= diff);
+  if (pool.length === 0) return null;
+
+  const weights = pool.map((d) => d.dropChance * qualityMult);
+  const total = weights.reduce((s, w) => s + w, 0);
+  let roll = Math.random() * total;
+
+  for (let i = 0; i < pool.length; i++) {
+    roll -= weights[i]!;
+    if (roll <= 0) {
+      const def = pool[i]!;
+      const qty = tier <= 3 ? 2 : 1;
+      return {
+        itemName: def.itemName,
+        itemType: def.itemType,
+        rarity:   def.rarity,
+        quantity: qty,
+      };
+    }
+  }
+  const fallback = pool[pool.length - 1]!;
+  return {
+    itemName: fallback.itemName,
+    itemType: fallback.itemType,
+    rarity:   fallback.rarity,
+    quantity: 1,
+  };
+}
+
+function rollBuffDrop(tier: number, quality: string): EncounterFightLootItem | null {
+  const qualityMult = QUALITY_FIGHT_MULT[quality] ?? 1;
+  const buffChance = Math.min(50, (6 + (9 - tier) * 5) * qualityMult);
+  if (Math.random() * 100 >= buffChance) return null;
+
+  const maxRarityByTier: Record<number, string[]> = {
+    8: ['Common'],
+    7: ['Common'],
+    6: ['Common', 'Uncommon'],
+    5: ['Common', 'Uncommon', 'Rare'],
+    4: ['Common', 'Uncommon', 'Rare'],
+    3: ['Common', 'Uncommon', 'Rare', 'Epic'],
+    2: ['Common', 'Uncommon', 'Rare', 'Epic'],
+    1: ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary'],
+  };
+  const allowed = maxRarityByTier[tier] ?? ['Common'];
+  const pool = BUFF_ITEMS.filter((b) => allowed.includes(b.rarity));
+  if (pool.length === 0) return null;
+
+  const pick = weightedPickBuff(pool);
+  return {
+    itemName: pick.name,
+    itemType: 'Buff',
+    rarity:   pick.rarity,
+    quantity: 1,
+    emoji:    pick.emoji,
+  };
+}
+
+function weightedPickBuff(pool: BuffItemDef[]): BuffItemDef {
+  const weights = pool.map((b) => BUFF_RARITY_WEIGHT[b.rarity] ?? 1);
+  const total = weights.reduce((s, w) => s + w, 0);
+  let roll = Math.random() * total;
+  for (let i = 0; i < pool.length; i++) {
+    roll -= weights[i]!;
+    if (roll <= 0) return pool[i]!;
+  }
+  return pool[pool.length - 1]!;
+}
+
+function rollMaterialDrops(tier: number, quality: string): EncounterFightLootItem[] {
+  const qualityMult = QUALITY_FIGHT_MULT[quality] ?? 1;
+  const dropCount = tier <= 2 ? 3 : tier <= 5 ? 2 : 1;
+  const drops: EncounterFightLootItem[] = [];
+  const seen = new Set<string>();
+
+  for (let i = 0; i < dropCount; i++) {
+    const item = pickWeightedMaterial(tier, qualityMult);
+    if (!item) continue;
+    const existing = drops.find((d) => d.itemName === item.itemName);
+    if (existing) {
+      existing.quantity += item.quantity;
+    } else if (!seen.has(item.itemName) || i === 0) {
+      drops.push(item);
+      seen.add(item.itemName);
+    }
+  }
+  return drops;
+}
+
+async function grantFightLoot(
+  prisma: PrismaClient,
+  playerId: string,
+  items: EncounterFightLootItem[],
+): Promise<void> {
+  for (const item of items) {
+    await prisma.inventoryItem.upsert({
+      where: { ownerId_itemName: { ownerId: playerId, itemName: item.itemName } },
+      create: {
+        ownerId:  playerId,
+        itemName: item.itemName,
+        itemType: item.itemType,
+        rarity:   item.rarity,
+        quantity: item.quantity,
+      },
+      update: { quantity: { increment: item.quantity } },
+    });
+  }
+}
+
+/** UI önizlemesi — tahmini savaş ödül aralığı */
+export function estimateEncounterFightRewards(
+  tier: number,
+  quality: string,
+  playerPower: number,
+  enemyPower: number,
+): { coinMin: number; coinMax: number; xpMin: number; xpMax: number; materialHint: string; buffChance: number } {
+  const qMult = QUALITY_FIGHT_MULT[quality] ?? 1;
+  const baseCoin = FIGHT_BASE_COINS[tier] ?? 60;
+  const baseXP   = FIGHT_BASE_XP[tier]   ?? 20;
+  const low  = calcCoinXpReward(baseCoin, baseXP, playerPower, enemyPower * 0.6, qMult);
+  const high = calcCoinXpReward(baseCoin, baseXP, playerPower, enemyPower * 1.4, qMult);
+  const matCount = tier <= 2 ? 3 : tier <= 5 ? 2 : 1;
+  const buffChance = Math.min(50, Math.round((6 + (9 - tier) * 5) * qMult));
+
+  return {
+    coinMin: Math.min(low.coins, high.coins),
+    coinMax: Math.max(low.coins, high.coins),
+    xpMin:   Math.min(low.xp, high.xp),
+    xpMax:   Math.max(low.xp, high.xp),
+    materialHint: `${matCount} materyal`,
+    buffChance,
+  };
+}
+
 export async function resolveEncounterFight(
-  prisma:      PrismaClient,
-  playerId:    string,
+  prisma: PrismaClient,
+  playerId: string,
   encounterId: string,
+  redis?: Redis,
 ): Promise<EncounterFightResult> {
-  // Encounter ve oyuncu verilerini paralel çek
   const [encounter, player, mainOwl] = await Promise.all([
     prisma.encounter.findFirst({
       where: { id: encounterId, playerId },
       select: {
         id: true, status: true,
-        owlTier: true, owlStats: true,
+        owlTier: true, owlQuality: true, owlSpecies: true, owlStats: true,
       },
     }),
     prisma.player.findUnique({
@@ -129,15 +247,14 @@ export async function resolveEncounterFight(
     throw new Error('Oyuncu veya main baykuş bulunamadı.');
   }
 
-  // Stat'ları soft cap formülüyle hesapla
+  const prestige = player.prestigeLevel ?? 0;
   const playerPower =
-    statEffect(mainOwl.statGaga, player.prestigeLevel ?? 0)  +
-    statEffect(mainOwl.statGoz, player.prestigeLevel ?? 0)   +
-    statEffect(mainOwl.statKulak, player.prestigeLevel ?? 0) +
-    statEffect(mainOwl.statKanat, player.prestigeLevel ?? 0) +
-    statEffect(mainOwl.statPence, player.prestigeLevel ?? 0);
+    statEffect(mainOwl.statGaga, prestige) +
+    statEffect(mainOwl.statGoz, prestige) +
+    statEffect(mainOwl.statKulak, prestige) +
+    statEffect(mainOwl.statKanat, prestige) +
+    statEffect(mainOwl.statPence, prestige);
 
-  // Düşman stat'larını encounter'dan oku
   const rawStats = encounter.owlStats as Record<string, number>;
   const enemyPower =
     statEffect(rawStats.gaga  ?? 10) +
@@ -149,7 +266,6 @@ export async function resolveEncounterFight(
   const winChance = calcWinChance(playerPower, enemyPower, player.level);
   const playerWon = Math.random() * 100 < winChance;
 
-  // Encounter'ı kapat
   await prisma.encounter.update({
     where: { id: encounterId },
     data: { status: 'closed' },
@@ -160,30 +276,61 @@ export async function resolveEncounterFight(
       playerWon:   false,
       rewardCoins: 0,
       rewardXP:    0,
+      lootItems:   [],
       enemyTier:   encounter.owlTier,
+      enemyQuality: encounter.owlQuality,
       enemyLevel:  Math.round(enemyPower),
+      winChance:   Math.round(winChance),
     };
   }
 
-  // Ödül hesapla
-  const baseCoin = FIGHT_BASE_COINS[encounter.owlTier] ?? 30;
-  const baseXP   = FIGHT_BASE_XP[encounter.owlTier]   ?? 15;
-  const { coins, xp } = calcReward(baseCoin, baseXP, playerPower, enemyPower);
+  const qualityMult = QUALITY_FIGHT_MULT[encounter.owlQuality] ?? 1;
+  const baseCoin = FIGHT_BASE_COINS[encounter.owlTier] ?? 60;
+  const baseXP   = FIGHT_BASE_XP[encounter.owlTier]   ?? 20;
+  const { coins, xp } = calcCoinXpReward(baseCoin, baseXP, playerPower, enemyPower, qualityMult);
 
-  // Coin ve XP ver
-  await Promise.all([
-    prisma.player.update({
+  const lootItems = rollMaterialDrops(encounter.owlTier, encounter.owlQuality);
+  const buffDrop = rollBuffDrop(encounter.owlTier, encounter.owlQuality);
+  if (buffDrop) lootItems.push(buffDrop);
+
+  if (redis) {
+    await applyCoinDeltaInRedis(redis, playerId, coins, prisma);
+  } else {
+    await prisma.player.update({
       where: { id: playerId },
       data: { coins: { increment: coins } },
-    }),
-    addXP(prisma, playerId, xp, 'encounterFight'),
-  ]);
+    });
+  }
+  await addXP(prisma, playerId, xp, 'encounterFight', undefined, undefined, redis);
+  await grantFightLoot(prisma, playerId, lootItems);
+
+  const lootbox = redis
+    ? await rollEncounterFightLootboxDrop(prisma, redis, playerId, player.level)
+    : null;
+
+  if (lootbox) {
+    lootItems.push({
+      itemName: lootbox.lootboxName,
+      itemType: 'Kutu',
+      rarity:   'Common',
+      quantity: 1,
+      emoji:    lootbox.emoji,
+    });
+  }
+
+  if (redis) {
+    await reloadInventoryFromPg(redis, prisma, playerId);
+  }
 
   return {
-    playerWon:   true,
-    rewardCoins: coins,
-    rewardXP:    xp,
-    enemyTier:   encounter.owlTier,
-    enemyLevel:  Math.round(enemyPower),
+    playerWon:    true,
+    rewardCoins:  coins,
+    rewardXP:     xp,
+    lootItems,
+    lootbox,
+    enemyTier:    encounter.owlTier,
+    enemyQuality: encounter.owlQuality,
+    enemyLevel:   Math.round(enemyPower),
+    winChance:    Math.round(winChance),
   };
 }

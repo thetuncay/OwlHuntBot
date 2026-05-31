@@ -1,4 +1,5 @@
 import type { PrismaClient } from '@prisma/client';
+import type { Redis } from 'ioredis';
 import {
   PVP_EXECUTE_POWER_MULT,
   PVP_EXECUTE_HP_THRESH,
@@ -28,6 +29,8 @@ import { recordPvpWin, refreshPowerScore, recordCoinsEarned } from './leaderboar
 import { updatePvpStreak, applyStreakXpBonus } from './pvp-streak';
 import { getBuffEffects, drainBuffCharge } from './items';
 import { rollPvpLootboxDrop } from './drops';
+import { applyCoinDeltaInRedis, applyOwlStatUpdate, syncPlayerStateAfterPgWrite, reloadInventoryFromPg } from '../state/player-state';
+import { getConsumableEffectValue, consumeConsumableEffect } from '../utils/use-items';
 
 interface BattleState {
   playerId: string;
@@ -70,7 +73,11 @@ export async function startPvP(
 /**
  * Aktif PvP oturumunu simule eder.
  */
-export async function simulatePvP(prisma: PrismaClient, sessionId: string): Promise<PvpSimResult> {
+export async function simulatePvP(
+  prisma: PrismaClient,
+  sessionId: string,
+  redis?: Redis,
+): Promise<PvpSimResult> {
   const session = await prisma.pvpSession.findUnique({
     where: { id: sessionId },
   });
@@ -102,26 +109,31 @@ export async function simulatePvP(prisma: PrismaClient, sessionId: string): Prom
     const turnEvents: PvpTurnEvent[] = [];
 
     // Buff etkilerini ve oyuncu prestige seviyelerini al (her oyuncu için ayrı)
-    const [challengerBuffs, defenderBuffs, challenger, defender] = await Promise.all([
+    const [challengerBuffs, defenderBuffs, challenger, defender, consEffects] = await Promise.all([
       getBuffEffects(prisma, session.challengerId, 'pvp'),
       getBuffEffects(prisma, session.defenderId, 'pvp'),
       prisma.player.findUnique({ where: { id: session.challengerId }, select: { prestigeLevel: true } }),
       prisma.player.findUnique({ where: { id: session.defenderId }, select: { prestigeLevel: true } }),
+      redis ? Promise.all([
+        getConsumableEffectValue(redis, session.challengerId, 'pvp_damage_once'),
+        getConsumableEffectValue(redis, session.challengerId, 'pvp_dodge_equip'),
+        getConsumableEffectValue(redis, session.defenderId, 'pvp_damage_once'),
+        getConsumableEffectValue(redis, session.defenderId, 'pvp_dodge_equip'),
+      ]) : Promise.resolve([0, 0, 0, 0] as const),
     ]);
+
+    const [challengerDmgOnce, challengerDodgeEquip, defenderDmgOnce, defenderDodgeEquip] = consEffects;
 
     const left: BattleState = {
       playerId: session.challengerId,
       hp: challengerOwl.hp,
       stamina: challengerOwl.staminaCur,
-      // effectiveness: 100=tam güç, düşükse power azalır
-      // bond: max +%20 güç bonusu (bond 100 = ×1.20)
-      // prestige: stat cap'i artırır
       power: statEffect(challengerOwl.statGaga + challengerOwl.statPence + challengerOwl.statKanat, challenger?.prestigeLevel ?? 0)
         * Math.max(0.1, challengerOwl.effectiveness / 100)
-        * (1 + challengerOwl.bond * 0.002), // bond 100 → ×1.20
+        * (1 + challengerOwl.bond * 0.002),
       hpMax: challengerOwl.hpMax,
-      buffDamageMult: challengerBuffs.pvpDamageMult,
-      buffDodgeBonus: challengerBuffs.pvpDodgeBonus,
+      buffDamageMult: challengerBuffs.pvpDamageMult * (1 + challengerDmgOnce),
+      buffDodgeBonus: challengerBuffs.pvpDodgeBonus + challengerDodgeEquip,
     };
     const right: BattleState = {
       playerId: session.defenderId,
@@ -131,8 +143,8 @@ export async function simulatePvP(prisma: PrismaClient, sessionId: string): Prom
         * Math.max(0.1, defenderOwl.effectiveness / 100)
         * (1 + defenderOwl.bond * 0.002),
       hpMax: defenderOwl.hpMax,
-      buffDamageMult: defenderBuffs.pvpDamageMult,
-      buffDodgeBonus: defenderBuffs.pvpDodgeBonus,
+      buffDamageMult: defenderBuffs.pvpDamageMult * (1 + defenderDmgOnce),
+      buffDodgeBonus: defenderBuffs.pvpDodgeBonus + defenderDodgeEquip,
     };
 
     let turns = 0;
@@ -189,7 +201,10 @@ export async function simulatePvP(prisma: PrismaClient, sessionId: string): Prom
       await Promise.all([
         tx.player.update({
           where: { id: winner.playerId },
-          data: { coins: { increment: 100 }, pvpCount: { increment: 1 } },
+          data: {
+            ...(redis ? {} : { coins: { increment: 100 } }),
+            pvpCount: { increment: 1 },
+          },
         }),
         tx.player.update({
           where: { id: loser.playerId },
@@ -215,20 +230,24 @@ export async function simulatePvP(prisma: PrismaClient, sessionId: string): Prom
     });
 
   // Streak sistemi — anti-abuse kontrolü dahil
-  const streakResult = await updatePvpStreak(prisma, winner.playerId, loser.playerId);
+  const streakResult = await updatePvpStreak(prisma, winner.playerId, loser.playerId, {
+    skipCoinWrite: !!redis,
+  });
 
   // XP + Bond + Streak coins — transaction içinde atomik yaz
   const winnerXP = applyStreakXpBonus(XP_PVP_WIN, streakResult.xpBonusPct);
   const totalCoinGain = 100 + streakResult.bonusCoins;
 
+  if (redis) {
+    await applyCoinDeltaInRedis(redis, winner.playerId, totalCoinGain, prisma);
+  }
+
+  const winnerOwlForBond = winner.playerId === session.challengerId ? challengerOwl : defenderOwl;
+  const newBond = winnerOwlForBond.bond < BOND_MAX
+    ? Math.min(BOND_MAX, winnerOwlForBond.bond + BOND_GAIN_PER_PVP_WIN)
+    : winnerOwlForBond.bond;
+
   await prisma.$transaction(async (tx) => {
-    // Streak bonus coin varsa kazanana ekle
-    if (streakResult.bonusCoins > 0) {
-      await tx.player.update({
-        where: { id: winner.playerId },
-        data: { coins: { increment: streakResult.bonusCoins } },
-      });
-    }
     // XP güncelle
     await tx.player.update({
       where: { id: winner.playerId },
@@ -239,14 +258,23 @@ export async function simulatePvP(prisma: PrismaClient, sessionId: string): Prom
       data: { xp: { increment: XP_PVP_LOSE } },
     });
     // Bond artışı
-    const winnerOwlForBond = winner.playerId === session.challengerId ? challengerOwl : defenderOwl;
     if (winnerOwlForBond.bond < BOND_MAX) {
       await tx.owl.update({
         where: { id: winnerOwlForBond.id },
-        data: { bond: Math.min(BOND_MAX, winnerOwlForBond.bond + BOND_GAIN_PER_PVP_WIN) },
+        data: { bond: newBond },
       });
     }
   });
+
+  if (redis) {
+    if (winnerOwlForBond.bond < BOND_MAX) {
+      await applyOwlStatUpdate(redis, prisma, winner.playerId, winnerOwlForBond.id, { bond: newBond });
+    }
+    await Promise.all([
+      syncPlayerStateAfterPgWrite(redis, prisma, winner.playerId, 'progress'),
+      syncPlayerStateAfterPgWrite(redis, prisma, loser.playerId, 'progress'),
+    ]);
+  }
 
     // Effectiveness uyarısı: %50 altına düştüyse result'a ekle
     const winnerOwlUpdated = await prisma.owl.findFirst({
@@ -260,6 +288,14 @@ export async function simulatePvP(prisma: PrismaClient, sessionId: string): Prom
       drainBuffCharge(prisma, winner.playerId, 'pvp'),
       drainBuffCharge(prisma, loser.playerId, 'pvp'),
     ]);
+
+    // Tek kullanımlık Savaş İksiri tüketimi
+    if (redis) {
+      await Promise.all([
+        consumeConsumableEffect(redis, session.challengerId, 'pvp_damage_once'),
+        consumeConsumableEffect(redis, session.defenderId, 'pvp_damage_once'),
+      ]);
+    }
 
     // Liderboard istatistikleri
     await recordPvpWin(prisma, winner.playerId);
@@ -275,7 +311,10 @@ export async function simulatePvP(prisma: PrismaClient, sessionId: string): Prom
       select: { level: true },
     });
     if (winnerPlayer) {
-      rollPvpLootboxDrop(prisma, winner.playerId, winnerPlayer.level).catch(() => null);
+      const drop = await rollPvpLootboxDrop(prisma, winner.playerId, winnerPlayer.level);
+      if (redis && drop) {
+        await reloadInventoryFromPg(redis, prisma, winner.playerId);
+      }
     }
 
     return {

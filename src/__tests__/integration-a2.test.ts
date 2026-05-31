@@ -283,19 +283,9 @@ describe('A2 Integration — Duel Daily Cap End-to-End (Requirements 2.7, 2.8)',
   // ── Test 4: Partial award at cap boundary ────────────────────────────────
 
   it(
-    'FIX CONFIRMED: when 8 duels have been won (480 coins), the 9th duel awards ' +
-      'only 20 coins (partial award up to cap), and the 10th awards 0 coins',
+    'FIX CONFIRMED: partial award at cap boundary — last win before cap gets remainder only',
     async () => {
-      /**
-       * Requirements: 2.7, 2.8
-       *
-       * With SIM_PVP_WIN_COINS = 60 and DUEL_DAILY_COIN_CAP = 500:
-       *   - 8 wins × 60 = 480 coins (below cap)
-       *   - 9th win: min(60, 500 - 480) = 20 coins (partial award)
-       *   - 10th win: min(60, 500 - 500) = 0 coins (cap reached)
-       *
-       * This tests the partial award logic at the cap boundary.
-       */
+      const fullWins = Math.floor(DUEL_DAILY_COIN_CAP / SIM_PVP_WIN_COINS);
       const playerId = 'player-a2-integration-004';
       const { prisma } = buildStrongPlayerPrismaMock(playerId);
       const { redis } = await import('../utils/redis');
@@ -303,7 +293,7 @@ describe('A2 Integration — Duel Daily Cap End-to-End (Requirements 2.7, 2.8)',
 
       const coinsPerDuel: number[] = [];
 
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < fullWins + 2; i++) {
         const result = await runSimulatedPvP(
           prisma as unknown as import('@prisma/client').PrismaClient,
           playerId,
@@ -313,21 +303,16 @@ describe('A2 Integration — Duel Daily Cap End-to-End (Requirements 2.7, 2.8)',
       }
 
       const totalCoins = coinsPerDuel.reduce((sum, c) => sum + c, 0);
-
-      // Total must not exceed cap
       expect(totalCoins).toBeLessThanOrEqual(DUEL_DAILY_COIN_CAP);
 
-      // The first 8 duels should each award SIM_PVP_WIN_COINS (60)
-      // (assuming no streak bonus since pvpStreak=0 in mock)
-      for (let i = 0; i < 8; i++) {
+      for (let i = 0; i < fullWins - 1; i++) {
         expect(coinsPerDuel[i]).toBe(SIM_PVP_WIN_COINS);
       }
 
-      // 9th duel: partial award (500 - 480 = 20)
-      expect(coinsPerDuel[8]).toBe(DUEL_DAILY_COIN_CAP - 8 * SIM_PVP_WIN_COINS);
-
-      // 10th duel: cap reached, 0 coins
-      expect(coinsPerDuel[9]).toBe(0);
+      expect(coinsPerDuel[fullWins - 1]).toBe(
+        DUEL_DAILY_COIN_CAP - (fullWins - 1) * SIM_PVP_WIN_COINS,
+      );
+      expect(coinsPerDuel[fullWins]).toBe(0);
     },
   );
 

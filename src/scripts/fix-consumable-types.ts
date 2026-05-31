@@ -26,7 +26,10 @@ const prisma = new PrismaClient();
 
 async function main() {
   // CRAFTING_RECIPES'deki tüm result item adlarını al
-  const consumableNames = ['Karma Yem', 'Bileme Taşı', 'Yırtıcı İksiri'];
+  const consumableNames = [
+    'Karma Yem', 'Bileme Taşı', 'Yırtıcı İksiri',
+    'Savaş İksiri', 'Gölge Zırhı', 'Av Trofesi Yağı', 'Koruyucu Balmumu', 'Güç Kapsülü',
+  ];
 
   const result = await prisma.inventoryItem.updateMany({
     where: {

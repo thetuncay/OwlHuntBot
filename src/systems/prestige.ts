@@ -1,9 +1,11 @@
 import type { PrismaClient } from '@prisma/client';
+import type { Redis } from 'ioredis';
 import {
   PRESTIGE_MIN_STAT_AVG,
   PRESTIGE_LEVEL_REQ
 } from '../config';
 import { withLock } from '../utils/lock';
+import { rehydratePlayerState } from '../state/player-state';
 
 /**
  * Baykuşu feda ederek prestige seviyesini artırır.
@@ -11,7 +13,8 @@ import { withLock } from '../utils/lock';
 export async function performAscension(
   prisma: PrismaClient,
   playerId: string,
-  owlId: string
+  owlId: string,
+  redis?: Redis,
 ) {
   return withLock(playerId, 'ascension', async () => {
     const player = await prisma.player.findUnique({
@@ -78,6 +81,11 @@ export async function performAscension(
       });
 
       return { newPrestigeLevel: player.prestigeLevel + 1 };
+    }).then(async (result) => {
+      if (redis) {
+        await rehydratePlayerState(redis, prisma, playerId);
+      }
+      return result;
     });
   });
 }

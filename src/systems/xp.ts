@@ -1,7 +1,13 @@
 import type { PrismaClient } from '@prisma/client';
+import type { Redis } from 'ioredis';
 import type { XpApplyResult } from '../types';
 import { finalXP, xpRequired } from '../utils/math';
 import { PRESTIGE_XP_BONUS_PER_LEVEL, getLevelUpReward } from '../config';
+import {
+  applyCoinDeltaInRedis,
+  reloadInventoryFromPg,
+  syncPlayerStateAfterPgWrite,
+} from '../state/player-state';
 
 /**
  * Oyuncuya XP ekler, level-up durumunu hesaplar ve sonucu dondurur.
@@ -20,6 +26,7 @@ export async function addXP(
   source: string,
   existingPlayer?: { level: number; xp: number; prestigeLevel?: number },
   skipDbWrite?: boolean,
+  redis?: Redis,
 ): Promise<XpApplyResult> {
   // existingPlayer geçildiyse DB'ye gitme — round-trip tasarrufu
   const player = existingPlayer ?? await prisma.player.findUnique({
@@ -68,6 +75,9 @@ export async function addXP(
       data:  { xp: remainingXP, totalXP: { increment: gainedXP } },
       select: { level: true, xp: true },
     });
+    if (redis) {
+      await syncPlayerStateAfterPgWrite(redis, prisma, playerId, 'progress');
+    }
     return {
       gainedXP,
       currentXP:    updated.xp,
@@ -84,10 +94,12 @@ export async function addXP(
 
   // Level-up ödülü ver
   let rewardSummary: { coins: number; lootboxName?: string; lootboxEmoji?: string; lootbox2Name?: string; lootbox2Emoji?: string; itemName?: string; message?: string } | undefined;
+  let totalLevelUpCoins = 0;
   for (let lvl = oldLevel + 1; lvl <= currentLevel; lvl++) {
     const reward = getLevelUpReward(lvl);
     // Coin ödülü
     if (reward.coins > 0) {
+      totalLevelUpCoins += reward.coins;
       await prisma.player.update({
         where: { id: playerId },
         data:  { coins: { increment: reward.coins } },
@@ -130,8 +142,16 @@ export async function addXP(
   }
 
   console.info(`[XP] ${playerId} kaynak=${source} +${gainedXP} XP (Lv ${oldLevel} -> ${currentLevel})`);
-  return {
-    gainedXP,
+
+  if (redis) {
+    if (totalLevelUpCoins > 0) {
+      await applyCoinDeltaInRedis(redis, playerId, totalLevelUpCoins, prisma);
+    }
+    await reloadInventoryFromPg(redis, prisma, playerId);
+    await syncPlayerStateAfterPgWrite(redis, prisma, playerId, 'progress');
+  }
+
+  return {    gainedXP,
     currentXP:    updated.xp,
     currentLevel: updated.level,
     levelUp: {

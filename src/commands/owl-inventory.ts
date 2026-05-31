@@ -3,7 +3,7 @@
  */
 
 import { ButtonBuilder, ButtonStyle, ActionRowBuilder, ComponentType } from 'discord.js';
-import { INVENTORY_BASE_SLOTS, INVENTORY_PER_LEVEL } from '../config';
+import { BUFF_ITEM_MAP, INVENTORY_BASE_SLOTS, INVENTORY_PER_LEVEL } from '../config';
 import { listActiveBuffs } from '../systems/items';
 import {
   buildInventoryOverviewEmbed,
@@ -42,13 +42,18 @@ export async function runInventory(
 
   const activeBuffs = rawBuffs
     .filter((b) => b.chargeCur > 0)
-    .map((b) => ({
-      buffItemId: b.buffItemId,
-      buffName:   b.buffItemId,
-      category:   b.category,
-      chargeCur:  b.chargeCur,
-      chargeMax:  b.chargeMax,
-    }));
+    .map((b) => {
+      const def = BUFF_ITEM_MAP[b.buffItemId];
+      return {
+        buffItemId: b.buffItemId,
+        buffName:   def
+          ? `\`${def.useId}\` ${def.emoji} **${def.name}**`
+          : b.buffItemId,
+        category:   b.category,
+        chargeCur:  b.chargeCur,
+        chargeMax:  b.chargeMax,
+      };
+    });
 
   type Mode = 'overview' | 'grid';
   let mode: Mode = 'overview';
@@ -135,13 +140,18 @@ export async function runInventoryMessage(
 
   const activeBuffs = rawBuffs
     .filter((b) => b.chargeCur > 0)
-    .map((b) => ({
-      buffItemId: b.buffItemId,
-      buffName:   b.buffItemId,
-      category:   b.category,
-      chargeCur:  b.chargeCur,
-      chargeMax:  b.chargeMax,
-    }));
+    .map((b) => {
+      const def = BUFF_ITEM_MAP[b.buffItemId];
+      return {
+        buffItemId: b.buffItemId,
+        buffName:   def
+          ? `\`${def.useId}\` ${def.emoji} **${def.name}**`
+          : b.buffItemId,
+        category:   b.category,
+        chargeCur:  b.chargeCur,
+        chargeMax:  b.chargeMax,
+      };
+    });
 
   const PAGE_SIZE  = 40;
   let page         = 0;

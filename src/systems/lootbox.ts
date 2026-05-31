@@ -28,6 +28,7 @@ import {
 import type { LootboxOpenResult } from '../types';
 import { enqueueDbWrite } from '../utils/db-queue.js';
 import { withLock } from '../utils/lock';
+import { reloadInventoryFromPg } from '../state/player-state';
 
 // ── YARDIMCI FONKSİYONLAR ────────────────────────────────────────────────────
 
@@ -160,6 +161,8 @@ async function _openLootboxUnsafe(
   } else {
     enqueueDbWrite({ type: 'recordPity', playerId, lootboxId, increment: 1, reset: false });
   }
+
+  await reloadInventoryFromPg(redis, prisma, playerId);
 
   return {
     lootboxId,

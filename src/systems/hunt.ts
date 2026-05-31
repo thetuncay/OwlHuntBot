@@ -24,16 +24,20 @@ import {
   XP_FAIL_RATIO,
   XP_RISK_BONUS_RATE,
   BOND_GAIN_PER_HUNT,
-  BOND_MAX,
-  CONSUMABLE_ITEM_BY_NAME,
 } from '../config';
 import type { HuntCatchResult, HuntRunResult, LootboxDrop } from '../types';
 import { catchChance, clamp, huntRolls, spawnScore } from '../utils/math';
 import { rollPercent, weightedRandom } from '../utils/rng';
 import { withLock } from '../utils/lock';
-import { invalidatePlayerCache, getPlayerBundle, setCachedPlayerBundle, type CachedPlayerBundle } from '../utils/player-cache';
 import { enqueueDbWriteBulk, type UpsertInventoryJob } from '../utils/db-queue';
-import { addXP } from './xp';
+import {
+  hydratePlayerState,
+  computeXpDelta,
+  applyHuntDelta,
+  deductCoinsInRedis,
+  buildLevelUpRewards,
+  type InventoryDeltaItem,
+} from '../state/player-state';
 import { createEncounter } from './tame';
 import { getBuffEffects, drainBuffCharge } from './items';
 import { rollHuntLootboxDrop } from './drops';
@@ -41,6 +45,31 @@ import { trackQuestProgress } from './daily-quests';
 import { getBiomeSession, setBiomeSession } from '../utils/biome-session';
 import { parseStoredTraits, resolveTraits, calcTraitEffects } from './traits';
 import { writeAudit } from '../utils/audit';
+import { consumeConsumableEffect, getConsumableEffectValue } from '../utils/use-items';
+
+/**
+ * Hunt sonrasi encounter + lootbox — kullanici cevabini BEKLEMEZ.
+ */
+export async function runHuntSideEffects(
+  prisma: PrismaClient,
+  redis: Redis,
+  playerId: string,
+  player: { level: number; prestigeLevel?: number },
+  owl: {
+    tier: number; statGoz: number; statKulak: number;
+    statGaga: number; statKanat: number; statPence: number;
+  },
+  hasCritical: boolean,
+): Promise<{ encounterId?: string; lootboxDrops?: LootboxDrop[] }> {
+  const [lootboxDrops, encounterId] = await Promise.all([
+    rollHuntLootboxDrop(prisma, redis, playerId, player.level, hasCritical).catch(() => [] as LootboxDrop[]),
+    createEncounter(prisma, playerId, player, owl, redis).catch(() => null),
+  ]);
+  return {
+    encounterId: encounterId ?? undefined,
+    lootboxDrops: lootboxDrops.length > 0 ? lootboxDrops : undefined,
+  };
+}
 
 /**
  * Envanter job'larını PostgreSQL uyumlu upsert işlemleriyle uygular.
@@ -111,44 +140,27 @@ export async function rollHunt(
   biomeId = 'b0'
 ): Promise<HuntRunResult> {
   return withLock(playerId, 'financial', async () => {
-    // ── Paralel veri çekimi ───────────────────────────────────────────────────
-    // Player bundle (cache-first) + Owl fetch + BuffEffects aynı anda başlar.
-    // Atlas M0'da her round-trip ~50-200ms — paralel yapı korunur.
-    // Cache hit → 0 DB round-trip player için; cache miss → DB'den çeker.
-    const [bundle, owl, buffEffects] = await Promise.all([
-      getPlayerBundle(redis, prisma, playerId),
-      prisma.owl.findUnique({ where: { id: owlId } }),
-      getBuffEffects(prisma, playerId, 'hunt'),
-    ]);
-
-    // Yeni oyuncu: cache miss + DB miss → upsert ile oluştur ve cache'e yaz
-    let resolvedBundle: CachedPlayerBundle;
+    let bundle = await hydratePlayerState(redis, prisma, playerId);
     if (!bundle) {
-      const newPlayer = await prisma.player.upsert({
+      await prisma.player.upsert({
         where: { id: playerId },
         create: { id: playerId },
         update: {},
-        select: {
-          id: true, level: true, xp: true, coins: true,
-          huntComboStreak: true, noRareStreak: true, mainOwlId: true,
-          dailyLootboxDrops: true, lastLootboxDropDate: true,
-        },
       });
-      resolvedBundle = {
-        player: {
-          ...newPlayer,
-          lastLootboxDropDate: newPlayer.lastLootboxDropDate?.toISOString() ?? null,
-        },
-        mainOwl: null,
-      };
-      await setCachedPlayerBundle(redis, playerId, resolvedBundle);
-    } else {
-      resolvedBundle = bundle;
+      bundle = await hydratePlayerState(redis, prisma, playerId);
+    }
+    if (!bundle) throw new Error('Oyuncu olusturulamadi.');
+
+    const buffEffects = await getBuffEffects(prisma, playerId, 'hunt');
+    const player = bundle.player;
+    let owl = bundle.mainOwl;
+
+    if (!owl || owl.id !== owlId) {
+      const dbOwl = await prisma.owl.findUnique({ where: { id: owlId } });
+      if (!dbOwl || dbOwl.ownerId !== playerId) throw new Error('Av icin gecersiz baykus.');
+      owl = dbOwl as NonNullable<typeof owl>;
     }
 
-    const player = resolvedBundle.player;
-
-    // Biyom seviye kontrolü
     const foundBiome = BIOMES.find(b => b.id === biomeId) || BIOMES[0];
     if (!foundBiome) throw new Error('Biyom bulunamadı.');
     const safeBiome = foundBiome;
@@ -156,47 +168,26 @@ export async function rollHunt(
       throw new Error(`Bu biyoma girmek için en az **${safeBiome.minLevel}** seviye olmalısın.`);
     }
 
-    // ── Biome Giriş Ücreti ────────────────────────────────────────────────────
-    // WHY: entryCost config'de tanımlıydı ama hiç tahsil edilmiyordu.
-    // Bu, tasarlanmış en büyük coin sink'in çalışmaması demekti.
-    // Çözüm: İlk girişte (session yoksa) entryCost tahsil et, 30dk session başlat.
-    // Sonraki hunt'larda aynı biyomda session varsa ücret alınmaz.
     if (safeBiome.entryCost > 0) {
       const existingSession = await getBiomeSession(redis, playerId);
       const isNewEntry = !existingSession || existingSession.biomeId !== biomeId;
-
       if (isNewEntry) {
-        // Coin kontrolü — player.coins cache'de olmayabilir, DB'den çek
-        const freshPlayer = await prisma.player.findUnique({
-          where: { id: playerId },
-          select: { coins: true },
-        });
-        if (!freshPlayer || freshPlayer.coins < safeBiome.entryCost) {
+        if (player.coins < safeBiome.entryCost) {
           throw new Error(
             `**${safeBiome.name}** biyomuna girmek için **${safeBiome.entryCost}** 💰 gerekiyor.\n` +
-            `Sahip olduğun: **${freshPlayer?.coins ?? 0}** 💰`,
+            `Sahip olduğun: **${player.coins}** 💰`,
           );
         }
-        // Giriş ücretini tahsil et
-        await prisma.player.update({
-          where: { id: playerId },
-          data: { coins: { decrement: safeBiome.entryCost } },
-        });
-        // 30 dakikalık session başlat
+        await deductCoinsInRedis(redis, playerId, safeBiome.entryCost, prisma);
+        player.coins -= safeBiome.entryCost;
         await setBiomeSession(redis, playerId, biomeId);
       }
     }
 
-    if (!owl || owl.ownerId !== playerId) throw new Error('Av icin gecersiz baykus.');
-
     const species = OWL_SPECIES.find((s) => s.name === owl.species);
     if (!species) throw new Error('Baykus tur bilgisi bulunamadi.');
 
-    // ── Trait Etkileri ────────────────────────────────────────────────────────
-    // WHY: Trait sistemi config'de tanımlıydı, DB'de saklanıyordu ama hiçbir
-    // yerde uygulanmıyordu. God Roll baykuş ile Trash baykuş aynı performansı
-    // veriyordu — bu oyuncu güvenini zedeliyor ve God Roll'u değersizleştiriyordu.
-    const storedTraits = parseStoredTraits((owl as any).traits);
+    const storedTraits = parseStoredTraits(owl.traits);
     const resolvedTraits = resolveTraits(storedTraits);
     const traitEffects = calcTraitEffects(resolvedTraits);
 
@@ -219,13 +210,14 @@ export async function rollHunt(
     const injured: HuntCatchResult[] = [];
     let highTierTaken = false;
     let gotRare = false;
+    const preyPoolThreshold = OWL_PREY_POOL[owl.tier];
+    if (preyPoolThreshold === undefined) throw new Error('Baykus tier av havuzu tanimli degil.');
+    const preyCandidates = PREY.filter((p) => p.difficulty <= preyPoolThreshold);
+    const consumableCatchBonus = await getConsumableEffectValue(redis, playerId, 'hunt_catch_once');
+    const consumableLootBonus = await getConsumableEffectValue(redis, playerId, 'hunt_loot_once');
 
     for (let i = 0; i < totalRoll; i++) {
-      const threshold = OWL_PREY_POOL[owl.tier];
-      if (threshold === undefined) throw new Error('Baykus tier av havuzu tanimli degil.');
-
-      const candidate = PREY.filter((p) => p.difficulty <= threshold);
-      const weighted = candidate.map((prey) => {
+      const weighted = preyCandidates.map((prey) => {
         let score = spawnScore(prey.difficulty, owl.statGoz, owl.statKulak);
         // Biyom nadirlik çarpanı
         if (prey.difficulty >= HUNT_HIGH_TIER_THRESHOLD) {
@@ -261,11 +253,6 @@ export async function rollHunt(
       // Buff catch bonus da eklenir (diminishing returns zaten uygulandı)
       // Trait huntCatch çarpanı da uygulanır
       // Consumable (Yırtıcı İksiri) bonusu da eklenir
-      const consumableCatchBonus = await (async () => {
-        const key = `${CONSUMABLE_ITEM_BY_NAME['Yırtıcı İksiri']?.redisKey ?? 'consumable:hunt_catch'}:${playerId}`;
-        const val = await redis.get(key);
-        return val ? parseFloat(val) : 0;
-      })();
       const extraBonus = levelBonus + streakBonus + (isRarePrey ? pityBonus : 0) + buffEffects.catchBonus + consumableCatchBonus;
       const finalChance = clamp(0.05, 0.95, (baseChanceVal + extraBonus) * safeBiome.catchModifier * traitEffects.huntCatch);
 
@@ -329,32 +316,23 @@ export async function rollHunt(
     // Trait xpGain çarpanı uygulanır
     const totalXP = Math.round((successXP + failXP + comboBonus + multiBonus) * traitEffects.xpGain);
 
-    // ── DB Güncelleme ─────────────────────────────────────────────────────────
-    // Kritik path: sadece player XP + streak güncelleme + bond.
-    // Envanter upsert'leri queue'ya alınır — kullanıcı bunları beklemez.
-    // addXP'ye mevcut player snapshot'ı geçilir — tekrar DB'ye gitmez.
-
-    // Envanter job'larını hazırla (queue'ya gidecek)
-    const inventoryJobs: UpsertInventoryJob[] = [];
-
+    // ── DB / Redis guncelleme (hot path) ─────────────────────────────────────
+    const inventoryItems: InventoryDeltaItem[] = [];
     for (const c of catches) {
-      inventoryJobs.push({
-        type: 'upsertInventory',
-        playerId,
+      inventoryItems.push({
         itemName: c.preyName,
         itemType: 'Av',
         rarity: c.difficulty >= 7 ? 'Rare' : c.difficulty >= 4 ? 'Uncommon' : 'Common',
         quantity: 1,
       });
-
-      // Item drop şansı (kritik avda 1.5x, buff loot_mult de uygulanır)
       for (const drop of HUNT_ITEM_DROPS) {
         if (c.difficulty < drop.minDifficulty) continue;
-        const dropChance = (c.critical ? drop.dropChance * 1.5 : drop.dropChance) * buffEffects.lootMult * safeBiome.lootModifier;
+        const dropChance = (c.critical ? drop.dropChance * 1.5 : drop.dropChance)
+          * buffEffects.lootMult
+          * (1 + consumableLootBonus)
+          * safeBiome.lootModifier;
         if (Math.random() * 100 < dropChance) {
-          inventoryJobs.push({
-            type: 'upsertInventory',
-            playerId,
+          inventoryItems.push({
             itemName: drop.itemName,
             itemType: drop.itemType,
             rarity: drop.rarity,
@@ -364,35 +342,13 @@ export async function rollHunt(
       }
     }
 
-    // Kritik path: XP hesaplama + bond güncelleme paralel
-    // addXP skipDbWrite:true ile çağrılır — hesaplanan değerleri döndürür, DB yazmasını rollHunt üstlenir.
-    // Bond artışı paralel bırakılır (streak/xp ile birleştirilmez).
     const newStreak = realCatchCount > 0 ? player.huntComboStreak + 1 : 0;
     const newNoRareStreak = gotRare ? 0 : player.noRareStreak + 1;
+    const xpResult = computeXpDelta(player, totalXP);
+    const levelUpRewards = xpResult.levelUp
+      ? buildLevelUpRewards(xpResult.levelUp.oldLevel, xpResult.levelUp.newLevel)
+      : undefined;
 
-    // WHY: $runCommandRaw MongoDB'ye özgüdür, PostgreSQL'de her hunt'ta hata
-    // logu üretiyordu. Direkt prisma.owl.update ile aynı sonuç, sıfır hata.
-    const bondUpdatePromise = realCatchCount > 0
-      ? prisma.owl.update({
-          where: { id: owlId },
-          data:  { bond: Math.min(BOND_MAX, (owl.bond ?? 0) + BOND_GAIN_PER_HUNT) },
-        }).catch(() => null)
-      : Promise.resolve(null);
-
-    const [xpResult] = await Promise.all([
-      addXP(prisma, playerId, totalXP, 'hunt', {
-        level: player.level,
-        xp: player.xp,
-        prestigeLevel: (player as any).prestigeLevel ?? 0,
-      }, true),
-      bondUpdatePromise,
-    ]);
-
-    // Birleşik player yazma: streak + xp/level tek round-trip'te
-    // totalXP: { increment: totalXP } — Gereksinim 7: artımlı güncelleme
-    // (addXP skipDbWrite:true ile çağrıldığından totalXP'yi burada yazıyoruz)
-
-    // Audit: hunt öncesi oyuncu durumu
     const auditBefore: Record<string, unknown> = {
       coins: player.coins,
       xp: player.xp,
@@ -401,29 +357,20 @@ export async function rollHunt(
       noRareStreak: player.noRareStreak,
     };
 
-    // Birleşik player yazma: streak + xp/level + totalXP tek transaction'da
-    // Transaction hatası durumunda tüm değişiklikler geri alınır — Req 15.1, 15.2, 15.3, 15.4
-    await prisma.$transaction([
-      prisma.player.update({
-        where: { id: playerId },
-        data: {
-          huntComboStreak: newStreak,
-          noRareStreak: newNoRareStreak,
-          lastHunt: new Date(),
-          ...(xpResult.levelUp
-            ? {
-                level: xpResult.levelUp.newLevel,
-                xp: xpResult.levelUp.remainingXP,
-              }
-            : {
-                xp: xpResult.currentXP,
-              }),
-          totalXP: { increment: xpResult.gainedXP },
-        },
-      }),
-    ]);
+    await applyHuntDelta(redis, prisma, playerId, {
+      gainedXP: xpResult.gainedXP,
+      newLevel: xpResult.levelUp ? xpResult.levelUp.newLevel : player.level,
+      newXp: xpResult.levelUp ? xpResult.levelUp.remainingXP : xpResult.currentXP,
+      totalXPGain: xpResult.gainedXP,
+      huntComboStreak: newStreak,
+      noRareStreak: newNoRareStreak,
+      bondGain: realCatchCount > 0 ? BOND_GAIN_PER_HUNT : 0,
+      owlId,
+      inventoryItems,
+      levelUp: xpResult.levelUp,
+      levelUpRewards,
+    });
 
-    // Audit: hunt sonrası oyuncu durumu (fire-and-forget)
     const auditAfter: Record<string, unknown> = {
       coins: player.coins,
       xp: xpResult.levelUp ? xpResult.levelUp.remainingXP : xpResult.currentXP,
@@ -434,39 +381,7 @@ export async function rollHunt(
     };
     writeAudit(prisma, playerId, 'hunt', auditBefore, auditAfter).catch(console.error);
 
-    // Envanter job'larını tek bulkWrite ile yaz — kullanıcı beklemez (Req 2)
-    buildAndExecuteBulkWrite(prisma, playerId, inventoryJobs)
-      .catch((err: Error) => console.error('[Hunt] BulkWrite failed:', err.message));
-
-    // ── Arka Plan İşlemleri (fire-and-forget) ────────────────────────────────
-    // Bu işlemler kullanıcı cevabını BEKLETMEZ — arka planda çalışır.
-    // Liderboard, buff charge, lootbox, encounter — hepsi sonuç gösterildikten sonra işlenir.
     const rareSuccesses = catches.filter((c) => c.difficulty >= HUNT_HIGH_TIER_THRESHOLD).length;
-    const hasCritical = catches.some((c) => c.critical);
-
-    // Lootbox drop — arka planda hesapla
-    // bundle.player gerçek cache verisi olduğundan tempCachedPlayer'a gerek yok.
-    const lootboxDropsPromise = rollHuntLootboxDrop(prisma, redis, playerId, player.level, hasCritical)
-      .catch(() => [] as LootboxDrop[]);
-
-    // Encounter — player ve owl snapshot'larını geçerek ekstra DB sorgusunu önle.
-    // Sonuç UI için gerekli (buton mesajı), bu yüzden lootbox ile paralel beklenir.
-    const encounterPromise = createEncounter(
-      prisma,
-      playerId,
-      { level: player.level },
-      {
-        tier: owl.tier,
-        statGoz: owl.statGoz,
-        statKulak: owl.statKulak,
-        statGaga: owl.statGaga,
-        statKanat: owl.statKanat,
-        statPence: owl.statPence,
-      },
-    ).catch(() => null);
-
-    // Liderboard istatistikleri — queue'ya gönder (DB'ye direkt yazma yok)
-    // recordHuntStats yerine enqueueDbWrite kullan — kritik path dışı
     if (catches.length > 0 || rareSuccesses > 0) {
       trackQuestProgress(prisma, playerId, 'hunt', catches.length).catch(() => null);
       enqueueDbWriteBulk([{
@@ -478,10 +393,24 @@ export async function rollHunt(
     }
     drainBuffCharge(prisma, playerId, 'hunt').catch(() => null);
 
-    // Player cache'i invalidate et — veri değişti, sonraki komut taze çeksin
-    invalidatePlayerCache(redis, playerId).catch(() => null);
+    if (consumableCatchBonus > 0) {
+      await consumeConsumableEffect(redis, playerId, 'hunt_catch_once');
+    }
+    if (consumableLootBonus > 0) {
+      await consumeConsumableEffect(redis, playerId, 'hunt_loot_once');
+    }
 
-    const lootboxDrops = await lootboxDropsPromise;
+    // Yem item'ları — av sonunda stamina yenile
+    for (const effectType of ['stamina_restore_once', 'stamina_boost_once'] as const) {
+      const amount = await getConsumableEffectValue(redis, playerId, effectType);
+      if (amount <= 0) continue;
+      const owlRow = await prisma.owl.findUnique({ where: { id: owlId }, select: { staminaCur: true, hpMax: true } });
+      if (owlRow) {
+        const newStamina = Math.min(owlRow.hpMax, owlRow.staminaCur + amount);
+        await prisma.owl.update({ where: { id: owlId }, data: { staminaCur: newStamina } });
+      }
+      await consumeConsumableEffect(redis, playerId, effectType);
+    }
 
     return {
       catches,
@@ -489,8 +418,6 @@ export async function rollHunt(
       injured,
       totalXP,
       levelUp: xpResult.levelUp,
-      resolveEncounter: encounterPromise,
-      lootboxDrops: lootboxDrops.length > 0 ? lootboxDrops : undefined,
     };
   });
 }

@@ -84,6 +84,10 @@ export interface UpgradePanelData {
   stat:        OwlStatKey;
   statValue:   number;
   chance:      number;
+  /** Aktif Bileme Taşı bonusu (0 = yok) */
+  consumableBonus?: number;
+  /** Koruyucu Balmumu çarpanı (1 = yok) */
+  downgradeShieldMult?: number;
   allStats:    Record<OwlStatKey, number>;
   /** Bağımlılık kontrolü sonucu (upgrade.ts'ten gelir) */
   depCheck?: {
@@ -158,6 +162,12 @@ export function buildUpgradePanel(data: UpgradePanelData): EmbedBuilder {
   const chanceNote = isLowChance
     ? '\n⚠️ *Şans düşük — stat seviyesi yükseldikçe zorlaşır.*'
     : '';
+  const consumableNote = (data.consumableBonus ?? 0) > 0
+    ? `\n🪨 **Bileme Taşı** aktif: +**${data.consumableBonus}** başarı puanı *(bu denemede tüketilir)*`
+    : '';
+  const balmumuNote = (data.downgradeShieldMult ?? 1) < 1
+    ? `\n🕯️ **Koruyucu Balmumu** aktif: downgrade riski **×${data.downgradeShieldMult}** *(bu denemede tüketilir)*`
+    : '';
 
   // ── Embed ──────────────────────────────────────────────────────────────────
   const embed = new EmbedBuilder()
@@ -188,7 +198,7 @@ export function buildUpgradePanel(data: UpgradePanelData): EmbedBuilder {
       name: '🎲 Başarı Şansı',
       value: depBlocked
         ? '🔒 *Bağımlılık karşılanmadan deneme yapılamaz.*'
-        : chanceBar(data.chance) + chanceNote,
+        : chanceBar(data.chance) + chanceNote + consumableNote + balmumuNote,
       inline: true,
     },
     {
