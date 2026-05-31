@@ -30,8 +30,11 @@ export function buildSpamMuteMessage(displayName: string, secondsUntil: number):
 export function buildCooldownMessage(
   remainingMs: number,
   label = 'bu komutu kullanabilirsin',
+  maxDisplayMs?: number,
 ): string {
-  return `⏰ ${label} ${discordCountdownFromRemainingMs(remainingMs)}`;
+  const safeMs = Math.max(1_000, Math.floor(remainingMs));
+  const displayMs = maxDisplayMs ? Math.min(safeMs, maxDisplayMs) : safeMs;
+  return `⏰ ${label} ${discordCountdownFromRemainingMs(displayMs)}`;
 }
 
 /** Kullaniciya Discord'da gosterilecek beklenen mesajlar (oyun kurallari, cooldown, spam). */

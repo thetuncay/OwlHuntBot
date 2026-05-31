@@ -16,7 +16,7 @@ import {
   EmbedBuilder,
 } from 'discord.js';
 import { HUNT_COOLDOWN_MS, HUNT_COOLDOWN_MAX_REMAINING_MS, BIOMES, BIOME_SESSION_TTL_MS } from '../config';
-import { armCooldown, peekCooldownBounded } from '../middleware/cooldown-manager';
+import { armCooldown, clearCooldown, peekCooldownBounded } from '../middleware/cooldown-manager';
 import { rollHunt, runHuntSideEffects } from '../systems/hunt';
 import {
   getBiomeSession,
@@ -88,8 +88,16 @@ async function enforceHuntCooldown(
     HUNT_COOLDOWN_MAX_REMAINING_MS,
   );
   if (!cooldown.active) return true;
+  if (cooldown.remainingMs > HUNT_COOLDOWN_MAX_REMAINING_MS) {
+    await clearCooldown(redis, huntCooldownKey(userId));
+    return true;
+  }
   if (!cooldown.notify) return false;
-  await notify(buildCooldownMessage(cooldown.remainingMs, 'Tekrar avlanabilirsin'));
+  await notify(buildCooldownMessage(
+    cooldown.remainingMs,
+    'Tekrar avlanabilirsin',
+    HUNT_COOLDOWN_MAX_REMAINING_MS,
+  ));
   return false;
 }
 
