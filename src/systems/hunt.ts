@@ -28,7 +28,7 @@ import {
 } from '../config';
 import type { HuntCatchResult, HuntRunResult, LootboxDrop } from '../types';
 import { catchChance, clamp, huntRolls, spawnScore } from '../utils/math';
-import { rollPercent, weightedRandom } from '../utils/rng';
+import { rollPercent } from '../utils/rng';
 import { withLock } from '../utils/lock';
 import { enqueueDbWriteBulk, type UpsertInventoryJob } from '../utils/db-queue';
 import {
@@ -47,7 +47,11 @@ import { trackQuestProgress } from './daily-quests';
 import { getBiomeSession, setBiomeSession } from '../utils/biome-session';
 import { parseStoredTraits, resolveTraits, calcTraitEffects } from './traits';
 import { writeAudit } from '../utils/audit';
-import { consumeConsumableEffect, getActiveConsumables, getConsumableEffectValue } from '../utils/use-items';
+import {
+  consumeConsumableEffects,
+  getActiveConsumables,
+  getConsumableEffectValues,
+} from '../utils/use-items';
 import { runDetached } from '../utils/async';
 
 /**
@@ -124,6 +128,37 @@ export async function buildAndExecuteBulkWrite(
   );
 }
 
+type PreyRow = (typeof PREY)[number];
+
+function pickWeightedPrey(
+  preyCandidates: PreyRow[],
+  owlStatGoz: number,
+  owlStatKulak: number,
+  rareModifier: number,
+): PreyRow {
+  let totalWeight = 0;
+  for (const prey of preyCandidates) {
+    let score = spawnScore(prey.difficulty, owlStatGoz, owlStatKulak);
+    if (prey.difficulty >= HUNT_HIGH_TIER_THRESHOLD) {
+      score *= rareModifier;
+    }
+    totalWeight += score;
+  }
+  if (totalWeight <= 0) {
+    return preyCandidates[Math.floor(Math.random() * preyCandidates.length)] ?? preyCandidates[0]!;
+  }
+  let threshold = Math.random() * totalWeight;
+  for (const prey of preyCandidates) {
+    let score = spawnScore(prey.difficulty, owlStatGoz, owlStatKulak);
+    if (prey.difficulty >= HUNT_HIGH_TIER_THRESHOLD) {
+      score *= rareModifier;
+    }
+    threshold -= score;
+    if (threshold <= 0) return prey;
+  }
+  return preyCandidates[preyCandidates.length - 1]!;
+}
+
 /**
  * Oyuncunun ana baykusu ile av turunu simule eder.
  * Rebalanced: minimum guarantee, soft scaling, pity, streak, multi-success bonus.
@@ -144,14 +179,14 @@ export async function rollHunt(
   includeDisplayMeta = false,
 ): Promise<HuntRunResult> {
   return withLock(playerId, 'financial', async () => {
-    let bundle = await hydratePlayerState(redis, prisma, playerId);
+    let bundle = await hydratePlayerState(redis, prisma, playerId, { includeInventory: false });
     if (!bundle) {
       await prisma.player.upsert({
         where: { id: playerId },
         create: { id: playerId },
         update: {},
       });
-      bundle = await hydratePlayerState(redis, prisma, playerId);
+      bundle = await hydratePlayerState(redis, prisma, playerId, { includeInventory: false });
     }
     if (!bundle) throw new Error('Oyuncu olusturulamadi.');
 
@@ -219,22 +254,19 @@ export async function rollHunt(
     const preyPoolThreshold = OWL_PREY_POOL[owl.tier];
     if (preyPoolThreshold === undefined) throw new Error('Baykus tier av havuzu tanimli degil.');
     const preyCandidates = PREY.filter((p) => p.difficulty <= preyPoolThreshold);
-    const consumableCatchBonus = await getConsumableEffectValue(redis, playerId, 'hunt_catch_once');
-    const consumableLootBonus = await getConsumableEffectValue(redis, playerId, 'hunt_loot_once');
+    const consumableBonuses = await getConsumableEffectValues(redis, playerId, [
+      'hunt_catch_once',
+      'hunt_loot_once',
+      'stamina_restore_once',
+      'stamina_boost_once',
+    ]);
+    const consumableCatchBonus = consumableBonuses.hunt_catch_once ?? 0;
+    const consumableLootBonus = consumableBonuses.hunt_loot_once ?? 0;
+    const staminaRestoreAmount = consumableBonuses.stamina_restore_once ?? 0;
+    const staminaBoostAmount = consumableBonuses.stamina_boost_once ?? 0;
 
     for (let i = 0; i < totalRoll; i++) {
-      const weighted = preyCandidates.map((prey) => {
-        let score = spawnScore(prey.difficulty, owl.statGoz, owl.statKulak);
-        // Biyom nadirlik çarpanı
-        if (prey.difficulty >= HUNT_HIGH_TIER_THRESHOLD) {
-          score *= safeBiome.rareModifier;
-        }
-        return {
-          value: prey,
-          weight: score,
-        };
-      });
-      const picked = weightedRandom(weighted);
+      const picked = pickWeightedPrey(preyCandidates, owl.statGoz, owl.statKulak, safeBiome.rareModifier);
 
       if (picked.difficulty >= HUNT_HIGH_TIER_THRESHOLD) {
         if (highTierTaken) continue;
@@ -399,19 +431,23 @@ export async function rollHunt(
     }
     runDetached('hunt-drain-buff-charge', () => drainBuffCharge(prisma, playerId, 'hunt'));
 
-    if (consumableCatchBonus > 0) {
-      await consumeConsumableEffect(redis, playerId, 'hunt_catch_once');
-    }
-    if (consumableLootBonus > 0) {
-      await consumeConsumableEffect(redis, playerId, 'hunt_loot_once');
-    }
+    const consumablesToConsume: Array<
+      'hunt_catch_once' | 'hunt_loot_once' | 'stamina_restore_once' | 'stamina_boost_once'
+    > = [];
+    if (consumableCatchBonus > 0) consumablesToConsume.push('hunt_catch_once');
+    if (consumableLootBonus > 0) consumablesToConsume.push('hunt_loot_once');
 
     // Yem item'ları — av sonunda stamina yenile
-    for (const effectType of ['stamina_restore_once', 'stamina_boost_once'] as const) {
-      const amount = await getConsumableEffectValue(redis, playerId, effectType);
-      if (amount <= 0) continue;
-      await applyOwlStaminaRecoveryInRedis(redis, prisma, playerId, targetOwlId, amount);
-      await consumeConsumableEffect(redis, playerId, effectType);
+    if (staminaRestoreAmount > 0) {
+      await applyOwlStaminaRecoveryInRedis(redis, prisma, playerId, targetOwlId, staminaRestoreAmount);
+      consumablesToConsume.push('stamina_restore_once');
+    }
+    if (staminaBoostAmount > 0) {
+      await applyOwlStaminaRecoveryInRedis(redis, prisma, playerId, targetOwlId, staminaBoostAmount);
+      consumablesToConsume.push('stamina_boost_once');
+    }
+    if (consumablesToConsume.length > 0) {
+      await consumeConsumableEffects(redis, playerId, consumablesToConsume);
     }
 
     let activeBuffs: HuntRunResult['activeBuffs'] | undefined;

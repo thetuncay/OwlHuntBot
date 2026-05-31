@@ -129,6 +129,61 @@ export async function getConsumableEffectValue(
   return Number.isFinite(parsed) ? parsed : def.effectValue;
 }
 
+/** Birden fazla consumable effect'i tek batch ile oku. */
+export async function getConsumableEffectValues(
+  redis: {
+    get: (key: string) => Promise<string | null>;
+    pipeline?: () => { get: (key: string) => unknown; exec: () => Promise<Array<[Error | null, unknown]> | null> };
+  },
+  playerId: string,
+  effectTypes: ConsumableItemDef['effectType'][],
+): Promise<Record<string, number>> {
+  const out: Record<string, number> = {};
+  const defs = effectTypes
+    .map((effectType) => ({
+      effectType,
+      def: CONSUMABLE_ITEMS.find((c) => c.effectType === effectType && c.durationMs > 0),
+    }))
+    .filter((row): row is { effectType: ConsumableItemDef['effectType']; def: ConsumableItemDef } => Boolean(row.def));
+
+  if (defs.length === 0) return out;
+
+  if (redis.pipeline) {
+    const p = redis.pipeline();
+    for (const { def } of defs) {
+      p.get(`${def.redisKey}:${playerId}`);
+    }
+    const rows = await p.exec();
+    const safeRows = rows ?? [];
+    for (let i = 0; i < defs.length; i++) {
+      const pair = safeRows[i];
+      const effectType = defs[i]!.effectType;
+      const rawVal = pair?.[1];
+      const val = typeof rawVal === 'string' ? rawVal : null;
+      if (!val) {
+        out[effectType] = 0;
+        continue;
+      }
+      const parsed = parseFloat(val);
+      out[effectType] = Number.isFinite(parsed) ? parsed : defs[i]!.def.effectValue;
+    }
+    return out;
+  }
+
+  const vals = await Promise.all(defs.map(({ def }) => redis.get(`${def.redisKey}:${playerId}`)));
+  for (let i = 0; i < defs.length; i++) {
+    const effectType = defs[i]!.effectType;
+    const val = vals[i];
+    if (!val) {
+      out[effectType] = 0;
+      continue;
+    }
+    const parsed = parseFloat(val);
+    out[effectType] = Number.isFinite(parsed) ? parsed : defs[i]!.def.effectValue;
+  }
+  return out;
+}
+
 /** Tek kullanımlık consumable efektini tüket (Redis key sil). */
 export async function consumeConsumableEffect(
   redis: { del: (...keys: string[]) => Promise<number> },
@@ -139,6 +194,20 @@ export async function consumeConsumableEffect(
   if (!def) return false;
   const deleted = await redis.del(`${def.redisKey}:${playerId}`);
   return deleted > 0;
+}
+
+/** Birden fazla consumable effect key'ini tek seferde tüket. */
+export async function consumeConsumableEffects(
+  redis: { del: (...keys: string[]) => Promise<number> },
+  playerId: string,
+  effectTypes: ConsumableItemDef['effectType'][],
+): Promise<number> {
+  const keys = effectTypes
+    .map((effectType) => CONSUMABLE_ITEMS.find((c) => c.effectType === effectType && c.durationMs > 0))
+    .filter((def): def is ConsumableItemDef => Boolean(def))
+    .map((def) => `${def.redisKey}:${playerId}`);
+  if (keys.length === 0) return 0;
+  return redis.del(...keys);
 }
 
 /** Aktif süreli consumable efektleri (Redis). */

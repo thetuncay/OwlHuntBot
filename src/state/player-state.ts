@@ -61,6 +61,10 @@ export interface PlayerStateBundle {
   mainOwl: CachedOwlData | null;
 }
 
+export interface HydratePlayerStateOptions {
+  includeInventory?: boolean;
+}
+
 function playerKey(id: string): string {
   return `${PLAYER_PREFIX}${id}`;
 }
@@ -169,7 +173,9 @@ export async function hydratePlayerState(
   redis: Redis,
   prisma: PrismaClient,
   playerId: string,
+  options?: HydratePlayerStateOptions,
 ): Promise<PlayerStateBundle | null> {
+  const includeInventory = options?.includeInventory ?? true;
   const hydrated = await redis.get(hydratedKey(playerId));
   if (hydrated === '1') {
     const rawPlayer = await redis.get(playerKey(playerId));
@@ -228,22 +234,24 @@ export async function hydratePlayerState(
     pipeline.expire(owlKey(mainOwl.id), STATE_TTL_SECONDS);
   }
 
-  const invRows = await prisma.inventoryItem.findMany({
-    where: { ownerId: playerId },
-    select: { itemName: true, itemType: true, rarity: true, quantity: true },
-  });
-  if (invRows.length > 0) {
-    const invArgs: string[] = [];
-    for (const row of invRows) {
-      invArgs.push(row.itemName, JSON.stringify({
-        itemType: row.itemType,
-        rarity: row.rarity,
-        quantity: row.quantity,
-      }));
+  if (includeInventory) {
+    const invRows = await prisma.inventoryItem.findMany({
+      where: { ownerId: playerId },
+      select: { itemName: true, itemType: true, rarity: true, quantity: true },
+    });
+    if (invRows.length > 0) {
+      const invArgs: string[] = [];
+      for (const row of invRows) {
+        invArgs.push(row.itemName, JSON.stringify({
+          itemType: row.itemType,
+          rarity: row.rarity,
+          quantity: row.quantity,
+        }));
+      }
+      pipeline.del(invKey(playerId));
+      pipeline.hset(invKey(playerId), ...invArgs);
+      pipeline.expire(invKey(playerId), STATE_TTL_SECONDS);
     }
-    pipeline.del(invKey(playerId));
-    pipeline.hset(invKey(playerId), ...invArgs);
-    pipeline.expire(invKey(playerId), STATE_TTL_SECONDS);
   }
 
   await pipeline.exec();
@@ -335,7 +343,6 @@ export async function applyHuntDelta(
         },
       });
       if (dbOwl) {
-        await redis.set(owlKey(delta.owlId), JSON.stringify(dbOwl));
         rawOwl = JSON.stringify(dbOwl);
       }
     }
@@ -434,7 +441,7 @@ async function loadPlayerForMutation(
   const raw = await redis.get(playerKey(playerId));
   if (raw) return JSON.parse(raw) as CachedPlayerData;
   if (!prisma) throw new Error('Oyuncu state bulunamadi.');
-  const bundle = await hydratePlayerState(redis, prisma, playerId);
+  const bundle = await hydratePlayerState(redis, prisma, playerId, { includeInventory: false });
   if (!bundle) throw new Error('Oyuncu bulunamadi.');
   return bundle.player;
 }
