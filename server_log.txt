@@ -2,3 +2,1722 @@
 [5192] 25 May 21:11:39.804 # Redis version=5.0.14.1, bits=64, commit=ec77f72d, modified=0, pid=5192, just started
 [5192] 25 May 21:11:39.804 # Configuration loaded
 [5192] 25 May 21:11:39.808 # Could not create server TCP listening socket 127.0.0.1:6379: bind: Islem basariyla tamamlandi.
+[9580] 29 May 22:22:45.503 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+[9580] 29 May 22:22:45.506 # Redis version=5.0.14.1, bits=64, commit=ec77f72d, modified=0, pid=9580, just started
+[9580] 29 May 22:22:45.506 # Configuration loaded
+                _._                                                  
+           _.-``__ ''-._                                             
+      _.-``    `.  `_.  ''-._           Redis 5.0.14.1 (ec77f72d/0) 64 bit
+  .-`` .-```.  ```\/    _.,_ ''-._                                   
+ (    '      ,       .-`  | `,    )     Running in standalone mode
+ |`-._`-...-` __...-.``-._|'` _.-'|     Port: 6379
+ |    `-._   `._    /     _.-'    |     PID: 9580
+  `-._    `-._  `-./  _.-'    _.-'                                   
+ |`-._`-._    `-.__.-'    _.-'_.-'|                                  
+ |    `-._`-._        _.-'_.-'    |           http://redis.io        
+  `-._    `-._`-.__.-'_.-'    _.-'                                   
+ |`-._`-._    `-.__.-'    _.-'_.-'|                                  
+ |    `-._`-._        _.-'_.-'    |                                  
+  `-._    `-._`-.__.-'_.-'    _.-'                                   
+      `-._    `-.__.-'    _.-'                                       
+          `-._        _.-'                                           
+              `-.__.-'                                               
+
+[9580] 29 May 22:22:45.571 # Server initialized
+[9580] 29 May 22:22:45.572 * Ready to accept connections
+[9580] 29 May 22:27:46.013 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:27:46.044 * Background saving started by pid 1112
+[1112] 29 May 22:27:46.107 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:27:46.154 # fork operation failed
+[9580] 29 May 22:27:46.169 # Background saving terminated by signal 1
+[9580] 29 May 22:27:52.046 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:27:52.046 * Background saving started by pid 6564
+[6564] 29 May 22:27:52.155 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:27:52.171 # fork operation failed
+[9580] 29 May 22:27:52.186 # Background saving terminated by signal 1
+[9580] 29 May 22:27:58.076 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:27:58.076 * Background saving started by pid 5144
+[5144] 29 May 22:27:58.154 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:27:58.187 # fork operation failed
+[9580] 29 May 22:27:58.201 # Background saving terminated by signal 1
+[9580] 29 May 22:28:04.061 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:28:04.061 * Background saving started by pid 7084
+[7084] 29 May 22:28:04.123 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:28:04.186 # fork operation failed
+[9580] 29 May 22:28:04.202 # Background saving terminated by signal 1
+[9580] 29 May 22:28:10.003 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:28:10.013 * Background saving started by pid 3396
+[3396] 29 May 22:28:10.076 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:28:10.125 # fork operation failed
+[9580] 29 May 22:28:10.141 # Background saving terminated by signal 1
+[9580] 29 May 22:28:16.064 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:28:16.080 * Background saving started by pid 7356
+[7356] 29 May 22:28:16.307 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:28:16.419 # fork operation failed
+[9580] 29 May 22:28:16.441 # Background saving terminated by signal 1
+[9580] 29 May 22:28:22.152 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:28:22.163 * Background saving started by pid 128
+[128] 29 May 22:28:22.275 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:28:22.377 # fork operation failed
+[9580] 29 May 22:28:22.402 # Background saving terminated by signal 1
+[9580] 29 May 22:28:28.091 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:28:28.102 * Background saving started by pid 5364
+[5364] 29 May 22:28:28.255 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:28:28.306 # fork operation failed
+[9580] 29 May 22:28:28.375 # Background saving terminated by signal 1
+[9580] 29 May 22:28:34.148 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:28:34.160 * Background saving started by pid 3068
+[3068] 29 May 22:28:34.295 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:28:34.464 # fork operation failed
+[9580] 29 May 22:28:34.484 # Background saving terminated by signal 1
+[9580] 29 May 22:28:40.086 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:28:40.098 * Background saving started by pid 9784
+[9784] 29 May 22:28:40.225 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:28:40.299 # fork operation failed
+[9580] 29 May 22:28:40.436 # Background saving terminated by signal 1
+[9580] 29 May 22:28:46.081 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:28:46.095 * Background saving started by pid 5148
+[5148] 29 May 22:28:46.157 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:28:46.366 # fork operation failed
+[9580] 29 May 22:28:46.391 # Background saving terminated by signal 1
+[9580] 29 May 22:28:52.027 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:28:52.039 * Background saving started by pid 10472
+[10472] 29 May 22:28:52.184 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:28:52.282 # fork operation failed
+[9580] 29 May 22:28:52.305 # Background saving terminated by signal 1
+[9580] 29 May 22:28:58.030 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:28:58.067 * Background saving started by pid 8532
+[8532] 29 May 22:28:58.200 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:28:58.200 # fork operation failed
+[9580] 29 May 22:28:58.232 # Background saving terminated by signal 1
+[9580] 29 May 22:29:04.035 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:29:04.048 * Background saving started by pid 5528
+[5528] 29 May 22:29:04.167 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:29:04.252 # fork operation failed
+[9580] 29 May 22:29:04.271 # Background saving terminated by signal 1
+[9580] 29 May 22:29:10.014 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:29:10.038 * Background saving started by pid 8152
+[8152] 29 May 22:29:11.099 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:29:11.289 # fork operation failed
+[9580] 29 May 22:29:11.311 # Background saving terminated by signal 1
+[9580] 29 May 22:29:16.016 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:29:16.042 * Background saving started by pid 8468
+[8468] 29 May 22:29:16.159 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:29:16.248 # fork operation failed
+[9580] 29 May 22:29:16.265 # Background saving terminated by signal 1
+[9580] 29 May 22:29:22.097 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:29:22.109 * Background saving started by pid 8200
+[8200] 29 May 22:29:22.265 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:29:22.354 # fork operation failed
+[9580] 29 May 22:29:22.785 # Background saving terminated by signal 1
+[9580] 29 May 22:29:28.096 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:29:28.116 * Background saving started by pid 7800
+[7800] 29 May 22:29:28.234 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:29:28.391 # fork operation failed
+[9580] 29 May 22:29:28.411 # Background saving terminated by signal 1
+[9580] 29 May 22:29:34.082 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:29:34.094 * Background saving started by pid 6216
+[6216] 29 May 22:29:34.242 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:29:34.361 # fork operation failed
+[9580] 29 May 22:29:34.379 # Background saving terminated by signal 1
+[9580] 29 May 22:29:40.117 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:29:40.131 * Background saving started by pid 4716
+[4716] 29 May 22:29:40.496 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:29:40.571 # fork operation failed
+[9580] 29 May 22:29:40.709 # Background saving terminated by signal 1
+[9580] 29 May 22:29:46.049 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:29:46.061 * Background saving started by pid 4776
+[4776] 29 May 22:29:46.252 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:29:46.263 # fork operation failed
+[9580] 29 May 22:29:46.283 # Background saving terminated by signal 1
+[9580] 29 May 22:29:52.077 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:29:52.088 * Background saving started by pid 8876
+[8876] 29 May 22:29:52.181 # GetPerformanceInfo failed.
+
+[8876] 29 May 22:29:52.181 # Failing startup.
+
+[9580] 29 May 22:29:52.197 # fork operation failed
+[9580] 29 May 22:29:52.653 # Background saving terminated by signal 1
+[9580] 29 May 22:29:58.019 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:29:58.034 * Background saving started by pid 3484
+[3484] 29 May 22:29:58.199 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:29:58.259 # fork operation failed
+[9580] 29 May 22:29:58.379 # Background saving terminated by signal 1
+[9580] 29 May 22:30:04.071 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:30:04.091 * Background saving started by pid 5692
+[5692] 29 May 22:30:04.277 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:30:04.292 # fork operation failed
+[9580] 29 May 22:30:04.308 # Background saving terminated by signal 1
+[9580] 29 May 22:30:10.030 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:30:10.052 * Background saving started by pid 7520
+[7520] 29 May 22:30:10.303 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:30:10.304 # fork operation failed
+[9580] 29 May 22:30:10.443 # Background saving terminated by signal 1
+[9580] 29 May 22:30:16.067 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:30:16.124 * Background saving started by pid 5288
+[5288] 29 May 22:30:16.261 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:30:16.386 # fork operation failed
+[9580] 29 May 22:30:16.406 # Background saving terminated by signal 1
+[9580] 29 May 22:30:22.060 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:30:22.086 * Background saving started by pid 716
+[716] 29 May 22:30:22.222 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:30:22.293 # fork operation failed
+[9580] 29 May 22:30:22.409 # Background saving terminated by signal 1
+[9580] 29 May 22:30:28.037 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:30:28.055 * Background saving started by pid 10248
+[10248] 29 May 22:30:28.194 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:30:28.300 # fork operation failed
+[9580] 29 May 22:30:28.409 # Background saving terminated by signal 1
+[9580] 29 May 22:30:34.081 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:30:34.129 * Background saving started by pid 6788
+[6788] 29 May 22:30:34.262 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:30:34.385 # fork operation failed
+[9580] 29 May 22:30:34.407 # Background saving terminated by signal 1
+[9580] 29 May 22:30:40.051 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:30:40.089 * Background saving started by pid 3136
+[3136] 29 May 22:30:40.257 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:30:40.379 # fork operation failed
+[9580] 29 May 22:30:40.405 # Background saving terminated by signal 1
+[9580] 29 May 22:30:46.019 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:30:46.033 * Background saving started by pid 2420
+[2420] 29 May 22:30:46.145 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:30:46.268 # fork operation failed
+[9580] 29 May 22:30:46.303 # Background saving terminated by signal 1
+[9580] 29 May 22:30:52.137 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:30:52.152 * Background saving started by pid 10592
+[10592] 29 May 22:30:52.427 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:30:52.518 # fork operation failed
+[9580] 29 May 22:30:52.586 # Background saving terminated by signal 1
+[9580] 29 May 22:30:58.002 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:30:58.016 * Background saving started by pid 9412
+[9412] 29 May 22:30:58.141 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:30:58.237 # fork operation failed
+[9580] 29 May 22:30:58.260 # Background saving terminated by signal 1
+[9580] 29 May 22:31:04.286 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:31:04.329 * Background saving started by pid 11004
+[11004] 29 May 22:31:04.396 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:31:04.432 # fork operation failed
+[9580] 29 May 22:31:04.450 # Background saving terminated by signal 1
+[9580] 29 May 22:31:10.065 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:31:10.077 * Background saving started by pid 10960
+[10960] 29 May 22:31:10.301 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:31:10.407 # fork operation failed
+[9580] 29 May 22:31:10.426 # Background saving terminated by signal 1
+[9580] 29 May 22:31:16.093 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:31:16.104 * Background saving started by pid 10944
+[10944] 29 May 22:31:16.223 # GetPerformanceInfo failed.
+
+[10944] 29 May 22:31:16.223 # Failing startup.
+
+[9580] 29 May 22:31:16.364 # fork operation failed
+[9580] 29 May 22:31:16.685 # Background saving terminated by signal 1
+[9580] 29 May 22:31:21.989 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:31:22.036 * Background saving started by pid 10840
+[10840] 29 May 22:31:22.238 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:31:22.367 # fork operation failed
+[9580] 29 May 22:31:22.387 # Background saving terminated by signal 1
+[9580] 29 May 22:31:28.083 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:31:28.097 * Background saving started by pid 9048
+[9048] 29 May 22:31:28.262 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:31:28.386 # fork operation failed
+[9580] 29 May 22:31:28.451 # Background saving terminated by signal 1
+[9580] 29 May 22:31:34.122 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:31:34.135 * Background saving started by pid 10964
+[10964] 29 May 22:31:34.402 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:31:34.494 # fork operation failed
+[9580] 29 May 22:31:34.524 # Background saving terminated by signal 1
+[9580] 29 May 22:31:40.003 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:31:40.021 * Background saving started by pid 11216
+[11216] 29 May 22:31:40.206 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:31:40.226 # fork operation failed
+[9580] 29 May 22:31:40.374 # Background saving terminated by signal 1
+[9580] 29 May 22:31:46.008 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:31:46.068 * Background saving started by pid 10136
+[10136] 29 May 22:31:46.254 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:31:46.278 # fork operation failed
+[9580] 29 May 22:31:46.401 # Background saving terminated by signal 1
+[9580] 29 May 22:31:52.018 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:31:52.050 * Background saving started by pid 8032
+[8032] 29 May 22:31:52.212 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:31:52.253 # fork operation failed
+[9580] 29 May 22:31:52.376 # Background saving terminated by signal 1
+[9580] 29 May 22:31:58.022 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:31:58.034 * Background saving started by pid 8936
+[8936] 29 May 22:31:58.212 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:31:58.214 # fork operation failed
+[9580] 29 May 22:31:58.245 # Background saving terminated by signal 1
+[9580] 29 May 22:32:04.081 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:32:04.128 * Background saving started by pid 9220
+[9220] 29 May 22:32:04.388 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:32:04.497 # fork operation failed
+[9580] 29 May 22:32:04.614 # Background saving terminated by signal 1
+[9580] 29 May 22:32:10.022 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:32:10.065 * Background saving started by pid 6464
+[6464] 29 May 22:32:10.213 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:32:10.220 # fork operation failed
+[9580] 29 May 22:32:10.382 # Background saving terminated by signal 1
+[9580] 29 May 22:32:16.019 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:32:16.091 * Background saving started by pid 6916
+[6916] 29 May 22:32:16.224 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:32:16.364 # fork operation failed
+[9580] 29 May 22:32:16.397 # Background saving terminated by signal 1
+[9580] 29 May 22:32:22.074 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:32:22.144 * Background saving started by pid 10284
+[10284] 29 May 22:32:22.205 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:32:22.416 # fork operation failed
+[9580] 29 May 22:32:22.488 # Background saving terminated by signal 1
+[9580] 29 May 22:32:28.110 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:32:28.168 * Background saving started by pid 10020
+[10020] 29 May 22:32:28.292 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:32:28.416 # fork operation failed
+[9580] 29 May 22:32:28.457 # Background saving terminated by signal 1
+[9580] 29 May 22:32:34.080 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:32:34.141 * Background saving started by pid 4920
+[4920] 29 May 22:32:34.288 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:32:34.288 # fork operation failed
+[9580] 29 May 22:32:34.418 # Background saving terminated by signal 1
+[9580] 29 May 22:32:40.125 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:32:40.137 * Background saving started by pid 10648
+[10648] 29 May 22:32:40.380 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:32:40.465 # fork operation failed
+[9580] 29 May 22:32:40.485 # Background saving terminated by signal 1
+[9580] 29 May 22:32:46.074 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:32:46.142 * Background saving started by pid 6732
+[6732] 29 May 22:32:46.207 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:32:46.306 # fork operation failed
+[9580] 29 May 22:32:46.388 # Background saving terminated by signal 1
+[9580] 29 May 22:32:52.021 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:32:52.057 * Background saving started by pid 9620
+[9620] 29 May 22:32:52.227 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:32:52.229 # fork operation failed
+[9580] 29 May 22:32:52.276 # Background saving terminated by signal 1
+[9580] 29 May 22:32:58.039 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:32:58.055 * Background saving started by pid 10784
+[10784] 29 May 22:32:58.201 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:32:58.257 # fork operation failed
+[9580] 29 May 22:32:58.276 # Background saving terminated by signal 1
+[9580] 29 May 22:33:04.080 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:33:04.095 * Background saving started by pid 9380
+[9380] 29 May 22:33:04.191 # GetPerformanceInfo failed.
+
+[9380] 29 May 22:33:04.192 # Failing startup.
+
+[9580] 29 May 22:33:04.203 # fork operation failed
+[9580] 29 May 22:33:04.868 # Background saving terminated by signal 1
+[9580] 29 May 22:33:10.030 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:33:10.045 * Background saving started by pid 6940
+[6940] 29 May 22:33:10.217 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:33:10.298 # fork operation failed
+[9580] 29 May 22:33:10.649 # Background saving terminated by signal 1
+[9580] 29 May 22:33:16.006 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:33:16.021 * Background saving started by pid 128
+[128] 29 May 22:33:16.058 # GetPerformanceInfo failed.
+
+[128] 29 May 22:33:16.059 # Failing startup.
+
+[9580] 29 May 22:33:16.122 # fork operation failed
+[9580] 29 May 22:33:16.525 # Background saving terminated by signal 1
+[9580] 29 May 22:33:22.013 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:33:22.036 * Background saving started by pid 6508
+[6508] 29 May 22:33:22.246 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:33:22.263 # fork operation failed
+[9580] 29 May 22:33:22.917 # Background saving terminated by signal 1
+[9580] 29 May 22:33:28.080 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:33:28.092 * Background saving started by pid 7400
+[7400] 29 May 22:33:28.294 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:33:28.299 # fork operation failed
+[9580] 29 May 22:33:28.415 # Background saving terminated by signal 1
+[9580] 29 May 22:33:34.221 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:33:34.232 * Background saving started by pid 848
+[848] 29 May 22:33:34.722 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:33:34.723 # fork operation failed
+[9580] 29 May 22:33:35.241 # Background saving terminated by signal 1
+[9580] 29 May 22:33:40.030 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:33:40.042 * Background saving started by pid 2428
+[2428] 29 May 22:33:40.191 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:33:40.378 # fork operation failed
+[9580] 29 May 22:33:40.455 # Background saving terminated by signal 1
+[9580] 29 May 22:33:46.027 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:33:46.045 * Background saving started by pid 6684
+[6684] 29 May 22:33:46.260 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:33:46.433 # fork operation failed
+[9580] 29 May 22:33:46.571 # Background saving terminated by signal 1
+[9580] 29 May 22:33:52.048 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:33:52.094 * Background saving started by pid 2456
+[2456] 29 May 22:33:52.402 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:33:52.561 # fork operation failed
+[9580] 29 May 22:33:52.590 # Background saving terminated by signal 1
+[9580] 29 May 22:33:58.049 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:33:58.122 * Background saving started by pid 9312
+[9312] 29 May 22:33:58.301 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:33:58.436 # fork operation failed
+[9580] 29 May 22:33:58.460 # Background saving terminated by signal 1
+[9580] 29 May 22:34:04.243 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:34:04.575 * Background saving started by pid 10564
+[10564] 29 May 22:34:04.880 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:34:04.970 # fork operation failed
+[9580] 29 May 22:34:05.004 # Background saving terminated by signal 1
+[9580] 29 May 22:34:10.156 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:34:10.168 * Background saving started by pid 5468
+[5468] 29 May 22:34:10.205 # GetPerformanceInfo failed.
+
+[5468] 29 May 22:34:10.297 # Failing startup.
+
+[9580] 29 May 22:34:10.876 # fork operation failed
+[9580] 29 May 22:34:12.817 # Background saving terminated by signal 1
+[9580] 29 May 22:34:16.081 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:34:16.398 * Background saving started by pid 5868
+[5868] 29 May 22:34:16.487 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:34:16.541 # fork operation failed
+[9580] 29 May 22:34:17.141 # Background saving terminated by signal 1
+[9580] 29 May 22:34:22.134 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:34:22.764 * Background saving started by pid 10000
+[10000] 29 May 22:34:22.849 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:34:22.870 # fork operation failed
+[9580] 29 May 22:34:24.256 # Background saving terminated by signal 1
+[9580] 29 May 22:34:28.071 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:34:28.084 * Background saving started by pid 4496
+[4496] 29 May 22:34:28.285 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:34:28.805 # fork operation failed
+[9580] 29 May 22:34:28.825 # Background saving terminated by signal 1
+[9580] 29 May 22:34:34.069 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:34:34.130 * Background saving started by pid 6008
+[6008] 29 May 22:34:34.200 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:34:34.239 # fork operation failed
+[9580] 29 May 22:34:34.775 # Background saving terminated by signal 1
+[9580] 29 May 22:34:40.079 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:34:40.126 * Background saving started by pid 3928
+[3928] 29 May 22:34:40.757 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:34:41.177 # fork operation failed
+[9580] 29 May 22:34:41.237 # Background saving terminated by signal 1
+[9580] 29 May 22:34:46.071 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:34:46.090 * Background saving started by pid 1136
+[1136] 29 May 22:34:46.178 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:34:46.207 # fork operation failed
+[9580] 29 May 22:34:46.536 # Background saving terminated by signal 1
+[9580] 29 May 22:34:52.013 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:34:52.028 * Background saving started by pid 1288
+[1288] 29 May 22:34:52.102 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:34:52.145 # fork operation failed
+[9580] 29 May 22:34:52.488 # Background saving terminated by signal 1
+[9580] 29 May 22:34:58.183 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:34:58.194 * Background saving started by pid 4368
+[4368] 29 May 22:34:58.451 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:34:58.537 # fork operation failed
+[9580] 29 May 22:34:58.564 # Background saving terminated by signal 1
+[9580] 29 May 22:35:04.016 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:35:04.091 * Background saving started by pid 8652
+[8652] 29 May 22:35:04.276 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:35:04.435 # fork operation failed
+[9580] 29 May 22:35:04.531 # Background saving terminated by signal 1
+[9580] 29 May 22:35:10.079 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:35:10.124 * Background saving started by pid 4776
+[4776] 29 May 22:35:10.215 # GetPerformanceInfo failed.
+
+[4776] 29 May 22:35:10.215 # Failing startup.
+
+[9580] 29 May 22:35:10.364 # fork operation failed
+[9580] 29 May 22:35:11.137 # Background saving terminated by signal 1
+[9580] 29 May 22:35:16.066 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:35:16.075 * Background saving started by pid 7676
+[7676] 29 May 22:35:16.200 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:35:16.404 # fork operation failed
+[9580] 29 May 22:35:16.434 # Background saving terminated by signal 1
+[9580] 29 May 22:35:22.059 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:35:22.365 * Background saving started by pid 5028
+[5028] 29 May 22:35:22.481 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:35:22.590 # fork operation failed
+[9580] 29 May 22:35:22.641 # Background saving terminated by signal 1
+[9580] 29 May 22:35:28.060 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:35:28.075 * Background saving started by pid 9040
+[9040] 29 May 22:35:28.190 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:35:28.293 # fork operation failed
+[9580] 29 May 22:35:29.763 # Background saving terminated by signal 1
+[9580] 29 May 22:35:34.096 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:35:34.112 * Background saving started by pid 2772
+[2772] 29 May 22:35:34.200 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:35:34.492 # fork operation failed
+[9580] 29 May 22:35:34.700 # Background saving terminated by signal 1
+[9580] 29 May 22:35:40.103 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:35:40.107 * Background saving started by pid 6112
+[6112] 29 May 22:35:40.181 # GetPerformanceInfo failed.
+
+[6112] 29 May 22:35:40.181 # Failing startup.
+
+[9580] 29 May 22:35:40.376 # fork operation failed
+[9580] 29 May 22:35:40.438 # Background saving terminated by signal 1
+[9580] 29 May 22:35:46.070 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:35:46.180 * Background saving started by pid 5624
+[5624] 29 May 22:35:46.857 # GetPerformanceInfo failed.
+
+[5624] 29 May 22:35:46.857 # Failing startup.
+
+[9580] 29 May 22:35:47.196 # fork operation failed
+[9580] 29 May 22:35:47.325 # Background saving terminated by signal 1
+[9580] 29 May 22:35:52.076 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:35:52.091 * Background saving started by pid 1668
+[1668] 29 May 22:35:52.122 # GetPerformanceInfo failed.
+
+[1668] 29 May 22:35:52.122 # Failing startup.
+
+[9580] 29 May 22:35:52.394 # fork operation failed
+[9580] 29 May 22:35:52.558 # Background saving terminated by signal 1
+[9580] 29 May 22:35:58.044 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:35:58.044 * Background saving started by pid 2516
+[2516] 29 May 22:35:58.153 # GetPerformanceInfo failed.
+
+[2516] 29 May 22:35:58.153 # Failing startup.
+
+[9580] 29 May 22:35:58.169 # fork operation failed
+[9580] 29 May 22:35:58.507 # Background saving terminated by signal 1
+[9580] 29 May 22:36:04.017 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:36:04.113 * Background saving started by pid 9540
+[9540] 29 May 22:36:04.294 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:36:04.588 # fork operation failed
+[9580] 29 May 22:36:09.435 # Background saving terminated by signal 1
+[9580] 29 May 22:36:10.004 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:36:10.063 * Background saving started by pid 7516
+[7516] 29 May 22:36:10.107 # GetPerformanceInfo failed.
+
+[7516] 29 May 22:36:10.107 # Failing startup.
+
+[9580] 29 May 22:36:10.216 # fork operation failed
+[9580] 29 May 22:36:10.481 # Background saving terminated by signal 1
+[9580] 29 May 22:36:16.091 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:36:16.091 * Background saving started by pid 3332
+[3332] 29 May 22:36:16.232 # GetPerformanceInfo failed.
+
+[3332] 29 May 22:36:16.232 # Failing startup.
+
+[9580] 29 May 22:36:16.364 # fork operation failed
+[9580] 29 May 22:36:16.568 # Background saving terminated by signal 1
+[9580] 29 May 22:36:22.005 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:36:22.020 * Background saving started by pid 10056
+[10056] 29 May 22:36:22.115 # GetPerformanceInfo failed.
+
+[10056] 29 May 22:36:22.115 # Failing startup.
+
+[9580] 29 May 22:36:22.130 # fork operation failed
+[9580] 29 May 22:36:22.396 # Background saving terminated by signal 1
+[9580] 29 May 22:36:28.068 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:36:28.084 * Background saving started by pid 10152
+[10152] 29 May 22:36:28.189 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:36:28.204 # fork operation failed
+[9580] 29 May 22:36:28.513 # Background saving terminated by signal 1
+[9580] 29 May 22:36:34.075 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:36:34.138 * Background saving started by pid 1968
+[1968] 29 May 22:36:34.244 # GetPerformanceInfo failed.
+
+[1968] 29 May 22:36:34.244 # Failing startup.
+
+[9580] 29 May 22:36:34.426 # fork operation failed
+[9580] 29 May 22:36:34.749 # Background saving terminated by signal 1
+[9580] 29 May 22:36:40.031 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:36:40.051 * Background saving started by pid 10512
+[10512] 29 May 22:36:40.143 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:36:40.264 # fork operation failed
+[9580] 29 May 22:36:40.544 # Background saving terminated by signal 1
+[9580] 29 May 22:36:46.086 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:36:46.086 * Background saving started by pid 3468
+[9580] 29 May 22:36:46.212 # fork operation failed
+[9580] 29 May 22:36:47.030 # Background saving terminated by signal 1
+[9580] 29 May 22:36:52.012 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:36:52.012 * Background saving started by pid 8332
+[8332] 29 May 22:36:52.059 # GetPerformanceInfo failed.
+
+[8332] 29 May 22:36:52.059 # Failing startup.
+
+[9580] 29 May 22:36:52.138 # fork operation failed
+[9580] 29 May 22:36:52.184 # Background saving terminated by signal 1
+[9580] 29 May 22:36:58.014 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:36:58.014 * Background saving started by pid 10304
+[10304] 29 May 22:36:58.075 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:36:58.137 # fork operation failed
+[9580] 29 May 22:36:58.153 # Background saving terminated by signal 1
+[9580] 29 May 22:37:04.075 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:37:04.091 * Background saving started by pid 7060
+[7060] 29 May 22:37:04.153 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:37:04.200 # fork operation failed
+[9580] 29 May 22:37:04.216 # Background saving terminated by signal 1
+[9580] 29 May 22:37:10.012 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:37:10.028 * Background saving started by pid 4152
+[4152] 29 May 22:37:10.106 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:37:10.137 # fork operation failed
+[9580] 29 May 22:37:10.169 # Background saving terminated by signal 1
+[9580] 29 May 22:37:16.090 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:37:16.106 * Background saving started by pid 11056
+[11056] 29 May 22:37:16.169 # GetPerformanceInfo failed.
+
+[11056] 29 May 22:37:16.169 # Failing startup.
+
+[9580] 29 May 22:37:16.216 # fork operation failed
+[9580] 29 May 22:37:16.278 # Background saving terminated by signal 1
+[9580] 29 May 22:37:22.091 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:37:22.091 * Background saving started by pid 9040
+[9040] 29 May 22:37:22.153 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:37:22.216 # fork operation failed
+[9580] 29 May 22:37:22.231 # Background saving terminated by signal 1
+[9580] 29 May 22:37:28.028 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:37:28.028 * Background saving started by pid 10000
+[10000] 29 May 22:37:28.122 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:37:28.153 # fork operation failed
+[9580] 29 May 22:37:28.200 # Background saving terminated by signal 1
+[9580] 29 May 22:37:34.106 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:37:34.122 * Background saving started by pid 2856
+[2856] 29 May 22:37:34.185 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:37:34.231 # fork operation failed
+[9580] 29 May 22:37:34.247 # Background saving terminated by signal 1
+[9580] 29 May 22:37:40.059 * 10 changes in 300 seconds. Saving...
+[9580] 29 May 22:37:40.059 * Background saving started by pid 8496
+[8496] 29 May 22:37:40.137 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:37:40.186 # fork operation failed
+[9580] 29 May 22:37:40.200 # Background saving terminated by signal 1
+[9580] 29 May 22:37:46.028 * 1 changes in 900 seconds. Saving...
+[9580] 29 May 22:37:46.028 * Background saving started by pid 7456
+[7456] 29 May 22:37:46.090 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:37:46.153 # fork operation failed
+[9580] 29 May 22:37:46.169 # Background saving terminated by signal 1
+[9580] 29 May 22:37:52.094 * 1 changes in 900 seconds. Saving...
+[9580] 29 May 22:37:52.106 * Background saving started by pid 7808
+[7808] 29 May 22:37:52.153 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:37:52.215 # fork operation failed
+[9580] 29 May 22:37:52.231 # Background saving terminated by signal 1
+[9580] 29 May 22:37:58.028 * 1 changes in 900 seconds. Saving...
+[9580] 29 May 22:37:58.028 * Background saving started by pid 10772
+[10772] 29 May 22:37:58.106 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:37:58.153 # fork operation failed
+[9580] 29 May 22:37:58.169 # Background saving terminated by signal 1
+[9580] 29 May 22:38:04.075 * 1 changes in 900 seconds. Saving...
+[9580] 29 May 22:38:04.075 * Background saving started by pid 6684
+[6684] 29 May 22:38:04.138 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:38:04.200 # fork operation failed
+[9580] 29 May 22:38:04.216 # Background saving terminated by signal 1
+[9580] 29 May 22:38:10.044 * 1 changes in 900 seconds. Saving...
+[9580] 29 May 22:38:10.044 * Background saving started by pid 10612
+[10612] 29 May 22:38:10.106 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:38:10.169 # fork operation failed
+[9580] 29 May 22:38:10.186 # Background saving terminated by signal 1
+[9580] 29 May 22:38:16.091 * 1 changes in 900 seconds. Saving...
+[9580] 29 May 22:38:16.091 * Background saving started by pid 6568
+[6568] 29 May 22:38:16.153 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:38:16.216 # fork operation failed
+[9580] 29 May 22:38:16.231 # Background saving terminated by signal 1
+[9580] 29 May 22:38:22.028 * 1 changes in 900 seconds. Saving...
+[9580] 29 May 22:38:22.028 * Background saving started by pid 8176
+[8176] 29 May 22:38:22.090 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:38:22.153 # fork operation failed
+[9580] 29 May 22:38:22.169 # Background saving terminated by signal 1
+[9580] 29 May 22:38:28.075 * 1 changes in 900 seconds. Saving...
+[9580] 29 May 22:38:28.075 * Background saving started by pid 8240
+[8240] 29 May 22:38:28.137 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:38:28.200 # fork operation failed
+[9580] 29 May 22:38:28.215 # Background saving terminated by signal 1
+[9580] 29 May 22:38:34.028 * 1 changes in 900 seconds. Saving...
+[9580] 29 May 22:38:34.028 * Background saving started by pid 10192
+[10192] 29 May 22:38:34.106 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:38:34.153 # fork operation failed
+[9580] 29 May 22:38:34.169 # Background saving terminated by signal 1
+[9580] 29 May 22:38:40.075 * 1 changes in 900 seconds. Saving...
+[9580] 29 May 22:38:40.075 * Background saving started by pid 7204
+[7204] 29 May 22:38:40.137 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:38:40.200 # fork operation failed
+[9580] 29 May 22:38:40.216 # Background saving terminated by signal 1
+[9580] 29 May 22:38:46.044 * 1 changes in 900 seconds. Saving...
+[9580] 29 May 22:38:46.059 * Background saving started by pid 4944
+[4944] 29 May 22:38:46.122 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:38:46.169 # fork operation failed
+[9580] 29 May 22:38:46.184 # Background saving terminated by signal 1
+[9580] 29 May 22:38:52.106 * 1 changes in 900 seconds. Saving...
+[9580] 29 May 22:38:52.106 * Background saving started by pid 9612
+[9612] 29 May 22:38:52.169 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:38:52.231 # fork operation failed
+[9580] 29 May 22:38:52.247 # Background saving terminated by signal 1
+[9580] 29 May 22:38:58.075 * 1 changes in 900 seconds. Saving...
+[9580] 29 May 22:38:58.075 * Background saving started by pid 10788
+[10788] 29 May 22:38:58.122 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:38:58.200 # fork operation failed
+[9580] 29 May 22:38:58.262 # Background saving terminated by signal 1
+[9580] 29 May 22:39:04.075 * 1 changes in 900 seconds. Saving...
+[9580] 29 May 22:39:04.075 * Background saving started by pid 11084
+[11084] 29 May 22:39:04.137 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:39:04.200 # fork operation failed
+[9580] 29 May 22:39:04.215 # Background saving terminated by signal 1
+[9580] 29 May 22:39:10.012 * 1 changes in 900 seconds. Saving...
+[9580] 29 May 22:39:10.028 * Background saving started by pid 10172
+[10172] 29 May 22:39:10.091 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:39:10.137 # fork operation failed
+[9580] 29 May 22:39:10.153 # Background saving terminated by signal 1
+[9580] 29 May 22:39:16.059 * 1 changes in 900 seconds. Saving...
+[9580] 29 May 22:39:16.075 * Background saving started by pid 10896
+[10896] 29 May 22:39:16.137 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:39:16.184 # fork operation failed
+[9580] 29 May 22:39:16.200 # Background saving terminated by signal 1
+[9580] 29 May 22:39:22.106 * 1 changes in 900 seconds. Saving...
+[9580] 29 May 22:39:22.106 * Background saving started by pid 2280
+[2280] 29 May 22:39:22.169 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:39:22.231 # fork operation failed
+[9580] 29 May 22:39:22.247 # Background saving terminated by signal 1
+[9580] 29 May 22:39:28.091 * 1 changes in 900 seconds. Saving...
+[9580] 29 May 22:39:28.091 * Background saving started by pid 2080
+[2080] 29 May 22:39:28.169 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:39:28.216 # fork operation failed
+[9580] 29 May 22:39:28.231 # Background saving terminated by signal 1
+[9580] 29 May 22:39:34.044 * 1 changes in 900 seconds. Saving...
+[9580] 29 May 22:39:34.044 * Background saving started by pid 6792
+[6792] 29 May 22:39:34.122 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:39:34.169 # fork operation failed
+[9580] 29 May 22:39:34.184 # Background saving terminated by signal 1
+[9580] 29 May 22:39:40.106 * 1 changes in 900 seconds. Saving...
+[9580] 29 May 22:39:40.106 * Background saving started by pid 3264
+[3264] 29 May 22:39:40.184 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:39:40.231 # fork operation failed
+[9580] 29 May 22:39:40.247 # Background saving terminated by signal 1
+[9580] 29 May 22:39:46.044 * 1 changes in 900 seconds. Saving...
+[9580] 29 May 22:39:46.044 * Background saving started by pid 4912
+[4912] 29 May 22:39:46.122 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:39:46.169 # fork operation failed
+[9580] 29 May 22:39:46.184 # Background saving terminated by signal 1
+[9580] 29 May 22:39:52.106 * 1 changes in 900 seconds. Saving...
+[9580] 29 May 22:39:52.106 * Background saving started by pid 11232
+[11232] 29 May 22:39:52.184 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:39:52.231 # fork operation failed
+[9580] 29 May 22:39:52.248 # Background saving terminated by signal 1
+[9580] 29 May 22:39:58.059 * 1 changes in 900 seconds. Saving...
+[9580] 29 May 22:39:58.059 * Background saving started by pid 8692
+[8692] 29 May 22:39:58.090 # GetPerformanceInfo failed.
+
+[8692] 29 May 22:39:58.106 # Failing startup.
+
+[9580] 29 May 22:39:58.184 # fork operation failed
+[9580] 29 May 22:39:58.216 # Background saving terminated by signal 1
+[9580] 29 May 22:40:04.028 * 1 changes in 900 seconds. Saving...
+[9580] 29 May 22:40:04.028 * Background saving started by pid 3456
+[3456] 29 May 22:40:04.106 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:40:04.153 # fork operation failed
+[9580] 29 May 22:40:04.169 # Background saving terminated by signal 1
+[9580] 29 May 22:40:10.091 * 1 changes in 900 seconds. Saving...
+[9580] 29 May 22:40:10.106 * Background saving started by pid 5244
+[5244] 29 May 22:40:10.169 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:40:10.215 # fork operation failed
+[9580] 29 May 22:40:10.231 # Background saving terminated by signal 1
+[9580] 29 May 22:40:16.028 * 1 changes in 900 seconds. Saving...
+[9580] 29 May 22:40:16.044 * Background saving started by pid 4076
+[4076] 29 May 22:40:16.106 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:40:16.153 # fork operation failed
+[9580] 29 May 22:40:16.169 # Background saving terminated by signal 1
+[9580] 29 May 22:40:22.075 * 1 changes in 900 seconds. Saving...
+[9580] 29 May 22:40:22.090 * Background saving started by pid 7600
+[7600] 29 May 22:40:22.122 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:40:22.200 # fork operation failed
+[9580] 29 May 22:40:22.247 # Background saving terminated by signal 1
+[9580] 29 May 22:40:28.044 * 1 changes in 900 seconds. Saving...
+[9580] 29 May 22:40:28.044 * Background saving started by pid 6096
+[6096] 29 May 22:40:28.153 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:40:28.169 # fork operation failed
+[9580] 29 May 22:40:28.184 # Background saving terminated by signal 1
+[9580] 29 May 22:40:34.106 * 1 changes in 900 seconds. Saving...
+[9580] 29 May 22:40:34.106 * Background saving started by pid 9280
+[9280] 29 May 22:40:34.184 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:40:34.231 # fork operation failed
+[9580] 29 May 22:40:34.247 # Background saving terminated by signal 1
+[9580] 29 May 22:40:40.044 * 1 changes in 900 seconds. Saving...
+[9580] 29 May 22:40:40.044 * Background saving started by pid 9672
+[9672] 29 May 22:40:40.122 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:40:40.169 # fork operation failed
+[9580] 29 May 22:40:40.184 # Background saving terminated by signal 1
+[9580] 29 May 22:40:46.090 * 1 changes in 900 seconds. Saving...
+[9580] 29 May 22:40:46.090 * Background saving started by pid 5616
+[5616] 29 May 22:40:46.153 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:40:46.216 # fork operation failed
+[9580] 29 May 22:40:46.231 # Background saving terminated by signal 1
+[9580] 29 May 22:40:52.028 * 1 changes in 900 seconds. Saving...
+[9580] 29 May 22:40:52.028 * Background saving started by pid 7904
+[7904] 29 May 22:40:52.106 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:40:52.153 # fork operation failed
+[9580] 29 May 22:40:52.169 # Background saving terminated by signal 1
+[9580] 29 May 22:40:58.090 * 1 changes in 900 seconds. Saving...
+[9580] 29 May 22:40:58.090 * Background saving started by pid 7372
+[7372] 29 May 22:40:58.153 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:40:58.216 # fork operation failed
+[9580] 29 May 22:40:58.231 # Background saving terminated by signal 1
+[9580] 29 May 22:41:04.060 * 1 changes in 900 seconds. Saving...
+[9580] 29 May 22:41:04.060 * Background saving started by pid 6648
+[6648] 29 May 22:41:04.200 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:41:04.200 # fork operation failed
+[9580] 29 May 22:41:04.247 # Background saving terminated by signal 1
+[9580] 29 May 22:41:10.079 * 1 changes in 900 seconds. Saving...
+[9580] 29 May 22:41:10.079 * Background saving started by pid 9020
+[9020] 29 May 22:41:10.142 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:41:10.204 # fork operation failed
+[9580] 29 May 22:41:10.220 # Background saving terminated by signal 1
+[9580] 29 May 22:41:16.058 * 1 changes in 900 seconds. Saving...
+[9580] 29 May 22:41:16.058 * Background saving started by pid 1984
+[1984] 29 May 22:41:16.107 # GetPerformanceInfo failed.
+
+[1984] 29 May 22:41:16.107 # Failing startup.
+
+[9580] 29 May 22:41:16.185 # fork operation failed
+[9580] 29 May 22:41:16.310 # Background saving terminated by signal 1
+[9580] 29 May 22:41:22.042 * 1 changes in 900 seconds. Saving...
+[9580] 29 May 22:41:22.042 * Background saving started by pid 7316
+[7316] 29 May 22:41:22.107 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:41:22.168 # fork operation failed
+[9580] 29 May 22:41:22.184 # Background saving terminated by signal 1
+[9580] 29 May 22:41:28.102 * 1 changes in 900 seconds. Saving...
+[9580] 29 May 22:41:28.102 * Background saving started by pid 9604
+[9604] 29 May 22:41:28.196 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:41:28.227 # fork operation failed
+[9580] 29 May 22:41:28.243 # Background saving terminated by signal 1
+[9580] 29 May 22:41:34.040 * 1 changes in 900 seconds. Saving...
+[9580] 29 May 22:41:34.040 * Background saving started by pid 7804
+[7804] 29 May 22:41:34.102 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:41:34.165 # fork operation failed
+[9580] 29 May 22:41:34.180 # Background saving terminated by signal 1
+[9580] 29 May 22:41:40.102 * 1 changes in 900 seconds. Saving...
+[9580] 29 May 22:41:40.102 * Background saving started by pid 8056
+[8056] 29 May 22:41:40.180 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:41:40.227 # fork operation failed
+[9580] 29 May 22:41:40.243 # Background saving terminated by signal 1
+[9580] 29 May 22:41:46.040 * 1 changes in 900 seconds. Saving...
+[9580] 29 May 22:41:46.040 * Background saving started by pid 10124
+[10124] 29 May 22:41:46.102 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:41:46.165 # fork operation failed
+[9580] 29 May 22:41:46.180 # Background saving terminated by signal 1
+[9580] 29 May 22:41:52.089 * 1 changes in 900 seconds. Saving...
+[9580] 29 May 22:41:52.102 * Background saving started by pid 3372
+[3372] 29 May 22:41:52.149 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:41:52.211 # fork operation failed
+[9580] 29 May 22:41:52.227 # Background saving terminated by signal 1
+[9580] 29 May 22:41:58.024 * 1 changes in 900 seconds. Saving...
+[9580] 29 May 22:41:58.024 * Background saving started by pid 9128
+[9128] 29 May 22:41:58.102 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:41:58.149 # fork operation failed
+[9580] 29 May 22:41:58.165 # Background saving terminated by signal 1
+[9580] 29 May 22:42:04.071 * 1 changes in 900 seconds. Saving...
+[9580] 29 May 22:42:04.087 * Background saving started by pid 10728
+[10728] 29 May 22:42:04.149 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:42:04.196 # fork operation failed
+[9580] 29 May 22:42:04.211 # Background saving terminated by signal 1
+[9580] 29 May 22:42:10.024 * 1 changes in 900 seconds. Saving...
+[9580] 29 May 22:42:10.024 * Background saving started by pid 10696
+[10696] 29 May 22:42:10.102 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:42:10.149 # fork operation failed
+[9580] 29 May 22:42:10.165 # Background saving terminated by signal 1
+[9580] 29 May 22:42:16.071 * 1 changes in 900 seconds. Saving...
+[9580] 29 May 22:42:16.071 * Background saving started by pid 10664
+[10664] 29 May 22:42:16.133 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:42:16.196 # fork operation failed
+[9580] 29 May 22:42:16.211 # Background saving terminated by signal 1
+[9580] 29 May 22:42:22.024 * 1 changes in 900 seconds. Saving...
+[9580] 29 May 22:42:22.024 * Background saving started by pid 5316
+[5316] 29 May 22:42:22.102 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:42:22.149 # fork operation failed
+[9580] 29 May 22:42:22.165 # Background saving terminated by signal 1
+[9580] 29 May 22:42:28.071 * 1 changes in 900 seconds. Saving...
+[9580] 29 May 22:42:28.071 * Background saving started by pid 4952
+[4952] 29 May 22:42:28.133 # 
+The Windows version of Redis reserves heap memory from the system paging file
+for sharing with the forked process used for persistence operations.At this time there is insufficient contiguous free space available in the
+system paging file. You may increase the size of the system paging file.
+Sometimes a reboot will defragment the system paging file sufficiently for
+this operation to complete successfully.
+
+Redis can not continue. Exiting.
+[9580] 29 May 22:42:28.196 # fork operation failed
+[9580] 29 May 22:42:28.211 # Background saving terminated by signal 1
