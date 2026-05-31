@@ -1,4 +1,4 @@
-import { discordRelativeTimestamp } from './discord-time';
+import { discordRelativeTimestamp, discordTimestampFromMs } from './discord-time';
 
 /** Spam susturmasi — silent=true iken Discord'a yanit yok, komut islenmez. */
 export class SpamBlockedError extends Error {
@@ -26,13 +26,29 @@ export function buildSpamMuteMessage(displayName: string, secondsUntil: number):
   return `⏱️ | **${displayName}**, Lutfen yavasla~ Cok hizlisin :c Komutu tekrar dene ${when}`;
 }
 
-/** Tek seferlik cooldown uyarisi (OwO stili relative timestamp). */
+/** Kisa cooldown'larda Discord :R render hatalarini onlemek icin esik (ms). */
+const LITERAL_COOLDOWN_MS = 120_000;
+
+/** Tek seferlik cooldown uyarisi. Kisa surelerde acik saniye, uzun surelerde <t:R>. */
 export function buildCooldownMessage(
   expiresAtMs: number,
   label = 'bu komutu kullanabilirsin',
+  remainingMsOverride?: number,
 ): string {
-  const secondsUntil = Math.max(1, Math.ceil((expiresAtMs - Date.now()) / 1000));
-  return `⏰ ${label} ${discordRelativeTimestamp(secondsUntil)}`;
+  let remainingMs = remainingMsOverride ?? Math.max(0, expiresAtMs - Date.now());
+
+  // Yanlislikla unix saniye (10 hane) expiresAtMs olarak geldiyse duzelt
+  if (remainingMsOverride === undefined && expiresAtMs > 0 && expiresAtMs < 1_000_000_000_000) {
+    remainingMs = Math.max(0, expiresAtMs * 1000 - Date.now());
+  }
+
+  const secondsUntil = Math.max(1, Math.ceil(remainingMs / 1000));
+
+  if (remainingMs <= LITERAL_COOLDOWN_MS) {
+    return `⏰ ${label} **${secondsUntil} saniye** sonra`;
+  }
+
+  return `⏰ ${label} ${discordTimestampFromMs(Date.now() + remainingMs)}`;
 }
 
 /** Kullaniciya Discord'da gosterilecek beklenen mesajlar (oyun kurallari, cooldown, spam). */

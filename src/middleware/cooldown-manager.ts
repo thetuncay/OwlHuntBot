@@ -90,18 +90,19 @@ export async function peekCooldown(
   redis: Redis,
   key: string,
 ): Promise<CooldownDecision> {
-  const local = getActiveLocalEntry(key);
-  if (local) return markWarned(key, local);
-
   const remainingMs = await checkCooldownRemainingMs(redis, key);
+
   if (remainingMs <= 0) {
     localCooldowns.delete(key);
     return toDecision(false, 0, false);
   }
 
+  const expiresAtMs = nowMs() + remainingMs;
+  const prev = localCooldowns.get(key);
   const entry: CooldownEntry = {
-    expiresAtMs: nowMs() + remainingMs,
-    warned: false,
+    expiresAtMs,
+    // Redis TTL yenilendiyse warn flag'i sifirla
+    warned: prev?.expiresAtMs === expiresAtMs ? prev.warned : false,
   };
   localCooldowns.set(key, entry);
   return markWarned(key, entry);
@@ -116,11 +117,27 @@ export async function peekCooldownBounded(
   key: string,
   maxRemainingMs: number,
 ): Promise<CooldownDecision> {
-  const decision = await peekCooldown(redis, key);
-  if (!decision.active) return decision;
-  if (decision.remainingMs <= maxRemainingMs) return decision;
-  await clearCooldown(redis, key);
-  return toDecision(false, 0, false);
+  const remainingMs = await checkCooldownRemainingMs(redis, key);
+  if (remainingMs <= 0) {
+    localCooldowns.delete(key);
+    return toDecision(false, 0, false);
+  }
+  if (remainingMs > maxRemainingMs) {
+    console.warn(
+      `[Cooldown] Anormal TTL temizlendi: ${key} (${Math.ceil(remainingMs / 1000)}s > ${Math.ceil(maxRemainingMs / 1000)}s)`,
+    );
+    await clearCooldown(redis, key);
+    return toDecision(false, 0, false);
+  }
+
+  const expiresAtMs = nowMs() + remainingMs;
+  const prev = localCooldowns.get(key);
+  const entry: CooldownEntry = {
+    expiresAtMs,
+    warned: prev?.expiresAtMs === expiresAtMs ? prev.warned : false,
+  };
+  localCooldowns.set(key, entry);
+  return markWarned(key, entry);
 }
 
 /**
