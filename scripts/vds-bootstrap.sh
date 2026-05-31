@@ -3,7 +3,13 @@
 # Kullanim: curl -fsSL ... | bash   VEYA   bash scripts/vds-bootstrap.sh
 set -euo pipefail
 
-APP_DIR="${APP_DIR:-/opt/owlhuntbot}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Mevcut repodan calistirildiysa o klasoru kullan; yoksa /opt/owlhuntbot
+if [ -f "${SCRIPT_DIR}/../.git/config" ] || [ -f "${SCRIPT_DIR}/../docker-compose.yml" ]; then
+  APP_DIR="${APP_DIR:-$(cd "${SCRIPT_DIR}/.." && pwd)}"
+else
+  APP_DIR="${APP_DIR:-/opt/owlhuntbot}"
+fi
 REPO_URL="${REPO_URL:-https://github.com/thetuncay/OwlHuntBot.git}"
 BRANCH="${BRANCH:-main}"
 

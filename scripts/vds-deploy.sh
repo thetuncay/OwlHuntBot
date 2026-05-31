@@ -2,8 +2,11 @@
 # VDS guncelleme / yeniden baslatma
 set -euo pipefail
 
-APP_DIR="${APP_DIR:-/opt/owlhuntbot}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+APP_DIR="${APP_DIR:-$(cd "${SCRIPT_DIR}/.." && pwd)}"
 cd "${APP_DIR}"
+
+echo "==> OwlHuntBot deploy: ${APP_DIR}"
 
 if [ ! -f .env ]; then
   echo "HATA: ${APP_DIR}/.env yok. Once vds-bootstrap.sh calistir."
