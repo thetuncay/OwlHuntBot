@@ -101,8 +101,8 @@ export async function peekCooldown(
   const prev = localCooldowns.get(key);
   const entry: CooldownEntry = {
     expiresAtMs,
-    // Redis TTL yenilendiyse warn flag'i sifirla
-    warned: prev?.expiresAtMs === expiresAtMs ? prev.warned : false,
+    // Ayni aktif cooldown suresince ikinci uyariyi gonderme.
+    warned: prev?.warned ?? false,
   };
   localCooldowns.set(key, entry);
   return markWarned(key, entry);
@@ -134,7 +134,7 @@ export async function peekCooldownBounded(
   const prev = localCooldowns.get(key);
   const entry: CooldownEntry = {
     expiresAtMs,
-    warned: prev?.expiresAtMs === expiresAtMs ? prev.warned : false,
+    warned: prev?.warned ?? false,
   };
   localCooldowns.set(key, entry);
   return markWarned(key, entry);

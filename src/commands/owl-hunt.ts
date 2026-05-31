@@ -46,7 +46,6 @@ import {
 import { animateHuntMessage, buildFinalMessage, compressHuntResult } from '../utils/hunt-ux';
 import { safeReply } from '../utils/safe-reply';
 import {
-  buildCooldownMessage,
   logCommandError,
   shouldNotifyUserOnDiscord,
   userErrorMessage,
@@ -71,6 +70,7 @@ import type { CommandDefinition } from '../types';
 import type { Message } from 'discord.js';
 
 const BIOME_PANEL_LOCK_MS = 30_000;
+const HUNT_COOLDOWN_TEXT = `⏰ Tekrar avlanabilirsin ${Math.ceil(HUNT_COOLDOWN_MS / 1000)} saniye sonra`;
 
 function huntCooldownKey(userId: string): string {
   return `cooldown:hunt:${userId}`;
@@ -93,11 +93,7 @@ async function enforceHuntCooldown(
     return true;
   }
   if (!cooldown.notify) return false;
-  await notify(buildCooldownMessage(
-    cooldown.remainingMs,
-    'Tekrar avlanabilirsin',
-    HUNT_COOLDOWN_MAX_REMAINING_MS,
-  ));
+  await notify(HUNT_COOLDOWN_TEXT);
   return false;
 }
 
