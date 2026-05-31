@@ -26,10 +26,7 @@ export function buildSpamMuteMessage(displayName: string, secondsUntil: number):
   return `⏱️ | **${displayName}**, Lutfen yavasla~ Cok hizlisin :c Komutu tekrar dene ${when}`;
 }
 
-/** Kisa cooldown'larda Discord :R render hatalarini onlemek icin esik (ms). */
-const LITERAL_COOLDOWN_MS = 120_000;
-
-/** Tek seferlik cooldown uyarisi. Kisa surelerde acik saniye, uzun surelerde <t:R>. */
+/** Tek seferlik cooldown uyarisi — OwO stili <t:R> (Discord client geri sayimi gunceller). */
 export function buildCooldownMessage(
   expiresAtMs: number,
   label = 'bu komutu kullanabilirsin',
@@ -42,12 +39,7 @@ export function buildCooldownMessage(
     remainingMs = Math.max(0, expiresAtMs * 1000 - Date.now());
   }
 
-  const secondsUntil = Math.max(1, Math.ceil(remainingMs / 1000));
-
-  if (remainingMs <= LITERAL_COOLDOWN_MS) {
-    return `⏰ ${label} **${secondsUntil} saniye** sonra`;
-  }
-
+  remainingMs = Math.max(1_000, remainingMs);
   return `⏰ ${label} ${discordTimestampFromMs(Date.now() + remainingMs)}`;
 }
 
