@@ -1,0 +1,26 @@
+---
+description: Kod degisikligi sonrasi GitHub'a otomatik push
+alwaysApply: true
+---
+
+# Otomatik GitHub Push
+
+Kullanici istegi: Her kod degisikliginden sonra commit + push yap; kullanicidan push beklenmesin.
+
+## Akis
+
+1. Anlamli bir degisiklik tamamlaninca `git add` (`.env`, token, secret dosyalari HARIC)
+2. Aciklayici commit mesaji yaz
+3. Hemen push et:
+   - Windows: `powershell -File scripts/push-github.ps1`
+   - Linux: `bash scripts/push-github.sh`
+4. Push basarisizsa kullaniciya sadece `GITHUB_TOKEN` eksikligini bildir
+
+## Token
+
+- `GITHUB_TOKEN` sadece yerel `.env` icinde tutulur (gitignore)
+- Asla commit etme, sohbette token yazdirma
+
+## VDS
+
+Kullanici VDS'te `git pull` + `bash update.sh` (PM2) veya `bash scripts/vds-deploy.sh` (Docker) kullanir.
