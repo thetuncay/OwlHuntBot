@@ -9,9 +9,10 @@ import {
 import { settleBlackjack } from '../systems/gambling';
 import type { CommandDefinition, CommandContext } from '../types';
 import { failEmbed } from '../utils/embed';
-import { getCooldownRemainingMs, setCooldown } from '../middleware/cooldown';
+import { guardCooldown } from '../middleware/cooldown-manager';
 import { GAMBLE_BJ_COOLDOWN_MS } from '../config';
 import { recordCoinsEarned } from '../systems/leaderboard';
+import { buildCooldownMessage } from '../utils/command-error';
 
 const data = new SlashCommandBuilder()
   .setName('bj')
@@ -254,10 +255,11 @@ async function execute(
   try {
     const userId      = interaction.user.id;
     const cooldownKey = `cooldown:bj:${userId}`;
-    const remaining   = await getCooldownRemainingMs(ctx.redis, cooldownKey, GAMBLE_BJ_COOLDOWN_MS);
-    if (remaining > 0) {
+    const cooldown = await guardCooldown(ctx.redis, cooldownKey, GAMBLE_BJ_COOLDOWN_MS);
+    if (cooldown.active) {
+      if (!cooldown.notify) return;
       await interaction.reply({
-        content: `⏰ Tekrar blackjack için **${Math.ceil(remaining / 1000)}s** beklemelisin.`,
+        content: buildCooldownMessage(cooldown.expiresAtMs, 'Tekrar blackjack oynayabilirsin'),
         flags: 64,
       });
       return;
@@ -285,9 +287,6 @@ async function execute(
     const deck = makeDeck();
     const playerHand: Card[] = [deck.pop()!, deck.pop()!];
     const dealerHand: Card[] = [deck.pop()!, deck.pop()!];
-
-    // Cooldown'ı oyun başlamadan set et
-    await setCooldown(ctx.redis, cooldownKey, GAMBLE_BJ_COOLDOWN_MS);
 
     // ── Anında Blackjack ──────────────────────────────────────────────────────
     if (isBlackjack(playerHand)) {
@@ -427,9 +426,10 @@ export async function handleBjTextCommand(
 ): Promise<void> {
   const userId      = message.author.id;
   const cooldownKey = `cooldown:bj:${userId}`;
-  const remaining   = await getCooldownRemainingMs(ctx.redis, cooldownKey, GAMBLE_BJ_COOLDOWN_MS);
-  if (remaining > 0) {
-    await message.reply(`⏰ Tekrar blackjack için **${Math.ceil(remaining / 1000)}s** beklemelisin.`);
+  const cooldown = await guardCooldown(ctx.redis, cooldownKey, GAMBLE_BJ_COOLDOWN_MS);
+  if (cooldown.active) {
+    if (!cooldown.notify) return;
+    await message.reply(buildCooldownMessage(cooldown.expiresAtMs, 'Tekrar blackjack oynayabilirsin'));
     return;
   }
 
@@ -444,9 +444,6 @@ export async function handleBjTextCommand(
   const deck = makeDeck();
   const playerHand: Card[] = [deck.pop()!, deck.pop()!];
   const dealerHand: Card[] = [deck.pop()!, deck.pop()!];
-
-  // Cooldown'ı oyun başlamadan set et
-  await setCooldown(ctx.redis, cooldownKey, GAMBLE_BJ_COOLDOWN_MS);
 
   // Anında Blackjack
   if (isBlackjack(playerHand)) {

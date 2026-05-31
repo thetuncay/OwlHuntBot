@@ -18,8 +18,9 @@
 
 import { EmbedBuilder, type Message } from 'discord.js';
 import { askGameQuestion } from '../systems/ai-qa';
-import { getCooldownRemainingMs } from '../middleware/cooldown';
+import { guardCooldown } from '../middleware/cooldown-manager';
 import type { CommandDefinition } from '../types';
+import { buildCooldownMessage } from '../utils/command-error';
 
 const SORU_COOLDOWN_MS = 30_000; // 30 saniye
 const MAX_SORU_LENGTH = 200;
@@ -57,11 +58,10 @@ export async function runSoruMessage(
 
   // Cooldown kontrolü
   const cooldownKey = `cooldown:soru:${message.author.id}`;
-  const remaining = await getCooldownRemainingMs(ctx.redis, cooldownKey, SORU_COOLDOWN_MS);
-  if (remaining > 0) {
-    const secs = Math.ceil(remaining / 1000);
-    const sent = await message.reply(`⏰ Tekrar soru sormak için **${secs}s** beklemelisin.`);
-    setTimeout(() => sent.delete().catch(() => null), 4000);
+  const cooldown = await guardCooldown(ctx.redis, cooldownKey, SORU_COOLDOWN_MS);
+  if (cooldown.active) {
+    if (!cooldown.notify) return;
+    await message.reply(buildCooldownMessage(cooldown.expiresAtMs, 'Tekrar soru sorabilirsin'));
     return;
   }
 
@@ -87,8 +87,6 @@ export async function runSoruMessage(
 
     await message.reply({ embeds: [embed] });
 
-    // Cooldown'u başarılı cevaptan sonra ayarla
-    await ctx.redis.set(cooldownKey, '1', 'EX', Math.ceil(SORU_COOLDOWN_MS / 1000));
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : 'Bir hata oluştu.';
     await message.reply(`❌ **Hata** | ${errMsg}\n\n💡 Lütfen sorunuzu daha açık bir şekilde sorun veya daha sonra tekrar deneyin.`);

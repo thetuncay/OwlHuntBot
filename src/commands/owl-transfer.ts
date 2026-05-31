@@ -4,9 +4,11 @@
 
 import { EmbedBuilder, type Message } from 'discord.js';
 import { transferCoins } from '../systems/transfer';
-import { TRANSFER_MIN_AMOUNT } from '../config';
+import { TRANSFER_COOLDOWN_MS, TRANSFER_MIN_AMOUNT } from '../config';
 import { failEmbed } from '../utils/embed';
 import type { CommandDefinition } from '../types';
+import { armCooldown, peekCooldown } from '../middleware/cooldown-manager';
+import { buildCooldownMessage } from '../utils/command-error';
 
 // ─── Slash: /owl ver ──────────────────────────────────────────────────────────
 
@@ -18,9 +20,21 @@ export async function runTransfer(
   const target     = interaction.options.getUser('kullanici', true);
   const amount     = interaction.options.getInteger('miktar', true);
   const receiverId = target.id;
+  const cooldownKey = `cooldown:transfer:${senderId}`;
+
+  const cooldown = await peekCooldown(ctx.redis, cooldownKey);
+  if (cooldown.active) {
+    if (!cooldown.notify) return;
+    await interaction.reply({
+      content: buildCooldownMessage(cooldown.expiresAtMs, 'Tekrar transfer yapabilirsin'),
+      flags: 64,
+    });
+    return;
+  }
 
   try {
     const result       = await transferCoins(ctx.prisma, ctx.redis, senderId, receiverId, amount);
+    await armCooldown(ctx.redis, cooldownKey, TRANSFER_COOLDOWN_MS);
     const receiverName = target.displayName ?? target.username;
     const taxPct       = Math.round(result.taxRate * 100);
     const dailyLeft    = result.dailyLimit - result.dailySent;
@@ -71,8 +85,17 @@ export async function runTransferMessage(
     return;
   }
 
+  const cooldownKey = `cooldown:transfer:${message.author.id}`;
+  const cooldown = await peekCooldown(ctx.redis, cooldownKey);
+  if (cooldown.active) {
+    if (!cooldown.notify) return;
+    await message.reply(buildCooldownMessage(cooldown.expiresAtMs, 'Tekrar transfer yapabilirsin'));
+    return;
+  }
+
   try {
     const result    = await transferCoins(ctx.prisma, ctx.redis, message.author.id, receiverId, amount);
+    await armCooldown(ctx.redis, cooldownKey, TRANSFER_COOLDOWN_MS);
     const taxPct    = Math.round(result.taxRate * 100);
     const dailyLeft = result.dailyLimit - result.dailySent;
 

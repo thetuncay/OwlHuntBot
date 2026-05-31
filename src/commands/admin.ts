@@ -5,6 +5,7 @@ import { createLeaderboardRoles, syncAllRoles } from '../systems/roles';
 import { handleTestTame } from './admin-testtame';
 import { undoLastAction } from '../utils/audit';
 import { applyCoinDeltaInRedis, rehydratePlayerState } from '../state/player-state';
+import { clearCooldown, clearCooldownPattern } from '../middleware/cooldown-manager';
 
 const ADMIN_IDS = new Set([
   '1110219662509224006',
@@ -349,23 +350,22 @@ async function execute(
   // ── sys/clearcooldown ──────────────────────────────────────────────────────
   if (grp === 'sys' && sub === 'clearcooldown') {
     const user = interaction.options.getUser('kullanici', true);
-    await ctx.redis.del(`cooldown:hunt:${user.id}`);
+    await clearCooldown(ctx.redis, `cooldown:hunt:${user.id}`);
     await interaction.reply({ content: `✅ <@${user.id}> hunt cooldown temizlendi. ⏰`, flags: 64 });
     return;
   }
 
   // ── sys/clearallcooldowns ──────────────────────────────────────────────────
   if (grp === 'sys' && sub === 'clearallcooldowns') {
-    const keys = await ctx.redis.keys('cooldown:hunt:*');
-    if (keys.length > 0) await ctx.redis.del(...keys);
-    await interaction.reply({ content: `✅ ${keys.length} hunt cooldown temizlendi. ⏰`, flags: 64 });
+    const cleared = await clearCooldownPattern(ctx.redis, 'cooldown:hunt:*');
+    await interaction.reply({ content: `✅ ${cleared} hunt cooldown temizlendi. ⏰`, flags: 64 });
     return;
   }
 
   // ── sys/clearupgradecooldown ───────────────────────────────────────────────
   if (grp === 'sys' && sub === 'clearupgradecooldown') {
     const user = interaction.options.getUser('kullanici', true);
-    await ctx.redis.del(`cooldown:upgrade:${user.id}`);
+    await clearCooldown(ctx.redis, `cooldown:upgrade:${user.id}`);
     await interaction.reply({ content: `✅ <@${user.id}> upgrade cooldown temizlendi. ⏰`, flags: 64 });
     return;
   }
@@ -608,8 +608,8 @@ async function execute(
       // Redis cache temizle
       await Promise.allSettled([
         ctx.redis.del(`player:${user.id}`),
-        ctx.redis.del(`cooldown:hunt:${user.id}`),
-        ctx.redis.del(`cooldown:upgrade:${user.id}`),
+        clearCooldown(ctx.redis, `cooldown:hunt:${user.id}`),
+        clearCooldown(ctx.redis, `cooldown:upgrade:${user.id}`),
         ctx.redis.del(`biome:${user.id}`),
         ctx.redis.del(`upgrade:panel:${user.id}`),
       ]);

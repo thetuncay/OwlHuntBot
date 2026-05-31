@@ -24,7 +24,6 @@ import {
 } from '../state/player-state';
 import {
   PVP_GAMBLE_MIN_BET,
-  PVP_GAMBLE_COOLDOWN_MS,
   PVP_GAMBLE_HOUSE_CUT_BASE,
   PVP_GAMBLE_PROGRESSIVE_THRESHOLD,
   PVP_GAMBLE_PROGRESSIVE_STEP,
@@ -47,7 +46,6 @@ import {
   PVP_BJ_PUSH_PAYOUT,
   PVP_GAMBLE_INVITE_TTL_MS,
 } from '../config';
-import { setCooldown } from '../middleware/cooldown';
 
 // ─── Tip Tanımlamaları ────────────────────────────────────────────────────────
 
@@ -160,7 +158,7 @@ const lossTotalKey = (playerId: string) =>
   `${PVP_GAMBLE_REDIS_LOSS_TOTAL_PREFIX}${playerId}`;
 
 /** PvP gambling cooldown anahtarı */
-const cooldownKey = (playerId: string) =>
+export const pvpGambleCooldownKey = (playerId: string) =>
   `cooldown:pvp_gamble:${playerId}`;
 
 // ─── Yardımcı: House Cut Hesaplama ───────────────────────────────────────────
@@ -263,27 +261,7 @@ export async function validateInvite(
     };
   }
 
-  // 2. Challenger cooldown — sadece kontrol et, set etme
-  const challengerCdCheck = await redis.pttl(cooldownKey(challengerId));
-  if (challengerCdCheck > 0) {
-    return {
-      valid: false,
-      cooldownMs: challengerCdCheck,
-      error: `Cooldown aktif. **${Math.ceil(challengerCdCheck / 1000)}sn** sonra tekrar dene.`,
-    };
-  }
-
-  // 3. Defender cooldown — sadece kontrol et
-  const defenderCdCheck = await redis.pttl(cooldownKey(defenderId));
-  if (defenderCdCheck > 0) {
-    return {
-      valid: false,
-      cooldownMs: defenderCdCheck,
-      error: `Rakibinin cooldown'u devam ediyor. **${Math.ceil(defenderCdCheck / 1000)}sn** bekle.`,
-    };
-  }
-
-  // 4. Bakiye kontrolü (her iki oyuncu)
+  // 2. Bakiye kontrolü (her iki oyuncu)
   const [challenger, defender] = await Promise.all([
     prisma.player.findUnique({ where: { id: challengerId }, select: { coins: true } }),
     prisma.player.findUnique({ where: { id: defenderId }, select: { coins: true } }),
@@ -394,21 +372,6 @@ async function syncGambleCoinDeltas(
   if (ops.length) await Promise.all(ops);
 }
 
-/**
- * Her iki oyuncu için cooldown set eder.
- */
-async function applyPostGameCooldown(
-  redis: Redis,
-  challengerId: string,
-  defenderId: string,
-): Promise<void> {
-  const ttlSec = Math.floor(PVP_GAMBLE_COOLDOWN_MS / 1000);
-  await Promise.all([
-    redis.set(cooldownKey(challengerId), '1', 'EX', ttlSec),
-    redis.set(cooldownKey(defenderId), '1', 'EX', ttlSec),
-  ]);
-}
-
 // ─── Oyun Motoru: Coin Flip Duel ──────────────────────────────────────────────
 
 /**
@@ -486,10 +449,9 @@ export async function settleCoinFlip(
 
   await syncGambleCoinDeltas(redis, prisma, winnerId, loserId, winnerGain, loserLoss);
 
-  // Pair count artır + cooldown set et
+  // Pair count artır
   await Promise.all([
     incrementPairCount(redis, challengerId, defenderId),
-    applyPostGameCooldown(redis, challengerId, defenderId),
     recordCoinsEarned(prisma, winnerId, winnerGain, redis).catch(() => null),
   ]);
 
@@ -619,10 +581,9 @@ export async function settleSlotRace(
 
   await syncGambleCoinDeltas(redis, prisma, winnerId, loserId, winnerGain, loserLoss);
 
-  // Pair count + cooldown
+  // Pair count
   await Promise.all([
     incrementPairCount(redis, challengerId, defenderId),
-    applyPostGameCooldown(redis, challengerId, defenderId),
     ...(winnerId ? [recordCoinsEarned(prisma, winnerId, winnerGain, redis).catch(() => null)] : []),
   ]);
 
@@ -844,7 +805,6 @@ export async function settleBlackjackPro(
 
   await Promise.all([
     incrementPairCount(redis, challengerId, defenderId),
-    applyPostGameCooldown(redis, challengerId, defenderId),
   ]);
 
   await deleteSession(redis, sessionId);

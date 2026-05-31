@@ -26,6 +26,15 @@ export function buildSpamMuteMessage(displayName: string, secondsUntil: number):
   return `⏱️ | **${displayName}**, Lutfen yavasla~ Cok hizlisin :c Komutu tekrar dene ${when}`;
 }
 
+/** Tek seferlik cooldown uyarisi (OwO stili relative timestamp). */
+export function buildCooldownMessage(
+  expiresAtMs: number,
+  label = 'bu komutu kullanabilirsin',
+): string {
+  const secondsUntil = Math.max(1, Math.ceil((expiresAtMs - Date.now()) / 1000));
+  return `⏰ ${label} ${discordRelativeTimestamp(secondsUntil)}`;
+}
+
 /** Kullaniciya Discord'da gosterilecek beklenen mesajlar (oyun kurallari, cooldown, spam). */
 export function shouldNotifyUserOnDiscord(error: unknown): boolean {
   if (error instanceof SpamBlockedError) return !error.silent;

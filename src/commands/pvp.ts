@@ -37,12 +37,14 @@ import {
   dealInitialHands,
   hitCard,
   calcHandValue,
+  pvpGambleCooldownKey,
   type PvpGamblingSession,
   type PvpGamblingResult,
 } from '../systems/PvPGamblingSystem';
-import { formatNumber, formatDuration } from '../utils/format';
+import { formatNumber } from '../utils/format';
 import type { CommandContext } from '../types';
 import {
+  PVP_GAMBLE_COOLDOWN_MS,
   PVP_GAMBLE_INVITE_TTL_MS,
   PVP_BJ_HIGH_STAKES_THRESHOLD,
   PVP_BJ_TURN_TTL_MS,
@@ -54,6 +56,8 @@ import {
   COLOR_FAIL,
   COLOR_WARNING,
 } from '../config';
+import { armCooldown, peekCooldown } from '../middleware/cooldown-manager';
+import { buildCooldownMessage } from '../utils/command-error';
 
 // ─── Text Renderer'lar ────────────────────────────────────────────────────────
 
@@ -350,6 +354,24 @@ async function runInviteFlow(
   bet: number,
   mode: PvpGamblingSession['mode'],
 ): Promise<void> {
+  const challengerCooldown = await peekCooldown(ctx.redis, pvpGambleCooldownKey(challengerId));
+  if (challengerCooldown.active) {
+    if (!challengerCooldown.notify) return;
+    await message.reply(
+      buildCooldownMessage(challengerCooldown.expiresAtMs, 'Tekrar PvP kumar daveti atabilirsin'),
+    );
+    return;
+  }
+
+  const defenderCooldown = await peekCooldown(ctx.redis, pvpGambleCooldownKey(defenderId));
+  if (defenderCooldown.active) {
+    if (!defenderCooldown.notify) return;
+    await message.reply(
+      buildCooldownMessage(defenderCooldown.expiresAtMs, `${defenderName} tekrar PvP kumar oynayabilir`),
+    );
+    return;
+  }
+
   // Ön doğrulama
   const validation = await validateInvite(ctx.prisma, ctx.redis, challengerId, defenderId, bet);
   if (!validation.valid) {
@@ -482,6 +504,10 @@ async function runCoinFlipGame(
 
   await new Promise((r) => setTimeout(r, 1500));
   const result = await settleCoinFlip(ctx.prisma, ctx.redis, session);
+  await Promise.all([
+    armCooldown(ctx.redis, pvpGambleCooldownKey(session.challengerId), PVP_GAMBLE_COOLDOWN_MS),
+    armCooldown(ctx.redis, pvpGambleCooldownKey(session.defenderId), PVP_GAMBLE_COOLDOWN_MS),
+  ]);
 
   await animMsg.edit({
     content: buildCoinFlipResultText(result, challengerName, defenderName),
@@ -524,6 +550,10 @@ async function runSlotRaceGame(
   }
 
   const result = await settleSlotRace(ctx.prisma, ctx.redis, session);
+  await Promise.all([
+    armCooldown(ctx.redis, pvpGambleCooldownKey(session.challengerId), PVP_GAMBLE_COOLDOWN_MS),
+    armCooldown(ctx.redis, pvpGambleCooldownKey(session.defenderId), PVP_GAMBLE_COOLDOWN_MS),
+  ]);
 
   await spinMsg.edit({
     content: buildSlotResultText(result, challengerName, defenderName, session.challengerId),
@@ -646,6 +676,10 @@ async function runBlackjackGame(
     if (bothDone) {
       collector.stop('game_over');
       const result = await settleBlackjackPro(ctx.prisma, ctx.redis, newSession);
+      await Promise.all([
+        armCooldown(ctx.redis, pvpGambleCooldownKey(session.challengerId), PVP_GAMBLE_COOLDOWN_MS),
+        armCooldown(ctx.redis, pvpGambleCooldownKey(session.defenderId), PVP_GAMBLE_COOLDOWN_MS),
+      ]);
       await i.update({
         content: buildBJResultScreen(result, challengerName, defenderName),
         embeds: [],
@@ -682,6 +716,10 @@ async function runBlackjackGame(
         const finalSession = await updateSession(ctx.redis, sessionId, { bj: bjData });
         if (finalSession) {
           const result = await settleBlackjackPro(ctx.prisma, ctx.redis, finalSession);
+          await Promise.all([
+            armCooldown(ctx.redis, pvpGambleCooldownKey(session.challengerId), PVP_GAMBLE_COOLDOWN_MS),
+            armCooldown(ctx.redis, pvpGambleCooldownKey(session.defenderId), PVP_GAMBLE_COOLDOWN_MS),
+          ]);
           const timeoutNote = `\n⏰ *${timedOutName} süre dolduğu için otomatik stand yaptı.*`;
           await gameMsg.edit({
             content: buildBJResultScreen(result, challengerName, defenderName) + timeoutNote,

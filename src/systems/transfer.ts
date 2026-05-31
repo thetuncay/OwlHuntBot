@@ -16,7 +16,6 @@
 import type { PrismaClient } from '@prisma/client';
 import type Redis from 'ioredis';
 import {
-  TRANSFER_COOLDOWN_MS,
   TRANSFER_DAILY_LIMIT,
   TRANSFER_DAILY_RECEIVE_LIMIT,
   TRANSFER_MIN_AMOUNT,
@@ -61,22 +60,6 @@ export function calcTax(amount: number): { tax: number; received: number; rate: 
   return { tax, received, rate };
 }
 
-/** Cooldown Redis key */
-function cooldownKey(senderId: string): string {
-  return `cooldown:transfer:${senderId}`;
-}
-
-/** Cooldown kalan süre (ms), 0 = hazır */
-export async function getTransferCooldown(redis: Redis, senderId: string): Promise<number> {
-  const ttl = await redis.pttl(cooldownKey(senderId));
-  return ttl > 0 ? ttl : 0;
-}
-
-/** Cooldown set et */
-async function setTransferCooldown(redis: Redis, senderId: string): Promise<void> {
-  await redis.set(cooldownKey(senderId), '1', 'PX', TRANSFER_COOLDOWN_MS);
-}
-
 // ── ANA FONKSİYON ────────────────────────────────────────────────────────────
 
 /**
@@ -98,13 +81,6 @@ export async function transferCoins(
   }
   if (!Number.isInteger(amount) || amount < TRANSFER_MIN_AMOUNT) {
     throw new Error(`Minimum transfer miktarı **${TRANSFER_MIN_AMOUNT}** 💰`);
-  }
-
-  // ── Cooldown kontrolü ────────────────────────────────────────────────────
-  const cooldownMs = await getTransferCooldown(redis, senderId);
-  if (cooldownMs > 0) {
-    const secs = Math.ceil(cooldownMs / 1000);
-    throw new Error(`Transfer cooldown: **${secs}s** beklemelisin.`);
   }
 
   // ── DB işlemleri (lock altında) ──────────────────────────────────────────
@@ -199,8 +175,6 @@ export async function transferCoins(
       } satisfies TransferResult;
     });
 
-    // Cooldown lock body içinde set edilir — crash window ortadan kalkar
-    await setTransferCooldown(redis, senderId);
     await Promise.all([
       applyCoinDeltaInRedis(redis, senderId, -amount, prisma),
       applyCoinDeltaInRedis(redis, receiverId, result.received, prisma),

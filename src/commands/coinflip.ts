@@ -2,8 +2,9 @@ import { SlashCommandBuilder } from 'discord.js';
 import { coinFlip } from '../systems/gambling';
 import type { CommandDefinition } from '../types';
 import { failEmbed } from '../utils/embed';
-import { getCooldownRemainingMs, setCooldown } from '../middleware/cooldown';
+import { guardCooldown } from '../middleware/cooldown-manager';
 import { GAMBLE_COINFLIP_COOLDOWN_MS } from '../config';
+import { buildCooldownMessage } from '../utils/command-error';
 
 const data = new SlashCommandBuilder()
   .setName('coinflip')
@@ -31,10 +32,11 @@ async function execute(
   try {
     const userId      = interaction.user.id;
     const cooldownKey = `cooldown:coinflip:${userId}`;
-    const remaining   = await getCooldownRemainingMs(ctx.redis, cooldownKey, GAMBLE_COINFLIP_COOLDOWN_MS);
-    if (remaining > 0) {
+    const cooldown = await guardCooldown(ctx.redis, cooldownKey, GAMBLE_COINFLIP_COOLDOWN_MS);
+    if (cooldown.active) {
+      if (!cooldown.notify) return;
       await interaction.reply({
-        content: `⏰ Tekrar coinflip için **${Math.ceil(remaining / 1000)}s** beklemelisin.`,
+        content: buildCooldownMessage(cooldown.expiresAtMs, 'Tekrar coinflip kullanabilirsin'),
         flags: 64,
       });
       return;
@@ -42,9 +44,6 @@ async function execute(
 
     const bet = interaction.options.getInteger('bet', true);
     const choice = interaction.options.getString('secim', true);
-
-    // Cooldown'ı hemen set et — işlem başlamadan önce
-    await setCooldown(ctx.redis, cooldownKey, GAMBLE_COINFLIP_COOLDOWN_MS);
 
     // Ephemeral deferred reply — yalnızca komutu kullanan kişiye görünür
     await interaction.deferReply({ flags: 64 });

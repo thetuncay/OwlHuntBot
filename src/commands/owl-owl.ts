@@ -11,14 +11,14 @@ import {
   type Message,
 } from 'discord.js';
 import { HUNT_COOLDOWN_MS, SWITCH_COOLDOWN_MS, SWITCH_HP_THRESHOLD, SWITCH_PENALTY_DURATION } from '../config';
-import { checkCooldownRemainingMs, setCooldown } from '../middleware/cooldown';
+import { armCooldown, peekCooldown } from '../middleware/cooldown-manager';
 import { switchCost } from '../utils/math';
 import { withLock } from '../utils/lock';
-import { formatDuration } from '../utils/format';
-import { successEmbed, warningEmbed, failEmbed } from '../utils/embed';
+import { successEmbed, failEmbed } from '../utils/embed';
 import type { CommandDefinition } from '../types';
 import { syncPlayerStateAfterPgWrite, rehydratePlayerState } from '../state/player-state';
 import { formatShortOwlId, resolveOwlByInput } from '../utils/owl-id';
+import { buildCooldownMessage } from '../utils/command-error';
 
 // Prisma Owl modelinin lokal tip tanımı (generate edilmemiş @prisma/client için)
 interface OwlRecord {
@@ -49,10 +49,11 @@ export async function runSetMain(
   const userId = interaction.user.id;
   const owlInput = interaction.options.getString('baykus', true);
 
-  const cooldown = await checkCooldownRemainingMs(ctx.redis, `cooldown:switch:${userId}`);
-  if (cooldown > 0) {
+  const cooldown = await peekCooldown(ctx.redis, `cooldown:switch:${userId}`);
+  if (cooldown.active) {
+    if (!cooldown.notify) return;
     await interaction.reply({
-      embeds: [warningEmbed('Switch Cooldown', `${formatDuration(cooldown)} sonra tekrar deneyebilirsin.`)],
+      content: buildCooldownMessage(cooldown.expiresAtMs, 'Switch tekrar kullanilabilir'),
       flags: 64,
     });
     return;
@@ -114,7 +115,7 @@ export async function runSetMain(
 
   // Cooldown sadece başarılı işlemden sonra set edilir
   await rehydratePlayerState(ctx.redis, ctx.prisma, userId);
-  await setCooldown(ctx.redis, `cooldown:switch:${userId}`, SWITCH_COOLDOWN_MS);
+  await armCooldown(ctx.redis, `cooldown:switch:${userId}`, SWITCH_COOLDOWN_MS);
   await interaction.reply({ embeds: [successEmbed('Main Degisti', 'Yeni main baykus aktif. 🦉')], flags: 64 });
 }
 
@@ -156,9 +157,10 @@ export async function runSetMainMessage(
     return;
   }
 
-  const cooldown = await checkCooldownRemainingMs(ctx.redis, `cooldown:switch:${userId}`);
-  if (cooldown > 0) {
-    await message.reply(`⏰ **Switch Cooldown** | ${formatDuration(cooldown)} sonra tekrar deneyebilirsin.`);
+  const cooldown = await peekCooldown(ctx.redis, `cooldown:switch:${userId}`);
+  if (cooldown.active) {
+    if (!cooldown.notify) return;
+    await message.reply(buildCooldownMessage(cooldown.expiresAtMs, 'Switch tekrar kullanilabilir'));
     return;
   }
 
@@ -212,7 +214,7 @@ export async function runSetMainMessage(
 
   // Cooldown sadece başarılı işlemden sonra set edilir
   await rehydratePlayerState(ctx.redis, ctx.prisma, userId);
-  await setCooldown(ctx.redis, `cooldown:switch:${userId}`, SWITCH_COOLDOWN_MS);
+  await armCooldown(ctx.redis, `cooldown:switch:${userId}`, SWITCH_COOLDOWN_MS);
   await message.reply(`✅ **Main Degisti** | Yeni main baykus aktif. 🦉`);
 }
 
@@ -306,9 +308,13 @@ export async function runOwls(
     else if (i.customId.startsWith('setmain:')) {
       const targetOwlId = i.customId.split(':')[1]!;
       try {
-        const cooldown = await checkCooldownRemainingMs(ctx.redis, `cooldown:switch:${userId}`);
-        if (cooldown > 0) {
-          await i.reply({ content: `⏰ Switch cooldown: ${formatDuration(cooldown)}`, flags: 64 });
+        const cooldown = await peekCooldown(ctx.redis, `cooldown:switch:${userId}`);
+        if (cooldown.active) {
+          if (!cooldown.notify) return;
+          await i.reply({
+            content: buildCooldownMessage(cooldown.expiresAtMs, 'Switch tekrar kullanilabilir'),
+            flags: 64,
+          });
           return;
         }
         await withLock(userId, 'setmain', async () => {
@@ -332,7 +338,7 @@ export async function runOwls(
         });
         // Cooldown sadece başarılı işlemden sonra set edilir
         await rehydratePlayerState(ctx.redis, ctx.prisma, userId);
-        await setCooldown(ctx.redis, `cooldown:switch:${userId}`, SWITCH_COOLDOWN_MS);
+        await armCooldown(ctx.redis, `cooldown:switch:${userId}`, SWITCH_COOLDOWN_MS);
         // Listeyi güncelle
         currentOwls = currentOwls.map((o) => ({ ...o, isMain: o.id === targetOwlId }));
       } catch (err) {
@@ -430,9 +436,13 @@ export async function runOwlsMessage(
     else if (i.customId.startsWith('setmain:')) {
       const targetOwlId = i.customId.split(':')[1]!;
       try {
-        const cooldown = await checkCooldownRemainingMs(ctx.redis, `cooldown:switch:${userId}`);
-        if (cooldown > 0) {
-          await i.reply({ content: `⏰ Switch cooldown: ${formatDuration(cooldown)}`, flags: 64 });
+        const cooldown = await peekCooldown(ctx.redis, `cooldown:switch:${userId}`);
+        if (cooldown.active) {
+          if (!cooldown.notify) return;
+          await i.reply({
+            content: buildCooldownMessage(cooldown.expiresAtMs, 'Switch tekrar kullanilabilir'),
+            flags: 64,
+          });
           return;
         }
         await withLock(userId, 'setmain', async () => {
@@ -456,7 +466,7 @@ export async function runOwlsMessage(
         });
         // Cooldown sadece başarılı işlemden sonra set edilir
         await rehydratePlayerState(ctx.redis, ctx.prisma, userId);
-        await setCooldown(ctx.redis, `cooldown:switch:${userId}`, SWITCH_COOLDOWN_MS);
+        await armCooldown(ctx.redis, `cooldown:switch:${userId}`, SWITCH_COOLDOWN_MS);
         currentOwls = currentOwls.map((o) => ({ ...o, isMain: o.id === targetOwlId }));
       } catch (err) {
         const errMsg = err instanceof Error ? err.message : 'Bir hata oluştu.';

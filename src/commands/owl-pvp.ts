@@ -10,7 +10,8 @@ import {
   type Message,
 } from 'discord.js';
 import { SIM_PVP_COOLDOWN_MS } from '../config';
-import { getCooldownRemainingMs, checkKeysPipelined } from '../middleware/cooldown';
+import { checkKeysPipelined } from '../middleware/cooldown';
+import { guardCooldown } from '../middleware/cooldown-manager';
 import { simulatePvP, startPvP } from '../systems/pvp';
 import { runSimulatedPvP } from '../systems/pvp-sim';
 import {
@@ -23,6 +24,7 @@ import {
 import type { PvpBattleData } from '../utils/pvp-ux';
 import { failEmbed } from '../utils/embed';
 import type { CommandDefinition } from '../types';
+import { buildCooldownMessage } from '../utils/command-error';
 
 // ─── Slash: /owl vs ───────────────────────────────────────────────────────────
 
@@ -155,11 +157,11 @@ export async function runDuel(
 ): Promise<void> {
   const userId = interaction.user.id;
   const cooldownKey = `cooldown:duel:${userId}`;
-  const remaining = await getCooldownRemainingMs(ctx.redis, cooldownKey, SIM_PVP_COOLDOWN_MS);
-
-  if (remaining > 0) {
+  const cooldown = await guardCooldown(ctx.redis, cooldownKey, SIM_PVP_COOLDOWN_MS);
+  if (cooldown.active) {
+    if (!cooldown.notify) return;
     await interaction.reply({
-      content: `⏰ Tekrar duel için **${Math.ceil(remaining / 1000)}s** beklemelisin.`,
+      content: buildCooldownMessage(cooldown.expiresAtMs, 'Tekrar duel atabilirsin'),
       flags: 64,
     });
     return;
@@ -186,7 +188,6 @@ export async function runDuel(
     : interaction.user.username;
 
   await animateSimPvPInteraction(interaction, userId, playerName, mainOwl.hpMax, result);
-  await ctx.redis.set(cooldownKey, '1', 'PX', SIM_PVP_COOLDOWN_MS);
 }
 
 // ─── Prefix: owl vs ───────────────────────────────────────────────────────────
@@ -324,10 +325,10 @@ export async function runDuelMessage(
 ): Promise<void> {
   const userId = message.author.id;
   const cooldownKey = `cooldown:duel:${userId}`;
-  const remaining = await getCooldownRemainingMs(ctx.redis, cooldownKey, SIM_PVP_COOLDOWN_MS);
-
-  if (remaining > 0) {
-    await message.reply(`⏰ Tekrar duel için **${Math.ceil(remaining / 1000)}s** beklemelisin.`);
+  const cooldown = await guardCooldown(ctx.redis, cooldownKey, SIM_PVP_COOLDOWN_MS);
+  if (cooldown.active) {
+    if (!cooldown.notify) return;
+    await message.reply(buildCooldownMessage(cooldown.expiresAtMs, 'Tekrar duel atabilirsin'));
     return;
   }
 
@@ -349,5 +350,4 @@ export async function runDuelMessage(
   const playerName = message.member?.displayName ?? message.author.username;
 
   await animateSimPvPMessage(sent, userId, playerName, mainOwl.hpMax, result);
-  await ctx.redis.set(cooldownKey, '1', 'PX', SIM_PVP_COOLDOWN_MS);
 }

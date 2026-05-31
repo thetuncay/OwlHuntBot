@@ -2,8 +2,9 @@ import { SlashCommandBuilder } from 'discord.js';
 import { slot } from '../systems/gambling';
 import type { CommandDefinition } from '../types';
 import { failEmbed } from '../utils/embed';
-import { getCooldownRemainingMs, setCooldown } from '../middleware/cooldown';
+import { guardCooldown } from '../middleware/cooldown-manager';
 import { GAMBLE_SLOT_COOLDOWN_MS } from '../config';
+import { buildCooldownMessage } from '../utils/command-error';
 
 const data = new SlashCommandBuilder()
   .setName('slot')
@@ -38,10 +39,11 @@ async function execute(
   try {
     const userId      = interaction.user.id;
     const cooldownKey = `cooldown:slot:${userId}`;
-    const remaining   = await getCooldownRemainingMs(ctx.redis, cooldownKey, GAMBLE_SLOT_COOLDOWN_MS);
-    if (remaining > 0) {
+    const cooldown = await guardCooldown(ctx.redis, cooldownKey, GAMBLE_SLOT_COOLDOWN_MS);
+    if (cooldown.active) {
+      if (!cooldown.notify) return;
       await interaction.reply({
-        content: `⏰ Tekrar slot için **${Math.ceil(remaining / 1000)}s** beklemelisin.`,
+        content: buildCooldownMessage(cooldown.expiresAtMs, 'Tekrar slot oynayabilirsin'),
         flags: 64,
       });
       return;
@@ -49,9 +51,6 @@ async function execute(
 
     const bet = interaction.options.getInteger('bet', true);
     
-    // Cooldown'ı hemen set et
-    await setCooldown(ctx.redis, cooldownKey, GAMBLE_SLOT_COOLDOWN_MS);
-
     // Sonucu ÖNCE belirle
     const result = await slot(ctx.prisma, interaction.user.id, bet, ctx.redis);
     

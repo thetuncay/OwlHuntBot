@@ -9,7 +9,7 @@ import {
   ComponentType,
   type Message,
 } from 'discord.js';
-import { getCooldownRemainingMs, checkCooldownRemainingMs, setCooldown } from '../middleware/cooldown';
+import { armCooldown, peekCooldown } from '../middleware/cooldown-manager';
 import { attemptUpgrade, getUpgradePreview } from '../systems/upgrade';
 import {
   buildUpgradePanel,
@@ -25,6 +25,7 @@ import type { CommandDefinition, OwlStatKey } from '../types';
 import { UPGRADE_COOLDOWN_SUCCESS_MS, UPGRADE_COOLDOWN_FAIL_MS, UPGRADE_STATS } from './owl-utils';
 import { getPlayerBundle, invalidatePlayerCache } from '../utils/player-cache';
 import { reloadInventoryFromPg } from '../state/player-state';
+import { buildCooldownMessage } from '../utils/command-error';
 
 // ─── Slash: /owl upgrade ──────────────────────────────────────────────────────
 
@@ -35,13 +36,13 @@ export async function runUpgrade(
   const stat = interaction.options.getString('stat', true) as OwlStatKey;
 
   const cooldownKey = `cooldown:upgrade:${interaction.user.id}`;
-  const remaining = await checkCooldownRemainingMs(ctx.redis, cooldownKey);
-  if (remaining > 0) {
+  const cooldown = await peekCooldown(ctx.redis, cooldownKey);
+  if (cooldown.active) {
+    if (!cooldown.notify) return;
     await interaction.reply({
-      content: `⏰ Upgrade için **${Math.ceil(remaining / 1000)}s** beklemelisin.`,
+      content: buildCooldownMessage(cooldown.expiresAtMs, 'Tekrar upgrade deneyebilirsin'),
       flags: 64,
     });
-    setTimeout(() => interaction.deleteReply().catch(() => null), 3000);
     return;
   }
 
@@ -118,7 +119,7 @@ export async function runUpgrade(
       const result = await attemptUpgrade(ctx.prisma, interaction.user.id, main.id, stat, [], ctx.redis);
       const cdMs = result.success ? UPGRADE_COOLDOWN_SUCCESS_MS : UPGRADE_COOLDOWN_FAIL_MS;
       await Promise.all([
-        setCooldown(ctx.redis, cooldownKey, cdMs),
+        armCooldown(ctx.redis, cooldownKey, cdMs),
         ctx.redis.del(panelLockKey),
         // Stat değişti — cache'i invalidate et
         invalidatePlayerCache(ctx.redis, interaction.user.id),
@@ -174,10 +175,10 @@ export async function runUpgradeMessage(
   }
 
   const upgradeCooldownKey = `cooldown:upgrade:${message.author.id}`;
-  const upgradeRemaining   = await checkCooldownRemainingMs(ctx.redis, upgradeCooldownKey);
-  if (upgradeRemaining > 0) {
-    const sent = await message.reply(`⏰ Upgrade için **${Math.ceil(upgradeRemaining / 1000)}s** beklemelisin.`);
-    setTimeout(() => sent.delete().catch(() => null), 3000);
+  const cooldown = await peekCooldown(ctx.redis, upgradeCooldownKey);
+  if (cooldown.active) {
+    if (!cooldown.notify) return;
+    await message.reply(buildCooldownMessage(cooldown.expiresAtMs, 'Tekrar upgrade deneyebilirsin'));
     return;
   }
 
@@ -249,7 +250,7 @@ export async function runUpgradeMessage(
       const result = await attemptUpgrade(ctx.prisma, message.author.id, main.id, stat, [], ctx.redis);
       const cdMs = result.success ? UPGRADE_COOLDOWN_SUCCESS_MS : UPGRADE_COOLDOWN_FAIL_MS;
       await Promise.all([
-        setCooldown(ctx.redis, upgradeCooldownKey, cdMs),
+        armCooldown(ctx.redis, upgradeCooldownKey, cdMs),
         ctx.redis.del(upgradePanelKey),
         // Stat değişti — cache'i invalidate et
         invalidatePlayerCache(ctx.redis, message.author.id),

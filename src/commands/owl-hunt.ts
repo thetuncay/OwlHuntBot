@@ -16,7 +16,7 @@ import {
   EmbedBuilder,
 } from 'discord.js';
 import { HUNT_COOLDOWN_MS, BIOMES, BIOME_SESSION_TTL_MS } from '../config';
-import { getCooldownRemainingMs } from '../middleware/cooldown';
+import { guardCooldown } from '../middleware/cooldown-manager';
 import { rollHunt, runHuntSideEffects } from '../systems/hunt';
 import {
   getBiomeSession,
@@ -46,6 +46,7 @@ import {
 import { animateHuntMessage, buildFinalMessage, compressHuntResult } from '../utils/hunt-ux';
 import { safeReply } from '../utils/safe-reply';
 import {
+  buildCooldownMessage,
   logCommandError,
   shouldNotifyUserOnDiscord,
   userErrorMessage,
@@ -255,10 +256,11 @@ export async function runHunt(
 
   // ── Aktif biyom var — cooldown kontrolü ve hunt ───────────────────────────
   const cooldownKey = `cooldown:hunt:${userId}`;
-  const remaining = await getCooldownRemainingMs(ctx.redis, cooldownKey, HUNT_COOLDOWN_MS);
-  if (remaining > 0) {
+  const cooldown = await guardCooldown(ctx.redis, cooldownKey, HUNT_COOLDOWN_MS);
+  if (cooldown.active) {
+    if (!cooldown.notify) return;
     await interaction.reply({
-      content: `⏰ Tekrar avlanmak için **${Math.ceil(remaining / 1000)}s** beklemelisin.`,
+      content: buildCooldownMessage(cooldown.expiresAtMs, 'Tekrar avlanabilirsin'),
       flags: 64,
     });
     return;
@@ -405,11 +407,10 @@ export async function runHuntMessage(
 
   // ── Aktif biyom var — cooldown kontrolü ve hunt ───────────────────────────
   const cooldownKey = `cooldown:hunt:${userId}`;
-  const remaining = await getCooldownRemainingMs(ctx.redis, cooldownKey, HUNT_COOLDOWN_MS);
-  if (remaining > 0) {
-    const secs = Math.ceil(remaining / 1000);
-    const sent = await message.reply(`⏰ Tekrar avlanmak için **${secs}s** beklemelisin.`);
-    setTimeout(() => sent.delete().catch(() => null), 4000);
+  const cooldown = await guardCooldown(ctx.redis, cooldownKey, HUNT_COOLDOWN_MS);
+  if (cooldown.active) {
+    if (!cooldown.notify) return;
+    await message.reply(buildCooldownMessage(cooldown.expiresAtMs, 'Tekrar avlanabilirsin'));
     return;
   }
 

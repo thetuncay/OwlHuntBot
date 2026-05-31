@@ -31,6 +31,11 @@ import {
   SpamBlockedError,
   userErrorMessage,
 } from './utils/command-error';
+import {
+  COOLDOWN_CLEAR_CHANNEL,
+  handleCooldownClearSignal,
+  sweepCooldownCache,
+} from './middleware/cooldown-manager';
 
 const env = parseBotEnv();
 
@@ -69,6 +74,7 @@ const client = new Client({
   },
 });
 const commandMap = new Collection<string, CommandDefinition>();
+let cooldownSubscriber: typeof redis | null = null;
 
 /**
  * src/commands altindaki komutlari dinamik yukler.
@@ -102,6 +108,14 @@ async function loadCommands(): Promise<void> {
 async function bootstrap(): Promise<void> {
   await assertRedisConnection();
   console.info('Redis connected');
+  cooldownSubscriber = redis.duplicate();
+  await cooldownSubscriber.connect().catch(() => null);
+  await cooldownSubscriber.subscribe(COOLDOWN_CLEAR_CHANNEL);
+  cooldownSubscriber.on('message', (channel, key) => {
+    if (channel !== COOLDOWN_CLEAR_CHANNEL) return;
+    handleCooldownClearSignal(key);
+  });
+
   await prisma.$connect();
   console.info(`PostgreSQL connected (${describeDatabaseUrl(dbUrl)})`);
 
@@ -342,8 +356,13 @@ trackInterval(async () => {
   }
 }, 60_000);
 
+trackInterval(() => {
+  sweepCooldownCache();
+}, 60_000);
+
 registerGracefulShutdown([
   () => client.destroy(),
+  async () => { await cooldownSubscriber?.quit().catch(() => null); },
   async () => { await redis.quit(); },
   () => prisma.$disconnect(),
 ], 'Bot');
