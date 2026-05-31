@@ -25,29 +25,14 @@ import {
 } from './utils/perf-metrics';
 import { safeReply } from './utils/safe-reply';
 import { RUNTIME } from './config/runtime';
+import {
+  logCommandError,
+  shouldNotifyUserOnDiscord,
+  SpamBlockedError,
+  userErrorMessage,
+} from './utils/command-error';
 
 const env = parseBotEnv();
-
-/** Kullaniciya gosterilen beklenen hatalar — PM2 logunu kirletmez. */
-function isExpectedUserError(error: unknown): boolean {
-  if (!(error instanceof Error)) return false;
-  const msg = error.message;
-  return (
-    msg.includes('hizli komut') ||
-    msg.includes('Spam algilandi') ||
-    msg.includes('yoğun') ||
-    msg.includes('beklemelisin') ||
-    msg.includes('Tekrar avlanmak')
-  );
-}
-
-function formatUserFacingError(error: unknown): string {
-  if (!(error instanceof Error)) return 'Bir seyler ters gitti, islem geri alindi.';
-  if (error.message.includes('Received one or more errors')) {
-    return 'Bot mesaji Discord sinirini asti. Yonetici deploy guncellemesi gerekebilir.';
-  }
-  return error.message;
-}
 
 const dbUrl = resolveDatabaseUrl('bot');
 const prisma = new PrismaClient({
@@ -148,17 +133,31 @@ async function bootstrap(): Promise<void> {
       } catch (error) {
         // Unknown interaction (10062) = token süresi dolmuş, sessizce geç
         if ((error as any)?.code === 10062) return;
-        console.error('[Registration Button Error]', error);
-        const errorMsg = error instanceof Error ? error.message : 'Kayit isleminde bir hata olustu.';
-        try {
-          if (interaction.replied || interaction.deferred) {
-            await interaction.followUp({ content: `❌ **Hata** | ${errorMsg}`, flags: 64 });
-          } else {
-            await interaction.reply({ content: `❌ **Hata** | ${errorMsg}`, flags: 64 });
+        if (error instanceof SpamBlockedError) {
+          if (!error.silent) {
+            try {
+              const payload = { content: error.message, flags: 64 as const };
+              if (interaction.replied || interaction.deferred) {
+                await interaction.followUp(payload);
+              } else {
+                await interaction.reply(payload);
+              }
+            } catch { /* ignore */ }
           }
-        } catch {
-          // Yanıt gönderilemedi, sessizce geç
+          return;
         }
+        if (shouldNotifyUserOnDiscord(error)) {
+          const errorMsg = userErrorMessage(error);
+          try {
+            if (interaction.replied || interaction.deferred) {
+              await interaction.followUp({ content: errorMsg, flags: 64 });
+            } else {
+              await interaction.reply({ content: errorMsg, flags: 64 });
+            }
+          } catch { /* ignore */ }
+          return;
+        }
+        logCommandError('Registration Button Error', error);
       }
       return;
     }
@@ -176,8 +175,8 @@ async function bootstrap(): Promise<void> {
     let perfOk = true;
     let perfError: string | undefined;
     try {
+      await enforceAntiSpam(redis, interaction.user.id, interaction.user.displayName);
       releaseSlot = await acquireCommandSlot(redis);
-      await enforceAntiSpam(redis, interaction.user.id);
       perf.markQueueDone();
       await command.execute(interaction, { prisma, redis });
     } catch (error) {
@@ -185,22 +184,31 @@ async function bootstrap(): Promise<void> {
       if ((error as any)?.code === 10062) return;
       perfOk = false;
       perfError = error instanceof Error ? error.message : String(error);
-      console.error('[Interaction Error]', error);
-      try {
-        if (interaction.replied || interaction.deferred) {
-          await interaction.followUp({
-            content: 'Bir seyler ters gitti, islem geri alindi.',
-            flags: 64,
-          });
-        } else {
-          await interaction.reply({
-            content: 'Bir seyler ters gitti, islem geri alindi.',
-            flags: 64,
-          });
+      if (error instanceof SpamBlockedError) {
+        if (!error.silent) {
+          try {
+            const payload = { content: error.message, flags: 64 as const };
+            if (interaction.replied || interaction.deferred) {
+              await interaction.followUp(payload);
+            } else {
+              await interaction.reply(payload);
+            }
+          } catch { /* ignore */ }
         }
-      } catch {
-        // Yanıt gönderilemedi, sessizce geç
+        return;
       }
+      if (shouldNotifyUserOnDiscord(error)) {
+        const msg = userErrorMessage(error);
+        try {
+          if (interaction.replied || interaction.deferred) {
+            await interaction.followUp({ content: msg, flags: 64 });
+          } else {
+            await interaction.reply({ content: msg, flags: 64 });
+          }
+        } catch { /* ignore */ }
+        return;
+      }
+      logCommandError('Interaction Error', error);
     } finally {
       await perf.finish(redis, {
         command: perfCommand,
@@ -258,15 +266,22 @@ async function bootstrap(): Promise<void> {
       let perfOk = true;
       let perfError: string | undefined;
       try {
+        await enforceAntiSpam(redis, message.author.id, message.author.displayName);
         releaseSlot = await acquireCommandSlot(redis);
-        await enforceAntiSpam(redis, message.author.id);
         perf.markQueueDone();
         await handleTopTextCommand(message, parts.slice(1), { prisma, redis });
       } catch (error) {
         perfOk = false;
         perfError = error instanceof Error ? error.message : String(error);
-        const msg = error instanceof Error ? error.message : 'Bir hata olustu.';
-        await safeReply(message, `❌ ${msg}`);
+        if (error instanceof SpamBlockedError) {
+          if (!error.silent) await safeReply(message, error.message);
+          return;
+        }
+        if (shouldNotifyUserOnDiscord(error)) {
+          await safeReply(message, userErrorMessage(error));
+        } else {
+          logCommandError('Top Command Error', error);
+        }
       } finally {
         await perf.finish(redis, {
           command: 'top',
@@ -285,18 +300,22 @@ async function bootstrap(): Promise<void> {
     let perfOk = true;
     let perfError: string | undefined;
     try {
+      await enforceAntiSpam(redis, message.author.id, message.author.displayName);
       releaseSlot = await acquireCommandSlot(redis);
-      await enforceAntiSpam(redis, message.author.id);
       perf.markQueueDone();
       perfCommand = await handleOwlTextCommand(message, parts, { prisma, redis });
     } catch (error) {
       perfOk = false;
       perfError = error instanceof Error ? error.message : String(error);
-      if (!isExpectedUserError(error)) {
-        console.error('[Message Command Error]', error);
+      if (error instanceof SpamBlockedError) {
+        if (!error.silent) await safeReply(message, error.message);
+        return;
       }
-      const errorMsg = formatUserFacingError(error);
-      await safeReply(message, `❌ **Hata** | ${errorMsg}`);
+      if (shouldNotifyUserOnDiscord(error)) {
+        await safeReply(message, userErrorMessage(error));
+      } else {
+        logCommandError('Message Command Error', error);
+      }
     } finally {
       await perf.finish(redis, {
         command: perfCommand,

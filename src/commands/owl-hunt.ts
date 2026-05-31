@@ -45,6 +45,11 @@ import {
 } from '../utils/tame-ux';
 import { animateHuntMessage, buildFinalMessage, compressHuntResult } from '../utils/hunt-ux';
 import { safeReply } from '../utils/safe-reply';
+import {
+  logCommandError,
+  shouldNotifyUserOnDiscord,
+  userErrorMessage,
+} from '../utils/command-error';
 import { listActiveBuffs } from '../systems/items';
 import { BUFF_ITEM_MAP } from '../config';
 import { getActiveConsumables } from '../utils/use-items';
@@ -293,7 +298,12 @@ export async function runHunt(
     if (err.message?.includes('biyom') || err.message?.includes('coin')) {
       await clearBiomeSession(ctx.redis, userId);
     }
-    await interaction.editReply({ content: `❌ **Hata** | ${err.message}` });
+    if (shouldNotifyUserOnDiscord(err)) {
+      await interaction.editReply({ content: userErrorMessage(err) });
+    } else {
+      logCommandError('Hunt Slash Error', err);
+      await interaction.deleteReply().catch(() => null);
+    }
   }
 }
 
@@ -409,8 +419,9 @@ export async function runHuntMessage(
     return;
   }
 
+  let loadingMsg: Awaited<ReturnType<typeof safeReply>> | null = null;
   try {
-    const sent = await safeReply(message, '🦅 **Avlanıyor...**');
+    loadingMsg = await safeReply(message, '🦅 **Avlanıyor...**');
     const result = await rollHunt(ctx.prisma, ctx.redis, userId, bundle.mainOwl.id, session.biomeId);
     const compressed = compressHuntResult(result);
     const name = message.member?.displayName ?? message.author.username;
@@ -445,7 +456,7 @@ export async function runHuntMessage(
       ? await getGuildPrefix(ctx.redis, message.guildId)
       : 'w';
     const finalText = buildFinalMessage(name, compressed, prefix);
-    await sent.edit(finalText).catch(() => safeReply(message, finalText));
+    await loadingMsg.edit(finalText).catch(() => safeReply(message, finalText));
 
     spawnHuntFollowUp(
       { reply: (payload: unknown) => safeReply(message, payload as Parameters<typeof safeReply>[1]) },
@@ -460,7 +471,17 @@ export async function runHuntMessage(
     if (err.message?.includes('biyom') || err.message?.includes('coin')) {
       await clearBiomeSession(ctx.redis, userId);
     }
-    await safeReply(message, { content: `❌ **Hata** | ${err.message}` });
+    if (shouldNotifyUserOnDiscord(err)) {
+      const text = userErrorMessage(err);
+      if (loadingMsg) {
+        await loadingMsg.edit(text).catch(() => safeReply(message, { content: text }));
+      } else {
+        await safeReply(message, { content: text });
+      }
+    } else {
+      logCommandError('Hunt Message Error', err);
+      if (loadingMsg) await loadingMsg.delete().catch(() => null);
+    }
   }
 }
 

@@ -4,18 +4,24 @@ import {
   COMMAND_RATE_LIMIT_WINDOW_SECONDS,
   SPAM_MUTE_SECONDS,
 } from '../config';
+import { buildSpamMuteMessage, SpamBlockedError } from '../utils/command-error';
 import { consumeRateLimitToken } from '../utils/redis';
 
 /**
  * Kullanici istek hizini kontrol eder ve gerekirse susturma uygular.
- * Redis erişilemezse sessizce geçer (availability > correctness).
+ * Zaten susturulmus kullanicilar sessizce reddedilir (performans).
+ * Yeni susturma: OwO tarzi relative timestamp mesaji (<t:unix:R>).
  */
-export async function enforceAntiSpam(redis: Redis, userId: string): Promise<void> {
+export async function enforceAntiSpam(
+  redis: Redis,
+  userId: string,
+  displayName = 'Sen',
+): Promise<void> {
   try {
     const muteKey = `mute:${userId}`;
-    const muted = await redis.ttl(muteKey);
-    if (muted > 0) {
-      throw new Error(`Cok hizli komut kullaniyorsun. ${muted} sn sonra tekrar dene.`);
+    const mutedTtl = await redis.ttl(muteKey);
+    if (mutedTtl > 0) {
+      throw new SpamBlockedError('', true);
     }
 
     const bucketKey = `rate:${userId}`;
@@ -27,15 +33,15 @@ export async function enforceAntiSpam(redis: Redis, userId: string): Promise<voi
 
     if (!allowed) {
       await redis.set(muteKey, '1', 'EX', SPAM_MUTE_SECONDS);
-      throw new Error(`Spam algilandi. ${SPAM_MUTE_SECONDS} sn susturuldun.`);
+      throw new SpamBlockedError(
+        buildSpamMuteMessage(displayName, SPAM_MUTE_SECONDS),
+        false,
+      );
     }
   } catch (err) {
-    // Spam/mute hataları yeniden fırlat
-    if (err instanceof Error && (err.message.includes('hizli') || err.message.includes('Spam'))) {
-      throw err;
-    }
-    // Redis down GÜVENLİK FİX: "Open Bar" modunu engellemek için hata fırlat
-    // Kritik sistemlerde availability yerine security önceliklidir.
-    throw new Error('⚠️ Sistem şu an yoğunluk nedeniyle kapalı (Redis Error). Lütfen az sonra tekrar deneyin.');
+    if (err instanceof SpamBlockedError) throw err;
+    throw new Error(
+      '⚠️ Sistem su an yogunluk nedeniyle kapali (Redis Error). Lutfen az sonra tekrar dene.',
+    );
   }
 }

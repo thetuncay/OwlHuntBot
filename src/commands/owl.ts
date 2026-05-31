@@ -17,6 +17,12 @@ import type { CommandDefinition } from '../types';
 import { ensureRegisteredForInteraction, ensureRegisteredForMessage } from '../systems/onboarding';
 import { getGuildPrefix } from '../utils/prefix';
 import { failEmbed } from '../utils/embed';
+import {
+  logCommandError,
+  shouldNotifyUserOnDiscord,
+  SpamBlockedError,
+  userErrorMessage,
+} from '../utils/command-error';
 
 // ─── Modül import'ları ────────────────────────────────────────────────────────
 import { runHunt, runHuntMessage } from './owl-hunt';
@@ -148,12 +154,27 @@ async function execute(
       default: throw new Error('Bilinmeyen alt komut.');
     }
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Bir seyler ters gitti.';
-    if (interaction.replied || interaction.deferred) {
-      await interaction.followUp({ embeds: [failEmbed('Hata', message)], flags: 64 });
-    } else {
-      await interaction.reply({ embeds: [failEmbed('Hata', message)], flags: 64 });
+    if (error instanceof SpamBlockedError) {
+      if (!error.silent) {
+        const payload = { content: error.message, flags: 64 as const };
+        if (interaction.replied || interaction.deferred) {
+          await interaction.followUp(payload);
+        } else {
+          await interaction.reply(payload);
+        }
+      }
+      return;
     }
+    if (shouldNotifyUserOnDiscord(error)) {
+      const message = userErrorMessage(error);
+      if (interaction.replied || interaction.deferred) {
+        await interaction.followUp({ embeds: [failEmbed('Bilgi', message)], flags: 64 });
+      } else {
+        await interaction.reply({ embeds: [failEmbed('Bilgi', message)], flags: 64 });
+      }
+      return;
+    }
+    logCommandError('Owl Slash Error', error);
   }
 }
 
