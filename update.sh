@@ -24,8 +24,12 @@ echo "[4/5] Derleme..."
 pnpm build
 
 echo "[5/5] PM2 restart..."
-pm2 restart owlhuntbot || pm2 start ecosystem.config.js
+if pm2 describe owlhuntbot-shard >/dev/null 2>&1; then
+  pm2 restart owlhuntbot-shard owlhuntbot-worker --update-env
+else
+  pm2 start ecosystem.config.js
+fi
 pm2 save
 
 echo "=== Guncelleme tamamlandi ==="
-pm2 status owlhuntbot
+pm2 status owlhuntbot-shard owlhuntbot-worker
