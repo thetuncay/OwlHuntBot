@@ -1,0 +1,22 @@
+---
+description: 10+ dosya degisikliginden once git snapshot
+alwaysApply: true
+---
+
+# Git Snapshot (on degisiklik)
+
+**10'dan fazla dosyayi** degistirmeden veya buyuk refactor/migration oncesi snapshot al:
+
+```bash
+git stash push -u -m "pre-agent-snapshot"
+```
+
+veya (tercih: geri alinabilir commit):
+
+```bash
+git commit -am "pre-agent-snapshot"
+```
+
+Snapshot sonrasi kullaniciya kisa ozet ver (stash mi commit mi, mesaj).
+
+Kucuk degisikliklerde (<10 dosya) zorunlu degil; yine de riskli islerde snapshot oner.

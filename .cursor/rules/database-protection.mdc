@@ -1,0 +1,21 @@
+---
+description: Production veritabani — yikici SQL ve migration onayi
+alwaysApply: true
+---
+
+# Database Korumasi
+
+Production veritabaninda kullanici acikca istemedikce **asla** calistirma veya onerme:
+
+- `DELETE`
+- `TRUNCATE`
+- `DROP`
+- `ALTER`
+
+## Migration / schema
+
+- Migration SQL veya Prisma migration dosyasini **once goster**.
+- Etkilenen tablolar, geri alma riski ve ortam (prod/staging) belirt.
+- `prisma migrate deploy`, `prisma migrate reset`, `prisma db push` — sadece acik kullanici istegi ile (`production-safety.mdc`).
+
+Gelistirme ortaminda bile yikici SQL icin plan + onay sun.

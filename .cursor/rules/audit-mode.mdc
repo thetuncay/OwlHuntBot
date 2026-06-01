@@ -1,0 +1,30 @@
+---
+description: AUDIT MODE — salt okunur performans/sistem analizi
+alwaysApply: true
+---
+
+# AUDIT MODE
+
+Kullanici **AUDIT MODE** (veya esanlamli "audit", "salt okunur inceleme") dediginde bu mod aktif olur.
+
+## Davranis
+
+- **Salt okunur**: hicbir dosya, servis veya veritabani degistirme.
+- Cikti: yalnizca rapor (bulgular, metrikler, oneriler — uygulama yok).
+
+## Izinli
+
+- `cat`, `grep`, `find`, `ls`
+- `git status`, `git log`, `git diff` (yazma yok)
+- `pm2 status`, `pm2 list`, `pm2 logs`, `pm2 describe`
+- `redis-cli INFO` (ve diger salt okunur INFO komutlari)
+- `docker ps`, `docker compose ps`, `docker logs` (okuma)
+
+## Yasak
+
+- Dosya yazma / patch / commit / push
+- Restart, reload, deploy, migration
+- `docker compose down`, `pm2 restart`, Prisma migrate/push
+- Production DB uzerinde yazma veya yikici SQL
+
+Mod bitene kadar her oneriyi "rapor maddesi" olarak sun; uygulama icin kullanicidan cikis veya ayri onay iste.

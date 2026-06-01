@@ -1,0 +1,45 @@
+---
+description: Production guvenlik — yasak komutlar, sistem yollari, plan onayi
+alwaysApply: true
+---
+
+# Production Safety Rules
+
+Buyuk veya riskli islerden once kisa bir plan sun; kullanici onaylamadan uygulama.
+
+## Asla calistirma
+
+```text
+rm -rf
+rm -f
+sudo rm
+mkfs
+fdisk
+parted
+shutdown
+reboot
+init 0
+halt
+poweroff
+```
+
+## Asla degistirme
+
+- `/etc`
+- `/usr`
+- `/boot`
+- `/root` (proje disi sistem dosyalari; bu repodaki `/root/OwlHuntBot` calisma alanidir)
+
+## Prisma (acik istek olmadan)
+
+Asla calistirma:
+
+- `prisma migrate deploy`
+- `prisma migrate reset`
+- `prisma db push`
+
+Kullanici acikca istemedikce bu komutlari onerme veya calistirma.
+
+## PM2 / Docker
+
+Detaylar: `pm2-protection.mdc`, `docker-protection.mdc`.
