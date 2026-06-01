@@ -17,7 +17,7 @@ fi
 
 BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 REMOTE="$(git remote get-url origin)"
-REPO="$(echo "$REMOTE" | sed -E 's#.*github.com[:/](.+/.+?)(\.git)?$#\1#')"
+REPO="$(echo "$REMOTE" | sed -E 's#.*github.com[:/](.+)\.git/?$#\1#')"
 
 git push "https://${GITHUB_TOKEN}@github.com/${REPO}.git" "$BRANCH"
 echo "OK: pushed to origin/$BRANCH"
