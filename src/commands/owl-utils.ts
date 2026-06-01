@@ -66,7 +66,7 @@ export const ALIASES: Record<string, string> = {
   yardım: 'yardim',
   pf:   'prefix',
   // OwO uyum (veri: h→b→s, daily, cf)
-  s:    'sell',      // OwO sell — stats için st/stat
+  s:    'stats',     // Kullanıcı beklentisi: kısa s -> stats
   st:   'stats',
   stat: 'stats',
   b:    'duel',      // OwO battle — use için u/buff
@@ -140,7 +140,7 @@ export function commandInfo(prefix: string, sub: string): CommandInfo {
       };
     case 'stats':
       return {
-        usage: `${prefix} stats [deep]`, aliases: `${prefix} st · ${prefix} stat`,
+        usage: `${prefix} stats [deep]`, aliases: `${prefix} s · ${prefix} st · ${prefix} stat`,
         description: 'Main baykuşunun istatistiklerini gösterir. `deep` yazarsan formül detayları da çıkar.',
         example: `${prefix} stats deep`,
       };
@@ -176,8 +176,8 @@ export function commandInfo(prefix: string, sub: string): CommandInfo {
       };
     case 'sell':
       return {
-        usage: `${prefix} sell [all|<hayvan>]`, aliases: `${prefix} s · ${prefix} sl`,
-        description: 'Avladığın hayvanları satar (OwO `s` ile aynı).',
+        usage: `${prefix} sell [all|<hayvan>]`, aliases: `${prefix} sl`,
+        description: 'Avladığın hayvanları satar.',
         example: `${prefix} sell all`,
       };
     case 'zoo':
