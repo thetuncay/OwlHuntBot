@@ -1,26 +1,34 @@
 ---
-description: Kod degisikligi sonrasi GitHub'a otomatik push
+description: GitHub yedek — VDS ana ortam, push istege bagli
 alwaysApply: true
 ---
 
-# Otomatik GitHub Push
+# GitHub Yedek (opsiyonel)
 
-Kullanici istegi: Her kod degisikliginden sonra commit + push yap; kullanicidan push beklenmesin.
+## Ortam
 
-## Akis
+- **Ana calisma**: VDS uzerinde SSH (agent dogrudan burada kod degistirir).
+- **GitHub**: Zorunlu deploy degil; **guvenli uzak yedek** olarak tutulur.
 
-1. Anlamli bir degisiklik tamamlaninca `git add` (`.env`, token, secret dosyalari HARIC)
-2. Aciklayici commit mesaji yaz
-3. Hemen push et:
+Her degisiklikten sonra push **gerekmez**. VDS'teki repo canli kaynaktir.
+
+## Ne zaman push
+
+Anlamli bir is paketi bittiginde veya kullanici istediginde yedekle:
+
+1. `git add` (`.env`, token, secret dosyalari HARIC)
+2. Aciklayici commit
+3. Istege bagli push:
+   - Linux/VDS: `bash scripts/push-github.sh`
    - Windows: `powershell -File scripts/push-github.ps1`
-   - Linux: `bash scripts/push-github.sh`
-4. Push basarisizsa kullaniciya sadece `GITHUB_TOKEN` eksikligini bildir
+
+Push basarisizsa isi bloklama; kisa bildir (`GITHUB_TOKEN` / ag). Kullanici isterse sonra tekrar dener.
 
 ## Token
 
-- `GITHUB_TOKEN` sadece yerel `.env` icinde tutulur (gitignore)
+- `GITHUB_TOKEN` sadece yerel `.env` icinde (gitignore)
 - Asla commit etme, sohbette token yazdirma
 
-## VDS
+## Not
 
-Kullanici VDS'te `git pull` + `bash update.sh` (PM2) veya `bash scripts/vds-deploy.sh` (Docker) kullanir.
+Eski akis `git pull` + `update.sh` baska makine icindi. Simdi dogrudan VDS'te calisiliyorsa pull gerekmez; GitHub sadece yedek mirror.
