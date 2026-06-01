@@ -333,8 +333,9 @@ export async function applyHuntDelta(
   playerId: string,
   delta: HuntStateDelta,
   metrics?: HuntHotPathMetricsCollector | null,
+  existingPlayer?: CachedPlayerData,
 ): Promise<CachedPlayerData> {
-  const player = await loadPlayerForMutation(redis, prisma, playerId, metrics);
+  const player = existingPlayer ?? await loadPlayerForMutation(redis, prisma, playerId, metrics);
 
   player.xp = delta.newXp;
   player.level = delta.newLevel;
@@ -438,15 +439,19 @@ export async function applyHuntDelta(
     }
   }
 
-  metrics?.addRedisWrite(1 + itemNames.length + 2);
+  // Player JSON + dirty flag + ttl yenileme tek pipeline'da.
+  const dirtyTs = Date.now().toString();
+  pipeline.eval(HUNT_APPLY_LUA, 1, playerKey(playerId), JSON.stringify(player));
+  pipeline.set(`${DIRTY_PREFIX}${playerId}`, dirtyTs);
+  pipeline.sadd(DIRTY_SET, playerId);
+  pipeline.expire(playerKey(playerId), STATE_TTL_SECONDS);
+  pipeline.expire(hydratedKey(playerId), STATE_TTL_SECONDS);
+  pipeline.expire(invKey(playerId), STATE_TTL_SECONDS);
+  if (delta.owlId) {
+    pipeline.expire(owlKey(delta.owlId), STATE_TTL_SECONDS);
+  }
+  metrics?.addRedisWrite(itemNames.length + 8 + (delta.owlId ? 1 : 0));
   await pipeline.exec();
-  metrics?.addRedisWrite(1);
-  await markDirty(redis, playerId);
-
-  // Player JSON — Lua ile atomik SET (tek round-trip)
-  metrics?.addRedisWrite(1);
-  await redis.eval(HUNT_APPLY_LUA, 1, playerKey(playerId), JSON.stringify(player));
-  await touchPlayerStateTtl(redis, playerId, delta.owlId, metrics);
 
   if (delta.totalXPGain > 0) {
     enqueueDbWrite({
@@ -485,8 +490,9 @@ export async function deductCoinsInRedis(
   amount: number,
   prisma?: PrismaClient,
   metrics?: HuntHotPathMetricsCollector | null,
+  existingPlayer?: CachedPlayerData,
 ): Promise<number> {
-  const player = await loadPlayerForMutation(redis, prisma, playerId, metrics);
+  const player = existingPlayer ?? await loadPlayerForMutation(redis, prisma, playerId, metrics);
   if (player.coins < amount) throw new Error('Yetersiz coin.');
   player.coins -= amount;
   metrics?.addRedisWrite();
@@ -842,9 +848,12 @@ export async function applyOwlStaminaRecoveryInRedis(
   owlId: string,
   amount: number,
   metrics?: HuntHotPathMetricsCollector | null,
+  existingPlayer?: CachedPlayerData,
 ): Promise<void> {
   if (amount <= 0) return;
-  await loadPlayerForMutation(redis, prisma, playerId, metrics);
+  if (!existingPlayer) {
+    await loadPlayerForMutation(redis, prisma, playerId, metrics);
+  }
   metrics?.addRedisRead();
   let raw = await redis.get(owlKey(owlId));
   if (!raw) {

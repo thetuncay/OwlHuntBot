@@ -218,17 +218,48 @@ export async function consumeConsumableEffects(
 
 /** Aktif süreli consumable efektleri (Redis). */
 export async function getActiveConsumables(
-  redis: { get: (key: string) => Promise<string | null>; pttl: (key: string) => Promise<number> },
+  redis: {
+    get: (key: string) => Promise<string | null>;
+    pttl: (key: string) => Promise<number>;
+    pipeline?: () => {
+      get: (key: string) => unknown;
+      pttl: (key: string) => unknown;
+      exec: () => Promise<Array<[Error | null, unknown]> | null>;
+    };
+  },
   playerId: string,
 ): Promise<{ def: ConsumableItemDef; expiresAt: number }[]> {
   const results: { def: ConsumableItemDef; expiresAt: number }[] = [];
-  for (const def of CONSUMABLE_ITEMS) {
-    if (def.durationMs === 0) continue;
+  const defs = CONSUMABLE_ITEMS.filter((def) => def.durationMs > 0);
+
+  if (redis.pipeline) {
+    const p = redis.pipeline();
+    for (const def of defs) {
+      const key = `${def.redisKey}:${playerId}`;
+      p.get(key);
+      p.pttl(key);
+    }
+    const rows = (await p.exec()) ?? [];
+    for (let i = 0; i < defs.length; i++) {
+      const valRaw = rows[i * 2]?.[1];
+      const ttlRaw = rows[i * 2 + 1]?.[1];
+      const val = typeof valRaw === 'string' ? valRaw : null;
+      const ttl = typeof ttlRaw === 'number' ? ttlRaw : -1;
+      if (val && ttl > 0) {
+        results.push({ def: defs[i]!, expiresAt: Date.now() + ttl });
+      }
+    }
+    return results;
+  }
+
+  for (const def of defs) {
     const key = `${def.redisKey}:${playerId}`;
     const val = await redis.get(key);
     if (val) {
       const ttl = await redis.pttl(key);
-      results.push({ def, expiresAt: Date.now() + ttl });
+      if (ttl > 0) {
+        results.push({ def, expiresAt: Date.now() + ttl });
+      }
     }
   }
   return results;

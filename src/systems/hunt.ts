@@ -225,7 +225,7 @@ export async function rollHunt(
             `Sahip olduğun: **${player.coins}** 💰`,
           );
         }
-        await deductCoinsInRedis(redis, playerId, safeBiome.entryCost, prisma, metrics);
+        await deductCoinsInRedis(redis, playerId, safeBiome.entryCost, prisma, metrics, player);
         player.coins -= safeBiome.entryCost;
         metrics?.addRedisWrite();
         await setBiomeSession(redis, playerId, biomeId);
@@ -416,7 +416,7 @@ export async function rollHunt(
       inventoryItems,
       levelUp: xpResult.levelUp,
       levelUpRewards,
-    }, metrics);
+    }, metrics, player);
 
     const auditAfter: Record<string, unknown> = {
       coins: player.coins,
@@ -449,11 +449,11 @@ export async function rollHunt(
 
     // Yem item'ları — av sonunda stamina yenile
     if (staminaRestoreAmount > 0) {
-      await applyOwlStaminaRecoveryInRedis(redis, prisma, playerId, targetOwlId, staminaRestoreAmount, metrics);
+      await applyOwlStaminaRecoveryInRedis(redis, prisma, playerId, targetOwlId, staminaRestoreAmount, metrics, player);
       consumablesToConsume.push('stamina_restore_once');
     }
     if (staminaBoostAmount > 0) {
-      await applyOwlStaminaRecoveryInRedis(redis, prisma, playerId, targetOwlId, staminaBoostAmount, metrics);
+      await applyOwlStaminaRecoveryInRedis(redis, prisma, playerId, targetOwlId, staminaBoostAmount, metrics, player);
       consumablesToConsume.push('stamina_boost_once');
     }
     if (consumablesToConsume.length > 0) {
