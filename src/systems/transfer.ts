@@ -22,19 +22,18 @@ import {
   TRANSFER_MIN_LEVEL,
   TRANSFER_TAX_BRACKETS,
 } from '../config';
-import { withLock } from '../utils/lock';
-import { applyCoinDeltaInRedis, reloadInventoryFromPg } from '../state/player-state';
+import { refreshCoinSnapshotsInRedis, runWithFinancialLocks } from './economy-transaction-manager';
 
 // ── TİPLER ───────────────────────────────────────────────────────────────────
 
 export interface TransferResult {
-  sent:        number;   // gönderilen miktar
-  tax:         number;   // kesilen vergi
-  taxRate:     number;   // uygulanan vergi oranı (0.05 = %5)
-  received:    number;   // alıcıya ulaşan miktar
-  senderCoins: number;   // gönderici yeni bakiye
-  dailySent:   number;   // bugün toplam gönderilen (bu transfer dahil)
-  dailyLimit:  number;   // günlük limit
+  sent: number; // gönderilen miktar
+  tax: number; // kesilen vergi
+  taxRate: number; // uygulanan vergi oranı (0.05 = %5)
+  received: number; // alıcıya ulaşan miktar
+  senderCoins: number; // gönderici yeni bakiye
+  dailySent: number; // bugün toplam gönderilen (bu transfer dahil)
+  dailyLimit: number; // günlük limit
 }
 
 // ── YARDIMCI FONKSİYONLAR ────────────────────────────────────────────────────
@@ -54,8 +53,8 @@ export function calcTaxRate(amount: number): number {
  * Vergi miktarını hesaplar (yukarı yuvarlanır — oyuncu lehine değil).
  */
 export function calcTax(amount: number): { tax: number; received: number; rate: number } {
-  const rate     = calcTaxRate(amount);
-  const tax      = Math.ceil(amount * rate);
+  const rate = calcTaxRate(amount);
+  const tax = Math.ceil(amount * rate);
   const received = amount - tax;
   return { tax, received, rate };
 }
@@ -70,10 +69,10 @@ export function calcTax(amount: number): { tax: number; received: number; rate: 
  */
 export async function transferCoins(
   prisma: PrismaClient,
-  redis:  Redis,
-  senderId:   string,
+  redis: Redis,
+  senderId: string,
   receiverId: string,
-  amount:     number,
+  amount: number,
 ): Promise<TransferResult> {
   // ── Temel doğrulamalar (DB'ye gitmeden) ──────────────────────────────────
   if (senderId === receiverId) {
@@ -84,7 +83,7 @@ export async function transferCoins(
   }
 
   // ── DB işlemleri (lock altında) ──────────────────────────────────────────
-  return withLock(senderId, 'financial', async () => {
+  return runWithFinancialLocks([senderId, receiverId], async () => {
     const result = await prisma.$transaction(async (tx) => {
       // Gönderici kontrolü
       const sender = await tx.player.findUnique({ where: { id: senderId } });
@@ -93,27 +92,24 @@ export async function transferCoins(
       if (sender.level < TRANSFER_MIN_LEVEL) {
         throw new Error(
           `Transfer için minimum **Seviye ${TRANSFER_MIN_LEVEL}** gerekli. ` +
-          `Şu an: Seviye ${sender.level}`,
+            `Şu an: Seviye ${sender.level}`,
         );
       }
       if (sender.coins < amount) {
-        throw new Error(
-          `Yetersiz coin. Sahip: **${sender.coins}** 💰, Gerekli: **${amount}** 💰`,
-        );
+        throw new Error(`Yetersiz coin. Sahip: **${sender.coins}** 💰, Gerekli: **${amount}** 💰`);
       }
 
       // Günlük limit kontrolü
       const today = new Date();
       const isNewDay =
-        !sender.lastTransferDate ||
-        (sender.lastTransferDate).toDateString() !== today.toDateString();
+        !sender.lastTransferDate || sender.lastTransferDate.toDateString() !== today.toDateString();
 
       const currentDailySent = isNewDay ? 0 : (sender.dailyTransferSent ?? 0);
       if (currentDailySent + amount > TRANSFER_DAILY_LIMIT) {
         const remaining = TRANSFER_DAILY_LIMIT - currentDailySent;
         throw new Error(
           `Günlük transfer limitine ulaştın. ` +
-          `Kalan: **${remaining > 0 ? remaining : 0}** 💰 / ${TRANSFER_DAILY_LIMIT} 💰`,
+            `Kalan: **${remaining > 0 ? remaining : 0}** 💰 / ${TRANSFER_DAILY_LIMIT} 💰`,
         );
       }
 
@@ -129,13 +125,13 @@ export async function transferCoins(
       // Alıcı kümülatif günlük alım limiti
       const receiverIsNewDay =
         !receiver.lastTransferDate ||
-        (receiver.lastTransferDate).toDateString() !== today.toDateString();
+        receiver.lastTransferDate.toDateString() !== today.toDateString();
       const receiverDailyReceived = receiverIsNewDay ? 0 : (receiver.dailyTransferReceived ?? 0);
       if (receiverDailyReceived + received > TRANSFER_DAILY_RECEIVE_LIMIT) {
         const remaining = Math.max(0, TRANSFER_DAILY_RECEIVE_LIMIT - receiverDailyReceived);
         throw new Error(
           `Alıcının günlük alım limitine ulaşıldı. ` +
-          `Kalan: **${remaining}** 💰 / ${TRANSFER_DAILY_RECEIVE_LIMIT} 💰`,
+            `Kalan: **${remaining}** 💰 / ${TRANSFER_DAILY_RECEIVE_LIMIT} 💰`,
         );
       }
 
@@ -143,9 +139,9 @@ export async function transferCoins(
       await tx.player.update({
         where: { id: senderId },
         data: {
-          coins:              { decrement: amount },
-          dailyTransferSent:  isNewDay ? amount : { increment: amount },
-          lastTransferDate:   today,
+          coins: { decrement: amount },
+          dailyTransferSent: isNewDay ? amount : { increment: amount },
+          lastTransferDate: today,
         },
       });
 
@@ -153,32 +149,29 @@ export async function transferCoins(
       await tx.player.update({
         where: { id: receiverId },
         data: {
-          coins:                { increment: received },
+          coins: { increment: received },
           dailyTransferReceived: receiverIsNewDay ? received : { increment: received },
-          lastTransferDate:     today,
+          lastTransferDate: today,
         },
       });
 
       // Vergi yakılır — hiçbir yere eklenmez (ekonomi sink)
 
       const newSenderCoins = sender.coins - amount;
-      const newDailySent   = currentDailySent + amount;
+      const newDailySent = currentDailySent + amount;
 
       return {
-        sent:        amount,
+        sent: amount,
         tax,
-        taxRate:     rate,
+        taxRate: rate,
         received,
         senderCoins: newSenderCoins,
-        dailySent:   newDailySent,
-        dailyLimit:  TRANSFER_DAILY_LIMIT,
+        dailySent: newDailySent,
+        dailyLimit: TRANSFER_DAILY_LIMIT,
       } satisfies TransferResult;
     });
 
-    await Promise.all([
-      applyCoinDeltaInRedis(redis, senderId, -amount, prisma),
-      applyCoinDeltaInRedis(redis, receiverId, result.received, prisma),
-    ]);
+    await refreshCoinSnapshotsInRedis({ prisma, redis }, [senderId, receiverId]);
     return result;
   });
 }

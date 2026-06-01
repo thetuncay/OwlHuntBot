@@ -17,6 +17,7 @@ import {
   PREY,
 } from '../config';
 import { withLock } from '../utils/lock';
+import { runWithListingLock } from './economy-transaction-manager';
 import { trackQuestProgress } from './daily-quests';
 import type { Redis } from 'ioredis';
 import {
@@ -49,9 +50,9 @@ export interface MarketBrowseOptions {
 }
 
 const CATEGORY_ITEM_TYPES: Record<MarketCategory, string[]> = {
-  owl:      ['owl'],
-  item:     ['Consumable', 'Lootbox', 'Kutu', 'Equipment', 'Item'],
-  buff:     ['Buff'],
+  owl: ['owl'],
+  item: ['Consumable', 'Lootbox', 'Kutu', 'Equipment', 'Item'],
+  buff: ['Buff'],
   material: ['Materyal', 'Material', 'Av'],
 };
 
@@ -69,8 +70,13 @@ export function resolveMarketCategory(itemType: string, itemName: string): Marke
 export function parseMarketSort(raw?: string): MarketSort {
   const s = (raw ?? '').toLowerCase().replace('sort:', '');
   const allowed: MarketSort[] = [
-    'price_asc', 'price_desc', 'newest', 'oldest',
-    'ending_soon', 'most_expensive', 'cheapest',
+    'price_asc',
+    'price_desc',
+    'newest',
+    'oldest',
+    'ending_soon',
+    'most_expensive',
+    'cheapest',
   ];
   return allowed.includes(s as MarketSort) ? (s as MarketSort) : 'price_asc';
 }
@@ -93,7 +99,9 @@ function buildOrderBy(sort: MarketSort): Prisma.MarketListingOrderByWithRelation
   }
 }
 
-function activeListingWhere(extra?: Prisma.MarketListingWhereInput): Prisma.MarketListingWhereInput {
+function activeListingWhere(
+  extra?: Prisma.MarketListingWhereInput,
+): Prisma.MarketListingWhereInput {
   return {
     status: 'active',
     expiresAt: { gt: new Date() },
@@ -101,7 +109,10 @@ function activeListingWhere(extra?: Prisma.MarketListingWhereInput): Prisma.Mark
   };
 }
 
-async function countActiveListings(tx: Prisma.TransactionClient, sellerId: string): Promise<number> {
+async function countActiveListings(
+  tx: Prisma.TransactionClient,
+  sellerId: string,
+): Promise<number> {
   return tx.marketListing.count({
     where: activeListingWhere({ sellerId }),
   });
@@ -142,10 +153,14 @@ export async function createListing(
       const bundle = await hydratePlayerState(redis, prisma, sellerId);
       const coins = bundle?.player.coins ?? player.coins;
       if (coins < listingFee) {
-        throw new Error(`Listeleme ücreti **${listingFee.toLocaleString('tr-TR')}** coin — yetersiz bakiye.`);
+        throw new Error(
+          `Listeleme ücreti **${listingFee.toLocaleString('tr-TR')}** coin — yetersiz bakiye.`,
+        );
       }
     } else if (player.coins < listingFee) {
-      throw new Error(`Listeleme ücreti **${listingFee.toLocaleString('tr-TR')}** coin — yetersiz bakiye.`);
+      throw new Error(
+        `Listeleme ücreti **${listingFee.toLocaleString('tr-TR')}** coin — yetersiz bakiye.`,
+      );
     }
 
     const result = await prisma.$transaction(async (tx) => {
@@ -231,10 +246,14 @@ export async function createOwlListing(
       const bundle = await hydratePlayerState(redis, prisma, sellerId);
       const coins = bundle?.player.coins ?? player.coins;
       if (coins < listingFee) {
-        throw new Error(`Listeleme ücreti **${listingFee.toLocaleString('tr-TR')}** coin — yetersiz bakiye.`);
+        throw new Error(
+          `Listeleme ücreti **${listingFee.toLocaleString('tr-TR')}** coin — yetersiz bakiye.`,
+        );
       }
     } else if (player.coins < listingFee) {
-      throw new Error(`Listeleme ücreti **${listingFee.toLocaleString('tr-TR')}** coin — yetersiz bakiye.`);
+      throw new Error(
+        `Listeleme ücreti **${listingFee.toLocaleString('tr-TR')}** coin — yetersiz bakiye.`,
+      );
     }
 
     const owl = await resolveOwlByInput(prisma, sellerId, owlId);
@@ -434,6 +453,28 @@ async function resolveListing(
   return tx.marketListing.findFirst({ where: { id: { startsWith: listingRef } } });
 }
 
+async function resolveListingIdForLock(
+  prisma: PrismaClient,
+  listingRef: string,
+): Promise<string | null> {
+  const num = parseInt(listingRef, 10);
+  const select = { id: true } as const;
+  if (!Number.isNaN(num)) {
+    return (
+      (await prisma.marketListing.findUnique({ where: { listingNo: num }, select }))?.id ?? null
+    );
+  }
+  if (listingRef.length === 36) {
+    return (
+      (await prisma.marketListing.findUnique({ where: { id: listingRef }, select }))?.id ?? null
+    );
+  }
+  return (
+    (await prisma.marketListing.findFirst({ where: { id: { startsWith: listingRef } }, select }))
+      ?.id ?? null
+  );
+}
+
 /** Satın al */
 export async function buyListing(
   prisma: PrismaClient,
@@ -442,142 +483,149 @@ export async function buyListing(
   redis?: Redis,
 ) {
   return withLock(buyerId, 'market_buy', async () => {
-    const result = await prisma.$transaction(async (tx) => {
-      const listing = await resolveListing(tx, listingRef);
-      if (!listing) throw new Error('İlan bulunamadı.');
-      if (listing.status !== 'active') throw new Error('Bu ilan artık aktif değil.');
-      if (listing.expiresAt <= new Date()) throw new Error('Bu ilanın süresi dolmuş.');
-      if (listing.sellerId === buyerId) throw new Error('Kendi ilanını satın alamazsın.');
+    const listingId = await resolveListingIdForLock(prisma, listingRef);
+    if (!listingId) throw new Error('İlan bulunamadı.');
 
-      const reserved = await tx.marketListing.updateMany({
-        where: { id: listing.id, status: 'active' },
-        data: { status: 'reserved' },
-      });
-      if (reserved.count === 0) throw new Error('İlan başka biri tarafından alınıyor.');
+    return runWithListingLock(listingId, async () => {
+      const result = await prisma.$transaction(async (tx) => {
+        const listing = await resolveListing(tx, listingId);
+        if (!listing) throw new Error('İlan bulunamadı.');
+        if (listing.status !== 'active') throw new Error('Bu ilan artık aktif değil.');
+        if (listing.expiresAt <= new Date()) throw new Error('Bu ilanın süresi dolmuş.');
+        if (listing.sellerId === buyerId) throw new Error('Kendi ilanını satın alamazsın.');
 
-      const buyer = await tx.player.findUnique({
-        where: { id: buyerId },
-        select: { coins: true, createdAt: true },
-      });
-      const seller = await tx.player.findUnique({
-        where: { id: listing.sellerId },
-        select: { coins: true, createdAt: true },
-      });
-      if (!buyer || !seller) throw new Error('Oyuncu bulunamadı.');
-      if (buyer.coins < listing.price) throw new Error('Yetersiz bakiye.');
-
-      const tax = calcTax(listing.price);
-      const sellerGain = listing.price - tax;
-
-      await tx.player.update({
-        where: { id: buyerId },
-        data: { coins: { decrement: listing.price } },
-      });
-      await tx.player.update({
-        where: { id: listing.sellerId },
-        data: { coins: { increment: sellerGain } },
-      });
-
-      if (listing.marketCategory === 'owl') {
-        await tx.owl.update({
-          where: { id: listing.itemId },
-          data: { ownerId: buyerId, passiveMode: 'idle', isMain: false },
+        const reserved = await tx.marketListing.updateMany({
+          where: { id: listing.id, status: 'active' },
+          data: { status: 'reserved' },
         });
-      } else {
-        await tx.inventoryItem.upsert({
-          where: { ownerId_itemName: { ownerId: buyerId, itemName: listing.itemName } },
-          create: {
-            ownerId: buyerId,
-            itemName: listing.itemName,
-            itemType: listing.itemType,
-            rarity: listing.rarity,
-            quantity: listing.quantity,
-          },
-          update: { quantity: { increment: listing.quantity } },
+        if (reserved.count === 0) throw new Error('İlan başka biri tarafından alınıyor.');
+
+        const buyer = await tx.player.findUnique({
+          where: { id: buyerId },
+          select: { coins: true, createdAt: true },
         });
-      }
+        const seller = await tx.player.findUnique({
+          where: { id: listing.sellerId },
+          select: { coins: true, createdAt: true },
+        });
+        if (!buyer || !seller) throw new Error('Oyuncu bulunamadı.');
+        if (buyer.coins < listing.price) throw new Error('Yetersiz bakiye.');
 
-      const { score, factors } = await computeRiskScore(
-        tx,
-        listing.sellerId,
-        buyerId,
-        listing.itemId,
-        listing.price,
-        seller.createdAt,
-        buyer.createdAt,
-      );
+        const tax = calcTax(listing.price);
+        const sellerGain = listing.price - tax;
 
-      const sale = await tx.marketSale.create({
-        data: {
-          listingId: listing.id,
-          listingNo: listing.listingNo,
-          sellerId: listing.sellerId,
+        await tx.player.update({
+          where: { id: buyerId },
+          data: { coins: { decrement: listing.price } },
+        });
+        await tx.player.update({
+          where: { id: listing.sellerId },
+          data: { coins: { increment: sellerGain } },
+        });
+
+        if (listing.marketCategory === 'owl') {
+          await tx.owl.update({
+            where: { id: listing.itemId },
+            data: { ownerId: buyerId, passiveMode: 'idle', isMain: false },
+          });
+        } else {
+          await tx.inventoryItem.upsert({
+            where: { ownerId_itemName: { ownerId: buyerId, itemName: listing.itemName } },
+            create: {
+              ownerId: buyerId,
+              itemName: listing.itemName,
+              itemType: listing.itemType,
+              rarity: listing.rarity,
+              quantity: listing.quantity,
+            },
+            update: { quantity: { increment: listing.quantity } },
+          });
+        }
+
+        const { score, factors } = await computeRiskScore(
+          tx,
+          listing.sellerId,
           buyerId,
-          itemId: listing.itemId,
-          itemName: listing.itemName,
-          itemType: listing.itemType,
-          marketCategory: listing.marketCategory,
-          quantity: listing.quantity,
-          salePrice: listing.price,
-          taxPaid: tax,
-          riskScore: score,
-        },
-      });
+          listing.itemId,
+          listing.price,
+          seller.createdAt,
+          buyer.createdAt,
+        );
 
-      if (score >= MARKET_SUSPICIOUS_THRESHOLD) {
-        await tx.marketSuspiciousLog.create({
+        const sale = await tx.marketSale.create({
           data: {
-            saleId: sale.id,
             listingId: listing.id,
+            listingNo: listing.listingNo,
             sellerId: listing.sellerId,
             buyerId,
             itemId: listing.itemId,
             itemName: listing.itemName,
+            itemType: listing.itemType,
+            marketCategory: listing.marketCategory,
+            quantity: listing.quantity,
             salePrice: listing.price,
+            taxPaid: tax,
             riskScore: score,
-            riskFactors: factors,
           },
         });
-      }
 
-      const sold = await tx.marketListing.update({
-        where: { id: listing.id },
-        data: {
-          status: 'sold',
-          buyerId,
-          soldAt: new Date(),
-        },
+        if (score >= MARKET_SUSPICIOUS_THRESHOLD) {
+          await tx.marketSuspiciousLog.create({
+            data: {
+              saleId: sale.id,
+              listingId: listing.id,
+              sellerId: listing.sellerId,
+              buyerId,
+              itemId: listing.itemId,
+              itemName: listing.itemName,
+              salePrice: listing.price,
+              riskScore: score,
+              riskFactors: factors,
+            },
+          });
+        }
+
+        const sold = await tx.marketListing.update({
+          where: { id: listing.id },
+          data: {
+            status: 'sold',
+            buyerId,
+            soldAt: new Date(),
+          },
+        });
+
+        return { listing: sold, tax, sellerGain, sale, riskScore: score };
       });
 
-      return { listing: sold, tax, sellerGain, sale, riskScore: score };
-    });
+      enqueueDbWrite({
+        type: 'refreshMarketAnalytics',
+        itemId: result.listing.itemId,
+        itemName: result.listing.itemName,
+        lastSalePrice: result.listing.price,
+      });
 
-    enqueueDbWrite({
-      type: 'refreshMarketAnalytics',
-      itemId: result.listing.itemId,
-      itemName: result.listing.itemName,
-      lastSalePrice: result.listing.price,
-    });
-
-    if (redis) {
-      const jobs: Promise<unknown>[] = [
-        applyCoinDeltaInRedis(redis, buyerId, -result.listing.price, prisma),
-        applyCoinDeltaInRedis(redis, result.listing.sellerId, result.sellerGain, prisma),
-      ];
-      if (result.listing.marketCategory !== 'owl') {
-        jobs.push(addInventoryItemInRedis(
-          redis,
-          buyerId,
-          result.listing.itemName,
-          result.listing.itemType,
-          result.listing.rarity,
-          result.listing.quantity,
-          prisma,
-        ));
+      if (redis) {
+        const jobs: Promise<unknown>[] = [
+          applyCoinDeltaInRedis(redis, buyerId, -result.listing.price, prisma),
+          applyCoinDeltaInRedis(redis, result.listing.sellerId, result.sellerGain, prisma),
+        ];
+        if (result.listing.marketCategory !== 'owl') {
+          jobs.push(
+            addInventoryItemInRedis(
+              redis,
+              buyerId,
+              result.listing.itemName,
+              result.listing.itemType,
+              result.listing.rarity,
+              result.listing.quantity,
+              prisma,
+            ),
+          );
+        }
+        await Promise.all(jobs);
       }
-      await Promise.all(jobs);
-    }
-    return result;
+      return result;
+    });
   });
 }
 
@@ -663,18 +711,13 @@ export async function cleanupExpiredListings(prisma: PrismaClient, redis?: Redis
   }
 
   if (redis) {
-    await Promise.all(
-      [...sellerIds].map((id) => reloadInventoryFromPg(redis, prisma, id)),
-    );
+    await Promise.all([...sellerIds].map((id) => reloadInventoryFromPg(redis, prisma, id)));
   }
 
   return expired.length;
 }
 
-export async function fetchListings(
-  prisma: PrismaClient,
-  options: MarketBrowseOptions = {},
-) {
+export async function fetchListings(prisma: PrismaClient, options: MarketBrowseOptions = {}) {
   const page = Math.max(1, options.page ?? 1);
   const sort = options.sort ?? 'price_asc';
   const skip = (page - 1) * MARKET_PAGE_SIZE;
@@ -746,7 +789,10 @@ export async function countListingsByCategory(prisma: PrismaClient) {
       }),
     })),
   );
-  return Object.fromEntries(counts.map((c) => [c.category, c.count])) as Record<MarketCategory, number>;
+  return Object.fromEntries(counts.map((c) => [c.category, c.count])) as Record<
+    MarketCategory,
+    number
+  >;
 }
 
 export { MARKET_PAGE_SIZE, CATEGORY_ITEM_TYPES };

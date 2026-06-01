@@ -5,8 +5,6 @@ import { join } from 'node:path';
 import type { CommandDefinition } from './types';
 import { parseBotEnv, resolveDatabaseUrl, describeDatabaseUrl } from './env';
 import { redis, assertRedisConnection } from './utils/redis';
-import { enforceAntiSpam } from './middleware/antiSpam';
-import { acquireCommandSlot } from './middleware/load-shed';
 import { getGuildPrefix } from './utils/prefix';
 import { stripGluedPrefix } from './utils/owo-command';
 import { handleOwlTextCommand } from './commands/owl';
@@ -18,7 +16,6 @@ import { initDbQueueProducer, setDbQueuePrisma } from './utils/db-queue';
 import { consumeRoleSyncFlag } from './jobs/background-jobs';
 import { registerGracefulShutdown, trackInterval } from './utils/shutdown';
 import {
-  beginCommandPerf,
   isPerfMetricsEnabled,
   logLocalPerfSummary,
   perfSummaryIntervalMs,
@@ -38,6 +35,7 @@ import {
   telemetryQueueSize,
 } from './utils/command-telemetry';
 import { logCommandError } from './utils/command-error';
+import { executeCommandPipeline } from './middleware/command-pipeline';
 import {
   COOLDOWN_CLEAR_CHANNEL,
   handleCooldownClearSignal,
@@ -45,6 +43,7 @@ import {
   sweepCooldownCache,
 } from './middleware/cooldown-manager';
 import { HUNT_COOLDOWN_MAX_REMAINING_MS } from './config';
+import { stopAllCollectors, sweepExpiredCollectors } from './utils/collector-manager';
 
 const env = parseBotEnv();
 
@@ -53,27 +52,31 @@ const prisma = new PrismaClient({
   datasources: { db: { url: dbUrl } },
 });
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+  ],
   // RAM optimizasyonu: discord.js varsayılan olarak tüm mesajları, üyeleri ve
   // kanalları bellekte tutar. Yüksek sunucu sayısında bu bellek sızıntısına yol açar.
   // makeCache: sadece ihtiyaç duyulan miktarı tut.
   makeCache: Options.cacheWithLimits({
-    MessageManager:     RUNTIME.discordCacheMessages,
+    MessageManager: RUNTIME.discordCacheMessages,
     GuildMemberManager: RUNTIME.discordCacheMembers,
-    UserManager:        RUNTIME.discordCacheUsers,
-    ReactionManager:   0,    // Reaksiyon cache'i tamamen kapat (kullanılmıyor)
-    GuildEmojiManager: 0,    // Emoji cache'i kapat (kullanılmıyor)
+    UserManager: RUNTIME.discordCacheUsers,
+    ReactionManager: 0, // Reaksiyon cache'i tamamen kapat (kullanılmıyor)
+    GuildEmojiManager: 0, // Emoji cache'i kapat (kullanılmıyor)
     StageInstanceManager: 0,
     GuildStickerManager: 0,
   }),
   // sweepers: belirli aralıklarla eski cache girişlerini temizle
   sweepers: {
     messages: {
-      interval: 300,    // Her 5 dakikada bir tara
+      interval: 300, // Her 5 dakikada bir tara
       lifetime: RUNTIME.discordMessageSweepLifetimeSec,
     },
     users: {
-      interval: 3_600,  // Her saatte bir tara
+      interval: 3_600, // Her saatte bir tara
       filter: Sweepers.filterByLifetime({ lifetime: 3_600 }), // 1 saatten eski user objelerini sil
     },
     guildMembers: {
@@ -91,20 +94,29 @@ let cooldownSubscriber: typeof redis | null = null;
 async function loadCommands(): Promise<void> {
   const { fileURLToPath, pathToFileURL } = await import('node:url');
   // import.meta.dir Bun'a özgü; Node.js'de import.meta.url'den türet
-  const currentDir = typeof (import.meta as any).dir !== 'undefined'
-    ? (import.meta as any).dir as string
-    : fileURLToPath(new URL('.', import.meta.url));
+  const currentDir =
+    typeof (import.meta as any).dir !== 'undefined'
+      ? ((import.meta as any).dir as string)
+      : fileURLToPath(new URL('.', import.meta.url));
   const commandsDir = join(currentDir, 'commands');
   const files = await readdir(commandsDir);
-  const commandFiles = files.filter((name) => (name.endsWith('.ts') || name.endsWith('.js')) && !name.endsWith('.d.ts'));
+  const commandFiles = files.filter(
+    (name) => (name.endsWith('.ts') || name.endsWith('.js')) && !name.endsWith('.d.ts'),
+  );
 
   for (const fileName of commandFiles) {
     // Windows'ta join() C:\... path üretir — ESM loader file:// ister
     const filePath = pathToFileURL(join(commandsDir, fileName)).href;
-    const mod = (await import(filePath)) as { default?: CommandDefinition | { default?: CommandDefinition } };
+    const mod = (await import(filePath)) as {
+      default?: CommandDefinition | { default?: CommandDefinition };
+    };
     // CJS interop: TypeScript CJS çıktısında asıl export mod.default.default'ta olabilir
     const raw = mod.default as any;
-    const cmd: CommandDefinition | undefined = raw?.data ? raw : raw?.default?.data ? raw.default : undefined;
+    const cmd: CommandDefinition | undefined = raw?.data
+      ? raw
+      : raw?.default?.data
+        ? raw.default
+        : undefined;
     if (cmd?.data?.name) {
       commandMap.set(cmd.data.name, cmd);
     }
@@ -187,9 +199,7 @@ async function bootstrap(): Promise<void> {
     if (!command) return;
 
     const owlSub =
-      interaction.commandName === 'owl'
-        ? interaction.options.getSubcommand(false)
-        : null;
+      interaction.commandName === 'owl' ? interaction.options.getSubcommand(false) : null;
     const perfCommand = owlSub ? `owl:${owlSub}` : interaction.commandName;
     const actionGate = {
       userId: interaction.user.id,
@@ -197,34 +207,18 @@ async function bootstrap(): Promise<void> {
       key: SuppressionKeys.state(`interaction:${perfCommand}`),
       ttlMs: 20_000,
     };
-    const hasGate = acquireInFlightAction(actionGate);
-    if (!hasGate) return;
-    let releaseSlot: (() => Promise<void>) | null = null;
-    const perf = beginCommandPerf();
-    let perfOk = true;
-    let perfError: string | undefined;
-    try {
-      await enforceAntiSpam(redis, interaction.user.id, interaction.user.displayName);
-      releaseSlot = await acquireCommandSlot(redis);
-      perf.markQueueDone();
-      await command.execute(interaction, { prisma, redis });
-    } catch (error) {
-      // Unknown interaction (10062) = token süresi dolmuş, sessizce geç
-      if ((error as any)?.code === 10062) return;
-      perfOk = false;
-      perfError = error instanceof Error ? error.message : String(error);
-      if (await notifyInteractionUserError(interaction, error)) return;
-      logCommandError('Interaction Error', error);
-    } finally {
-      await perf.finish(redis, {
-        command: perfCommand,
-        source: 'slash',
-        ok: perfOk,
-        error: perfError,
-      }).catch(() => null);
-      await releaseSlot?.().catch(() => null);
-      releaseInFlightAction(actionGate);
-    }
+    await executeCommandPipeline({
+      redis,
+      userId: interaction.user.id,
+      displayName: interaction.user.displayName,
+      command: perfCommand,
+      source: 'slash',
+      logLabel: 'Interaction Error',
+      acquireGate: () => acquireInFlightAction(actionGate),
+      releaseGate: () => releaseInFlightAction(actionGate),
+      execute: () => command.execute(interaction, { prisma, redis }),
+      notifyError: (error) => notifyInteractionUserError(interaction, error),
+    });
   });
 
   client.on(Events.MessageCreate, async (message) => {
@@ -246,7 +240,11 @@ async function bootstrap(): Promise<void> {
       commandText = glued.slice(defaultPrefix.length).trim();
     } else if (lowered.startsWith(customPrefix)) {
       commandText = glued.slice(customPrefix.length).trim();
-    } else if (shortPrefix && lowered.startsWith(shortPrefix) && lowered.length > shortPrefix.length) {
+    } else if (
+      shortPrefix &&
+      lowered.startsWith(shortPrefix) &&
+      lowered.length > shortPrefix.length
+    ) {
       const afterPrefix = glued.slice(shortPrefix.length).trim();
       if (afterPrefix.length > 0) {
         commandText = afterPrefix;
@@ -271,65 +269,46 @@ async function bootstrap(): Promise<void> {
     const firstWord = (parts[0] ?? '').toLowerCase();
 
     // Liderboard: owl top [kategori] veya owl lb [kategori]
-    if (firstWord === 'top' || firstWord === 'lb' || firstWord === 'liderboard' || firstWord === 'leaderboard') {
+    if (
+      firstWord === 'top' ||
+      firstWord === 'lb' ||
+      firstWord === 'liderboard' ||
+      firstWord === 'leaderboard'
+    ) {
       const topGate = {
         userId: message.author.id,
         guildId: message.guildId,
         key: SuppressionKeys.state('prefix:top-inflight'),
         ttlMs: 15_000,
       };
-      if (!acquireInFlightAction(topGate)) return;
-      let releaseSlot: (() => Promise<void>) | null = null;
-      const perf = beginCommandPerf();
-      let perfOk = true;
-      let perfError: string | undefined;
-      try {
-        await enforceAntiSpam(redis, message.author.id, message.author.displayName);
-        releaseSlot = await acquireCommandSlot(redis);
-        perf.markQueueDone();
-        await handleTopTextCommand(message, parts.slice(1), { prisma, redis });
-      } catch (error) {
-        perfOk = false;
-        perfError = error instanceof Error ? error.message : String(error);
-        if (await notifyPrefixUserError(message, error)) return;
-        logCommandError('Top Command Error', error);
-      } finally {
-        await perf.finish(redis, {
-          command: 'top',
-          source: 'prefix',
-          ok: perfOk,
-          error: perfError,
-        }).catch(() => null);
-        await releaseSlot?.().catch(() => null);
-        releaseInFlightAction(topGate);
-      }
+      await executeCommandPipeline({
+        redis,
+        userId: message.author.id,
+        displayName: message.author.displayName,
+        command: 'top',
+        source: 'prefix',
+        logLabel: 'Top Command Error',
+        acquireGate: () => acquireInFlightAction(topGate),
+        releaseGate: () => releaseInFlightAction(topGate),
+        execute: () => handleTopTextCommand(message, parts.slice(1), { prisma, redis }),
+        notifyError: (error) => notifyPrefixUserError(message, error),
+      });
       return;
     }
 
-    let releaseSlot: (() => Promise<void>) | null = null;
-    const perf = beginCommandPerf();
     let perfCommand = parts[0]?.toLowerCase() ?? 'owl';
-    let perfOk = true;
-    let perfError: string | undefined;
-    try {
-      await enforceAntiSpam(redis, message.author.id, message.author.displayName);
-      releaseSlot = await acquireCommandSlot(redis);
-      perf.markQueueDone();
-      perfCommand = await handleOwlTextCommand(message, parts, { prisma, redis }, guildPrefix);
-    } catch (error) {
-      perfOk = false;
-      perfError = error instanceof Error ? error.message : String(error);
-      if (await notifyPrefixUserError(message, error)) return;
-      logCommandError('Message Command Error', error);
-    } finally {
-      await perf.finish(redis, {
-        command: perfCommand,
-        source: 'prefix',
-        ok: perfOk,
-        error: perfError,
-      }).catch(() => null);
-      await releaseSlot?.().catch(() => null);
-    }
+    await executeCommandPipeline({
+      redis,
+      userId: message.author.id,
+      displayName: message.author.displayName,
+      command: () => perfCommand,
+      source: 'prefix',
+      logLabel: 'Message Command Error',
+      execute: async () => {
+        perfCommand = await handleOwlTextCommand(message, parts, { prisma, redis }, guildPrefix);
+      },
+      notifyError: (error) => notifyPrefixUserError(message, error),
+    });
   });
 
   await client.login(env.DISCORD_TOKEN);
@@ -350,21 +329,32 @@ trackInterval(async () => {
 trackInterval(() => {
   sweepCooldownCache();
   sweepResponseSuppression();
+  sweepExpiredCollectors();
 }, 60_000);
 
-registerGracefulShutdown([
-  () => client.destroy(),
-  async () => { await cooldownSubscriber?.quit().catch(() => null); },
-  async () => {
-    await flushCommandEvents(prisma).catch(() => null);
-    const pending = telemetryQueueSize();
-    if (pending > 0) {
-      console.warn(`[Telemetry] Kapatma sonrasi kuyrukta kalan olay: ${pending}`);
-    }
-  },
-  async () => { await redis.quit(); },
-  () => prisma.$disconnect(),
-], 'Bot');
+registerGracefulShutdown(
+  [
+    () => {
+      stopAllCollectors();
+    },
+    () => client.destroy(),
+    async () => {
+      await cooldownSubscriber?.quit().catch(() => null);
+    },
+    async () => {
+      await flushCommandEvents(prisma).catch(() => null);
+      const pending = telemetryQueueSize();
+      if (pending > 0) {
+        console.warn(`[Telemetry] Kapatma sonrasi kuyrukta kalan olay: ${pending}`);
+      }
+    },
+    async () => {
+      await redis.quit();
+    },
+    () => prisma.$disconnect(),
+  ],
+  'Bot',
+);
 
 void bootstrap().catch((err) => {
   console.error('[Bootstrap] Baslatma basarisiz:', err instanceof Error ? err.message : err);
