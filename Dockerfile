@@ -4,6 +4,8 @@ WORKDIR /app
 RUN apk add --no-cache openssl
 
 COPY package.json bun.lock ./
+COPY prisma ./prisma
+
 RUN bun install --frozen-lockfile
 
 COPY . .

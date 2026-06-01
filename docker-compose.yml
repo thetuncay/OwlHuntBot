@@ -85,7 +85,7 @@ services:
       --appendonly yes
       --appendfsync everysec
       --maxmemory 2400mb
-      --maxmemory-policy allkeys-lru
+      --maxmemory-policy noeviction
       --tcp-backlog 2048
       --io-threads 6
       --io-threads-do-reads yes
