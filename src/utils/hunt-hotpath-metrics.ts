@@ -17,6 +17,29 @@ interface HuntSample {
   rewardCalcDurationMs: number;
 }
 
+export interface MetricStats {
+  avg: number;
+  p50: number;
+  p95: number;
+  p99: number;
+  max: number;
+}
+
+export interface HuntHotPathSnapshot {
+  collectedAtMs: number;
+  sampleCount: number;
+  executionDurationMs: MetricStats;
+  rewardCalcDurationMs: MetricStats;
+  redisReads: MetricStats;
+  redisWrites: MetricStats;
+  pgReads: MetricStats;
+  pgWrites: MetricStats;
+  cacheHits: MetricStats;
+  cacheMisses: MetricStats;
+  hydrationCount: MetricStats;
+  persistenceCount: MetricStats;
+}
+
 export interface HuntHotPathMetricsCollector {
   addRedisRead(n?: number): void;
   addRedisWrite(n?: number): void;
@@ -43,6 +66,7 @@ function envFlag(name: string): boolean {
 const HUNT_HOTPATH_METRICS_ENABLED = envFlag('HUNT_HOTPATH_METRICS');
 
 const samples: HuntSample[] = [];
+const snapshots: HuntHotPathSnapshot[] = [];
 let lastFlushAt = Date.now();
 
 function percentile(values: number[], p: number): number {
@@ -58,6 +82,39 @@ function statLine(name: string, values: number[]): string {
   const avg = sum / values.length;
   const max = Math.max(...values);
   return `${name}: avg=${avg.toFixed(2)} p50=${percentile(values, 50).toFixed(2)} p95=${percentile(values, 95).toFixed(2)} p99=${percentile(values, 99).toFixed(2)} max=${max.toFixed(2)}`;
+}
+
+function metricStats(values: number[]): MetricStats {
+  if (values.length === 0) return { avg: 0, p50: 0, p95: 0, p99: 0, max: 0 };
+  const sum = values.reduce((s, v) => s + v, 0);
+  return {
+    avg: sum / values.length,
+    p50: percentile(values, 50),
+    p95: percentile(values, 95),
+    p99: percentile(values, 99),
+    max: Math.max(...values),
+  };
+}
+
+function buildSnapshot(items: HuntSample[], collectedAtMs: number): HuntHotPathSnapshot {
+  return {
+    collectedAtMs,
+    sampleCount: items.length,
+    executionDurationMs: metricStats(items.map((s) => s.executionDurationMs)),
+    rewardCalcDurationMs: metricStats(items.map((s) => s.rewardCalcDurationMs)),
+    redisReads: metricStats(items.map((s) => s.redisReads)),
+    redisWrites: metricStats(items.map((s) => s.redisWrites)),
+    pgReads: metricStats(items.map((s) => s.pgReads)),
+    pgWrites: metricStats(items.map((s) => s.pgWrites)),
+    cacheHits: metricStats(items.map((s) => s.cacheHits)),
+    cacheMisses: metricStats(items.map((s) => s.cacheMisses)),
+    hydrationCount: metricStats(items.map((s) => s.hydrationCount)),
+    persistenceCount: metricStats(items.map((s) => s.persistenceCount)),
+  };
+}
+
+function fmt(n: number): string {
+  return n.toFixed(2);
 }
 
 function maybeFlushAggregates(): void {
@@ -76,8 +133,12 @@ function maybeFlushAggregates(): void {
   const hydrations = samples.map((s) => s.hydrationCount);
   const persists = samples.map((s) => s.persistenceCount);
 
+  const snapshot = buildSnapshot(samples, now);
+  snapshots.push(snapshot);
+  if (snapshots.length > 24) snapshots.shift();
+
   console.info(
-    `[HuntHotPathMetrics] samples=${samples.length}\n` +
+    `[HuntHotPathMetrics] samples=${snapshot.sampleCount}\n` +
       `  ${statLine('exec_ms', exec)}\n` +
       `  ${statLine('reward_calc_ms', reward)}\n` +
       `  ${statLine('redis_reads', redisReads)}\n` +
@@ -92,6 +153,75 @@ function maybeFlushAggregates(): void {
 
   samples.length = 0;
   lastFlushAt = now;
+}
+
+export function isHuntHotPathMetricsEnabled(): boolean {
+  return HUNT_HOTPATH_METRICS_ENABLED;
+}
+
+export function getLatestHuntHotPathSnapshot(): HuntHotPathSnapshot | null {
+  if (snapshots.length === 0) return null;
+  return snapshots[snapshots.length - 1] ?? null;
+}
+
+function statText(label: string, s: MetricStats): string {
+  return `- ${label}: avg ${fmt(s.avg)} | p50 ${fmt(s.p50)} | p95 ${fmt(s.p95)} | p99 ${fmt(s.p99)} | max ${fmt(s.max)}`;
+}
+
+export function buildHuntHotPathReport(snapshot: HuntHotPathSnapshot): string {
+  const totalCache = snapshot.cacheHits.avg + snapshot.cacheMisses.avg;
+  const hitRate = totalCache > 0 ? (snapshot.cacheHits.avg / totalCache) * 100 : 0;
+  const missRate = totalCache > 0 ? (snapshot.cacheMisses.avg / totalCache) * 100 : 0;
+  const avgRedisOps = snapshot.redisReads.avg + snapshot.redisWrites.avg;
+  const avgPgOps = snapshot.pgReads.avg + snapshot.pgWrites.avg;
+
+  const opportunities: string[] = [];
+  if (snapshot.redisReads.p95 >= 12 || avgRedisOps >= 16) {
+    opportunities.push('Redis read pressure: batch/pipeline more state reads.');
+  }
+  if (avgPgOps >= 2 || snapshot.pgReads.p95 >= 2) {
+    opportunities.push('PostgreSQL pressure: reduce display-path DB reads.');
+  }
+  if (missRate >= 20 || snapshot.hydrationCount.avg >= 0.2) {
+    opportunities.push('Hydration misses: improve hot-state TTL/warmup.');
+  }
+  if (snapshot.persistenceCount.p95 >= 3) {
+    opportunities.push('Persistence pressure: stronger per-player coalescing.');
+  }
+  if (snapshot.rewardCalcDurationMs.p95 >= 15 || snapshot.executionDurationMs.p95 >= 60) {
+    opportunities.push('Reward calc tail latency: precompute heavy branches.');
+  }
+  if (opportunities.length === 0) {
+    opportunities.push('No clear bottleneck from current snapshot.');
+  }
+
+  return [
+    `📈 **Hunt Hot Path Perf**`,
+    `samples: **${snapshot.sampleCount}**`,
+    '',
+    `**Timings (ms)**`,
+    statText('executionDurationMs', snapshot.executionDurationMs),
+    statText('rewardCalcDurationMs', snapshot.rewardCalcDurationMs),
+    '',
+    `**Ops / Hunt**`,
+    statText('redisReads', snapshot.redisReads),
+    statText('redisWrites', snapshot.redisWrites),
+    statText('pgReads', snapshot.pgReads),
+    statText('pgWrites', snapshot.pgWrites),
+    statText('cacheHits', snapshot.cacheHits),
+    statText('cacheMisses', snapshot.cacheMisses),
+    statText('hydrationCount', snapshot.hydrationCount),
+    statText('persistenceCount', snapshot.persistenceCount),
+    '',
+    `**Derived**`,
+    `- cache hit rate: ${fmt(hitRate)}%`,
+    `- cache miss rate: ${fmt(missRate)}%`,
+    `- avg Redis operations / hunt: ${fmt(avgRedisOps)}`,
+    `- avg PostgreSQL operations / hunt: ${fmt(avgPgOps)}`,
+    '',
+    `**Optimization Opportunities**`,
+    ...opportunities.map((item) => `- ${item}`),
+  ].join('\n');
 }
 
 export function beginHuntHotPathMetrics(): HuntHotPathMetricsCollector | null {

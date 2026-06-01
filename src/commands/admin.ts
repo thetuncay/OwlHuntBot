@@ -129,6 +129,7 @@ const data = new SlashCommandBuilder()
   .addSubcommandGroup((g) => g.setName('sys').setDescription('Sistem yönetimi')
     .addSubcommand((s) => s.setName('info').setDescription('Sunucu istatistikleri'))
     .addSubcommand((s) => s.setName('perf').setDescription('Komut performans raporu (son 5 dk)'))
+    .addSubcommand((s) => s.setName('huntperf').setDescription('Hunt hot-path performans raporu'))
     .addSubcommand((s) => s.setName('maintenance').setDescription('Bakım modunu aç/kapat'))
     .addSubcommand((s) => s.setName('broadcast').setDescription('Tüm oyunculara duyuru gönder')
       .addStringOption((o) => o.setName('baslik').setDescription('Embed başlığı').setRequired(true))
@@ -375,6 +376,35 @@ async function execute(
     const { buildPerfReport } = await import('../utils/perf-metrics.js');
     const report = await buildPerfReport(ctx.redis, 5);
     await interaction.reply({ content: report, flags: 64 });
+    return;
+  }
+
+  // ── sys/huntperf ───────────────────────────────────────────────────────────
+  if (grp === 'sys' && sub === 'huntperf') {
+    const {
+      isHuntHotPathMetricsEnabled,
+      getLatestHuntHotPathSnapshot,
+      buildHuntHotPathReport,
+    } = await import('../utils/hunt-hotpath-metrics.js');
+
+    if (!isHuntHotPathMetricsEnabled()) {
+      await interaction.reply({
+        content: 'ℹ️ HUNT_HOTPATH_METRICS kapalı. Açmak için `.env` içine `HUNT_HOTPATH_METRICS=1` ekleyip botu yeniden başlat.',
+        flags: 64,
+      });
+      return;
+    }
+
+    const snapshot = getLatestHuntHotPathSnapshot();
+    if (!snapshot) {
+      await interaction.reply({
+        content: 'ℹ️ Henüz aggregate snapshot yok. 100 hunt veya 5 dakika sonra tekrar dene.',
+        flags: 64,
+      });
+      return;
+    }
+
+    await interaction.reply({ content: buildHuntHotPathReport(snapshot), flags: 64 });
     return;
   }
 
