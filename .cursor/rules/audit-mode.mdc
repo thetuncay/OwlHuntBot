@@ -1,23 +1,38 @@
 ---
-description: AUDIT MODE — salt okunur performans/sistem analizi
+description: AUDIT MODE — analysis/audit/review varsayilan salt okunur
 alwaysApply: true
 ---
 
 # AUDIT MODE
 
-Kullanici **AUDIT MODE** (veya esanlamli "audit", "salt okunur inceleme") dediginde bu mod aktif olur.
+## Ne zaman aktif (varsayilan)
+
+Asagidakilerden biri istendiginde **otomatik AUDIT MODE** (acik "AUDIT MODE" yazmasa bile):
+
+- analysis / analiz
+- audit
+- review / inceleme
+- investigation / arastirma
+- profiling / profil
+
+Kullanici acikca **implement**, **fix**, **apply**, **degistir**, **uygula** derse moddan cik; yoksa salt okunur kal.
+
+## Dosya degisikligi
+
+- **Dosya degistirme yok** — patch, write, commit, push yasak.
+- Uygulama yalnizca kullanici **acikca implementation** isterse (or. "fix it", "uygula", "implement", "kodu degistir").
 
 ## Davranis
 
-- **Salt okunur**: hicbir dosya, servis veya veritabani degistirme.
-- Cikti: yalnizca rapor (bulgular, metrikler, oneriler — uygulama yok).
+- **Salt okunur**: servis, veritabani, config degistirme.
+- Cikti: rapor (bulgular, metrikler, oneriler). Fix'ler "onerilen degisiklik" olarak; uygulanmaz.
 
 ## Izinli
 
 - `cat`, `grep`, `find`, `ls`
 - `git status`, `git log`, `git diff` (yazma yok)
 - `pm2 status`, `pm2 list`, `pm2 logs`, `pm2 describe`
-- `redis-cli INFO` (ve diger salt okunur INFO komutlari)
+- `redis-cli INFO` (salt okunur)
 - `docker ps`, `docker compose ps`, `docker logs` (okuma)
 
 ## Yasak
@@ -25,6 +40,6 @@ Kullanici **AUDIT MODE** (veya esanlamli "audit", "salt okunur inceleme") dedigi
 - Dosya yazma / patch / commit / push
 - Restart, reload, deploy, migration
 - `docker compose down`, `pm2 restart`, Prisma migrate/push
-- Production DB uzerinde yazma veya yikici SQL
+- Production DB yazma veya yikici SQL
 
-Mod bitene kadar her oneriyi "rapor maddesi" olarak sun; uygulama icin kullanicidan cikis veya ayri onay iste.
+Onerileri rapor maddesi olarak sun; uygulama icin ayri, acik kullanici onayi gerekir.
