@@ -1,4 +1,4 @@
-import { discordCountdownFromRemainingMs, discordRelativeTimestamp } from './discord-time';
+import { discordRelativeTimestamp } from './discord-time';
 
 /** Spam susturmasi — silent=true iken Discord'a yanit yok, komut islenmez. */
 export class SpamBlockedError extends Error {
@@ -26,7 +26,7 @@ export function buildSpamMuteMessage(displayName: string, secondsUntil: number):
   return `⏱️ | **${displayName}**, Lutfen yavasla~ Cok hizlisin :c Komutu tekrar dene ${when}`;
 }
 
-/** Tek seferlik cooldown — OwO stili canli geri sayim. Sadece Redis PTTL (ms) kullan. */
+/** Tek seferlik cooldown mesaji — düz metin sure gosterimi (Discord timestamp bugunu onler). */
 export function buildCooldownMessage(
   remainingMs: number,
   label = 'bu komutu kullanabilirsin',
@@ -34,7 +34,16 @@ export function buildCooldownMessage(
 ): string {
   const safeMs = Math.max(1_000, Math.floor(remainingMs));
   const displayMs = maxDisplayMs ? Math.min(safeMs, maxDisplayMs) : safeMs;
-  return `⏰ ${label} ${discordCountdownFromRemainingMs(displayMs)}`;
+  return `⏰ ${label} ${formatDurationForCooldown(displayMs)} sonra`;
+}
+
+function formatDurationForCooldown(remainingMs: number): string {
+  const totalSec = Math.max(1, Math.ceil(remainingMs / 1000));
+  if (totalSec < 60) return `**${totalSec} saniye**`;
+  const totalMin = Math.ceil(totalSec / 60);
+  if (totalMin < 60) return `**${totalMin} dakika**`;
+  const totalHour = Math.ceil(totalMin / 60);
+  return `**${totalHour} saat**`;
 }
 
 /** Kullaniciya Discord'da gosterilecek beklenen mesajlar (oyun kurallari, cooldown, spam). */
