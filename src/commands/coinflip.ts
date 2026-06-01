@@ -36,7 +36,13 @@ async function execute(
       await interactionReplyWithSuppression(
         interaction,
         {
-          content: buildCooldownMessage(cooldown.remainingMs, 'Tekrar coinflip kullanabilirsin'),
+          content: buildCooldownMessage(
+            cooldown.remainingMs,
+            'coinflip',
+            interaction.member && 'displayName' in interaction.member
+              ? (interaction.member as { displayName: string }).displayName
+              : interaction.user.username,
+          ),
           flags: 64,
         },
         SuppressionKeys.cooldown(cooldownKey),

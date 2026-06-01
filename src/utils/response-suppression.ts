@@ -159,7 +159,7 @@ export function deriveSuppressionKeyFromError(error: unknown): string {
       ?? 'generic';
     return SuppressionKeys.usage(cmd.toLowerCase(), 'help');
   }
-  if (m.includes('⏰') || /tekrar .+ kullan/i.test(m)) {
+  if (m.includes('⏰') || m.includes('⏱️') || /yava[sş]la/i.test(m) || /tekrar .+ (kullan|oyna|avlan|duel|deneyebilir)/i.test(m)) {
     return SuppressionKeys.cooldown(hashBucket(norm));
   }
   if (/yetersiz/i.test(m)) return SuppressionKeys.economy('insufficient');

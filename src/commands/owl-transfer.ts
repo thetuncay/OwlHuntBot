@@ -27,7 +27,13 @@ export async function runTransfer(
   if (cooldown.active) {
     if (!cooldown.notify) return;
     await interaction.reply({
-      content: buildCooldownMessage(cooldown.remainingMs, 'Tekrar transfer yapabilirsin'),
+      content: buildCooldownMessage(
+        cooldown.remainingMs,
+        'transfer',
+        interaction.member && 'displayName' in interaction.member
+          ? (interaction.member as { displayName: string }).displayName
+          : interaction.user.username,
+      ),
       flags: 64,
     });
     return;
@@ -99,7 +105,11 @@ export async function runTransferMessage(
     await replyCooldownIfAllowed(
       message,
       cooldownKey,
-      buildCooldownMessage(cooldown.remainingMs, 'Tekrar transfer yapabilirsin'),
+      buildCooldownMessage(
+        cooldown.remainingMs,
+        'transfer',
+        message.member?.displayName ?? message.author.displayName ?? message.author.username,
+      ),
     );
     return;
   }

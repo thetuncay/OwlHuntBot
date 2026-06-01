@@ -267,7 +267,13 @@ async function execute(
       await interactionReplyWithSuppression(
         interaction,
         {
-          content: buildCooldownMessage(cooldown.remainingMs, 'Tekrar blackjack oynayabilirsin'),
+          content: buildCooldownMessage(
+            cooldown.remainingMs,
+            'blackjack',
+            interaction.member && 'displayName' in interaction.member
+              ? (interaction.member as { displayName: string }).displayName
+              : interaction.user.username,
+          ),
           flags: 64,
         },
         SuppressionKeys.cooldown(cooldownKey),
@@ -444,7 +450,11 @@ export async function handleBjTextCommand(
     await replyCooldownIfAllowed(
       message,
       cooldownKey,
-      buildCooldownMessage(cooldown.remainingMs, 'Tekrar blackjack oynayabilirsin'),
+      buildCooldownMessage(
+        cooldown.remainingMs,
+        'blackjack',
+        message.member?.displayName ?? message.author.displayName ?? message.author.username,
+      ),
     );
     return;
   }

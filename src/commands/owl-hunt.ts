@@ -63,11 +63,11 @@ import {
 import type { EncounterOwlData, PlayerOwlData } from '../utils/encounter-ux';
 import { resolveEncounterFight, estimateEncounterFightRewards } from '../systems/encounter-fight';
 import { parseStoredTraits } from '../systems/traits';
+import { buildCooldownMessage } from '../utils/command-error';
 import type { CommandDefinition } from '../types';
 import type { Message } from 'discord.js';
 
 const BIOME_PANEL_LOCK_MS = 30_000;
-const HUNT_COOLDOWN_TEXT = `⏰ Tekrar avlanabilirsin ${Math.ceil(HUNT_COOLDOWN_MS / 1000)} saniye sonra`;
 
 function huntCooldownKey(userId: string): string {
   return `cooldown:hunt:${userId}`;
@@ -77,6 +77,7 @@ function huntCooldownKey(userId: string): string {
 async function enforceHuntCooldown(
   redis: Parameters<CommandDefinition['execute']>[1]['redis'],
   userId: string,
+  displayName: string,
   notify: (content: string) => Promise<void>,
 ): Promise<boolean> {
   const cooldown = await peekCooldownBounded(
@@ -90,7 +91,7 @@ async function enforceHuntCooldown(
     return true;
   }
   if (!cooldown.notify) return false;
-  await notify(HUNT_COOLDOWN_TEXT);
+  await notify(buildCooldownMessage(cooldown.remainingMs, 'hunt', displayName));
   return false;
 }
 
@@ -294,9 +295,13 @@ export async function runHunt(
   }
 
   // ── Aktif biyom var — cooldown kontrolü ve hunt ───────────────────────────
+  const huntDisplayName = interaction.member && 'displayName' in interaction.member
+    ? (interaction.member as { displayName: string }).displayName
+    : interaction.user.username;
   const canHunt = await enforceHuntCooldown(
     ctx.redis,
     userId,
+    huntDisplayName,
     async (content) => {
       await interactionReplyWithSuppression(
         interaction,
@@ -453,9 +458,11 @@ export async function runHuntMessage(
   }
 
   // ── Aktif biyom var — cooldown kontrolü ve hunt ───────────────────────────
+  const huntDisplayName = message.member?.displayName ?? message.author.displayName ?? message.author.username;
   const canHunt = await enforceHuntCooldown(
     ctx.redis,
     userId,
+    huntDisplayName,
     async (content) => {
       await replyWithSuppression(message, content, SuppressionKeys.cooldown(huntCooldownKey(userId)));
     },

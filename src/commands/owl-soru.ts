@@ -71,7 +71,11 @@ export async function runSoruMessage(
     await replyCooldownIfAllowed(
       message,
       cooldownKey,
-      buildCooldownMessage(cooldown.remainingMs, 'Tekrar soru sorabilirsin'),
+      buildCooldownMessage(
+        cooldown.remainingMs,
+        'soru',
+        message.member?.displayName ?? message.author.displayName ?? message.author.username,
+      ),
     );
     return;
   }

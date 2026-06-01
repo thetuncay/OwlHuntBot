@@ -361,7 +361,7 @@ async function runInviteFlow(
     if (!challengerCooldown.notify) return;
     await replyWithSuppression(
       message,
-      buildCooldownMessage(challengerCooldown.remainingMs, 'Tekrar PvP kumar daveti atabilirsin'),
+      buildCooldownMessage(challengerCooldown.remainingMs, 'pvp_gamble', challengerName),
       SuppressionKeys.cooldown(pvpGambleCooldownKey(challengerId)),
     );
     return;
@@ -372,7 +372,7 @@ async function runInviteFlow(
     if (!defenderCooldown.notify) return;
     await replyWithSuppression(
       message,
-      buildCooldownMessage(defenderCooldown.remainingMs, `${defenderName} tekrar PvP kumar oynayabilir`),
+      buildCooldownMessage(defenderCooldown.remainingMs, 'pvp_gamble', defenderName),
       SuppressionKeys.cooldown(pvpGambleCooldownKey(defenderId)),
     );
     return;

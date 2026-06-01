@@ -54,7 +54,13 @@ export async function runSetMain(
   if (cooldown.active) {
     if (!cooldown.notify) return;
     await interaction.reply({
-      content: buildCooldownMessage(cooldown.remainingMs, 'Switch tekrar kullanilabilir'),
+      content: buildCooldownMessage(
+        cooldown.remainingMs,
+        'switch',
+        interaction.member && 'displayName' in interaction.member
+          ? (interaction.member as { displayName: string }).displayName
+          : interaction.user.username,
+      ),
       flags: 64,
     });
     return;
@@ -164,7 +170,11 @@ export async function runSetMainMessage(
     await replyCooldownIfAllowed(
       message,
       `cooldown:switch:${userId}`,
-      buildCooldownMessage(cooldown.remainingMs, 'Switch tekrar kullanilabilir'),
+      buildCooldownMessage(
+        cooldown.remainingMs,
+        'switch',
+        message.member?.displayName ?? message.author.displayName ?? message.author.username,
+      ),
     );
     return;
   }
@@ -325,7 +335,7 @@ export async function runOwls(
         if (cooldown.active) {
           if (!cooldown.notify) return;
           await i.reply({
-            content: buildCooldownMessage(cooldown.remainingMs, 'Switch tekrar kullanilabilir'),
+            content: buildCooldownMessage(cooldown.remainingMs, 'switch', username),
             flags: 64,
           });
           return;
@@ -457,7 +467,7 @@ export async function runOwlsMessage(
         if (cooldown.active) {
           if (!cooldown.notify) return;
           await i.reply({
-            content: buildCooldownMessage(cooldown.remainingMs, 'Switch tekrar kullanilabilir'),
+            content: buildCooldownMessage(cooldown.remainingMs, 'switch', name),
             flags: 64,
           });
           return;

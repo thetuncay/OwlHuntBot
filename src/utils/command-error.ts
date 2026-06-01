@@ -22,21 +22,99 @@ const INTERNAL_PATTERNS = [
   /\n\s+at /,
 ];
 
-/** OwO tarzi spam uyari mesaji — Discord relative timestamp ile geri sayim. */
-export function buildSpamMuteMessage(displayName: string, secondsUntil: number): string {
-  const when = discordRelativeTimestamp(secondsUntil);
-  return `⏱️ | **${displayName}**, Lutfen yavasla~ Cok hizlisin :c Komutu tekrar dene ${when}`;
+export type CooldownAction =
+  | 'hunt'
+  | 'duel'
+  | 'upgrade'
+  | 'transfer'
+  | 'slot'
+  | 'soru'
+  | 'switch'
+  | 'coinflip'
+  | 'blackjack'
+  | 'pvp_gamble'
+  | 'generic';
+
+const RETRY_PHRASES: Record<CooldownAction, string> = {
+  hunt: 'tekrar avlanabilirsin',
+  duel: 'tekrar duel atabilirsin',
+  upgrade: 'tekrar upgrade deneyebilirsin',
+  transfer: 'tekrar transfer yapabilirsin',
+  slot: 'tekrar slot oynayabilirsin',
+  soru: 'tekrar soru sorabilirsin',
+  switch: 'tekrar main baykuşunu değiştirebilirsin',
+  coinflip: 'tekrar coinflip oynayabilirsin',
+  blackjack: 'tekrar blackjack oynayabilirsin',
+  pvp_gamble: 'tekrar PvP kumarı oynayabilirsin',
+  generic: 'tekrar deneyebilirsin',
+};
+
+const SLOW_OPENERS: Record<CooldownAction, string[]> = {
+  hunt: ['biraz yavaşla~', 'çok hızlı avlanıyorsun~', 'henüz dinlenmedim~'],
+  duel: ['sakin ol biraz~', 'çok hızlısın~', 'biraz yavaşla~'],
+  upgrade: ['acele etme~', 'biraz yavaşla~'],
+  transfer: ['biraz yavaşla~', 'çok hızlı transfer ediyorsun~'],
+  slot: ['sakin ol~', 'biraz yavaşla~'],
+  soru: ['biraz yavaşla~', 'çok hızlı soru soruyorsun~'],
+  switch: ['biraz bekle~', 'main değişimi için sakin ol~'],
+  coinflip: ['sakin ol~', 'biraz yavaşla~'],
+  blackjack: ['sakin ol~', 'biraz yavaşla~'],
+  pvp_gamble: ['biraz yavaşla~', 'çok hızlısın~'],
+  generic: ['biraz yavaşla~', 'çok hızlısın~'],
+};
+
+function pickSlowOpener(seed: string, action: CooldownAction): string {
+  const lines = SLOW_OPENERS[action];
+  const idx = Math.abs(seed.charCodeAt(0) + seed.length) % lines.length;
+  return lines[idx] ?? lines[0] ?? 'biraz yavaşla~';
 }
 
-/** Tek seferlik cooldown mesaji — düz metin sure gosterimi (Discord timestamp bugunu onler). */
+function resolveRetryPhrase(action: CooldownAction | string): string {
+  if (action in RETRY_PHRASES) {
+    return RETRY_PHRASES[action as CooldownAction];
+  }
+  const trimmed = action.trim();
+  if (/^tekrar /iu.test(trimmed)) {
+    return trimmed.charAt(0).toLowerCase() + trimmed.slice(1);
+  }
+  if (/^Tekrar /u.test(trimmed)) {
+    return `tekrar ${trimmed.slice(7).charAt(0).toLowerCase()}${trimmed.slice(8)}`;
+  }
+  return `tekrar ${trimmed.charAt(0).toLowerCase()}${trimmed.slice(1)}`;
+}
+
+function resolveActionKind(action: CooldownAction | string): CooldownAction {
+  if (action in RETRY_PHRASES) return action as CooldownAction;
+  return 'generic';
+}
+
+/** OwO tarzı spam uyarısı — Discord relative timestamp ile geri sayım. */
+export function buildSpamMuteMessage(displayName: string, secondsUntil: number): string {
+  const when = discordRelativeTimestamp(secondsUntil);
+  return `⏱️ | **${displayName}**, lütfen yavaşla~ Çok hızlısın :c Komutu ${when} tekrar dene`;
+}
+
+/**
+ * Cooldown mesajı — kullanıcı adı + yumuşak uyarı + kalan süre (düz metin, timestamp bug yok).
+ */
 export function buildCooldownMessage(
   remainingMs: number,
-  label = 'bu komutu kullanabilirsin',
+  action: CooldownAction | string = 'generic',
+  displayName?: string,
   maxDisplayMs?: number,
 ): string {
   const safeMs = Math.max(1_000, Math.floor(remainingMs));
   const displayMs = maxDisplayMs ? Math.min(safeMs, maxDisplayMs) : safeMs;
-  return `⏰ ${label} ${formatDurationForCooldown(displayMs)} sonra`;
+  const duration = formatDurationForCooldown(displayMs);
+  const retryPhrase = resolveRetryPhrase(action);
+  const kind = resolveActionKind(action);
+
+  if (displayName) {
+    const opener = pickSlowOpener(displayName, kind);
+    return `⏱️ | **${displayName}**, ${opener} ${duration} sonra ${retryPhrase} :c`;
+  }
+
+  return `⏱️ | ${duration} sonra ${retryPhrase}.`;
 }
 
 function formatDurationForCooldown(remainingMs: number): string {
@@ -61,6 +139,8 @@ export function shouldNotifyUserOnDiscord(error: unknown): boolean {
     msg.includes('yoğunluk') ||
     msg.includes('beklemelisin') ||
     msg.includes('Tekrar avlanmak') ||
+    msg.includes('yavaşla') ||
+    msg.includes('yavasla') ||
     msg.includes('Yetersiz') ||
     msg.includes('bulunamadi') ||
     msg.includes('bulunamadı') ||
@@ -71,6 +151,7 @@ export function shouldNotifyUserOnDiscord(error: unknown): boolean {
     msg.includes('zaten') ||
     msg.includes('Aktif') ||
     msg.includes('⏰') ||
+    msg.includes('⏱️') ||
     msg.includes('Main bayku') ||
     msg.includes('Oyuncu bulunamadi') ||
     msg.includes('Bilinmeyen alt komut') ||

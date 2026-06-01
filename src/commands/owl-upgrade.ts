@@ -41,7 +41,13 @@ export async function runUpgrade(
   if (cooldown.active) {
     if (!cooldown.notify) return;
     await interaction.reply({
-      content: buildCooldownMessage(cooldown.remainingMs, 'Tekrar upgrade deneyebilirsin'),
+      content: buildCooldownMessage(
+        cooldown.remainingMs,
+        'upgrade',
+        interaction.member && 'displayName' in interaction.member
+          ? (interaction.member as { displayName: string }).displayName
+          : interaction.user.username,
+      ),
       flags: 64,
     });
     return;
@@ -182,7 +188,11 @@ export async function runUpgradeMessage(
     await replyCooldownIfAllowed(
       message,
       upgradeCooldownKey,
-      buildCooldownMessage(cooldown.remainingMs, 'Tekrar upgrade deneyebilirsin'),
+      buildCooldownMessage(
+        cooldown.remainingMs,
+        'upgrade',
+        message.member?.displayName ?? message.author.displayName ?? message.author.username,
+      ),
     );
     return;
   }

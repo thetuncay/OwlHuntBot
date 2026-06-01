@@ -186,7 +186,16 @@ export async function runDuel(
     if (!cooldown.notify) return;
     await interactionReplyWithSuppression(
       interaction,
-      { content: buildCooldownMessage(cooldown.remainingMs, 'Tekrar duel atabilirsin'), flags: 64 },
+      {
+        content: buildCooldownMessage(
+          cooldown.remainingMs,
+          'duel',
+          interaction.member && 'displayName' in interaction.member
+            ? (interaction.member as { displayName: string }).displayName
+            : interaction.user.username,
+        ),
+        flags: 64,
+      },
       SuppressionKeys.cooldown(cooldownKey),
     );
     return;
@@ -370,7 +379,11 @@ export async function runDuelMessage(
     if (!cooldown.notify) return;
     await replyWithSuppression(
       message,
-      buildCooldownMessage(cooldown.remainingMs, 'Tekrar duel atabilirsin'),
+      buildCooldownMessage(
+        cooldown.remainingMs,
+        'duel',
+        message.member?.displayName ?? message.author.displayName ?? message.author.username,
+      ),
       SuppressionKeys.cooldown(cooldownKey),
     );
     return;
