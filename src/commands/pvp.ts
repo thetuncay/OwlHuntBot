@@ -57,7 +57,9 @@ import {
   COLOR_WARNING,
 } from '../config';
 import { armCooldown, peekCooldown } from '../middleware/cooldown-manager';
+import { replyWithSuppression, SuppressionKeys } from '../utils/guarded-discord';
 import { buildCooldownMessage } from '../utils/command-error';
+import { acquireInFlightAction, releaseInFlightAction } from '../utils/response-suppression';
 
 // ─── Text Renderer'lar ────────────────────────────────────────────────────────
 
@@ -357,8 +359,10 @@ async function runInviteFlow(
   const challengerCooldown = await peekCooldown(ctx.redis, pvpGambleCooldownKey(challengerId));
   if (challengerCooldown.active) {
     if (!challengerCooldown.notify) return;
-    await message.reply(
+    await replyWithSuppression(
+      message,
       buildCooldownMessage(challengerCooldown.remainingMs, 'Tekrar PvP kumar daveti atabilirsin'),
+      SuppressionKeys.cooldown(pvpGambleCooldownKey(challengerId)),
     );
     return;
   }
@@ -366,8 +370,10 @@ async function runInviteFlow(
   const defenderCooldown = await peekCooldown(ctx.redis, pvpGambleCooldownKey(defenderId));
   if (defenderCooldown.active) {
     if (!defenderCooldown.notify) return;
-    await message.reply(
+    await replyWithSuppression(
+      message,
       buildCooldownMessage(defenderCooldown.remainingMs, `${defenderName} tekrar PvP kumar oynayabilir`),
+      SuppressionKeys.cooldown(pvpGambleCooldownKey(defenderId)),
     );
     return;
   }
@@ -769,11 +775,22 @@ export async function runPvpCoinFlip(
   // Solo mod — mention yok
   if (!target) {
     if (!betRaw) {
-      await message.reply('❌ Kullanım: `owl cf <miktar>` veya `owl cf @oyuncu <miktar>`');
+      await replyWithSuppression(
+        message,
+        '❌ Kullanım: `owl cf <miktar>` veya `owl cf @oyuncu <miktar>`',
+        SuppressionKeys.usage('cf', 'solo'),
+      );
       return;
     }
     const bet = parseInt(betRaw, 10);
     const { coinFlip } = await import('../systems/gambling.js');
+    const gate = {
+      userId: message.author.id,
+      guildId: message.guildId,
+      key: SuppressionKeys.state('cf-solo-inflight'),
+      ttlMs: 15_000,
+    };
+    if (!acquireInFlightAction(gate)) return;
     try {
       const result = await coinFlip(ctx.prisma, message.author.id, bet, ctx.redis);
       const frames = ['🪙', '🔄', '🪙', '🔄', '🪙'];
@@ -788,18 +805,32 @@ export async function runPvpCoinFlip(
           : `❌ **KAYBETTİN.** -${Math.abs(result.deltaCoins)} 💰 · Bakiye: **${result.finalCoins}** 💰`,
       ).catch(() => null);
     } catch (err) {
-      await message.reply(`❌ ${err instanceof Error ? err.message : 'Hata'}`);
+      await replyWithSuppression(
+        message,
+        `❌ ${err instanceof Error ? err.message : 'Hata'}`,
+        SuppressionKeys.economy('cf-solo'),
+      );
+    } finally {
+      releaseInFlightAction(gate);
     }
     return;
   }
 
   // PvP mod
   if (!betRaw) {
-    await message.reply('❌ Kullanım: `owl cf @oyuncu <miktar>`');
+    await replyWithSuppression(
+      message,
+      '❌ Kullanım: `owl cf @oyuncu <miktar>`',
+      SuppressionKeys.usage('cf', 'pvp'),
+    );
     return;
   }
   if (target.id === message.author.id) {
-    await message.reply({ content: '❌ **Geçersiz Hedef** — Kendine meydan okuyamazsın.' });
+    await replyWithSuppression(
+      message,
+      { content: '❌ **Geçersiz Hedef** — Kendine meydan okuyamazsın.' },
+      SuppressionKeys.pvp('self-target'),
+    );
     return;
   }
   const bet = parseInt(betRaw, 10);
@@ -821,13 +852,24 @@ export async function runPvpSlot(
   // Solo mod
   if (!target) {
     if (!betRaw) {
-      await message.reply('❌ Kullanım: `owl slot <miktar>` veya `owl slot @oyuncu <miktar>`');
+      await replyWithSuppression(
+        message,
+        '❌ Kullanım: `owl slot <miktar>` veya `owl slot @oyuncu <miktar>`',
+        SuppressionKeys.usage('slot', 'solo'),
+      );
       return;
     }
     const bet = parseInt(betRaw, 10);
     const { slot } = await import('../systems/gambling.js');
     const SYMBOLS = ['🍒', '🍋', '🍊', '🍇', '🍉', '💎', '⭐', '🔔'];
     const rand = () => SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)]!;
+    const gate = {
+      userId: message.author.id,
+      guildId: message.guildId,
+      key: SuppressionKeys.state('slot-solo-inflight'),
+      ttlMs: 15_000,
+    };
+    if (!acquireInFlightAction(gate)) return;
     try {
       const result = await slot(ctx.prisma, message.author.id, bet, ctx.redis);
       const sent = await message.reply(`**═══ SLOTS ═══**\n| ❓ | ❓ | ❓ |`);
@@ -843,18 +885,32 @@ export async function runPvpSlot(
         `\nBakiye: **${result.finalCoins}** 💰`,
       ).catch(() => null);
     } catch (err) {
-      await message.reply(`❌ ${err instanceof Error ? err.message : 'Hata'}`);
+      await replyWithSuppression(
+        message,
+        `❌ ${err instanceof Error ? err.message : 'Hata'}`,
+        SuppressionKeys.economy('slot-solo'),
+      );
+    } finally {
+      releaseInFlightAction(gate);
     }
     return;
   }
 
   // PvP mod
   if (!betRaw) {
-    await message.reply('❌ Kullanım: `owl slot @oyuncu <miktar>`');
+    await replyWithSuppression(
+      message,
+      '❌ Kullanım: `owl slot @oyuncu <miktar>`',
+      SuppressionKeys.usage('slot', 'pvp'),
+    );
     return;
   }
   if (target.id === message.author.id) {
-    await message.reply({ content: '❌ **Geçersiz Hedef** — Kendine meydan okuyamazsın.' });
+    await replyWithSuppression(
+      message,
+      { content: '❌ **Geçersiz Hedef** — Kendine meydan okuyamazsın.' },
+      SuppressionKeys.pvp('self-target'),
+    );
     return;
   }
   const bet = parseInt(betRaw, 10);
@@ -876,7 +932,11 @@ export async function runPvpBlackjack(
   // Solo mod — bj.ts'deki handler'a yönlendir
   if (!target) {
     if (!betRaw) {
-      await message.reply('❌ Kullanım: `owl bj <miktar>` veya `owl bj @oyuncu <miktar>`');
+      await replyWithSuppression(
+        message,
+        '❌ Kullanım: `owl bj <miktar>` veya `owl bj @oyuncu <miktar>`',
+        SuppressionKeys.usage('bj', 'solo'),
+      );
       return;
     }
     const bet = parseInt(betRaw, 10);
@@ -887,11 +947,19 @@ export async function runPvpBlackjack(
 
   // PvP mod
   if (!betRaw) {
-    await message.reply('❌ Kullanım: `owl bj @oyuncu <miktar>`');
+    await replyWithSuppression(
+      message,
+      '❌ Kullanım: `owl bj @oyuncu <miktar>`',
+      SuppressionKeys.usage('bj', 'pvp'),
+    );
     return;
   }
   if (target.id === message.author.id) {
-    await message.reply({ content: '❌ **Geçersiz Hedef** — Kendine meydan okuyamazsın.' });
+    await replyWithSuppression(
+      message,
+      { content: '❌ **Geçersiz Hedef** — Kendine meydan okuyamazsın.' },
+      SuppressionKeys.pvp('self-target'),
+    );
     return;
   }
   const bet = parseInt(betRaw, 10);

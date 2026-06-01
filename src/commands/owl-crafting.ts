@@ -10,6 +10,7 @@ import {
 } from '../utils/craft-ux';
 import { getPlayerBundle } from '../utils/player-cache';
 import type { CommandContext } from '../types';
+import { replyWithSuppression, SuppressionKeys } from '../utils/guarded-discord';
 
 async function loadCraftContext(ctx: CommandContext, userId: string) {
   const invItems = await ctx.prisma.inventoryItem.findMany({ where: { ownerId: userId } });
@@ -38,7 +39,11 @@ export async function runCraftMessage(
 
   const recipe = resolveCraftTarget(args[0] ?? '');
   if (!recipe) {
-    await message.reply(`❌ Geçersiz tarif. \`${prefix} craft\` ile listeyi gör.`);
+    await replyWithSuppression(
+      message,
+      `❌ Geçersiz tarif. \`${prefix} craft\` ile listeyi gör.`,
+      SuppressionKeys.usage('craft', 'invalid'),
+    );
     return;
   }
 
@@ -47,7 +52,7 @@ export async function runCraftMessage(
     const name = getCraftDisplayName(recipe);
     await message.reply(`✅ ${recipe.emoji} **${name}** üretildi! 📦 Envantere eklendi.`);
   } catch (err: any) {
-    await message.reply(`❌ ${err.message}`);
+    await replyWithSuppression(message, `❌ ${err.message}`, SuppressionKeys.error('craft-fail'));
   }
 }
 
@@ -63,13 +68,21 @@ export async function runCraftInfoMessage(
   const userId = message.author.id;
 
   if (args.length === 0) {
-    await message.reply(`Kullanım: \`${prefix} craftinfo <id>\` · Örn: \`${prefix} craftinfo 015\``);
+    await replyWithSuppression(
+      message,
+      `Kullanım: \`${prefix} craftinfo <id>\` · Örn: \`${prefix} craftinfo 015\``,
+      SuppressionKeys.usage('craftinfo'),
+    );
     return;
   }
 
   const recipe = resolveCraftTarget(args[0] ?? '');
   if (!recipe) {
-    await message.reply(`❌ Geçersiz ID. \`${prefix} craft\` ile mevcut tarifleri gör.`);
+    await replyWithSuppression(
+      message,
+      `❌ Geçersiz ID. \`${prefix} craft\` ile mevcut tarifleri gör.`,
+      SuppressionKeys.usage('craftinfo', 'invalid'),
+    );
     return;
   }
 

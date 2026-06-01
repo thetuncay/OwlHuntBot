@@ -26,6 +26,7 @@ import { UPGRADE_COOLDOWN_SUCCESS_MS, UPGRADE_COOLDOWN_FAIL_MS, UPGRADE_STATS } 
 import { getPlayerBundle, invalidatePlayerCache } from '../utils/player-cache';
 import { reloadInventoryFromPg } from '../state/player-state';
 import { buildCooldownMessage } from '../utils/command-error';
+import { replyCooldownIfAllowed, replyWithSuppression, SuppressionKeys } from '../utils/guarded-discord';
 
 // ─── Slash: /owl upgrade ──────────────────────────────────────────────────────
 
@@ -178,14 +179,23 @@ export async function runUpgradeMessage(
   const cooldown = await peekCooldown(ctx.redis, upgradeCooldownKey);
   if (cooldown.active) {
     if (!cooldown.notify) return;
-    await message.reply(buildCooldownMessage(cooldown.remainingMs, 'Tekrar upgrade deneyebilirsin'));
+    await replyCooldownIfAllowed(
+      message,
+      upgradeCooldownKey,
+      buildCooldownMessage(cooldown.remainingMs, 'Tekrar upgrade deneyebilirsin'),
+    );
     return;
   }
 
   const upgradePanelKey    = `upgrade:panel:${message.author.id}`;
   const upgradePanelActive = await ctx.redis.get(upgradePanelKey);
   if (upgradePanelActive) {
-    const sent = await message.reply(`⚠️ Zaten açık bir upgrade panelin var. Önce onu onayla veya iptal et.`);
+    const sent = await replyWithSuppression(
+      message,
+      `⚠️ Zaten açık bir upgrade panelin var. Önce onu onayla veya iptal et.`,
+      SuppressionKeys.state('upgrade-panel-open'),
+    );
+    if (!sent) return;
     setTimeout(() => sent.delete().catch(() => null), 3000);
     return;
   }
@@ -197,7 +207,11 @@ export async function runUpgradeMessage(
   const main = msgBundle?.mainOwl;
   if (!main || !player) {
     await ctx.redis.del(upgradePanelKey);
-    await message.reply(`❌ **Hata** | Main baykus bulunamadi.`);
+    await replyWithSuppression(
+      message,
+      `❌ **Hata** | Main baykus bulunamadi.`,
+      SuppressionKeys.pvp('no-main'),
+    );
     return;
   }
 

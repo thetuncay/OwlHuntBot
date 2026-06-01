@@ -13,6 +13,12 @@ import { armCooldown, peekCooldown } from '../middleware/cooldown-manager';
 import { GAMBLE_BJ_COOLDOWN_MS } from '../config';
 import { recordCoinsEarned } from '../systems/leaderboard';
 import { buildCooldownMessage } from '../utils/command-error';
+import {
+  interactionReplyWithSuppression,
+  replyCooldownIfAllowed,
+  replyWithSuppression,
+  SuppressionKeys,
+} from '../utils/guarded-discord';
 
 const data = new SlashCommandBuilder()
   .setName('bj')
@@ -258,10 +264,14 @@ async function execute(
     const cooldown = await peekCooldown(ctx.redis, cooldownKey);
     if (cooldown.active) {
       if (!cooldown.notify) return;
-      await interaction.reply({
-        content: buildCooldownMessage(cooldown.remainingMs, 'Tekrar blackjack oynayabilirsin'),
-        flags: 64,
-      });
+      await interactionReplyWithSuppression(
+        interaction,
+        {
+          content: buildCooldownMessage(cooldown.remainingMs, 'Tekrar blackjack oynayabilirsin'),
+          flags: 64,
+        },
+        SuppressionKeys.cooldown(cooldownKey),
+      );
       return;
     }
 
@@ -431,7 +441,11 @@ export async function handleBjTextCommand(
   const cooldown = await peekCooldown(ctx.redis, cooldownKey);
   if (cooldown.active) {
     if (!cooldown.notify) return;
-    await message.reply(buildCooldownMessage(cooldown.remainingMs, 'Tekrar blackjack oynayabilirsin'));
+    await replyCooldownIfAllowed(
+      message,
+      cooldownKey,
+      buildCooldownMessage(cooldown.remainingMs, 'Tekrar blackjack oynayabilirsin'),
+    );
     return;
   }
 
@@ -439,7 +453,11 @@ export async function handleBjTextCommand(
 
   const player = await ctx.prisma.player.findUnique({ where: { id: userId } });
   if (!player || player.coins < bet) {
-    await message.reply(`❌ Yetersiz bakiye. Mevcut: **${player?.coins ?? 0}** 💰`);
+    await replyWithSuppression(
+      message,
+      `❌ Yetersiz bakiye. Mevcut: **${player?.coins ?? 0}** 💰`,
+      SuppressionKeys.economy('bj-insufficient'),
+    );
     return;
   }
 

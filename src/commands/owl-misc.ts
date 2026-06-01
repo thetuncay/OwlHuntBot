@@ -6,6 +6,7 @@ import { EmbedBuilder, PermissionFlagsBits, type Message } from 'discord.js';
 import { PREY, LOOTBOX_DEFS, LOOTBOX_DEF_MAP, BUFF_ITEMS, BUFF_ITEM_MAP } from '../config';
 import { setGuildPrefix } from '../utils/prefix';
 import { failEmbed } from '../utils/embed';
+import { replyWithSuppression, SuppressionKeys } from '../utils/guarded-discord';
 import { openLootbox, openAllLootboxes, listLootboxInventory, getPityCounts } from '../systems/lootbox';
 import { runUseMessage } from './owl-use';
 import type Redis from 'ioredis';
@@ -176,12 +177,20 @@ export async function runPrefixMessage(
   }
   const hasAdmin = message.member?.permissions.has(PermissionFlagsBits.Administrator) ?? false;
   if (!hasAdmin) {
-    await message.reply(`🔒 **Yetki** | Prefix ayari icin yonetici yetkisi gerekir.`);
+    await replyWithSuppression(
+      message,
+      `🔒 **Yetki** | Prefix ayari icin yonetici yetkisi gerekir.`,
+      SuppressionKeys.permission('prefix-admin'),
+    );
     return;
   }
   const value = (args[0] ?? '').trim().toLowerCase();
   if (!value || !/^[a-z0-9]{1,16}$/i.test(value)) {
-    await message.reply(`❌ **Gecersiz Prefix** | Kullanim: owl prefix <1-16 harf/rakam>`);
+    await replyWithSuppression(
+      message,
+      `❌ **Gecersiz Prefix** | Kullanim: owl prefix <1-16 harf/rakam>`,
+      SuppressionKeys.usage('prefix'),
+    );
     return;
   }
   const newPrefix = await setGuildPrefix(ctx.redis, message.guildId, value);

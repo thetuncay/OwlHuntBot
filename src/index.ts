@@ -24,18 +24,20 @@ import {
   perfSummaryIntervalMs,
 } from './utils/perf-metrics';
 import { safeReply } from './utils/safe-reply';
+import { notifyInteractionUserError, notifyPrefixUserError } from './utils/guarded-discord';
+import {
+  acquireInFlightAction,
+  releaseInFlightAction,
+  SuppressionKeys,
+  sweepResponseSuppression,
+} from './utils/response-suppression';
 import { RUNTIME } from './config/runtime';
 import {
   consumeDroppedTelemetryCount,
   flushCommandEvents,
   telemetryQueueSize,
 } from './utils/command-telemetry';
-import {
-  logCommandError,
-  shouldNotifyUserOnDiscord,
-  SpamBlockedError,
-  userErrorMessage,
-} from './utils/command-error';
+import { logCommandError } from './utils/command-error';
 import {
   COOLDOWN_CLEAR_CHANNEL,
   handleCooldownClearSignal,
@@ -175,30 +177,7 @@ async function bootstrap(): Promise<void> {
       } catch (error) {
         // Unknown interaction (10062) = token süresi dolmuş, sessizce geç
         if ((error as any)?.code === 10062) return;
-        if (error instanceof SpamBlockedError) {
-          if (!error.silent) {
-            try {
-              const payload = { content: error.message, flags: 64 as const };
-              if (interaction.replied || interaction.deferred) {
-                await interaction.followUp(payload);
-              } else {
-                await interaction.reply(payload);
-              }
-            } catch { /* ignore */ }
-          }
-          return;
-        }
-        if (shouldNotifyUserOnDiscord(error)) {
-          const errorMsg = userErrorMessage(error);
-          try {
-            if (interaction.replied || interaction.deferred) {
-              await interaction.followUp({ content: errorMsg, flags: 64 });
-            } else {
-              await interaction.reply({ content: errorMsg, flags: 64 });
-            }
-          } catch { /* ignore */ }
-          return;
-        }
+        if (await notifyInteractionUserError(interaction, error)) return;
         logCommandError('Registration Button Error', error);
       }
       return;
@@ -207,13 +186,21 @@ async function bootstrap(): Promise<void> {
     const command = commandMap.get(interaction.commandName);
     if (!command) return;
 
-    let releaseSlot: (() => Promise<void>) | null = null;
-    const perf = beginCommandPerf();
     const owlSub =
       interaction.commandName === 'owl'
         ? interaction.options.getSubcommand(false)
         : null;
     const perfCommand = owlSub ? `owl:${owlSub}` : interaction.commandName;
+    const actionGate = {
+      userId: interaction.user.id,
+      guildId: interaction.guildId,
+      key: SuppressionKeys.state(`interaction:${perfCommand}`),
+      ttlMs: 20_000,
+    };
+    const hasGate = acquireInFlightAction(actionGate);
+    if (!hasGate) return;
+    let releaseSlot: (() => Promise<void>) | null = null;
+    const perf = beginCommandPerf();
     let perfOk = true;
     let perfError: string | undefined;
     try {
@@ -226,30 +213,7 @@ async function bootstrap(): Promise<void> {
       if ((error as any)?.code === 10062) return;
       perfOk = false;
       perfError = error instanceof Error ? error.message : String(error);
-      if (error instanceof SpamBlockedError) {
-        if (!error.silent) {
-          try {
-            const payload = { content: error.message, flags: 64 as const };
-            if (interaction.replied || interaction.deferred) {
-              await interaction.followUp(payload);
-            } else {
-              await interaction.reply(payload);
-            }
-          } catch { /* ignore */ }
-        }
-        return;
-      }
-      if (shouldNotifyUserOnDiscord(error)) {
-        const msg = userErrorMessage(error);
-        try {
-          if (interaction.replied || interaction.deferred) {
-            await interaction.followUp({ content: msg, flags: 64 });
-          } else {
-            await interaction.reply({ content: msg, flags: 64 });
-          }
-        } catch { /* ignore */ }
-        return;
-      }
+      if (await notifyInteractionUserError(interaction, error)) return;
       logCommandError('Interaction Error', error);
     } finally {
       await perf.finish(redis, {
@@ -259,6 +223,7 @@ async function bootstrap(): Promise<void> {
         error: perfError,
       }).catch(() => null);
       await releaseSlot?.().catch(() => null);
+      releaseInFlightAction(actionGate);
     }
   });
 
@@ -296,7 +261,9 @@ async function bootstrap(): Promise<void> {
     }
 
     if (!commandText) {
-      await safeReply(message, '❌ **Komut eksik** | Ornek: owl yardim');
+      await safeReply(message, '❌ **Komut eksik** | Ornek: owl yardim', {
+        suppressionKey: SuppressionKeys.usage('empty'),
+      });
       return;
     }
 
@@ -305,6 +272,13 @@ async function bootstrap(): Promise<void> {
 
     // Liderboard: owl top [kategori] veya owl lb [kategori]
     if (firstWord === 'top' || firstWord === 'lb' || firstWord === 'liderboard' || firstWord === 'leaderboard') {
+      const topGate = {
+        userId: message.author.id,
+        guildId: message.guildId,
+        key: SuppressionKeys.state('prefix:top-inflight'),
+        ttlMs: 15_000,
+      };
+      if (!acquireInFlightAction(topGate)) return;
       let releaseSlot: (() => Promise<void>) | null = null;
       const perf = beginCommandPerf();
       let perfOk = true;
@@ -317,15 +291,8 @@ async function bootstrap(): Promise<void> {
       } catch (error) {
         perfOk = false;
         perfError = error instanceof Error ? error.message : String(error);
-        if (error instanceof SpamBlockedError) {
-          if (!error.silent) await safeReply(message, error.message);
-          return;
-        }
-        if (shouldNotifyUserOnDiscord(error)) {
-          await safeReply(message, userErrorMessage(error));
-        } else {
-          logCommandError('Top Command Error', error);
-        }
+        if (await notifyPrefixUserError(message, error)) return;
+        logCommandError('Top Command Error', error);
       } finally {
         await perf.finish(redis, {
           command: 'top',
@@ -334,6 +301,7 @@ async function bootstrap(): Promise<void> {
           error: perfError,
         }).catch(() => null);
         await releaseSlot?.().catch(() => null);
+        releaseInFlightAction(topGate);
       }
       return;
     }
@@ -351,15 +319,8 @@ async function bootstrap(): Promise<void> {
     } catch (error) {
       perfOk = false;
       perfError = error instanceof Error ? error.message : String(error);
-      if (error instanceof SpamBlockedError) {
-        if (!error.silent) await safeReply(message, error.message);
-        return;
-      }
-      if (shouldNotifyUserOnDiscord(error)) {
-        await safeReply(message, userErrorMessage(error));
-      } else {
-        logCommandError('Message Command Error', error);
-      }
+      if (await notifyPrefixUserError(message, error)) return;
+      logCommandError('Message Command Error', error);
     } finally {
       await perf.finish(redis, {
         command: perfCommand,
@@ -388,6 +349,7 @@ trackInterval(async () => {
 
 trackInterval(() => {
   sweepCooldownCache();
+  sweepResponseSuppression();
 }, 60_000);
 
 registerGracefulShutdown([

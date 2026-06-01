@@ -9,6 +9,7 @@ import type { CommandDefinition } from '../types';
 import type { Message } from 'discord.js';
 import { getPlayerBundle } from '../utils/player-cache';
 import { safeReply } from '../utils/safe-reply';
+import { acquireInFlightAction, releaseInFlightAction, SuppressionKeys } from '../utils/response-suppression';
 
 // ─── Slash: /owl stats ────────────────────────────────────────────────────────
 
@@ -57,37 +58,49 @@ export async function runStatsMessage(
   ctx: Parameters<CommandDefinition['execute']>[1],
 ): Promise<void> {
   const deep = (args[0] ?? '').toLowerCase() === 'deep';
+  const gate = {
+    userId: message.author.id,
+    guildId: message.guildId,
+    key: SuppressionKeys.state('stats-inflight'),
+    ttlMs: 10_000,
+  };
+  if (!acquireInFlightAction(gate)) return;
   const sent = await safeReply(message, '📊 **İstatistikler yükleniyor...**');
+  try {
+    if (!sent) return;
 
-  const bundle = await getPlayerBundle(ctx.redis, ctx.prisma, message.author.id);
-  const player = bundle?.player;
-  const owl = bundle?.mainOwl;
-  if (!player || !owl) {
-    await sent.edit('❌ **Hata** | Main baykus bulunamadi.').catch(() => null);
-    return;
+    const bundle = await getPlayerBundle(ctx.redis, ctx.prisma, message.author.id);
+    const player = bundle?.player;
+    const owl = bundle?.mainOwl;
+    if (!player || !owl) {
+      await sent.edit('❌ **Hata** | Main baykus bulunamadi.').catch(() => null);
+      return;
+    }
+
+    const owlData: OwlStatsData = {
+      species:    owl.species,
+      tier:       owl.tier,
+      quality:    owl.quality,
+      hp:         owl.hp,
+      hpMax:      owl.hpMax,
+      staminaCur: owl.staminaCur,
+      statGaga:   owl.statGaga,
+      statGoz:    owl.statGoz,
+      statKulak:  owl.statKulak,
+      statKanat:  owl.statKanat,
+      statPence:  owl.statPence,
+      bond:       owl.bond,
+      isMain:     owl.isMain,
+    };
+    const playerData: PlayerStatsData = {
+      level: player.level,
+      prestigeLevel: player.prestigeLevel || 0
+    };
+
+    await sent.edit({ embeds: [buildOwlStatsEmbed(owlData, playerData, deep)] }).catch(() =>
+      safeReply(message, { embeds: [buildOwlStatsEmbed(owlData, playerData, deep)] }),
+    );
+  } finally {
+    releaseInFlightAction(gate);
   }
-
-  const owlData: OwlStatsData = {
-    species:    owl.species,
-    tier:       owl.tier,
-    quality:    owl.quality,
-    hp:         owl.hp,
-    hpMax:      owl.hpMax,
-    staminaCur: owl.staminaCur,
-    statGaga:   owl.statGaga,
-    statGoz:    owl.statGoz,
-    statKulak:  owl.statKulak,
-    statKanat:  owl.statKanat,
-    statPence:  owl.statPence,
-    bond:       owl.bond,
-    isMain:     owl.isMain,
-  };
-  const playerData: PlayerStatsData = {
-    level: player.level,
-    prestigeLevel: player.prestigeLevel || 0
-  };
-
-  await sent.edit({ embeds: [buildOwlStatsEmbed(owlData, playerData, deep)] }).catch(() =>
-    safeReply(message, { embeds: [buildOwlStatsEmbed(owlData, playerData, deep)] }),
-  );
 }

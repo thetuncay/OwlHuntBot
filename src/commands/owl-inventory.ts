@@ -126,6 +126,7 @@ export async function runInventoryMessage(
 ): Promise<void> {
   const playerId = message.author.id;
   const sent = await safeReply(message, '🎒 **Envanter yükleniyor...**');
+  if (!sent) return;
   const player   = await ctx.prisma.player.findUnique({ where: { id: playerId } });
   if (!player) throw new Error('Oyuncu bulunamadi.');
 

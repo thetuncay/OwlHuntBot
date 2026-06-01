@@ -45,6 +45,7 @@ import {
 } from '../utils/tame-ux';
 import { animateHuntMessage, buildFinalMessage, compressHuntResult } from '../utils/hunt-ux';
 import { safeReply } from '../utils/safe-reply';
+import { interactionReplyWithSuppression, replyWithSuppression, SuppressionKeys } from '../utils/guarded-discord';
 import {
   logCommandError,
   shouldNotifyUserOnDiscord,
@@ -296,7 +297,13 @@ export async function runHunt(
   const canHunt = await enforceHuntCooldown(
     ctx.redis,
     userId,
-    async (content) => { await interaction.reply({ content, flags: 64 }); },
+    async (content) => {
+      await interactionReplyWithSuppression(
+        interaction,
+        { content, flags: 64 },
+        SuppressionKeys.cooldown(huntCooldownKey(userId)),
+      );
+    },
   );
   if (!canHunt) return;
 
@@ -449,7 +456,9 @@ export async function runHuntMessage(
   const canHunt = await enforceHuntCooldown(
     ctx.redis,
     userId,
-    async (content) => { await message.reply(content); },
+    async (content) => {
+      await replyWithSuppression(message, content, SuppressionKeys.cooldown(huntCooldownKey(userId)));
+    },
   );
   if (!canHunt) return;
 
@@ -465,7 +474,11 @@ export async function runHuntMessage(
       ? await getGuildPrefix(ctx.redis, message.guildId)
       : 'w';
     const finalText = buildFinalMessage(name, compressed, prefix);
-    await loadingMsg.edit(finalText).catch(() => safeReply(message, finalText));
+    if (loadingMsg) {
+      await loadingMsg.edit(finalText).catch(() => safeReply(message, finalText));
+    } else {
+      await safeReply(message, finalText);
+    }
 
     if (result.playerSnapshot && result.owlSnapshot) {
       spawnHuntFollowUp(

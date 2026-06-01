@@ -5,6 +5,7 @@ import { failEmbed } from '../utils/embed';
 import { armCooldown, peekCooldown } from '../middleware/cooldown-manager';
 import { GAMBLE_COINFLIP_COOLDOWN_MS } from '../config';
 import { buildCooldownMessage } from '../utils/command-error';
+import { interactionReplyWithSuppression, SuppressionKeys } from '../utils/guarded-discord';
 import { sleep } from '../utils/async';
 
 const data = new SlashCommandBuilder()
@@ -32,10 +33,14 @@ async function execute(
     const cooldown = await peekCooldown(ctx.redis, cooldownKey);
     if (cooldown.active) {
       if (!cooldown.notify) return;
-      await interaction.reply({
-        content: buildCooldownMessage(cooldown.remainingMs, 'Tekrar coinflip kullanabilirsin'),
-        flags: 64,
-      });
+      await interactionReplyWithSuppression(
+        interaction,
+        {
+          content: buildCooldownMessage(cooldown.remainingMs, 'Tekrar coinflip kullanabilirsin'),
+          flags: 64,
+        },
+        SuppressionKeys.cooldown(cooldownKey),
+      );
       return;
     }
 

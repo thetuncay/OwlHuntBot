@@ -20,6 +20,7 @@ import {
 } from '../systems/tame-session';
 import { generateNarrative, generateEnding } from '../utils/tame-narrative';
 import type { TameAction } from '../utils/tame-narrative';
+import { replyWithSuppression, SuppressionKeys } from '../utils/guarded-discord';
 import {
   buildTameEncounterEmbed,
   buildTameResultEmbed,
@@ -183,25 +184,40 @@ export async function runTameMessage(
 ): Promise<void> {
   const encounterId = args[0];
   if (!encounterId) {
-    await message.reply(`❌ Kullanim: \`${helpPrefix} tame <encounterID>\``);
+    await replyWithSuppression(
+      message,
+      `❌ Kullanim: \`${helpPrefix} tame <encounterID>\``,
+      SuppressionKeys.usage('tame'),
+    );
     return;
   }
 
   const userId   = message.author.id;
   const existing = await getTameSession(ctx.redis, userId);
   if (existing && existing.encounterId !== encounterId) {
-    await message.reply(`⚠️ Zaten aktif bir evcilleştirme seansın var. Önce onu tamamla.`);
+    await replyWithSuppression(
+      message,
+      `⚠️ Zaten aktif bir evcilleştirme seansın var. Önce onu tamamla.`,
+      SuppressionKeys.state('tame-active'),
+    );
     return;
   }
 
   const encounter = await ctx.prisma.encounter.findFirst({ where: { id: encounterId, playerId: userId } });
   if (!encounter || encounter.status !== 'open') {
-    await message.reply(`❌ Encounter bulunamadı veya artık aktif değil.`);
+    await replyWithSuppression(
+      message,
+      `❌ Encounter bulunamadı veya artık aktif değil.`,
+      SuppressionKeys.error('tame-not-found'),
+    );
     return;
   }
 
   const mainOwl = await ctx.prisma.owl.findFirst({ where: { ownerId: userId, isMain: true } });
-  if (!mainOwl) { await message.reply(`❌ Main baykuş bulunamadı.`); return; }
+  if (!mainOwl) {
+    await replyWithSuppression(message, `❌ Main baykuş bulunamadı.`, SuppressionKeys.pvp('no-main'));
+    return;
+  }
 
   const state = existing ?? await createTameSession(
     ctx.redis, encounterId, userId,

@@ -19,6 +19,7 @@ import type { CommandDefinition } from '../types';
 import { syncPlayerStateAfterPgWrite, rehydratePlayerState } from '../state/player-state';
 import { formatShortOwlId, resolveOwlByInput } from '../utils/owl-id';
 import { buildCooldownMessage } from '../utils/command-error';
+import { replyCooldownIfAllowed, replyWithSuppression, SuppressionKeys } from '../utils/guarded-discord';
 
 // Prisma Owl modelinin lokal tip tanımı (generate edilmemiş @prisma/client için)
 interface OwlRecord {
@@ -160,7 +161,11 @@ export async function runSetMainMessage(
   const cooldown = await peekCooldown(ctx.redis, `cooldown:switch:${userId}`);
   if (cooldown.active) {
     if (!cooldown.notify) return;
-    await message.reply(buildCooldownMessage(cooldown.remainingMs, 'Switch tekrar kullanilabilir'));
+    await replyCooldownIfAllowed(
+      message,
+      `cooldown:switch:${userId}`,
+      buildCooldownMessage(cooldown.remainingMs, 'Switch tekrar kullanilabilir'),
+    );
     return;
   }
 
@@ -168,11 +173,19 @@ export async function runSetMainMessage(
   try {
     resolvedOwl = await resolveOwlByInput(ctx.prisma, userId, owlInput);
   } catch (err) {
-    await message.reply(`❌ ${err instanceof Error ? err.message : 'Geçersiz baykuş ID.'}`);
+    await replyWithSuppression(
+      message,
+      `❌ ${err instanceof Error ? err.message : 'Geçersiz baykuş ID.'}`,
+      SuppressionKeys.usage('setmain', 'invalid-id'),
+    );
     return;
   }
   if (!resolvedOwl) {
-    await message.reply(`❌ Baykuş bulunamadı. \`${helpPrefix} owls\` ile kısa ID'yi kontrol et.`);
+    await replyWithSuppression(
+      message,
+      `❌ Baykuş bulunamadı. \`${helpPrefix} owls\` ile kısa ID'yi kontrol et.`,
+      SuppressionKeys.error('setmain-not-found'),
+    );
     return;
   }
   const owlId = resolvedOwl.id;

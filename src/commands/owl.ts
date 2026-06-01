@@ -19,10 +19,8 @@ import { getGuildPrefix } from '../utils/prefix';
 import { failEmbed } from '../utils/embed';
 import {
   logCommandError,
-  shouldNotifyUserOnDiscord,
-  SpamBlockedError,
-  userErrorMessage,
 } from '../utils/command-error';
+import { notifyInteractionUserError, replyWithSuppression, SuppressionKeys } from '../utils/guarded-discord';
 
 // ─── Modül import'ları ────────────────────────────────────────────────────────
 import { runHunt, runHuntMessage } from './owl-hunt';
@@ -44,6 +42,7 @@ import { runSoruMessage } from './owl-soru';
 import { ALIASES, TEXT_SUBCOMMANDS, findClosest, buildUnknownCommandEmbed } from './owl-utils';
 import { runPvpCoinFlip, runPvpSlot, runPvpBlackjack } from './pvp';
 import { logCommandEvent } from '../utils/command-telemetry';
+import { acquireInFlightAction, releaseInFlightAction } from '../utils/response-suppression';
 
 // ─── Slash komut tanımı ───────────────────────────────────────────────────────
 
@@ -126,54 +125,49 @@ async function execute(
 ): Promise<void> {
   try {
     const sub = interaction.options.getSubcommand(true);
+    const gate = {
+      userId: interaction.user.id,
+      guildId: interaction.guildId,
+      key: SuppressionKeys.state(`owl-slash:${sub}`),
+      ttlMs: 15_000,
+    };
+    if (!acquireInFlightAction(gate)) return;
+    try {
 
-    // Kayıt gerektirmeyen komutlar
-    if (sub === 'yardim') { await runYardim(interaction); return; }
-    if (sub === 'prefix')  { await runPrefix(interaction, ctx); return; }
+      // Kayıt gerektirmeyen komutlar
+      if (sub === 'yardim') { await runYardim(interaction); return; }
+      if (sub === 'prefix')  { await runPrefix(interaction, ctx); return; }
 
-    // Diğer tüm komutlar kayıt gerektirir
-    const ready = await ensureRegisteredForInteraction(interaction, ctx);
-    if (!ready) return;
+      // Diğer tüm komutlar kayıt gerektirir
+      const ready = await ensureRegisteredForInteraction(interaction, ctx);
+      if (!ready) return;
 
-    switch (sub) {
-      case 'hunt':      await runHunt(interaction, ctx);      break;
-      case 'vs':        await runVs(interaction, ctx);        break;
-      case 'duel':      await runDuel(interaction, ctx);      break;
-      case 'setmain':   await runSetMain(interaction, ctx);   break;
-      case 'owls':      await runOwls(interaction, ctx);      break;
-      case 'inventory': await runInventory(interaction, ctx); break;
-      case 'stats':     await runStats(interaction, ctx);     break;
-      case 'upgrade':   await runUpgrade(interaction, ctx);   break;
-      case 'tame':      await runTame(interaction, ctx);      break;
-      case 'ver':       await runTransfer(interaction, ctx);  break;
-      case 'craft':     await runCraftSlash(interaction, ctx); break;
-      case 'dismantle': await runDismantleSlash(interaction, ctx); break;
-      case 'market':    await runMarketSlash(interaction, ctx); break;
-      case 'prestige':  await runPrestigeSlash(interaction, ctx); break;
-      case 'quests':    await runQuestsSlash(interaction, ctx); break;
-      default: throw new Error('Bilinmeyen alt komut.');
+      switch (sub) {
+        case 'hunt':      await runHunt(interaction, ctx);      break;
+        case 'vs':        await runVs(interaction, ctx);        break;
+        case 'duel':      await runDuel(interaction, ctx);      break;
+        case 'setmain':   await runSetMain(interaction, ctx);   break;
+        case 'owls':      await runOwls(interaction, ctx);      break;
+        case 'inventory': await runInventory(interaction, ctx); break;
+        case 'stats':     await runStats(interaction, ctx);     break;
+        case 'upgrade':   await runUpgrade(interaction, ctx);   break;
+        case 'tame':      await runTame(interaction, ctx);      break;
+        case 'ver':       await runTransfer(interaction, ctx);  break;
+        case 'craft':     await runCraftSlash(interaction, ctx); break;
+        case 'dismantle': await runDismantleSlash(interaction, ctx); break;
+        case 'market':    await runMarketSlash(interaction, ctx); break;
+        case 'prestige':  await runPrestigeSlash(interaction, ctx); break;
+        case 'quests':    await runQuestsSlash(interaction, ctx); break;
+        default: throw new Error('Bilinmeyen alt komut.');
+      }
+    } finally {
+      releaseInFlightAction(gate);
     }
   } catch (error) {
-    if (error instanceof SpamBlockedError) {
-      if (!error.silent) {
-        const payload = { content: error.message, flags: 64 as const };
-        if (interaction.replied || interaction.deferred) {
-          await interaction.followUp(payload);
-        } else {
-          await interaction.reply(payload);
-        }
-      }
-      return;
-    }
-    if (shouldNotifyUserOnDiscord(error)) {
-      const message = userErrorMessage(error);
-      if (interaction.replied || interaction.deferred) {
-        await interaction.followUp({ embeds: [failEmbed('Bilgi', message)], flags: 64 });
-      } else {
-        await interaction.reply({ embeds: [failEmbed('Bilgi', message)], flags: 64 });
-      }
-      return;
-    }
+    if (await notifyInteractionUserError(interaction, error, {
+      useEmbed: true,
+      embed: (title, body) => ({ embeds: [failEmbed(title, body)] }),
+    })) return;
     logCommandError('Owl Slash Error', error);
   }
 }
@@ -188,69 +182,83 @@ export async function handleOwlTextCommand(
 ): Promise<string> {
   const rawSub    = (parts[0] ?? '').toLowerCase();
   const sub       = ALIASES[rawSub] ?? rawSub;
-  const args      = parts.slice(1);
-  const helpPrefix = (guildPrefix ?? (await getGuildPrefix(ctx.redis, message.guildId ?? ''))) || 'owl';
+  const gate = {
+    userId: message.author.id,
+    guildId: message.guildId,
+    key: SuppressionKeys.state(`owl-prefix:${sub}`),
+    ttlMs: 15_000,
+  };
+  if (!acquireInFlightAction(gate)) return sub;
+  try {
+    const args      = parts.slice(1);
+    const helpPrefix = (guildPrefix ?? (await getGuildPrefix(ctx.redis, message.guildId ?? ''))) || 'owl';
 
-  // Kayıt gerektirmeyen komutlar
-  if (sub === 'yardim' || sub === 'yardım') {
-    await message.reply({ embeds: [buildHelpEmbed(helpPrefix)] });
-    return sub;
-  }
-  if (sub === 'prefix') {
-    await runPrefixMessage(message, args, ctx);
-    return sub;
-  }
-
-  // Diğer tüm komutlar kayıt gerektirir
-  const ready = await ensureRegisteredForMessage(message, ctx);
-  if (!ready) return sub;
-
-  if (message.guildId) {
-    logCommandEvent(ctx.prisma, {
-      userId: message.author.id,
-      guildId: message.guildId,
-      command: sub,
-    });
-  }
-
-  switch (sub) {
-    case 'hunt':      await runHuntMessage(message, ctx);                          break;
-    case 'stats':     await runStatsMessage(message, args, ctx);                   break;
-    case 'inventory': await runInventoryMessage(message, ctx);                     break;
-    case 'setmain':   await runSetMainMessage(message, args, ctx, helpPrefix);     break;
-    case 'upgrade':   await runUpgradeMessage(message, args, ctx, helpPrefix);     break;
-    case 'vs':        await runVsMessage(message, args, ctx);                      break;
-    case 'duel':      await runDuelMessage(message, ctx);                          break;
-    case 'sell':      await runSellMessage(message, args, ctx, helpPrefix);        break;
-    case 'zoo':       await runZooMessage(message, ctx, helpPrefix);               break;
-    case 'cash':      await runCashMessage(message, ctx);                          break;
-    case 'ver':       await runTransferMessage(message, args, ctx, helpPrefix);    break;
-    case 'owls':      await runOwlsMessage(message, ctx);                          break;
-    case 'tame':      await runTameMessage(message, args, ctx, helpPrefix); break;
-    case 'cf':        await runPvpCoinFlip(message, args, ctx);             break;
-    case 'slot':      await runPvpSlot(message, args, ctx);                 break;
-    case 'bj':        await runPvpBlackjack(message, args, ctx);            break;
-    case 'aç':        await runAcMessage(message, args, ctx, helpPrefix);    break;
-    case 'sk':        await runSkMessage(message, args, ctx, helpPrefix);    break;
-    case 'ek':        await runEkMessage(message, args, ctx, helpPrefix);    break;
-    case 'use':       await runUseMessage(message, args, ctx, helpPrefix);     break;
-    case 'buffs':     await runBuffsMessage(message, args, helpPrefix);        break;
-    case 'craft':     await runCraftMessage(message, args, ctx, helpPrefix);   break;
-    case 'craftinfo': await runCraftInfoMessage(message, args, ctx, helpPrefix); break;
-    case 'dismantle': await runDismantleMessage(message, args, ctx, helpPrefix); break;
-    case 'market':    await runMarketMessage(message, args, ctx, helpPrefix); break;
-    case 'buy':       await runBuyMessage(message, args, ctx);                break;
-    case 'msell':     await runMarketSellMessage(message, args, ctx, helpPrefix); break;
-    case 'prestige':  await runPrestigeMessage(message, args, ctx, helpPrefix); break;
-    case 'quests':    await runQuestsMessage(message, args, ctx, helpPrefix); break;
-    case 'soru':      await runSoruMessage(message, args, ctx, helpPrefix);   break;
-    default: {
-      const suggestion = findClosest(sub, TEXT_SUBCOMMANDS);
-      await message.reply({ embeds: [buildUnknownCommandEmbed(helpPrefix, rawSub, suggestion)] });
+    // Kayıt gerektirmeyen komutlar
+    if (sub === 'yardim' || sub === 'yardım') {
+      await message.reply({ embeds: [buildHelpEmbed(helpPrefix)] });
+      return sub;
     }
-  }
+    if (sub === 'prefix') {
+      await runPrefixMessage(message, args, ctx);
+      return sub;
+    }
 
-  return sub;
+    // Diğer tüm komutlar kayıt gerektirir
+    const ready = await ensureRegisteredForMessage(message, ctx);
+    if (!ready) return sub;
+
+    if (message.guildId) {
+      logCommandEvent(ctx.prisma, {
+        userId: message.author.id,
+        guildId: message.guildId,
+        command: sub,
+      });
+    }
+
+    switch (sub) {
+      case 'hunt':      await runHuntMessage(message, ctx);                          break;
+      case 'stats':     await runStatsMessage(message, args, ctx);                   break;
+      case 'inventory': await runInventoryMessage(message, ctx);                     break;
+      case 'setmain':   await runSetMainMessage(message, args, ctx, helpPrefix);     break;
+      case 'upgrade':   await runUpgradeMessage(message, args, ctx, helpPrefix);     break;
+      case 'vs':        await runVsMessage(message, args, ctx);                      break;
+      case 'duel':      await runDuelMessage(message, ctx);                          break;
+      case 'sell':      await runSellMessage(message, args, ctx, helpPrefix);        break;
+      case 'zoo':       await runZooMessage(message, ctx, helpPrefix);               break;
+      case 'cash':      await runCashMessage(message, ctx);                          break;
+      case 'ver':       await runTransferMessage(message, args, ctx, helpPrefix);    break;
+      case 'owls':      await runOwlsMessage(message, ctx);                          break;
+      case 'tame':      await runTameMessage(message, args, ctx, helpPrefix); break;
+      case 'cf':        await runPvpCoinFlip(message, args, ctx);             break;
+      case 'slot':      await runPvpSlot(message, args, ctx);                 break;
+      case 'bj':        await runPvpBlackjack(message, args, ctx);            break;
+      case 'aç':        await runAcMessage(message, args, ctx, helpPrefix);    break;
+      case 'sk':        await runSkMessage(message, args, ctx, helpPrefix);    break;
+      case 'ek':        await runEkMessage(message, args, ctx, helpPrefix);    break;
+      case 'use':       await runUseMessage(message, args, ctx, helpPrefix);     break;
+      case 'buffs':     await runBuffsMessage(message, args, helpPrefix);        break;
+      case 'craft':     await runCraftMessage(message, args, ctx, helpPrefix);   break;
+      case 'craftinfo': await runCraftInfoMessage(message, args, ctx, helpPrefix); break;
+      case 'dismantle': await runDismantleMessage(message, args, ctx, helpPrefix); break;
+      case 'market':    await runMarketMessage(message, args, ctx, helpPrefix); break;
+      case 'buy':       await runBuyMessage(message, args, ctx);                break;
+      case 'msell':     await runMarketSellMessage(message, args, ctx, helpPrefix); break;
+      case 'prestige':  await runPrestigeMessage(message, args, ctx, helpPrefix); break;
+      case 'quests':    await runQuestsMessage(message, args, ctx, helpPrefix); break;
+      case 'soru':      await runSoruMessage(message, args, ctx, helpPrefix);   break;
+      default: {
+        const suggestion = findClosest(sub, TEXT_SUBCOMMANDS);
+        await replyWithSuppression(
+          message,
+          { embeds: [buildUnknownCommandEmbed(helpPrefix, rawSub, suggestion)] },
+          SuppressionKeys.usage('unknown', rawSub || 'empty'),
+        );
+      }
+    }
+    return sub;
+  } finally {
+    releaseInFlightAction(gate);
+  }
 }
 
 export default { data, execute } satisfies CommandDefinition;

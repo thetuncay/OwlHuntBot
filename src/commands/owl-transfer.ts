@@ -9,6 +9,7 @@ import { failEmbed } from '../utils/embed';
 import type { CommandDefinition } from '../types';
 import { armCooldown, peekCooldown } from '../middleware/cooldown-manager';
 import { buildCooldownMessage } from '../utils/command-error';
+import { replyCooldownIfAllowed, replyWithSuppression, SuppressionKeys } from '../utils/guarded-discord';
 
 // ─── Slash: /owl ver ──────────────────────────────────────────────────────────
 
@@ -72,16 +73,22 @@ export async function runTransferMessage(
   const receiverId  = mentionOrId.replace(/^<@!?(\d+)>$/, '$1') || mentionOrId;
 
   if (!receiverId || !/^\d+$/.test(receiverId)) {
-    await message.reply(
+    await replyWithSuppression(
+      message,
       `❌ **Kullanım:** \`${helpPrefix} ver @kullanıcı <miktar>\`\n` +
       `Örnek: \`${helpPrefix} ver @arkadaş 500\``,
+      SuppressionKeys.usage('ver'),
     );
     return;
   }
 
   const amount = parseInt(amountStr, 10);
   if (isNaN(amount) || amount < TRANSFER_MIN_AMOUNT) {
-    await message.reply(`❌ Geçerli bir miktar gir. Minimum: **${TRANSFER_MIN_AMOUNT}** 💰`);
+    await replyWithSuppression(
+      message,
+      `❌ Geçerli bir miktar gir. Minimum: **${TRANSFER_MIN_AMOUNT}** 💰`,
+      SuppressionKeys.usage('ver', 'amount'),
+    );
     return;
   }
 
@@ -89,7 +96,11 @@ export async function runTransferMessage(
   const cooldown = await peekCooldown(ctx.redis, cooldownKey);
   if (cooldown.active) {
     if (!cooldown.notify) return;
-    await message.reply(buildCooldownMessage(cooldown.remainingMs, 'Tekrar transfer yapabilirsin'));
+    await replyCooldownIfAllowed(
+      message,
+      cooldownKey,
+      buildCooldownMessage(cooldown.remainingMs, 'Tekrar transfer yapabilirsin'),
+    );
     return;
   }
 
@@ -115,6 +126,10 @@ export async function runTransferMessage(
     await message.reply({ embeds: [embed] });
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : 'Bir hata oluştu.';
-    await message.reply({ embeds: [failEmbed('Transfer Hatası', errMsg)] });
+    await replyWithSuppression(
+      message,
+      { embeds: [failEmbed('Transfer Hatası', errMsg)] },
+      SuppressionKeys.error(`transfer:${errMsg.slice(0, 40)}`),
+    );
   }
 }

@@ -28,6 +28,7 @@ import {
   buildMyListingsText,
   buildPurchaseSuccessText,
 } from '../utils/market-ux';
+import { replyWithSuppression, SuppressionKeys } from '../utils/guarded-discord';
 import type { CommandContext } from '../types';
 import { parseMarketSellItemArgs, resolveInventoryItemName } from '../utils/market-parse';
 import { resolveOwlByInput } from '../utils/owl-id';
@@ -119,26 +120,32 @@ export async function runMarketMessage(
 ) {
   const userId = message.author.id;
   const sub = args[0]?.toLowerCase();
+  const marketReply = (text: string, key: string) =>
+    replyWithSuppression(message, text, SuppressionKeys.market(key));
 
   if (sub === 'sat' || sub === 'sell') {
-    await handleSell(ctx, userId, args.slice(1), prefix, async (text) => { await message.reply(text); });
+    await handleSell(ctx, userId, args.slice(1), prefix, async (text) => {
+      await marketReply(text, 'sell');
+    });
     return;
   }
 
   if (sub === 'al' || sub === 'buy') {
     const listingRef = args[1];
     if (!listingRef) {
-      await message.reply(`Kullanım: \`${prefix} market al <ilanNo>\` veya \`${prefix} buy <ilanNo>\``);
+      await marketReply(`Kullanım: \`${prefix} market al <ilanNo>\` veya \`${prefix} buy <ilanNo>\``, 'usage-buy');
       return;
     }
-    await handleBuy(ctx, userId, listingRef, async (text) => { await message.reply(text); });
+    await handleBuy(ctx, userId, listingRef, async (text) => {
+      await marketReply(text, 'buy');
+    });
     return;
   }
 
   if (sub === 'search' || sub === 'ara') {
     const query = args.slice(1).filter((a) => !a.startsWith('sort:') && !/^\d+$/.test(a)).join(' ').trim();
     if (!query) {
-      await message.reply(`Kullanım: \`${prefix} market search <kelime>\``);
+      await marketReply(`Kullanım: \`${prefix} market search <kelime>\``, 'usage-search');
       return;
     }
     const sortArg = args.find((a) => a.startsWith('sort:'))?.slice(5);
@@ -162,12 +169,12 @@ export async function runMarketMessage(
   if (sub === 'info' || sub === 'detay') {
     const no = parseInt(args[1] ?? '0', 10);
     if (!no) {
-      await message.reply(`Kullanım: \`${prefix} market info <ilanNo>\``);
+      await marketReply(`Kullanım: \`${prefix} market info <ilanNo>\``, 'usage-info');
       return;
     }
     const listing = await fetchListingByNo(ctx.prisma, no);
     if (!listing || listing.status !== 'active') {
-      await message.reply('❌ Aktif ilan bulunamadı.');
+      await marketReply('❌ Aktif ilan bulunamadı.', 'no-listing');
       return;
     }
     const analytics = await fetchMarketAnalytics(ctx.prisma, listing.itemId);
@@ -184,14 +191,14 @@ export async function runMarketMessage(
   if (sub === 'cancel' || sub === 'iptal') {
     const listingRef = args[1];
     if (!listingRef) {
-      await message.reply(`Kullanım: \`${prefix} market cancel <ilanNo>\``);
+      await marketReply(`Kullanım: \`${prefix} market cancel <ilanNo>\``, 'usage-cancel');
       return;
     }
     try {
       const listing = await cancelListing(ctx.prisma, userId, listingRef, ctx.redis);
       await message.reply(`✅ #${listing.listingNo} ilanı iptal edildi. Eşya envanterine iade edildi.`);
     } catch (err: any) {
-      await message.reply(`❌ ${err.message}`);
+      await marketReply(`❌ ${err.message}`, 'cancel-fail');
     }
     return;
   }
@@ -231,10 +238,12 @@ export async function runBuyMessage(
 ) {
   const listingRef = args[0];
   if (!listingRef) {
-    await message.reply('Kullanım: `buy <ilanNo>`');
+    await replyWithSuppression(message, 'Kullanım: `buy <ilanNo>`', SuppressionKeys.market('usage-buy'));
     return;
   }
-  await handleBuy(ctx, message.author.id, listingRef, async (text) => { await message.reply(text); });
+  await handleBuy(ctx, message.author.id, listingRef, async (text) => {
+    await replyWithSuppression(message, text, SuppressionKeys.market('buy'));
+  });
 }
 
 export async function runMarketSellMessage(
@@ -243,7 +252,9 @@ export async function runMarketSellMessage(
   ctx: CommandContext,
   prefix: string,
 ) {
-  await handleSell(ctx, message.author.id, args, prefix, async (text) => { await message.reply(text); });
+  await handleSell(ctx, message.author.id, args, prefix, async (text) => {
+    await replyWithSuppression(message, text, SuppressionKeys.market('sell'));
+  });
 }
 
 export async function runMarketSlash(interaction: ChatInputCommandInteraction, ctx: CommandContext): Promise<void> {

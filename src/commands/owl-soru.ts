@@ -21,6 +21,7 @@ import { askGameQuestion } from '../systems/ai-qa';
 import { armCooldown, peekCooldown } from '../middleware/cooldown-manager';
 import type { CommandDefinition } from '../types';
 import { buildCooldownMessage } from '../utils/command-error';
+import { replyCooldownIfAllowed, replyWithSuppression, SuppressionKeys } from '../utils/guarded-discord';
 
 const SORU_COOLDOWN_MS = 30_000; // 30 saniye
 const MAX_SORU_LENGTH = 200;
@@ -35,7 +36,8 @@ export async function runSoruMessage(
 
   // Soru girilmemişse kullanım göster
   if (!soru) {
-    await message.reply(
+    await replyWithSuppression(
+      message,
       `🤖 **AI Oyun Asistanı**\n\n` +
       `Oyunla ilgili her şeyi sorabilirsin!\n\n` +
       `**Kullanım:** \`${helpPrefix} soru <sorunuz>\`\n\n` +
@@ -46,13 +48,18 @@ export async function runSoruMessage(
       `• \`${helpPrefix} soru prestige ne zaman yapmalıyım?\`\n` +
       `• \`${helpPrefix} soru tame şansını nasıl artırırım?\`\n\n` +
       `💡 Stratejik tavsiyeler, komut açıklamaları ve oyun mekaniği hakkında bilgi alabilirsin.`,
+      SuppressionKeys.usage('soru'),
     );
     return;
   }
 
   // Uzunluk kontrolü
   if (soru.length > MAX_SORU_LENGTH) {
-    await message.reply(`❌ Soru en fazla **${MAX_SORU_LENGTH}** karakter olabilir.`);
+    await replyWithSuppression(
+      message,
+      `❌ Soru en fazla **${MAX_SORU_LENGTH}** karakter olabilir.`,
+      SuppressionKeys.usage('soru', 'too-long'),
+    );
     return;
   }
 
@@ -61,7 +68,11 @@ export async function runSoruMessage(
   const cooldown = await peekCooldown(ctx.redis, cooldownKey);
   if (cooldown.active) {
     if (!cooldown.notify) return;
-    await message.reply(buildCooldownMessage(cooldown.remainingMs, 'Tekrar soru sorabilirsin'));
+    await replyCooldownIfAllowed(
+      message,
+      cooldownKey,
+      buildCooldownMessage(cooldown.remainingMs, 'Tekrar soru sorabilirsin'),
+    );
     return;
   }
 
@@ -90,6 +101,10 @@ export async function runSoruMessage(
 
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : 'Bir hata oluştu.';
-    await message.reply(`❌ **Hata** | ${errMsg}\n\n💡 Lütfen sorunuzu daha açık bir şekilde sorun veya daha sonra tekrar deneyin.`);
+    await replyWithSuppression(
+      message,
+      `❌ **Hata** | ${errMsg}\n\n💡 Lütfen sorunuzu daha açık bir şekilde sorun veya daha sonra tekrar deneyin.`,
+      SuppressionKeys.error('soru-api'),
+    );
   }
 }

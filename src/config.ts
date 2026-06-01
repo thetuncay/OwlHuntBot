@@ -1104,6 +1104,15 @@ export const LOCK_TTL_SECONDS = 5;   // 15s → 5s: hunt ~200ms, pvp ~500ms, upg
 export const COMMAND_RATE_LIMIT_TOKENS = Number.parseInt(process.env.COMMAND_RATE_LIMIT_TOKENS ?? '24', 10);
 export const COMMAND_RATE_LIMIT_WINDOW_SECONDS = Number.parseInt(process.env.COMMAND_RATE_LIMIT_WINDOW_SECONDS ?? '10', 10);
 export const SPAM_MUTE_SECONDS = Number.parseInt(process.env.SPAM_MUTE_SECONDS ?? '15', 10);
+/** Ayni kullanici hatasi icin tekrar Discord yaniti bastirma suresi (ms). */
+export const RESPONSE_SUPPRESSION_TTL_MS = Number.parseInt(
+  process.env.RESPONSE_SUPPRESSION_TTL_MS ?? '45000',
+  10,
+);
+export const RESPONSE_SUPPRESSION_MAX_ENTRIES = Number.parseInt(
+  process.env.RESPONSE_SUPPRESSION_MAX_ENTRIES ?? '100000',
+  10,
+);
 export const MAX_CONCURRENT_COMMANDS = Number.parseInt(process.env.MAX_CONCURRENT_COMMANDS ?? '40', 10);
 export const COMMAND_GATE_TTL_SECONDS = Number.parseInt(process.env.COMMAND_GATE_TTL_SECONDS ?? '15', 10);
 

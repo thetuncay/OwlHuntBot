@@ -11,7 +11,7 @@ import {
 } from 'discord.js';
 import { SIM_PVP_COOLDOWN_MS } from '../config';
 import { checkKeysPipelined } from '../middleware/cooldown';
-import { armCooldown, peekCooldown } from '../middleware/cooldown-manager';
+import { guardCooldown } from '../middleware/cooldown-manager';
 import { simulatePvP, startPvP } from '../systems/pvp';
 import { runSimulatedPvP } from '../systems/pvp-sim';
 import {
@@ -24,6 +24,7 @@ import type { PvpBattleData } from '../utils/pvp-ux';
 import { failEmbed } from '../utils/embed';
 import type { CommandDefinition } from '../types';
 import { buildCooldownMessage } from '../utils/command-error';
+import { interactionReplyWithSuppression, replyWithSuppression, SuppressionKeys } from '../utils/guarded-discord';
 
 // ─── Slash: /owl vs ───────────────────────────────────────────────────────────
 
@@ -33,7 +34,11 @@ export async function runVs(
 ): Promise<void> {
   const defender = interaction.options.getUser('kullanici', true);
   if (defender.id === interaction.user.id) {
-    await interaction.reply({ content: `❌ Kendinle PvP yapamazsın.`, flags: 64 });
+    await interactionReplyWithSuppression(
+      interaction,
+      { content: `❌ Kendinle PvP yapamazsın.`, flags: 64 },
+      SuppressionKeys.pvp('self-target'),
+    );
     return;
   }
 
@@ -46,7 +51,11 @@ export async function runVs(
   const [challengerEntry, defenderEntry] = await checkKeysPipelined(ctx.redis, [pvpLockKey, `pvp:active:${defender.id}`]);
   const challengerActive = challengerEntry?.value ?? null;
   if (challengerActive) {
-    await interaction.reply({ content: `⚔️ Zaten aktif bir PvP'n var.`, flags: 64 });
+    await interactionReplyWithSuppression(
+      interaction,
+      { content: `⚔️ Zaten aktif bir PvP'n var.`, flags: 64 },
+      SuppressionKeys.pvp('already-active'),
+    );
     return;
   }
 
@@ -54,7 +63,11 @@ export async function runVs(
   const defenderLockKey = `pvp:active:${defender.id}`;
   const defenderActive  = defenderEntry?.value ?? null;
   if (defenderActive) {
-    await interaction.reply({ content: `⚔️ Rakip şu an başka bir PvP'de.`, flags: 64 });
+    await interactionReplyWithSuppression(
+      interaction,
+      { content: `⚔️ Rakip şu an başka bir PvP'de.`, flags: 64 },
+      SuppressionKeys.pvp('defender-busy'),
+    );
     return;
   }
 
@@ -155,16 +168,6 @@ export async function runDuel(
 ): Promise<void> {
   const userId = interaction.user.id;
   const cooldownKey = `cooldown:duel:${userId}`;
-  const cooldown = await peekCooldown(ctx.redis, cooldownKey);
-  if (cooldown.active) {
-    if (!cooldown.notify) return;
-    await interaction.reply({
-      content: buildCooldownMessage(cooldown.remainingMs, 'Tekrar duel atabilirsin'),
-      flags: 64,
-    });
-    return;
-  }
-
   const mainOwl = await ctx.prisma.owl.findFirst({
     where: { ownerId: userId, isMain: true },
     select: { hp: true, hpMax: true },
@@ -178,6 +181,17 @@ export async function runDuel(
     return;
   }
 
+  const cooldown = await guardCooldown(ctx.redis, cooldownKey, SIM_PVP_COOLDOWN_MS);
+  if (cooldown.active) {
+    if (!cooldown.notify) return;
+    await interactionReplyWithSuppression(
+      interaction,
+      { content: buildCooldownMessage(cooldown.remainingMs, 'Tekrar duel atabilirsin'), flags: 64 },
+      SuppressionKeys.cooldown(cooldownKey),
+    );
+    return;
+  }
+
   await interaction.deferReply({ flags: 64 });
 
   const result = await runSimulatedPvP(ctx.prisma, userId, ctx.redis);
@@ -186,7 +200,6 @@ export async function runDuel(
     : interaction.user.username;
 
   await animateSimPvPInteraction(interaction, userId, playerName, mainOwl.hpMax, result);
-  await armCooldown(ctx.redis, cooldownKey, SIM_PVP_COOLDOWN_MS);
 }
 
 // ─── Prefix: owl vs ───────────────────────────────────────────────────────────
@@ -201,11 +214,19 @@ export async function runVsMessage(
   const defenderId = mentionId ?? targetRaw;
 
   if (!defenderId) {
-    await message.reply(`❌ **Kullanım:** owl vs @oyuncu`);
+    await replyWithSuppression(
+      message,
+      `❌ **Kullanım:** owl vs @oyuncu`,
+      SuppressionKeys.usage('vs'),
+    );
     return;
   }
   if (defenderId === message.author.id) {
-    await message.reply(`❌ **Hata** | Kendinle PvP yapamazsin.`);
+    await replyWithSuppression(
+      message,
+      `❌ **Hata** | Kendinle PvP yapamazsin.`,
+      SuppressionKeys.pvp('self-target'),
+    );
     return;
   }
 
@@ -216,11 +237,19 @@ export async function runVsMessage(
     ctx.redis.get(`pvp:active:${defenderId}`),
   ]);
   if (alreadyActive) {
-    await message.reply(`⚔️ Zaten aktif bir PvP'n var, önce onu bitir.`);
+    await replyWithSuppression(
+      message,
+      `⚔️ Zaten aktif bir PvP'n var, önce onu bitir.`,
+      SuppressionKeys.pvp('already-active'),
+    );
     return;
   }
   if (defenderActive) {
-    await message.reply(`⚔️ Rakip şu an başka bir PvP'de.`);
+    await replyWithSuppression(
+      message,
+      `⚔️ Rakip şu an başka bir PvP'de.`,
+      SuppressionKeys.pvp('defender-busy'),
+    );
     return;
   }
 
@@ -323,13 +352,6 @@ export async function runDuelMessage(
 ): Promise<void> {
   const userId = message.author.id;
   const cooldownKey = `cooldown:duel:${userId}`;
-  const cooldown = await peekCooldown(ctx.redis, cooldownKey);
-  if (cooldown.active) {
-    if (!cooldown.notify) return;
-    await message.reply(buildCooldownMessage(cooldown.remainingMs, 'Tekrar duel atabilirsin'));
-    return;
-  }
-
   const mainOwl = await ctx.prisma.owl.findFirst({
     where: { ownerId: userId, isMain: true },
     select: { hp: true, hpMax: true },
@@ -343,10 +365,20 @@ export async function runDuelMessage(
     return;
   }
 
+  const cooldown = await guardCooldown(ctx.redis, cooldownKey, SIM_PVP_COOLDOWN_MS);
+  if (cooldown.active) {
+    if (!cooldown.notify) return;
+    await replyWithSuppression(
+      message,
+      buildCooldownMessage(cooldown.remainingMs, 'Tekrar duel atabilirsin'),
+      SuppressionKeys.cooldown(cooldownKey),
+    );
+    return;
+  }
+
   const sent = await message.reply(`⚔️ **Rakip aranıyor...**`);
   const result = await runSimulatedPvP(ctx.prisma, userId, ctx.redis);
   const playerName = message.member?.displayName ?? message.author.username;
 
   await animateSimPvPMessage(sent, userId, playerName, mainOwl.hpMax, result);
-  await armCooldown(ctx.redis, cooldownKey, SIM_PVP_COOLDOWN_MS);
 }

@@ -1,5 +1,7 @@
 import { discordRelativeTimestamp } from './discord-time';
 
+export { UserFacingError } from './response-suppression';
+
 /** Spam susturmasi — silent=true iken Discord'a yanit yok, komut islenmez. */
 export class SpamBlockedError extends Error {
   constructor(
@@ -79,6 +81,10 @@ export function shouldNotifyUserOnDiscord(error: unknown): boolean {
     msg.includes('Transfer') ||
     msg.includes('Yetki') ||
     msg.includes('Prefix') ||
+    msg.includes('Kullanım') ||
+    msg.includes('Kullanim') ||
+    msg.includes('Usage:') ||
+    msg.includes('Komut eksik') ||
     msg.startsWith('⚠️')
   );
 }
