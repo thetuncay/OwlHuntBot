@@ -229,9 +229,10 @@ export function commandInfo(prefix: string, sub: string): CommandInfo {
       };
     case 'tame':
       return {
-        usage: `${prefix} tame <encounterID>`, aliases: `${prefix} t <encounterID>`,
-        description: 'Avlanma sırasında karşılaştığın yabani baykuşu evcilleştirmeye çalışır.',
-        example: `${prefix} tame enc_abc123`,
+        usage: `${prefix} hunt → Evcilleştir`,
+        aliases: `${prefix} t`,
+        description: 'Yabani baykuş evcilleştirme hunt sonrası butonla yapılır; ID yazılmaz.',
+        example: `${prefix} hunt`,
       };
     case 'sell':
       return {

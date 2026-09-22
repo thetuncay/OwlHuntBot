@@ -107,7 +107,7 @@ function buildHelpHubEmbed(prefix: string): EmbedBuilder {
     `\`${p} zoo\` — kaç av türü keşfettin?`,
     `\`${p} evrim\` — baykuşun ay evrimi nereye gidiyor?`,
     `\`${p} yardim drop\` — kutu oranları ve pity açıkça yazıyor`,
-    `\`${p} tame\` — yabani baykuş evcilleştirmeyi denedin mi?`,
+    `\`${p} hunt\` — avlan · encounter'da **Evcilleştir**`,
     `\`${p} market\` — başka oyuncular ne satıyor?`,
   ].join('\n');
 
@@ -136,7 +136,7 @@ function buildHelpTopicEmbed(prefix: string, topic: string): EmbedBuilder {
       `\`${p} hunt\` · \`${p} h\` — avlan`,
       `\`${p} sell all\` · \`${p} sl all\` — avları coin'e çevir`,
       `\`${p} parçala all\` · \`${p} parçala <av>\` — avdan upgrade materyali`,
-      `\`${p} tame <id>\` · \`${p} t\` — yabani baykuş evcilleştir`,
+      `\`${p} hunt\` sonrası **Evcilleştir** butonu — yabani baykuş`,
       `\`${p} stats\` · \`${p} st\` — istatistik & Verim`,
       `\`${p} evrim\` — ay evrimi ilerlemesi`,
       `\`${p} owls\` — koleksiyon vitrini · \`${p} owllist\` ID listesi`,
