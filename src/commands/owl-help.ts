@@ -212,7 +212,7 @@ function buildHelpTopicEmbed(prefix: string, topic: string): EmbedBuilder {
       `\`${p} slot <miktar|all>\` — ganimet makinesi (3'lü eşleşme)`,
       `\`${p} cf/bj/slot @oyuncu <miktar|all>\` — PvP kumar`,
       `\`${p} duelbet @oyuncu <bahis|all>\` — bahisli düello`,
-      `\`${p} kumar\` — kendi kazanç oranın + şansını etkileyenler`,
+      `\`${p} kumar\` — solo + PvP kumar tanıtımı`,
       `Slot: baykuş x9 · elmas x4 · coin x2 · poop x0`,
       `Kasa payı davet ekranında gösterilir`,
     ].join('\n'),

@@ -6,7 +6,7 @@ import { EmbedBuilder, PermissionFlagsBits, type Message } from 'discord.js';
 import { COIN_EMOJI, formatCoinLabel } from '../config/ui-emojis';
 import { buildRewardClaimMessage, resultPipe } from '../utils/result-ux';
 import { PREY, PREY_MIN_SELL_PRICE, LOOTBOX_DEFS, LOOTBOX_DEF_MAP, HUNT_WEEKEND_COIN_MULT, isWeekendHuntBonus } from '../config';
-import { setGuildPrefix } from '../utils/prefix';
+import { getGuildPrefix, setGuildPrefix } from '../utils/prefix';
 import { failEmbed, successEmbed, infoEmbed } from '../utils/embed';
 import { replyWithSuppression, SuppressionKeys } from '../utils/guarded-discord';
 import { openLootbox, openAllLootboxes, listLootboxInventory, getPityCounts } from '../systems/lootbox';
@@ -25,8 +25,7 @@ import { buildXpStatusEmbed } from '../utils/xp-ux';
 import { claimRebalanceCompensation, getPendingCompensation, daysUntilExpiry } from '../systems/rebalance-compensation';
 import { getPreyDexView } from '../systems/prey-dex';
 import { buildFullZooMessages } from '../utils/zoo-ux';
-import { getGambleStats } from '../systems/gamble/gamble-stats';
-import { buildGambleStatsEmbed } from '../utils/gamble-stats-ux';
+import { buildKumarIntroMessage } from '../utils/gamble-ux';
 
 // ─── Paylaşılan sabitler ──────────────────────────────────────────────────────
 
@@ -508,38 +507,20 @@ async function runCrateOpen(
   }
 }
 
-// ─── kumar (M1 · kendi istatistiğin + şans şeffaflığı) ───────────────────────
+// ─── kumar (kısa solo + PvP tanıtım) ─────────────────────────────────────────
 
 /**
- * Oyuncunun kendi kumar kaydını ve şansını etkileyen değiştiricileri gösterir.
- *
- * M1 gereği opsiyoneldir — kimseye zorla gösterilmez, isteyen bakar.
+ * Solo ve PvP kumar komutlarını kısa tanıtır.
  */
 export async function runKumarStatsMessage(
   message: Message,
   _args: string[],
   ctx: Parameters<CommandDefinition['execute']>[1],
 ): Promise<void> {
-  const playerId = message.author.id;
-  const redis = ctx.redis as unknown as Redis;
-
-  const [stats, player] = await Promise.all([
-    getGambleStats(redis, playerId),
-    ctx.prisma.player.findUnique({
-      where: { id: playerId },
-      select: { coins: true, gambleStreakWins: true, gambleStreakLosses: true },
-    }),
-  ]);
-
-  const embed = buildGambleStatsEmbed({
-    username: message.member?.displayName ?? message.author.username,
-    stats,
-    coins: player?.coins ?? 0,
-    streakWins: player?.gambleStreakWins ?? 0,
-    streakLosses: player?.gambleStreakLosses ?? 0,
-  });
-
-  await message.reply({ embeds: [embed] });
+  const prefix = message.guildId
+    ? await getGuildPrefix(ctx.redis as unknown as Redis, message.guildId).catch(() => 'w')
+    : 'w';
+  await message.reply(buildKumarIntroMessage(prefix || 'w'));
 }
 
 // ─── kudos / mentor ───────────────────────────────────────────────────────────
