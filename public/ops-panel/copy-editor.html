@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bot Çıktı Editörü — OwlHunt</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/admin/copy-editor.css" />
+  <link rel="icon" href="/assets/owlhuntweb/07_developer.png" type="image/png" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-left">
+      <a href="/admin" class="back">← Ops</a>
+      <h1>Bot Çıktı Editörü</h1>
+      <p class="sub">Bot çıktısına bak · sağa Cursor’a talimat notu yaz · JSON indir</p>
+    </div>
+    <div class="topbar-right">
+      <span id="statTotal" class="pill">—</span>
+      <span id="statDraft" class="pill draft">— not</span>
+      <button type="button" id="btnExport" class="btn">JSON indir</button>
+      <button type="button" id="btnSave" class="btn primary">Kaydet</button>
+    </div>
+  </header>
+
+  <div id="toast" class="toast hidden" role="status"></div>
+
+  <aside class="sidebar">
+    <input type="search" id="search" placeholder="Ara…" autocomplete="off" />
+    <label class="filter">
+      <input type="checkbox" id="filterDraft" />
+      Sadece not bıraktıklarım
+    </label>
+    <select id="categoryFilter">
+      <option value="">Tüm kategoriler</option>
+    </select>
+    <nav id="entryNav" class="entry-nav" aria-label="Çıktı listesi"></nav>
+  </aside>
+
+  <main class="workspace">
+    <div id="emptyState" class="empty hidden">
+      <p>Eşleşen çıktı yok.</p>
+    </div>
+    <article id="editor" class="editor hidden">
+      <header class="editor-head">
+        <div>
+          <span id="entryCategory" class="cat"></span>
+          <h2 id="entryLabel"></h2>
+        </div>
+        <div class="editor-nav">
+          <button type="button" id="btnPrev" class="btn sm">← Önceki</button>
+          <button type="button" id="btnNext" class="btn sm">Sonraki →</button>
+        </div>
+      </header>
+
+      <section class="context-box" id="contextBox">
+        <div class="ctx-item ctx-status" id="ctxStatus"></div>
+        <div class="ctx-grid">
+          <div class="ctx-item">
+            <span class="ctx-k">Komut</span>
+            <p id="ctxCommand">—</p>
+          </div>
+          <div class="ctx-item">
+            <span class="ctx-k">Ne zaman</span>
+            <p id="ctxWhen">—</p>
+          </div>
+          <div class="ctx-item">
+            <span class="ctx-k">Nerede görünür</span>
+            <p id="ctxPlace">—</p>
+          </div>
+          <div class="ctx-item ctx-wide">
+            <span class="ctx-k">Nasıl görünür</span>
+            <p id="ctxHow">—</p>
+          </div>
+        </div>
+      </section>
+
+      <div class="panels outputs-only">
+        <section class="panel preview-panel">
+          <h3>Bot çıktısı (Discord)</h3>
+          <div id="previewCurrent" class="discord-frame discord-frame-lg"></div>
+          <details class="raw-details" open>
+            <summary>Ham metin (kod)</summary>
+            <pre id="currentRaw"></pre>
+          </details>
+        </section>
+
+        <section class="panel note-panel">
+          <h3>Agent notu (bana talimat)</h3>
+          <p class="hint">Sanki Cursor sohbetine yazıyormuşsun gibi: ne değişsin, ne kaldırılsın, ton nasıl olsun…</p>
+          <textarea id="draftText" rows="6" spellcheck="true" placeholder="Örn: slop kaldır veya yeni metni ham kod olarak yaz (emoji etiketleri dahil)…"></textarea>
+          <h4 class="sub-head">Kaydedilecek not — önizleme</h4>
+          <div id="notePreview" class="discord-frame discord-frame-lg"></div>
+          <details class="raw-details">
+            <summary>Ham metin (not)</summary>
+            <pre id="noteRaw"></pre>
+          </details>
+          <div class="edit-actions">
+            <button type="button" id="btnClearDraft" class="btn sm">Temizle</button>
+            <button type="button" id="btnCopyId" class="btn sm">ID kopyala</button>
+          </div>
+          <p class="edit-meta"><code id="entryId"></code> · <span id="entrySource"></span></p>
+        </section>
+      </div>
+    </article>
+  </main>
+
+  <script src="/admin/discord-preview.js?v=11"></script>
+  <script src="/admin/copy-entry-context.js?v=11"></script>
+  <script src="/admin/copy-editor.js?v=11"></script>
+</body>
+</html>

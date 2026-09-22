@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="OwlHunt — Türkçe Discord av botu. Hunt at, baykuş evcilleştir, koleksiyon kur. Kısa prefix komutları (w hunt). Global ekonomi, sezonluk sıralama." />
+  <meta property="og:title" content="OwlHunt — Discord'da avlan, sıralamaya gir" />
+  <meta property="og:description" content="Hunt döngüsü, tame, market ve küresel /lb. Slash ve prefix — tüm sunucularda tek profil." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="/assets/owlhuntweb/01_normal.png" />
+  <title>OwlHuntBot</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/assets/styles.css" />
+  <link rel="icon" href="/assets/owlhuntweb/01_normal.png" type="image/png" />
+</head>
+<body>
+  <div class="bg-glow" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <a class="brand" href="/">
+      <img src="/assets/owlhuntweb/01_normal.png" width="42" height="42" alt="" class="brand-owl" />
+      <span>OwlHunt</span>
+    </a>
+    <nav class="nav">
+      <a href="/" class="active">Ana Sayfa</a>
+      <a href="#komutlar">Komutlar</a>
+      <a href="/leaderboard">Sıralama</a>
+      <a href="/feedback">Geri Bildirim</a>
+      <a href="#ozellikler">Özellikler</a>
+      <a href="/login?next=/dashboard" id="navProfileGuest">Profil</a>
+      <a href="/dashboard" id="navProfile" class="hidden">Profilim</a>
+    </nav>
+    <div class="topbar-actions">
+      <a class="btn btn-ghost btn-sm" id="navSupport" href="https://discord.gg/5yQxgQDRHu" target="_blank" rel="noopener">Destek</a>
+      <a class="btn btn-ghost btn-sm" id="navLogin" href="/login">Giriş</a>
+      <a class="btn btn-primary btn-sm" id="navInvite" href="/invite">Sunucuya Ekle</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Türkçe av botu · slash &amp; prefix · <span class="eyebrow-hu">Hu!</span></p>
+        <h1>Discord'da avlan.<br /><span class="accent">Koleksiyon kur.</span></h1>
+        <p class="lead">
+          OwlHunt, klasik hunt döngüsünü Türkçe sunar. Sunucuna ekle, avlan, loot topla,
+          baykuş evcilleştir. Profilini ve küresel sıralamayı buradan takip et — tüm sunucularda tek ekonomi.
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-primary btn-lg" id="heroInvite" href="/invite">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20.32 4.37a19.8 19.8 0 0 0-4.89-1.52.09.09 0 0 0-.09.04 13.5 13.5 0 0 0-.64 1.28 18.3 18.3 0 0 0-5.5 0 12.5 12.5 0 0 0-.64-1.28.09.09 0 0 0-.09-.04 19.7 19.7 0 0 0-4.89 1.52.08.08 0 0 0-.04.03C1.45 8.05.96 11.58 1.22 15.06a.09.09 0 0 0 .03.06 19.9 19.9 0 0 0 6 3.03.09.09 0 0 0 .1-.03 14 14 0 0 0 1.2-1.95.09.09 0 0 0-.05-.13 13.1 13.1 0 0 1-1.87-.89.09.09 0 0 1-.01-.15l.38-.3a.09.09 0 0 1 .09-.01c3.93 1.8 8.18 1.8 12.06 0a.09.09 0 0 1 .09.01l.38.3a.09.09 0 0 1-.01.15 12.2 12.2 0 0 1-1.88.88.09.09 0 0 0-.04.14c.35.68.73 1.33 1.19 1.94a.09.09 0 0 0 .1.03 19.8 19.8 0 0 0 6-3.03.09.09 0 0 0 .03-.06c.32-4.08-.82-7.58-3.36-10.66a.08.08 0 0 0-.04-.03zM8.02 13.52c-1.18 0-2.16-1.08-2.16-2.41s.95-2.41 2.16-2.41c1.22 0 2.17 1.1 2.15 2.41 0 1.33-.93 2.41-2.15 2.41zm7.97 0c-1.18 0-2.16-1.08-2.16-2.41s.95-2.41 2.16-2.41c1.22 0 2.17 1.1 2.15 2.41 0 1.33-.93 2.41-2.15 2.41z"/></svg>
+            Sunucuya Ekle
+          </a>
+          <a class="btn btn-ghost btn-lg" href="/login?next=/dashboard">Profilini gör</a>
+          <a class="btn btn-ghost btn-lg" id="heroSupport" href="https://discord.gg/5yQxgQDRHu" target="_blank" rel="noopener">Destek Sunucusu</a>
+        </div>
+        <p class="stat-line" id="statLine">
+          <img src="/assets/owlhuntweb/12_loading.png" alt="" class="stat-loading-owl" id="statLoadingOwl" width="28" height="28" />
+          <span id="statText">Sunucular yükleniyor…</span>
+        </p>
+        <p class="hero-hint"><a href="#komutlar">Komutları gör ↓</a></p>
+      </div>
+      <div class="hero-art">
+        <div class="hunt-mock" aria-label="Örnek av sonucu">
+          <p class="hunt-mock-label">Örnek av çıktısı</p>
+          <pre class="hunt-mock-body"><span class="hunt-line">🌙 | <strong>Avcı</strong> derin ormana daldı!</span>
+<span class="hunt-line">🌿 | Bulunanlar: 🐰 🦊 🔥🦔🔥</span>
+<span class="hunt-line hunt-rare">✨ Nadir av yakalandı!</span>
+<span class="hunt-line">🦉 | <strong>+42 XP</strong> · <strong>3 av</strong> 💰 128</span></pre>
+        </div>
+        <img src="/assets/owlhuntweb/01_normal.png" alt="OwlHunt maskotu" class="hero-owl-side" width="140" height="140" />
+      </div>
+    </section>
+
+    <section class="commands" id="komutlar">
+      <div class="commands-head">
+        <img src="/assets/owlhuntweb/07_developer.png" alt="" class="commands-owl" width="72" height="72" />
+        <p class="section-eyebrow">Hızlı başlangıç</p>
+        <h2>Komutlar</h2>
+        <p class="commands-lead">Kısa komutlar: <code>w hunt</code> = av, <code>w st</code> = stats. İlk dakika: ekle → <code>owl hunt</code> → av sat → upgrade.</p>
+      </div>
+      <div class="cmd-grid">
+        <button type="button" class="cmd-card" data-copy="/owl hunt"><code>/owl hunt</code><span>Avlan, loot kazan</span></button>
+        <button type="button" class="cmd-card" data-copy="/owl zoo"><code>/owl zoo</code><span>Koleksiyonunu gör</span></button>
+        <button type="button" class="cmd-card" data-copy="/lb"><code>/lb</code><span>5 kategori, sezonluk</span></button>
+        <button type="button" class="cmd-card" data-copy="w hunt"><code>w hunt</code><span>Kısa prefix av</span></button>
+        <button type="button" class="cmd-card" data-copy="/owl market"><code>/owl market</code><span>Oyuncular arası ticaret</span></button>
+        <button type="button" class="cmd-card" data-copy="/owl stats"><code>/owl stats</code><span>Level, coin, güç</span></button>
+      </div>
+      <p class="cmd-copy-hint" id="cmdCopyHint" aria-live="polite"></p>
+    </section>
+
+    <section class="lb-preview">
+      <div class="lb-preview-text">
+        <p class="section-eyebrow">Rekabet</p>
+        <h2>Küresel sıralama</h2>
+        <p>Güç skorun, toplam avın, nadir bulguların, arena galibiyetlerin ve coin servetin ayrı tablolarda. Sezon biter, sıra arşivlenir. Discord'da <code>/lb</code>, burada ilk 10.</p>
+        <a class="btn btn-ghost" href="/leaderboard">Sıralamayı gör →</a>
+      </div>
+      <img src="/assets/owlhuntweb/09_premium.png" alt="" class="lb-preview-owl" width="120" height="120" />
+    </section>
+
+    <section class="feature feature-a" id="ozellikler">
+      <div class="feature-visual">
+        <div class="shot-frame shot-gold">
+          <img src="/assets/owlhuntweb/06_surprised.png" alt="Nadir yakalama" class="shot-img" />
+          <div class="shot-caption">
+            <span class="cmd-pill">owl hunt</span>
+            <p>Kritik avda ek loot · nadirde kutlama</p>
+          </div>
+        </div>
+      </div>
+      <div class="feature-text">
+        <p class="section-eyebrow">Av döngüsü</p>
+        <h2>Nadir avlar &amp; Av Bölgesi</h2>
+        <p>
+          Tek av alanı — <strong>Av Bölgesi</strong> — dengeli ödül ve ~9 sn cooldown.
+          <code>owl hunt</code> ile avlan; hayvanları sat, materyal topla, zoo koleksiyonuna ekle.
+        </p>
+      </div>
+    </section>
+
+    <section class="feature feature-b">
+      <div class="feature-text">
+        <p class="section-eyebrow">Rekabet</p>
+        <h2>Boss &amp; sıralama</h2>
+        <p>
+          Av sırasında yabani baykuş çıkabilir: mini savaşta kazan veya tame et.
+          <code>owl vs</code> ile rakibe meydan oku; streak kırılınca ekstra ödül gider.
+          Küresel sıra için <code>/lb</code> — 5 kategori, haftalık sezon.
+        </p>
+      </div>
+      <div class="feature-visual">
+        <div class="shot-frame shot-red">
+          <img src="/assets/owlhuntweb/11_boss.png" alt="Boss modu" class="shot-img" />
+          <div class="shot-caption">
+            <span class="cmd-pill">encounter</span>
+            <p>Encounter · savaş veya evcilleştir · tier sistemli baykuş</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="feature feature-c">
+      <div class="feature-visual duo-shots">
+        <div class="shot-frame shot-small">
+          <img src="/assets/owlhuntweb/10_rich.png" alt="Ekonomi" class="shot-img" />
+        </div>
+        <div class="shot-frame shot-small">
+          <img src="/assets/owlhuntweb/08_protector.png" alt="Sunucu kontrolü" class="shot-img" />
+        </div>
+      </div>
+      <div class="feature-text">
+        <p class="section-eyebrow">Koleksiyon &amp; yönetim</p>
+        <h2>Evcilleştirme &amp; sunucu kontrolü</h2>
+        <p>
+          Tame mini-oyunu baykuşunla bağ kurar; <code>/owl zoo</code> koleksiyonunu tek bakışta gösterir.
+          Lv.5+ markette eşya ve baykuş sat; yöneticiler <code>/owlonly</code> ile komutları tek kanala kilitleyebilir.
+        </p>
+        <ul class="feature-chips">
+          <li><code>/owl market</code> Oyuncu ticareti</li>
+          <li><code>/owlonly</code> Bot kanal kilidi</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="cta-band">
+      <img src="/assets/owlhuntweb/09_premium.png" alt="" class="cta-owl" width="120" height="120" />
+      <h2>İlk avını at</h2>
+      <p>Botu ekle > OwlHunt odası oluştur > avlanmaya başla!</p>
+      <div class="cta-actions">
+        <a class="btn btn-primary btn-lg" id="footerInvite" href="/invite">Sunucuya Ekle</a>
+        <a class="btn btn-ghost btn-lg" href="/login?next=/dashboard">Profilini gör</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span>OwlHunt — Türkçe Discord av botu · thetuncay.com</span>
+    <nav class="footer-links">
+      <a id="footerSupport" href="https://discord.gg/5yQxgQDRHu" target="_blank" rel="noopener">Destek</a>
+      <a href="/leaderboard">Sıralama</a>
+      <a href="/privacy-policy">Gizlilik</a>
+      <a href="/terms-of-service">Kullanım</a>
+      <a href="/login">Giriş</a>
+    </nav>
+  </footer>
+
+  <div class="mobile-invite-bar" aria-hidden="false">
+    <a class="btn btn-primary btn-lg" href="/invite">Sunucuya Ekle</a>
+  </div>
+
+  <script src="/assets/app.js"></script>
+</body>
+</html>

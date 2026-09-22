@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="OwlHunt geri bildirim anketi — görüşünü paylaş, ödül kazan." />
+  <title>Geri Bildirim — OwlHunt</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/assets/styles.css" />
+  <link rel="icon" href="/assets/owlhuntweb/01_normal.png" type="image/png" />
+</head>
+<body>
+  <div class="bg-glow" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <a class="brand" href="/">
+      <img src="/assets/owlhuntweb/01_normal.png" width="42" height="42" alt="" class="brand-owl" />
+      <span>OwlHunt</span>
+    </a>
+    <nav class="nav">
+      <a href="/">Ana Sayfa</a>
+      <a href="/leaderboard">Sıralama</a>
+      <a href="/dashboard">Profilim</a>
+      <a href="/feedback" class="active">Geri Bildirim</a>
+    </nav>
+    <div class="topbar-actions">
+      <a class="btn btn-ghost btn-sm" href="/api/auth/logout">Çıkış</a>
+    </div>
+  </header>
+
+  <main class="fb-main">
+    <div id="fbLoading" class="fb-loading">
+      <img src="/assets/owlhuntweb/12_loading.png" alt="" width="56" height="56" />
+      <span>Anket yükleniyor…</span>
+    </div>
+
+    <div id="fbDone" class="fb-done hidden">
+      <img src="/assets/owlhuntweb/02_happy.png" alt="" width="96" height="96" />
+      <h1>Teşekkürler!</h1>
+      <p id="fbDoneMsg"></p>
+      <div id="fbRewardActions" class="fb-reward-actions hidden">
+        <a class="btn btn-primary" href="/invite">Botu sunucuna ekle / kayıt ol</a>
+        <button type="button" class="btn btn-ghost" id="btnClaimReward">Ödülü al</button>
+      </div>
+      <a class="btn btn-ghost" href="/dashboard">Profile git</a>
+    </div>
+
+    <div id="fbReadonly" class="fb-readonly hidden">
+      <h1>Anketin kaydedildi</h1>
+      <p id="fbReadonlyReward"></p>
+      <div id="fbReadonlyAnswers" class="fb-readonly-list"></div>
+      <button type="button" class="btn btn-primary hidden" id="btnClaimRewardReadonly">Ödülü al</button>
+    </div>
+
+    <form id="fbForm" class="fb-form hidden">
+      <div class="fb-hero">
+        <img src="/assets/owlhuntweb/08_protector.png" alt="" width="72" height="72" />
+        <div>
+          <h1 id="fbTitle">Geri Bildirim Anketi</h1>
+          <p id="fbDesc" class="fb-desc"></p>
+          <p class="fb-reward-badge">Ödül: <strong>5.000 coin</strong> + <strong>5 Eşya Kutusu</strong></p>
+        </div>
+      </div>
+
+      <div class="fb-progress-wrap">
+        <div class="fb-progress-bar"><div id="fbProgressFill" class="fb-progress-fill"></div></div>
+        <span id="fbProgressLabel" class="fb-progress-label">1 / 16</span>
+      </div>
+
+      <p id="fbSectionTitle" class="fb-section-title"></p>
+      <div id="fbQuestionHost" class="fb-question-host"></div>
+
+      <p id="fbError" class="auth-error hidden"></p>
+
+      <div class="fb-nav">
+        <button type="button" class="btn btn-ghost" id="fbPrev">Geri</button>
+        <button type="button" class="btn btn-primary" id="fbNext">İleri</button>
+        <button type="submit" class="btn btn-primary hidden" id="fbSubmit">Gönder</button>
+      </div>
+    </form>
+  </main>
+
+  <script src="/feedback/feedback.js"></script>
+</body>
+</html>

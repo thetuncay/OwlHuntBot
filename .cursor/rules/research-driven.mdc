@@ -1,0 +1,81 @@
+---
+description: Bir tasarım kararı docs/research/ belgelerine dayanıyorsa oku. MECHANISM→EVIDENCE→DESIGN IMPLICATION→CURRENT BOT→DECISION zinciri zorunlu.
+alwaysApply: false
+---
+
+# Research-Driven Karar Zinciri (kural)
+
+Belgeler: [`docs/research/`](../../docs/research/) klasörü:
+
+- [`player-engagement-motivation-review.md`](../../docs/research/player-engagement-motivation-review.md) — bilimsel literatür raporu
+- [`owlhunt-core-design-audit.md`](../../docs/research/owlhunt-core-design-audit.md) — kanıt bazlı stres testi
+- [`owlhunt-engagement-action-list.md`](../../docs/research/owlhunt-engagement-action-list.md) — uygulama kataloğu
+
+## Kural
+
+Bir tasarım kararı bir araştırma bulgusuna dayanıyorsa **zincir açıkça yazılmalı:**
+
+```
+MECHANISM (bilimsel bulgu)
+    -> EVIDENCE (kaynak + effect size / güç)
+    -> DESIGN IMPLICATION (oyun tasarımı için ne demek?)
+    -> CURRENT BOT (mevcut kod ne yapıyor?)
+    -> DECISION (implement / with changes / defer / reject)
+```
+
+Zincir eksikse **karar geçersiz.**
+
+## Kaynak öncelik hiyerarşisi (çakışma)
+
+1. **Gerçek çalışan kod** ([`src/`](../../src/))
+2. **Database / schema gerçekliği** ([`prisma/schema.prisma`](../../prisma/schema.prisma))
+3. **Mevcut testler** ([`src/__tests__/`](../../src/__tests__/))
+4. **Projenin açıkça tanımlanmış core design kararları** ([`docs/ai/memory-bank/decisions.md`](../../docs/ai/memory-bank/decisions.md), [`docs/ai/analysis/CORE_LOOP.md`](../../docs/ai/analysis/CORE_LOOP.md))
+5. **Game-design belgeleri** (research üçlüsü)
+6. **Önceki DDR** ([`docs/ai/decisions/`](../../docs/ai/decisions/))
+7. **Varsayımlar** (kaydet + `ASSUMPTION:` prefix)
+
+Belgede yazan bir şey çalışan kod ile çelişirse **kod kazanır**; çelişki [`DESIGN_CODE_CONFLICTS.md`](../../docs/ai/analysis/DESIGN_CODE_CONFLICTS.md)'ye eklenir.
+
+## Kanıt gücü etiketleme
+
+Rapor bulgu gücü sınıflaması (audit belgesinden):
+
+- **HIGH** — Multiple çalışma, meta-analiz, effect size güçlü
+- **MEDIUM** — Sağlam çalışma(lar), tek bağlam
+- **LOW** — Tek çalışma, sınırlı populasyon
+- **INSUFFICIENT** — Doğrudan kanıt yok, teorik çıkarım
+
+**INSUFFICIENT** çıktığında karar mecburen bir metrik/veri toplama önermeli.
+
+## Öne çıkarma / undermining kırmızı bayrak
+
+Aşağıdaki argümanları görürsen **STOP** ve DDR aç:
+
+- "Kullanıcı zaten seviyor" — kanıt: retention? enjoyment survey? engagement bir motivasyon türü değildir, motivasyonun **kalitesi** de önemlidir (Deci & Ryan 2020 — external vs intrinsic).
+- "Retention artıyor" — hangi retention? long-term wellbeing? Bäcklund vd. 2022 escape motivation uyarısı.
+- "Diğer oyunlar yapıyor" — evidence-of-existence ≠ evidence-of-effectiveness.
+
+## Bilimsel çerçeve minimum sözlük
+
+- **SDT (Self-Determination Theory)** — autonomy + competence + relatedness (Ryan & Deci 2020)
+- **Flow** — beceri ↔ zorluk dengesi (Csikszentmihalyi, GameFlow: Sweetser & Wyeth 2005)
+- **Goal-setting** — spesifik + zor-ama-ulaşılabilir (Locke & Latham 2002)
+- **Information-gap** — merak = bilgi boşluğu farkındalığı (Loewenstein 1994)
+- **Reward prediction error** — beklenenden farklı ödül dopaminerjik (Schultz vd. 1997)
+- **Overjustification** — beklenen tangible ödül intrinsic motivasyonu düşürür (Deci vd. 1999 meta, d ≈ −0.40)
+
+Bu kavramlar bir tasarım savunmasında geçiyorsa doğru şekilde kullanılmalı — argüman zayıfsa DDR reddedilir.
+
+## Karar cümle formatı (referans)
+
+DDR'lerde bir cümle bu format:
+
+> "**Ryan & Deci (2020)** external regulation'ın intrinsic motivasyonu aşındırdığını gösteriyor (evidence: **HIGH** — 30+ yıl meta-analiz). Bu, mevcut daily maintenance'ın (`MAINTENANCE_MISS_EFFECTIVENESS_LOSS=5` — kalıcı ceza) tam bir external regulation örneği olduğu anlamına gelir. Karar: **REWORK** — ceza → bonus."
+
+## Bağı
+
+- [`docs/ai/AI_GUIDELINES.md`](../../docs/ai/AI_GUIDELINES.md) — kanun
+- [`game-design.mdc`](game-design.mdc) — SDT çerçevesi (kısa kanca)
+- [`feature-development.mdc`](feature-development.mdc) — genel feature süreci
+- [`docs/ai/decisions/`](../../docs/ai/decisions/) — mevcut DDR'ler

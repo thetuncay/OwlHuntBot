@@ -1,0 +1,34 @@
+---
+description: Her implementation oncesi git status + pre-agent-snapshot commit
+alwaysApply: true
+---
+
+# Git Snapshot (implementation oncesi)
+
+**Her implementation** baslamadan once (AUDIT MODE / salt okunur analiz haric):
+
+## 1. Durum
+
+```bash
+git status
+```
+
+Ciktiyi kisa ozetle (branch, staged/unstaged, untracked).
+
+## 2. Snapshot commit
+
+Degisiklik varsa:
+
+```bash
+git add -A
+git commit -m "pre-agent-snapshot"
+```
+
+Degisiklik **yoksa** commit atma; `git status` yeterli.
+
+## 3. Sonra
+
+Snapshot (veya temiz tree) sonrasi implementation'a gec.
+
+- `.env`, token ve secret dosyalarini commit'e ekleme (`.gitignore` / proje kurallari).
+- Snapshot sonrasi kullaniciya tek satir bildir: commit alindi mi, hangi branch.

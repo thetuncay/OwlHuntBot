@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OwlHunt Ops</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/admin/styles.css" />
+  <link rel="icon" href="/assets/owlhuntweb/07_developer.png" type="image/png" />
+</head>
+<body>
+  <div class="layout">
+    <header class="header">
+      <div class="brand">
+        <img src="/assets/owlhuntweb/07_developer.png" alt="" class="brand-owl" width="52" height="52" />
+        <div>
+          <h1>OwlHunt Ops</h1>
+          <p class="sub"><a href="/">← Ana sayfa</a> · sunucu &amp; sistem izleme</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <label class="refresh-label">
+          <input type="checkbox" id="autoRefresh" checked />
+          Otomatik yenile (10s)
+        </label>
+        <button type="button" id="btnRefresh" class="btn primary">Yenile</button>
+        <button type="button" id="btnCopyEditor" class="btn">Metin Editörü</button>
+        <button type="button" id="btnFeedback" class="btn">Feedback</button>
+        <button type="button" id="btnAnticheat" class="btn">AntiCheat</button>
+        <a class="btn" href="/api/admin/feedback/export.csv" download>CSV</a>
+      </div>
+    </header>
+
+    <section class="stats" id="statsRow">
+      <div class="stat-card"><span class="label">Durum</span><span class="value" id="statStatus">—</span></div>
+      <div class="stat-card"><span class="label">Readiness</span><span class="value" id="statReadiness">—</span></div>
+      <div class="stat-card"><span class="label">Sunucular</span><span class="value" id="statGuilds">—</span></div>
+      <div class="stat-card"><span class="label">Komut (24s)</span><span class="value" id="statCommands">—</span></div>
+      <div class="stat-card"><span class="label">p95 gecikme</span><span class="value" id="statLatency">—</span></div>
+      <div class="stat-card"><span class="label">Redis</span><span class="value" id="statRedis">—</span></div>
+    </section>
+
+    <main class="main">
+      <div class="toolbar">
+        <input type="search" id="search" placeholder="Sunucu adı veya ID ara…" autocomplete="off" />
+        <select id="sortBy">
+          <option value="members">Üye sayısı</option>
+          <option value="commands24h">Komut (24s)</option>
+          <option value="commandsHour">Komut (bu saat)</option>
+          <option value="joined">Katılım tarihi</option>
+          <option value="name">İsim</option>
+        </select>
+      </div>
+
+      <div id="error" class="error hidden"></div>
+      <div id="guildGrid" class="guild-grid"></div>
+      <p id="empty" class="empty hidden">
+        <img src="/assets/owlhuntweb/04_sleeping.png" alt="" width="72" height="72" />
+        Bot henüz hiçbir sunucuda değil veya shard hazır değil.
+      </p>
+    </main>
+
+    <section id="feedbackView" class="feedback-view hidden" aria-label="Feedback yanıtları">
+      <div class="fb-toolbar">
+        <div class="fb-toolbar-left">
+          <span id="fbResponseCount" class="fb-response-count">0 yanıt</span>
+          <div class="fb-tabs" role="tablist">
+            <button type="button" class="fb-tab active" data-fb-tab="individual" role="tab">Bağımsız</button>
+            <button type="button" class="fb-tab" data-fb-tab="summary" role="tab">Özet</button>
+          </div>
+        </div>
+        <div class="fb-toolbar-right">
+          <a class="btn fb-btn-light" href="/api/admin/feedback/export.csv" download>CSV indir</a>
+          <button type="button" id="btnCloseFeedback" class="btn fb-btn-light">← Panele dön</button>
+        </div>
+      </div>
+
+      <div id="fbIndividualNav" class="fb-nav">
+        <button type="button" id="fbPrev" class="fb-nav-btn" aria-label="Önceki yanıt">‹</button>
+        <label class="fb-pager">
+          <input type="number" id="fbPagerInput" min="1" value="1" />
+          <span id="fbPagerTotal">/ 1</span>
+        </label>
+        <button type="button" id="fbNext" class="fb-nav-btn" aria-label="Sonraki yanıt">›</button>
+      </div>
+
+      <div id="fbContent" class="fb-content"></div>
+    </section>
+
+    <section id="anticheatView" class="feedback-view hidden" aria-label="Anticheat görünümü">
+      <div class="fb-toolbar">
+        <div class="fb-toolbar-left">
+          <span class="fb-response-count">AntiCheat Ops</span>
+        </div>
+        <div class="fb-toolbar-right">
+          <button type="button" id="btnCloseAnticheat" class="btn fb-btn-light">← Panele dön</button>
+        </div>
+      </div>
+      <div class="fb-content">
+        <article class="fb-card">
+          <h3 class="fb-q-title">Trust Override</h3>
+          <form id="acOverrideForm" class="ac-form">
+            <input id="acUserId" type="text" placeholder="Discord userId" required />
+            <input id="acTrustScore" type="number" min="0" max="100" placeholder="trust (0-100)" />
+            <input id="acViolationCount" type="number" min="0" placeholder="violation" />
+            <label class="refresh-label"><input id="acClearThrottle" type="checkbox" /> throttle temizle</label>
+            <button type="submit" class="btn primary">Override Uygula</button>
+          </form>
+          <div id="acActionResult" class="error hidden"></div>
+        </article>
+        <article class="fb-card">
+          <h3 class="fb-q-title">Düşük Güven Skorlu Hesaplar</h3>
+          <div class="ac-toolbar">
+            <select id="acTrustSort">
+              <option value="trustScoreAsc">Trust (artan)</option>
+              <option value="violationDesc">Violation (azalan)</option>
+              <option value="lastViolationDesc">Son ihlal (yeni)</option>
+            </select>
+            <button id="acRefreshTrust" type="button" class="btn">Yenile</button>
+          </div>
+          <div class="ac-table-wrap">
+            <table class="ac-table">
+              <thead>
+                <tr><th>User</th><th>Trust</th><th>Violation</th><th>Throttle</th><th>Last Violation</th></tr>
+              </thead>
+              <tbody id="acTrustBody"></tbody>
+            </table>
+          </div>
+        </article>
+        <article class="fb-card">
+          <h3 class="fb-q-title">Ceza Kayıtları</h3>
+          <div class="ac-toolbar">
+            <input id="acPunishUserFilter" type="text" placeholder="userId filtre" />
+            <button id="acRefreshPunish" type="button" class="btn">Yenile</button>
+          </div>
+          <div class="ac-table-wrap">
+            <table class="ac-table">
+              <thead>
+                <tr><th>User</th><th>Tier</th><th>Reason</th><th>Issued</th><th>Expires</th></tr>
+              </thead>
+              <tbody id="acPunishBody"></tbody>
+            </table>
+          </div>
+        </article>
+        <article class="fb-card">
+          <h3 class="fb-q-title">Market Anomalileri</h3>
+          <div class="ac-table-wrap">
+            <table class="ac-table">
+              <thead>
+                <tr><th>Seller</th><th>Buyer</th><th>Reason</th><th>Risk</th><th>Created</th></tr>
+              </thead>
+              <tbody id="acMarketBody"></tbody>
+            </table>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <aside class="sidebar">
+      <h2>Sistem</h2>
+      <pre id="healthJson" class="health-pre">Yükleniyor…</pre>
+    </aside>
+  </div>
+  <footer class="footer">
+    <span id="lastUpdate">—</span>
+  </footer>
+  <script src="/admin/app.js"></script>
+</body>
+</html>

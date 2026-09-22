@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OwlHunt Appeal</title>
+  <link rel="stylesheet" href="/assets/styles.css" />
+</head>
+<body>
+  <main class="hero" style="max-width: 760px; margin: 40px auto; padding: 0 16px;">
+    <div class="hero-copy" style="width: 100%;">
+      <p class="eyebrow">Özel Erişim</p>
+      <h1>Ban İtiraz Formu</h1>
+      <p class="lead" id="appealStatus">Kontrol ediliyor…</p>
+
+      <div id="appealPanel" class="hidden">
+        <div class="commands" style="padding: 18px; margin-bottom: 16px;">
+          <p id="appealSummary" style="margin: 0;"></p>
+        </div>
+        <form id="appealForm">
+          <label for="appealReason">İtiraz gerekçesi</label>
+          <textarea id="appealReason" rows="7" maxlength="1500" style="width: 100%; margin-top: 8px;" required></textarea>
+          <div style="margin-top: 14px;">
+            <button type="submit" class="btn btn-primary">İtirazı Gönder</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+  <script src="/assets/appeal.js"></script>
+</body>
+</html>

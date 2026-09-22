@@ -1,0 +1,12 @@
+[Unit]
+Description=OwlHunt Docker DOCKER-USER DB port block
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/root/OwlHuntBot/scripts/docker-firewall.sh
+
+[Install]
+WantedBy=multi-user.target

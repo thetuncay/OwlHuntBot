@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="OwlHunt oyuncu profili — seviye, av, arena ve sıralama." />
+  <title>Oyuncu — OwlHunt</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/assets/styles.css" />
+  <link rel="icon" href="/assets/owlhuntweb/01_normal.png" type="image/png" />
+</head>
+<body>
+  <div class="bg-glow" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <a class="brand" href="/">
+      <img src="/assets/owlhuntweb/01_normal.png" width="42" height="42" alt="" class="brand-owl" />
+      <span>OwlHunt</span>
+    </a>
+    <nav class="nav">
+      <a href="/">Ana Sayfa</a>
+      <a href="/leaderboard">Sıralama</a>
+      <a href="/dashboard">Profil</a>
+    </nav>
+    <div class="topbar-actions">
+      <a class="btn btn-ghost btn-sm" href="https://discord.gg/5yQxgQDRHu" target="_blank" rel="noopener">Destek</a>
+      <a class="btn btn-primary btn-sm" href="/invite">Sunucuya Ekle</a>
+    </div>
+  </header>
+
+  <main class="dash-main player-main">
+    <div id="playerLoading" class="dash-loading">
+      <img src="/assets/owlhuntweb/12_loading.png" alt="" width="48" height="48" />
+      <span>Profil yükleniyor…</span>
+    </div>
+
+    <p id="playerError" class="auth-error hidden"></p>
+
+    <section id="playerHero" class="dash-hero hidden">
+      <img src="/assets/owlhuntweb/02_happy.png" alt="" width="96" height="96" class="dash-avatar" id="playerMascot" />
+      <div>
+        <p class="dash-badge">Avcı profili</p>
+        <h1 id="playerName">—</h1>
+        <p class="dash-sub" id="playerSub">—</p>
+      </div>
+    </section>
+
+    <section class="dash-grid hidden" id="playerStats">
+      <div class="dash-stat"><span class="label">Seviye</span><span class="value" id="pLevel">—</span></div>
+      <div class="dash-stat"><span class="label">XP</span><span class="value" id="pXp">—</span></div>
+      <div class="dash-stat"><span class="label">Güç skoru</span><span class="value" id="pPower">—</span></div>
+      <div class="dash-stat"><span class="label">Toplam av</span><span class="value" id="pHunts">—</span></div>
+      <div class="dash-stat"><span class="label">Nadir bulgu</span><span class="value" id="pRare">—</span></div>
+      <div class="dash-stat"><span class="label">PvP galibiyet</span><span class="value" id="pPvp">—</span></div>
+      <div class="dash-stat"><span class="label">Av serisi</span><span class="value" id="pStreak">—</span></div>
+      <div class="dash-stat"><span class="label">Prestige</span><span class="value" id="pPrestige">—</span></div>
+    </section>
+
+    <section class="dash-owl hidden" id="playerOwl">
+      <h2>Ana baykuş</h2>
+      <p id="playerOwlLine">—</p>
+    </section>
+
+    <section class="player-ranks hidden" id="playerRanks">
+      <h2>Sezon sıralaması</h2>
+      <ul class="player-rank-list" id="playerRankList"></ul>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span>OwlHunt — Türkçe Discord av botu · thetuncay.com</span>
+    <nav class="footer-links">
+      <a href="https://discord.gg/5yQxgQDRHu" target="_blank" rel="noopener">Destek</a>
+      <a href="/gizlilik">Gizlilik</a>
+      <a href="/kullanim">Kullanım</a>
+    </nav>
+  </footer>
+
+  <script src="/assets/player.js"></script>
+</body>
+</html>

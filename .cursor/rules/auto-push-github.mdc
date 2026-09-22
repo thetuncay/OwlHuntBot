@@ -1,0 +1,34 @@
+---
+description: GitHub yedek — VDS ana ortam, push istege bagli
+alwaysApply: true
+---
+
+# GitHub Yedek (opsiyonel)
+
+## Ortam
+
+- **Ana calisma**: VDS uzerinde SSH (agent dogrudan burada kod degistirir).
+- **GitHub**: Zorunlu deploy degil; **guvenli uzak yedek** olarak tutulur.
+
+Her degisiklikten sonra push **gerekmez**. VDS'teki repo canli kaynaktir.
+
+## Ne zaman push
+
+Anlamli bir is paketi bittiginde veya kullanici istediginde yedekle:
+
+1. `git add` (`.env`, token, secret dosyalari HARIC)
+2. Aciklayici commit
+3. Istege bagli push:
+   - Linux/VDS: `bash scripts/push-github.sh`
+   - Windows: `powershell -File scripts/push-github.ps1`
+
+Push basarisizsa isi bloklama; kisa bildir (`GITHUB_TOKEN` / ag). Kullanici isterse sonra tekrar dener.
+
+## Token
+
+- `GITHUB_TOKEN` sadece yerel `.env` icinde (gitignore)
+- Asla commit etme, sohbette token yazdirma
+
+## Not
+
+Eski akis `git pull` + `update.sh` baska makine icindi. Simdi dogrudan VDS'te calisiliyorsa pull gerekmez; GitHub sadece yedek mirror.

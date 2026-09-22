@@ -1,0 +1,28 @@
+---
+description: OwlHunt AI guidelines — memory bank + kapsam + test/JSDoc
+alwaysApply: true
+---
+
+# OwlHunt AI Guidelines (kısa kanca)
+
+Kanun (tam metin): `docs/ai/AI_GUIDELINES.md`  
+Harita: `docs/ai/memory-bank/INDEX.md`
+
+## Implement / fix öncesi
+
+1. `docs/ai/memory-bank/INDEX.md` → görev satırını seç.
+2. İlgili **1–2** memory bank dosyasını oku (hunt işinde ops notu yükleme).
+3. Kanun ihlali yok: kapsam, 800 satır, config sayıları, hot path, Vitest, JSDoc ≥ 8/10.
+
+## Sert sınırlar
+
+- Alakasız dosyaya “yanında düzelteyim” yok — raporla.
+- 800+ dosyayı büyütme; bölmeden onay al.
+- `any` / `@ts-ignore` / magic number (yeni kod) yok; sayılar `src/config.ts` veya `src/config/*`.
+- Hot path: Redis + Lua + `db-queue`; lock’suz ekonomi / komutta rastgele Prisma write yok.
+- Davranış değişince Vitest; “editor testi” kod testinin yerine geçmez.
+- Public export değişince JSDoc; kendi puanın 8 altındaysa düzelt.
+
+## Üretim
+
+PM2 / Docker / Prisma / AUDIT MODE → mevcut `.cursor/rules/*` (burada tekrar yok).

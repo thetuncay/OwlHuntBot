@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="OwlHunt'a Discord ile giriş yap — profil, istatistik ve bot ekleme." />
+  <title>Giriş — OwlHunt</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/assets/styles.css" />
+  <link rel="icon" href="/assets/owlhuntweb/01_normal.png" type="image/png" />
+</head>
+<body class="auth-page">
+  <div class="bg-glow" aria-hidden="true"></div>
+  <main class="auth-card">
+    <a href="/" class="auth-back">← Ana sayfa</a>
+    <img src="/assets/owlhuntweb/01_normal.png" alt="" width="96" height="96" class="auth-owl" />
+    <h1>Discord ile bağlan</h1>
+    <div class="auth-trust">
+      <img src="/assets/owlhuntweb/08_protector.png" alt="" width="40" height="40" />
+      <span>Sadece Discord kimliğin ve avatarın kullanılır. Şifre istenmez.</span>
+    </div>
+    <p class="auth-lead" id="authLead">
+      Discord hesabınla giriş yap; seviye, coin, av sayısı ve sıralama durumunu buradan görürsün. Botu sunucuna eklemek için de giriş gerekir.
+    </p>
+    <p id="authError" class="auth-error hidden"></p>
+    <a class="btn btn-discord btn-lg" id="btnDiscordLogin" href="/api/auth/discord/login">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20.32 4.37a19.8 19.8 0 0 0-4.89-1.52.09.09 0 0 0-.09.04 13.5 13.5 0 0 0-.64 1.28 18.3 18.3 0 0 0-5.5 0 12.5 12.5 0 0 0-.64-1.28.09.09 0 0 0-.09-.04 19.7 19.7 0 0 0-4.89 1.52.08.08 0 0 0-.04.03C1.45 8.05.96 11.58 1.22 15.06a.09.09 0 0 0 .03.06 19.9 19.9 0 0 0 6 3.03.09.09 0 0 0 .1-.03 14 14 0 0 0 1.2-1.95.09.09 0 0 0-.05-.13 13.1 13.1 0 0 1-1.87-.89.09.09 0 0 1-.01-.15l.38-.3a.09.09 0 0 1 .09-.01c3.93 1.8 8.18 1.8 12.06 0a.09.09 0 0 1 .09.01l.38.3a.09.09 0 0 1-.01.15 12.2 12.2 0 0 1-1.88.88.09.09 0 0 0-.04.14c.35.68.73 1.33 1.19 1.94a.09.09 0 0 0 .1.03 19.8 19.8 0 0 0 6-3.03.09.09 0 0 0 .03-.06c.32-4.08-.82-7.58-3.36-10.66a.08.08 0 0 0-.04-.03zM8.02 13.52c-1.18 0-2.16-1.08-2.16-2.41s.95-2.41 2.16-2.41c1.22 0 2.17 1.1 2.15 2.41 0 1.33-.93 2.41-2.15 2.41zm7.97 0c-1.18 0-2.16-1.08-2.16-2.41s.95-2.41 2.16-2.41c1.22 0 2.17 1.1 2.15 2.41 0 1.33-.93 2.41-2.15 2.41z"/></svg>
+      Discord ile Giriş Yap
+    </a>
+    <p class="auth-note">Giriş yaptıktan sonra profil sayfasında hunt istatistiklerin görünür. Bot ekleme akışı da giriş gerektirir.</p>
+  </main>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const err = params.get('error');
+    const box = document.getElementById('authError');
+    if (err && box) {
+      const msgs = {
+        oauth: 'Discord girişi tamamlanamadı. Tekrar dene.',
+        oauth_config: 'OAuth yapılandırması eksik (sunucu).',
+        state: 'Güvenlik doğrulaması başarısız. Tekrar dene.',
+      };
+      box.textContent = msgs[err] || 'Giriş hatası.';
+      box.classList.remove('hidden');
+    }
+    const next = params.get('next');
+    const btn = document.getElementById('btnDiscordLogin');
+    const lead = document.getElementById('authLead');
+    const safeNext = next && next.startsWith('/') && !next.startsWith('//') ? next : '';
+    if (safeNext === '/invite' && lead) {
+      lead.textContent = 'Sunucuna bot eklemek için önce Discord ile giriş yap. Ardından Discord\'un bot yetkilendirme ekranına yönlendirilirsin.';
+    }
+    if (btn) {
+      btn.href = safeNext
+        ? '/api/auth/discord/login?next=' + encodeURIComponent(safeNext)
+        : '/api/auth/discord/login';
+    }
+  </script>
+</body>
+</html>

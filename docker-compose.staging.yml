@@ -1,0 +1,30 @@
+version: '3.8'
+
+# Staging ortamı — production geçişi öncesi test için
+# Kullanım: docker compose -f docker-compose.yml -f docker-compose.staging.yml up -d
+
+services:
+  bot:
+    environment:
+      NODE_ENV: staging
+    env_file: .env.staging
+
+  postgres:
+    environment:
+      POSTGRES_DB: owlhuntbot_staging
+    volumes:
+      - postgres_staging_data:/var/lib/postgresql/data
+      - postgres_staging_wal:/var/lib/postgresql/wal_archive
+    ports:
+      - '5433:5432'  # Farklı port — production ile çakışmaz
+
+  redis:
+    volumes:
+      - redis_staging_data:/data
+    ports:
+      - '6380:6379'  # Farklı port — production ile çakışmaz
+
+volumes:
+  postgres_staging_data:
+  postgres_staging_wal:
+  redis_staging_data:

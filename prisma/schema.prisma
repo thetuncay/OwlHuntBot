@@ -1,0 +1,603 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Player {
+  id                 String   @id @default(uuid())
+  coins              Int      @default(0)
+  level              Int      @default(1)
+  xp                 Int      @default(0)
+  mainOwlId          String?
+  lastHunt           DateTime?
+  lastSwitch         DateTime?
+  pvpStreak          Int      @default(0)
+  pvpStreakLoss      Int      @default(0)
+  gambleStreakWins   Int      @default(0)
+  gambleStreakLosses Int      @default(0)
+  huntComboStreak    Int      @default(0)
+  pvpCount           Int      @default(0)
+  switchPenaltyUntil DateTime?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  // --- LIDERBOARD ISTATISTIKLERI ---
+  totalHunts       Int      @default(0)
+  totalRareFinds   Int      @default(0)
+  totalPvpWins     Int      @default(0)
+  totalCoinsEarned Int      @default(0)
+  totalCoinsLost   Int      @default(0)
+  powerScore       Int      @default(0)
+  totalXP          Int      @default(0)
+
+  // --- PVP STREAK ---
+  pvpBestStreak    Int      @default(0)
+
+  // --- PITY SISTEMI ---
+  noRareStreak     Int      @default(0)
+
+  // --- BUFF & LOOTBOX SISTEMI ---
+  dailyLootboxDrops   Int       @default(0)
+  lastLootboxDropDate DateTime?
+
+  // --- TRANSFER SİSTEMİ ---
+  dailyTransferSent     Int       @default(0)
+  dailyTransferReceived Int       @default(0)
+  lastTransferDate      DateTime?
+
+  // --- MARKET SİSTEMİ ---
+  dailyMarketListings   Int       @default(0)
+  lastMarketListingDate DateTime?
+
+  // --- PRESTIGE SİSTEMİ ---
+  prestigeLevel   Int @default(0)
+  prestigePoints  Int @default(0) // @deprecated — oyun mekaniği kaldırıldı, şema uyumluluğu
+
+  /** Web / liderboard görünen adı (Discord adından bağımsız). */
+  leaderboardName String? @db.VarChar(32)
+
+  // --- GÜNLÜK LOGIN ÖDÜLÜ ---
+  loginStreak         Int       @default(0)
+  lastDailyClaimAt    DateTime?
+  starterPackClaimedAt DateTime?
+
+  owls            Owl[]
+  inventory       InventoryItem[]
+  pvpAsChallenger PvpSession[]   @relation("Challenger")
+  pvpAsDefender   PvpSession[]   @relation("Defender")
+  encounters      Encounter[]
+  registrations   PlayerRegistration[]
+  seasonArchives  SeasonArchive[]
+  activeBuffs     PlayerBuff[]
+  marketListings  MarketListing[]
+  dailyQuests     DailyQuest[]
+  leaderboardScores LeaderboardScore[]
+  recipeProgress  PlayerRecipeProgress[]
+  journalEntries  JournalEntry[]
+  preyDex         PlayerPreyDex[]
+  owlPrestigeDex  PlayerOwlPrestigeDex[]
+  rebalanceCompensation RebalanceCompensation?
+
+  // Liderboard sıralama index'leri — full table scan'i önler
+  @@index([powerScore])
+  @@index([totalHunts])
+  @@index([totalRareFinds])
+  @@index([totalPvpWins])
+  @@index([totalCoinsEarned])
+  @@index([totalXP])
+  @@index([updatedAt])
+  @@index([level, xp])
+  @@index([coins])
+  @@index([pvpCount])
+}
+
+model LeaderboardScore {
+  id        String   @id @default(uuid())
+  scope     String   // global | g:{guildId}
+  category  String   // power | hunt | relic | arena | wealth
+  period    String   // season/week/month id or "all"
+  playerId  String
+  score     BigInt   @default(0)
+  updatedAt DateTime @updatedAt
+
+  player Player @relation(fields: [playerId], references: [id])
+
+  @@unique([scope, category, period, playerId])
+  @@index([scope, category, period, score(sort: Desc)])
+}
+
+// Aktif buff kayitlari — oyuncunun kullandigı geçici buff'lar
+model PlayerBuff {
+  id          String   @id @default(uuid())
+  playerId    String
+  buffItemId  String
+  category    String
+  effectType  String
+  effectValue Float
+  chargeMax   Int
+  chargeCur   Int
+  createdAt   DateTime @default(now())
+
+  player Player @relation(fields: [playerId], references: [id])
+
+  @@index([playerId, category])
+  @@index([playerId, effectType])
+  // Aktif buff sorgusu için (chargeCur > 0 filtresi)
+  @@index([playerId, category, chargeCur])
+}
+
+// Sezon kayitlari — her sezon sonunda anlık snapshot
+model SeasonArchive {
+  id             String   @id @default(uuid())
+  playerId       String
+  seasonId       String   // "2026-W16" veya "2026-04" formatinda
+  seasonType     String   // "weekly" | "monthly"
+  powerScore     Int      @default(0)
+  totalHunts     Int      @default(0)
+  totalRareFinds Int      @default(0)
+  totalPvpWins   Int      @default(0)
+  totalCoinsEarned Int    @default(0)
+  rank           Int      @default(0)   // O sezon sonu sirasi
+  archivedAt     DateTime @default(now())
+
+  player Player @relation(fields: [playerId], references: [id])
+
+  @@unique([playerId, seasonId])
+  @@index([seasonId])
+  @@index([playerId])
+  @@index([seasonId, powerScore(sort: Desc)])
+  @@index([seasonId, totalHunts(sort: Desc)])
+  @@index([seasonId, totalRareFinds(sort: Desc)])
+  @@index([seasonId, totalPvpWins(sort: Desc)])
+  @@index([seasonId, totalCoinsEarned(sort: Desc)])
+}
+
+// Aktif sezon bilgisi (tek kayit, upsert ile guncellenir)
+model Season {
+  id         String   @id @default(uuid())
+  seasonId   String                      // "2026-W16"
+  seasonType String                      // "weekly" | "monthly"
+  startedAt  DateTime @default(now())
+  endsAt     DateTime
+}
+
+model Owl {
+  id            String   @id @default(uuid())
+  ownerId       String
+  species       String
+  nickname      String?  @db.VarChar(24)
+  tier          Int
+  bond          Int      @default(0)
+  passiveMode   String   @default("idle")
+  statGaga      Int      @default(1)
+  statGoz       Int      @default(1)
+  statKulak     Int      @default(1)
+  statKanat     Int      @default(1)
+  statPence     Int      @default(1)
+  statGagaBase      Int  @default(1)
+  statGozBase       Int  @default(1)
+  statKulakBase     Int  @default(1)
+  statKanatBase     Int  @default(1)
+  statPenceBase     Int  @default(1)
+  statGagaTrained   Int  @default(0)
+  statGozTrained    Int  @default(0)
+  statKulakTrained  Int  @default(0)
+  statKanatTrained  Int  @default(0)
+  statPenceTrained  Int  @default(0)
+  quality       String   @default("Common")
+  hp            Int
+  hpMax         Int
+  staminaCur    Int
+  isMain        Boolean  @default(false)
+  effectiveness Int      @default(100)
+  createdAt     DateTime @default(now())
+  traits        Json?
+
+  // --- PRESTİJ EVRİM (moon tier) ---
+  moonTier         Int   @default(1)
+  moonTierPeak     Int   @default(1)
+  evolutionHistory Json?
+  unlockedVisuals  Json?
+
+  owner Player @relation(fields: [ownerId], references: [id])
+
+  // Main owl lookup index'i — her hunt/pvp/tame'de kullanılır
+  @@index([ownerId, isMain])
+  @@index([ownerId, passiveMode])
+}
+
+/** Oyuncunun tür başına açılan moon tier varyantları (zoo koleksiyonu). */
+model PlayerOwlPrestigeDex {
+  id              String   @id @default(uuid())
+  playerId        String
+  speciesTier     Int
+  moonTier        Int
+  firstUnlockedAt DateTime @default(now())
+
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([playerId, speciesTier, moonTier])
+  @@index([playerId])
+}
+
+model InventoryItem {
+  id       String @id @default(uuid())
+  ownerId  String
+  itemName String
+  itemType String
+  rarity   String
+  quantity Int    @default(1)
+
+  owner Player @relation(fields: [ownerId], references: [id])
+
+  @@unique([ownerId, itemName])
+  @@index([ownerId])
+  @@index([ownerId, itemType])
+}
+
+model PvpSession {
+  id           String   @id @default(uuid())
+  challengerId String
+  defenderId   String
+  status       String   @default("pending")
+  winnerId     String?
+  totalTurns   Int?
+  createdAt    DateTime @default(now())
+  finishedAt   DateTime?
+
+  challenger Player @relation("Challenger", fields: [challengerId], references: [id])
+  defender   Player @relation("Defender", fields: [defenderId], references: [id])
+
+  @@index([challengerId])
+  @@index([defenderId])
+  @@index([status])
+}
+
+model Encounter {
+  id           String   @id @default(uuid())
+  playerId     String
+  owlSpecies   String
+  owlTier      Int
+  owlQuality   String
+  owlStats     Json
+  owlTraits    Json?
+  tameAttempts Int      @default(0)
+  failStreak   Int      @default(0)
+  status       String   @default("open")
+  createdAt    DateTime @default(now())
+
+  player Player @relation(fields: [playerId], references: [id])
+
+  // Limbo cleanup ve tame lookup için
+  @@index([playerId, status])
+  @@index([status, createdAt])
+}
+
+model PlayerRegistration {
+  id          String   @id @default(uuid())
+  userId      String
+  username    String
+  displayName String?
+  guildId     String
+  guildName   String
+  acceptedAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  player Player @relation(fields: [userId], references: [id])
+
+  @@unique([userId, guildId])
+  @@index([guildId])
+}
+
+model MarketListing {
+  id              String    @id @default(uuid())
+  listingNo       Int       @unique @default(autoincrement())
+  sellerId        String
+  itemId          String
+  itemName        String
+  itemType        String
+  marketCategory  String    // owl | item | buff | material
+  rarity          String
+  quantity        Int
+  price           Int
+  listingFeePaid  Int       @default(0)
+  /** Opsiyonel satıcı notu (0–120 karakter). */
+  sellerNote      String?   @db.VarChar(120)
+  status          String    @default("active") // active | reserved | sold | expired | cancelled | returned
+  buyerId         String?
+  createdAt       DateTime  @default(now())
+  expiresAt       DateTime
+  soldAt          DateTime?
+
+  seller Player @relation(fields: [sellerId], references: [id])
+
+  @@index([itemName])
+  @@index([itemId])
+  @@index([sellerId, status])
+  @@index([status, expiresAt])
+  @@index([marketCategory, status])
+}
+
+model MarketSale {
+  id             Int      @id @default(autoincrement())
+  listingId      String
+  listingNo      Int
+  sellerId       String
+  buyerId        String
+  itemId         String
+  itemName       String
+  itemType       String
+  marketCategory String
+  quantity       Int
+  salePrice      Int
+  taxPaid        Int
+  riskScore      Int      @default(0)
+  soldAt         DateTime @default(now())
+
+  @@index([itemId])
+  @@index([itemId, soldAt])
+  @@index([itemName])
+  @@index([sellerId, buyerId])
+  @@index([soldAt])
+}
+
+model MarketAnalytics {
+  itemId            String   @id
+  itemName          String
+  lastSalePrice     Int      @default(0)
+  averagePrice24h   Int      @default(0)
+  averagePrice7d    Int      @default(0)
+  medianPrice30d    Int      @default(0)
+  salesCount24h     Int      @default(0)
+  salesCount7d      Int      @default(0)
+  updatedAt         DateTime @updatedAt
+
+  @@index([itemName])
+}
+
+model MarketSuspiciousLog {
+  id          Int      @id @default(autoincrement())
+  saleId      Int?
+  listingId   String?
+  sellerId    String
+  buyerId     String
+  itemId      String
+  itemName    String
+  salePrice   Int
+  riskScore   Int
+  riskFactors Json
+  createdAt   DateTime @default(now())
+
+  @@index([riskScore])
+  @@index([sellerId, buyerId])
+  @@index([createdAt])
+}
+
+model DailyQuest {
+  id          String   @id @default(uuid())
+  playerId    String
+  type        String // daily quest type key
+  target      Int
+  current     Int      @default(0)
+  meta        String?  // JSON: prey, stat, ...
+  rewardCoins Int
+  rewardXp    Int
+  isClaimed   Boolean  @default(false)
+  resetAt     DateTime
+
+  player Player @relation(fields: [playerId], references: [id])
+
+  @@unique([playerId, type, resetAt])
+  @@index([playerId])
+  @@index([playerId, type, resetAt])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  playerId  String
+  action    String
+  before    Json
+  after     Json
+  createdAt DateTime @default(now())
+
+  @@index([playerId, createdAt])
+}
+
+model CommandEvent {
+  id        String   @id @default(uuid())
+  userId    String
+  guildId   String
+  command   String
+  category  String   @default("owl_command")
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([guildId, createdAt])
+  @@index([command])
+}
+
+/// Sell komutu kaydı — rollback için 7 güne kadar tutulur.
+model SellEvent {
+  id              String    @id @default(uuid())
+  userId          String
+  guildId         String?
+  coinsGained     Int
+  preySold        Json
+  preyQty         Int
+  source          String    @default("prefix")
+  rolledBackAt    DateTime?
+  rollbackBatchId String?
+  createdAt       DateTime  @default(now())
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
+  @@index([rollbackBatchId])
+}
+
+model PlayerPreyDex {
+  id            String   @id @default(uuid())
+  playerId      String
+  preyName      String
+  totalCaught   Int      @default(0)
+  firstCaughtAt DateTime @default(now())
+
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([playerId, preyName])
+  @@index([playerId])
+}
+
+/** @deprecated Craft sistemi kaldırıldı — şema uyumluluğu için tutulur */
+model PlayerRecipeProgress {
+  id            String    @id @default(uuid())
+  playerId      String
+  recipeId      String
+  discovered    Boolean   @default(false)
+  discoveredAt  DateTime?
+  craftedCount  Int       @default(0)
+  lastCraftedAt DateTime?
+  firstSeenAt   DateTime?
+
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([playerId, recipeId])
+  @@index([playerId])
+}
+
+model JournalEntry {
+  id        String   @id @default(uuid())
+  playerId  String
+  kind      String
+  recipeId  String?
+  message   String
+  createdAt DateTime @default(now())
+
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@index([playerId, createdAt])
+}
+
+model FeedbackCampaign {
+  id                String   @id @default(uuid())
+  slug              String   @unique
+  title             String
+  description       String?
+  isActive          Boolean  @default(true)
+  rewardCoins       Int      @default(5000)
+  rewardLootboxName String   @default("Eşya Kutusu")
+  rewardLootboxQty  Int      @default(5)
+  questions         Json
+  startsAt          DateTime?
+  endsAt            DateTime?
+  createdAt         DateTime @default(now())
+  submissions       FeedbackSubmission[]
+}
+
+model FeedbackSubmission {
+  id              String   @id @default(uuid())
+  campaignId      String
+  userId          String
+  answers         Json
+  rewardGranted   Boolean  @default(false)
+  rewardGrantedAt DateTime?
+  submittedAt     DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  campaign FeedbackCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, userId])
+  @@index([campaignId, submittedAt])
+  @@index([userId])
+}
+
+model RebalanceCompensation {
+  id        String   @id @default(uuid())
+  playerId  String   @unique
+  payload   Json
+  snapshot  Json
+  claimedAt DateTime?
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt, claimedAt])
+}
+
+model FeedbackAttachment {
+  id         String   @id @default(uuid())
+  campaignId String
+  userId     String
+  storageKey String
+  mimeType   String
+  sizeBytes  Int
+  createdAt  DateTime @default(now())
+
+  @@index([campaignId, userId])
+  @@index([userId, createdAt])
+}
+
+/// Anti-cheat trust score özeti (Discord userId bazlı).
+model AnticheatTrust {
+  userId            String   @id
+  trustScore        Int      @default(100)
+  violationCount    Int      @default(0)
+  lastViolationAt   DateTime?
+  isRewardThrottled Boolean  @default(false)
+  throttleUntil     DateTime?
+  updatedAt         DateTime @updatedAt
+
+  @@index([trustScore])
+  @@index([lastViolationAt])
+}
+
+/// Anti-cheat olay kayıtları — AuditLog'dan ayrı tutulur.
+model AnticheatEvent {
+  id        String   @id @default(uuid())
+  userId    String
+  guildId   String?
+  eventType String
+  severity  Int
+  detail    Json
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([eventType, createdAt])
+}
+
+model AnticheatPunishment {
+  id              String   @id @default(uuid())
+  userId          String
+  tier            Int
+  reason          String
+  durationSeconds Int?
+  issuedBy        String   @default("system")
+  issuedAt        DateTime @default(now())
+  expiresAt       DateTime?
+  appealed        Boolean  @default(false)
+  overturned      Boolean  @default(false)
+
+  @@index([userId, issuedAt(sort: Desc)])
+  @@index([tier, issuedAt])
+}
+
+model AnticheatAppeal {
+  id              String   @id @default(uuid())
+  punishmentId    String
+  userId          String
+  reason          String
+  status          String   @default("pending")
+  reviewedBy      String?
+  reviewNote      String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([punishmentId])
+  @@index([status, createdAt])
+}

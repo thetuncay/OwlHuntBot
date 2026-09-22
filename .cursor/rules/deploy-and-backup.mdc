@@ -1,0 +1,12 @@
+# Canli Deploy + Yedek
+
+Guncelleme paketi bittiginde kullaniciya sormadan `bash scripts/deploy-live.sh`.
+
+## DB yedek — VDS'ten bagimsiz
+
+- **Kaynak dogruluk Google Drive** (5TB). VDS yalnizca gecici cache (2 gun).
+- `BACKUP_REQUIRE_CLOUD=1` — bulut yukleme basarisizsa yedek BASARISIZ sayilir.
+- Tarihli Drive klasorleri append-only, **asla silinmez**.
+- `latest/` = en guncel tam kopya; VDS olmeden restore: `bash scripts/restore-from-gdrive.sh --latest`
+- Cron: saatlik + reboot sonrasi (`install-db-backup-cron.sh`)
+- Detay: `docs/CLOUD-BACKUP.md`

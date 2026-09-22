@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="OwlHunt küresel sıralama — güç, av, arena ve servet tabloları. Discord'daki /lb ile aynı veri." />
+  <title>Sıralama — OwlHunt</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/assets/styles.css" />
+  <link rel="icon" href="/assets/owlhuntweb/01_normal.png" type="image/png" />
+</head>
+<body>
+  <div class="bg-glow" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <a class="brand" href="/">
+      <img src="/assets/owlhuntweb/01_normal.png" width="42" height="42" alt="" class="brand-owl" />
+      <span>OwlHunt</span>
+    </a>
+    <nav class="nav">
+      <a href="/">Ana Sayfa</a>
+      <a href="/leaderboard" class="active">Sıralama</a>
+      <a href="/dashboard">Profil</a>
+    </nav>
+    <div class="topbar-actions">
+      <a class="btn btn-ghost btn-sm" href="https://discord.gg/5yQxgQDRHu" target="_blank" rel="noopener">Destek</a>
+      <a class="btn btn-primary btn-sm" href="/invite">Sunucuya Ekle</a>
+    </div>
+  </header>
+
+  <main class="lb-main">
+    <div class="lb-head">
+      <img src="/assets/owlhuntweb/09_premium.png" alt="" width="80" height="80" />
+      <div>
+        <p class="section-eyebrow">Küresel · sezon</p>
+        <h1>Sıralama</h1>
+        <p class="lb-lead">Discord'daki <code>/lb</code> ile aynı veri — güç skoru, toplam av, arena galibiyeti veya coin serveti. Burada ilk 10, oyunda tam liste.</p>
+      </div>
+    </div>
+
+    <div class="lb-tabs" id="lbTabs">
+      <button type="button" class="lb-tab active" data-cat="power">Güç</button>
+      <button type="button" class="lb-tab" data-cat="hunt">Av</button>
+      <button type="button" class="lb-tab" data-cat="arena">Arena</button>
+      <button type="button" class="lb-tab" data-cat="wealth">Servet</button>
+    </div>
+
+    <p id="lbMeta" class="lb-meta">Yükleniyor…</p>
+    <div id="lbLoading" class="dash-loading">
+      <img src="/assets/owlhuntweb/12_loading.png" alt="" width="48" height="48" />
+      <span>Tablo yükleniyor…</span>
+    </div>
+    <ol id="lbList" class="lb-list hidden"></ol>
+    <p id="lbError" class="auth-error hidden"></p>
+  </main>
+
+  <footer class="footer">
+    <span>OwlHunt — Türkçe Discord av botu · thetuncay.com</span>
+    <nav class="footer-links">
+      <a href="https://discord.gg/5yQxgQDRHu" target="_blank" rel="noopener">Destek</a>
+      <a href="/gizlilik">Gizlilik</a>
+      <a href="/kullanim">Kullanım</a>
+    </nav>
+  </footer>
+
+  <script src="/assets/leaderboard.js"></script>
+</body>
+</html>

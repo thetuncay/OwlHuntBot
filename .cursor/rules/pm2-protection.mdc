@@ -1,0 +1,29 @@
+---
+description: PM2 otomatik restart yasagi — onay bekle
+alwaysApply: true
+---
+
+# PM2 Korumasi
+
+## Calisan servisler (VDS snapshot)
+
+| id | name | status |
+|----|------|--------|
+| 0 | `owlhuntbot-shard` | online |
+| 1 | `owlhuntbot-worker` | online |
+
+`pm2 list` ile guncel durumu dogrula; tablo degismisse kullaniciya bildir.
+
+## Kurallar
+
+- PM2 sureclerini **otomatik restart etme** (`pm2 restart`, `pm2 reload`, `pm2 stop`, `pm2 delete`, `pm2 kill`).
+- Asla calistirma: `pm2 delete all`, `pm2 kill`.
+- Restart gerekirse komutu goster ve **onay bekle**:
+
+```bash
+pm2 restart owlhuntbot-shard owlhuntbot-worker
+# veya tek process:
+pm2 restart owlhuntbot-shard
+```
+
+- `pm2 logs`, `pm2 status`, `pm2 list`, `pm2 describe` — okuma icin serbest.

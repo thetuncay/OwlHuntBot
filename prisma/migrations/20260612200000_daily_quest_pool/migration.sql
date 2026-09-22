@@ -1,0 +1,1 @@
+ALTER TABLE "DailyQuest" ADD COLUMN IF NOT EXISTS "meta" TEXT;

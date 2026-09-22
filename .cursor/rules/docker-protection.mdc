@@ -1,0 +1,16 @@
+---
+description: Docker yikici komutlar — acik onay gerekir
+alwaysApply: true
+---
+
+# Docker Korumasi
+
+Kullanici **acikca onaylamadan** asla calistirma:
+
+- `docker compose down`
+- `docker rm` (tek veya toplu)
+- `docker system prune` / `docker system prune -a`
+
+Onay istenirken: hangi konteyner/stack etkilenecek, veri kaybi riski, alternatif (or. `docker compose ps`, loglar).
+
+Okuma / diagnostik serbest: `docker ps`, `docker compose ps`, `docker logs`, `docker inspect`.

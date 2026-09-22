@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="OwlHunt Discord Bağlı Rol — oyun hesabını Discord profiline bağla." />
+  <title>Bağlı Rol — OwlHunt</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/assets/styles.css" />
+</head>
+<body>
+  <div class="bg-glow" aria-hidden="true"></div>
+  <main class="legal-main">
+    <a href="/" class="auth-back" style="position:static;display:inline-block;margin-bottom:1rem">← Ana sayfa</a>
+    <h1>OwlHunt — Bağlı Rol</h1>
+    <p class="legal-updated">Discord Linked Roles · Bağlantı doğrulama sayfası</p>
+
+    <p>Bu sayfa Discord Developer Portal’daki <strong>Linked Roles Verification URL</strong> adresidir. Sunucundaki bağlı rolü almak için OwlHunt oyun hesabını Discord profiline bağlaman gerekir.</p>
+
+    <h2>Ne olacak?</h2>
+    <ol>
+      <li>Discord ile giriş yapacaksın (<code>identify</code> + <code>role_connections.write</code> izni).</li>
+      <li>OwlHunt, oyun istatistiklerini (seviye, av, güç) Discord’a gönderir.</li>
+      <li>Sunucu yöneticisinin tanımladığı kriterleri karşılıyorsan rol otomatik verilir.</li>
+    </ol>
+
+    <h2>Paylaşılan veriler</h2>
+    <ul>
+      <li><strong>level</strong> — oyuncu seviyesi</li>
+      <li><strong>hunts</strong> — toplam av sayısı</li>
+      <li><strong>power</strong> — güç skoru</li>
+      <li><strong>registered</strong> — oyuna kayıtlı mı (1/0)</li>
+    </ul>
+    <p>Şifre veya e-posta istenmez. Detay: <a href="/privacy-policy">Gizlilik Politikası</a>.</p>
+
+    <p style="margin-top:2rem">
+      <a class="btn btn-primary btn-lg" href="/api/auth/discord/linked-role/start">Discord ile bağlan</a>
+    </p>
+
+    <p style="margin-top:1rem;opacity:0.8;font-size:0.9rem">Henüz OwlHunt’a kayıtlı değilsen önce Discord’da botu kullanıp kayıt ol. Bağlantı yine kurulur; istatistikler 0 görünür.</p>
+  </main>
+</body>
+</html>

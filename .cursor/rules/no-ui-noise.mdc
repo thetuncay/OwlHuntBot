@@ -1,0 +1,23 @@
+---
+description: Discord/oyuncu UI'da gereksiz açıklama, meta ve debug dili yasak
+alwaysApply: true
+---
+
+# UI — gereksiz açıklama yok
+
+Oyuncuya giden Discord mesajı / embed / buton metninde **asla** ekleme:
+
+- İstenilen vs gerçek farkı (`istenilen 50, kaynak/kilit sınırı`)
+- İç limit / planlama / debug gerekçesi
+- Gereksiz meta satırlar (`📦 N adım`, `uygulandı`, `*(toplam)*`, `*(1 adım)*` gibi özet gürültü)
+- Sistemin nasıl hesap yaptığına dair “açıklama” cümleleri
+
+## Ne kalsın
+
+- Sonucu net gösteren sayılar (örn. `15 → 36`, toplam maliyet, `Yükselt x21`)
+- Kısa hata (örn. `Yetersiz coin`) — yalnızca aksiyonu engelliyorsa
+- Buton etiketi aksiyonu söylesin; embed aynı bilgiyi tekrar anlatmasın
+
+## Kural
+
+Şüphede kalınca **metni sil**. Oyuncu “neden?” diye sormadan açıklama ekleme.

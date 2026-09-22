@@ -1,0 +1,5 @@
+# Ubuntu/Linux deployment scriptleri LF satir sonu kullanir
+*.sh text eol=lf
+
+# Ortam ornegi
+.env.example text eol=lf

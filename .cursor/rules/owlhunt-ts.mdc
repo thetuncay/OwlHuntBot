@@ -1,0 +1,14 @@
+---
+description: OwlHunt TypeScript — any, magic number, hot-path Prisma
+globs: src/**/*.ts
+alwaysApply: false
+---
+
+# OwlHunt TypeScript (dosya bağlamı)
+
+- Yeni kodda `any` / `as any` / `@ts-ignore` yok (test mock dar istisna).
+- Oyun sayısı → `src/config.ts` veya `src/config/*`; bu dosyaya magic number gömme.
+- Hunt/ekonomi mutasyonu → Redis Lua + lock; hot path’te doğrudan Prisma write ekleme.
+- Bu dosya zaten 800+ ise büyütmeden önce böl veya onay iste.
+- Public export değiştiyse JSDoc (ne / invariant / yan etki); kalite ≥ 8/10.
+- Detay: `docs/ai/AI_GUIDELINES.md`

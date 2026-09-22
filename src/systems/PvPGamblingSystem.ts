@@ -1,0 +1,755 @@
+/**
+ * PvPGamblingSystem.ts — Sosyal PvP Kumar Sistemi İş Mantığı
+ *
+ * Sorumluluklar:
+ *   - Oturum yönetimi (Redis geçici state, Prisma kalıcı kayıt)
+ *   - House cut hesaplama (temel + progressive)
+ *   - Slot Race sonuç motoru
+ *   - Blackjack Pro kart motoru
+ *   - Kayıp iadesi (Baykuş Tesellisi)
+ *   - Race condition koruması (withLock + prisma.$transaction)
+ */
+
+import { formatCoinLabel } from '../config/ui-emojis';
+import type { PrismaClient } from '@prisma/client';
+import type { Redis } from 'ioredis';
+import { withLock } from '../utils/lock';
+import { addXP } from './xp';
+import { rollSlotOutcome, buildSlotReels } from './gamble/slot-engine';
+import { weightedRandom } from '../utils/rng';
+import {
+  applyCoinDeltaInRedis,
+} from '../state/player-state';
+import {
+  PVP_GAMBLE_MIN_BET,
+  PVP_GAMBLE_HOUSE_CUT_BASE,
+  PVP_GAMBLE_PROGRESSIVE_THRESHOLD,
+  PVP_GAMBLE_PROGRESSIVE_STEP,
+  PVP_GAMBLE_PROGRESSIVE_MAX,
+  PVP_GAMBLE_REBATE_LOSS_STREAK,
+  PVP_GAMBLE_REBATE_RATE,
+  PVP_GAMBLE_REDIS_SESSION_PREFIX,
+  PVP_GAMBLE_REDIS_PAIR_COUNT_PREFIX,
+  PVP_GAMBLE_REDIS_LOSS_STREAK_PREFIX,
+  PVP_GAMBLE_REDIS_LOSS_TOTAL_PREFIX,
+  PVP_GAMBLE_SESSION_TTL_MS,
+  PVP_GAMBLE_PAIR_COUNT_TTL_MS,
+  PVP_SLOT_COMBO_XP_BONUS,
+  PVP_BJ_BLACKJACK_PAYOUT,
+  PVP_BJ_WIN_PAYOUT,
+  PVP_BJ_PUSH_PAYOUT,
+  PVP_GAMBLE_INVITE_TTL_MS,
+  PVP_CF_WIN_CHANCE,
+  PVP_CF_SERIAL_KILLER_STREAK,
+  PVP_GAMBLE_REDIS_CF_STREAK_PREFIX,
+} from '../config';
+
+// ─── Tip Tanımlamaları ────────────────────────────────────────────────────────
+
+export type PvpGameMode = 'coinflip' | 'slot' | 'blackjack';
+export type PvpSessionStatus = 'pending' | 'active' | 'finished' | 'cancelled';
+export type BlackjackAction = 'hit' | 'stand';
+
+/** Blackjack kart temsili */
+export interface BJCard {
+  suit: '♠' | '♥' | '♦' | '♣';
+  rank: string; // '2'–'10', 'J', 'Q', 'K', 'A'
+  value: number; // Hesaplanmış değer (A=11 veya 1)
+}
+
+/** Blackjack oyuncu eli */
+export interface BJHand {
+  cards: BJCard[];
+  total: number;
+  isBust: boolean;
+  isBlackjack: boolean;
+  isSoft: boolean; // Ace 11 olarak sayılıyorsa true
+}
+
+/** Redis'te saklanan PvP oturum verisi */
+export interface PvpGamblingSession {
+  sessionId: string;
+  mode: PvpGameMode;
+  challengerId: string;
+  defenderId: string;
+  bet: number;
+  status: PvpSessionStatus;
+  createdAt: number; // Unix ms
+  // Blackjack'e özgü alanlar
+  bj?: {
+    challengerHand: BJCard[];
+    defenderHand: BJCard[];
+    deck: BJCard[];
+    currentTurn: 'challenger' | 'defender'; // Sıra kimin
+    challengerStood: boolean;
+    defenderStood: boolean;
+  };
+}
+
+/** Oyun sonucu — tüm modlar için ortak */
+export interface PvpGamblingResult {
+  sessionId: string;
+  mode: PvpGameMode;
+  winnerId: string | null; // null = beraberlik (sadece BJ)
+  loserId: string | null;
+  bet: number;
+  houseCut: number;       // Kesilen miktar (coin)
+  houseCutRate: number;   // Uygulanan oran (0.05 = %5)
+  winnerGain: number;     // Kazananın net kazancı
+  loserLoss: number;      // Kaybedenin kaybı
+  rebate: PvpRebateResult | null;
+  serialKiller?: boolean;
+  cfStreak?: number;
+  // Mod'a özgü detaylar
+  coinflip?: { winner: 'challenger' | 'defender'; face: 'heads' | 'tails' };
+  slot?: {
+    challengerSymbols: string[];
+    defenderSymbols: string[];
+    comboBonus: boolean; // Her ikisi de aynı sembolü yakaladı mı
+    comboXP: number;
+  };
+  blackjack?: {
+    challengerHand: BJHand;
+    defenderHand: BJHand;
+    outcome: 'challenger_wins' | 'defender_wins' | 'push';
+  };
+}
+
+/** Kayıp iadesi sonucu */
+export interface PvpRebateResult {
+  playerId: string;
+  amount: number;       // İade edilen coin
+  lossStreak: number;   // Tetikleyen kayıp serisi
+  totalLoss: number;    // İade hesaplanan toplam kayıp
+}
+
+/** Davet akışı için ön-doğrulama sonucu */
+export interface PvpInviteValidation {
+  valid: boolean;
+  error?: string;
+  cooldownMs?: number;
+}
+
+// ─── Yardımcı: Redis Anahtar Üreticileri ─────────────────────────────────────
+
+/** Oturum verisi anahtarı */
+const sessionKey = (sessionId: string) =>
+  `${PVP_GAMBLE_REDIS_SESSION_PREFIX}${sessionId}`;
+
+/** Aynı iki oyuncu arasındaki ardışık oyun sayacı (sıra bağımsız) */
+const pairCountKey = (a: string, b: string) => {
+  const [p1, p2] = [a, b].sort();
+  return `${PVP_GAMBLE_REDIS_PAIR_COUNT_PREFIX}${p1}:${p2}`;
+};
+
+/** PvP kayıp serisi anahtarı */
+const lossStreakKey = (playerId: string) =>
+  `${PVP_GAMBLE_REDIS_LOSS_STREAK_PREFIX}${playerId}`;
+
+/** Rebate için toplam kayıp takip anahtarı */
+const lossTotalKey = (playerId: string) =>
+  `${PVP_GAMBLE_REDIS_LOSS_TOTAL_PREFIX}${playerId}`;
+
+const cfStreakKey = (playerId: string) =>
+  `${PVP_GAMBLE_REDIS_CF_STREAK_PREFIX}${playerId}`;
+
+/** PvP gambling cooldown anahtarı */
+export const pvpGambleCooldownKey = (playerId: string) =>
+  `cooldown:pvp_gamble:${playerId}`;
+
+// ─── Yardımcı: House Cut Hesaplama ───────────────────────────────────────────
+
+/**
+ * Uygulanacak house cut oranını hesaplar.
+ * Aynı iki oyuncu arasında PROGRESSIVE_THRESHOLD'u aşan her oyun için
+ * PROGRESSIVE_STEP kadar artar, PROGRESSIVE_MAX ile sınırlanır.
+ */
+export async function calcHouseCutRate(
+  redis: Redis,
+  challengerId: string,
+  defenderId: string,
+): Promise<number> {
+  const raw = await redis.get(pairCountKey(challengerId, defenderId));
+  const count = raw ? parseInt(raw, 10) : 0;
+
+  if (count <= PVP_GAMBLE_PROGRESSIVE_THRESHOLD) {
+    return PVP_GAMBLE_HOUSE_CUT_BASE;
+  }
+
+  const extra = (count - PVP_GAMBLE_PROGRESSIVE_THRESHOLD) * PVP_GAMBLE_PROGRESSIVE_STEP;
+  return Math.min(PVP_GAMBLE_HOUSE_CUT_BASE + extra, PVP_GAMBLE_PROGRESSIVE_MAX);
+}
+
+/**
+ * Oyun sonrası pair count'u artırır.
+ * TTL: PVP_GAMBLE_PAIR_COUNT_TTL_MS (24 saat)
+ */
+async function incrementPairCount(redis: Redis, a: string, b: string): Promise<void> {
+  const key = pairCountKey(a, b);
+  const ttlSec = Math.floor(PVP_GAMBLE_PAIR_COUNT_TTL_MS / 1000);
+  const current = await redis.get(key);
+  if (current === null) {
+    await redis.set(key, '1', 'EX', ttlSec);
+  } else {
+    await redis.incr(key);
+    // TTL'yi yenile (son oyundan itibaren 24 saat)
+    await redis.expire(key, ttlSec);
+  }
+}
+
+// ─── Yardımcı: Oturum Yönetimi (Redis) ───────────────────────────────────────
+
+/** Oturumu Redis'e kaydeder */
+export async function saveSession(
+  redis: Redis,
+  session: PvpGamblingSession,
+): Promise<void> {
+  const ttlSec = Math.floor(PVP_GAMBLE_SESSION_TTL_MS / 1000);
+  await redis.set(sessionKey(session.sessionId), JSON.stringify(session), 'EX', ttlSec);
+}
+
+/** Oturumu Redis'ten okur */
+export async function getSession(
+  redis: Redis,
+  sessionId: string,
+): Promise<PvpGamblingSession | null> {
+  const raw = await redis.get(sessionKey(sessionId));
+  if (!raw) return null;
+  return JSON.parse(raw) as PvpGamblingSession;
+}
+
+/** Oturumu Redis'ten siler */
+export async function deleteSession(redis: Redis, sessionId: string): Promise<void> {
+  await redis.del(sessionKey(sessionId));
+}
+
+/** Oturumu günceller (kısmi güncelleme) */
+export async function updateSession(
+  redis: Redis,
+  sessionId: string,
+  patch: Partial<PvpGamblingSession>,
+): Promise<PvpGamblingSession | null> {
+  const existing = await getSession(redis, sessionId);
+  if (!existing) return null;
+  const updated = { ...existing, ...patch };
+  await saveSession(redis, updated);
+  return updated;
+}
+
+// ─── Yardımcı: Davet Ön-Doğrulama ────────────────────────────────────────────
+
+/**
+ * Oyun başlatmadan önce tüm ön koşulları kontrol eder.
+ * Cooldown, minimum bahis, bakiye, aktif kilit.
+ */
+export async function validateInvite(
+  prisma: PrismaClient,
+  redis: Redis,
+  challengerId: string,
+  defenderId: string,
+  bet: number,
+): Promise<PvpInviteValidation> {
+  // 1. Minimum bahis
+  if (bet < PVP_GAMBLE_MIN_BET) {
+    return {
+      valid: false,
+      error: `Minimum bahis ${formatCoinLabel(PVP_GAMBLE_MIN_BET)}.`,
+    };
+  }
+
+  // 2. Bakiye kontrolü (her iki oyuncu)
+  const [challenger, defender] = await Promise.all([
+    prisma.player.findUnique({ where: { id: challengerId }, select: { coins: true } }),
+    prisma.player.findUnique({ where: { id: defenderId }, select: { coins: true } }),
+  ]);
+
+  if (!challenger || challenger.coins < bet) {
+    return { valid: false, error: 'Yetersiz bakiye. Bahis miktarın kadar coin\'in olmalı.' };
+  }
+  if (!defender || defender.coins < bet) {
+    return { valid: false, error: 'Rakibinin bu bahisi karşılayacak kadar coin\'i yok.' };
+  }
+
+  return { valid: true };
+}
+
+// ─── Yardımcı: Streak & Rebate Yönetimi ──────────────────────────────────────
+
+/**
+ * PvP kayıp serisini ve toplam kaybı günceller.
+ * Kaybeden için artırır, kazanan için sıfırlar.
+ * Rebate eşiğine ulaşıldıysa rebate sonucunu döner.
+ */
+async function updateLossStreak(
+  redis: Redis,
+  winnerId: string,
+  loserId: string,
+  lossAmount: number,
+): Promise<PvpRebateResult | null> {
+  // Kazanan sıfırla
+  await redis.set(lossStreakKey(winnerId), '0');
+  await redis.set(lossTotalKey(winnerId), '0');
+
+  // Kaybeden artır
+  const newStreak = await redis.incr(lossStreakKey(loserId));
+  const newTotal = await redis.incrby(lossTotalKey(loserId), lossAmount);
+
+  if (newStreak >= PVP_GAMBLE_REBATE_LOSS_STREAK) {
+    const rebateAmount = Math.floor(newTotal * PVP_GAMBLE_REBATE_RATE);
+    // Streak ve total'ı sıfırla (rebate tetiklendi)
+    await redis.set(lossStreakKey(loserId), '0');
+    await redis.set(lossTotalKey(loserId), '0');
+    return {
+      playerId: loserId,
+      amount: rebateAmount,
+      lossStreak: newStreak,
+      totalLoss: newTotal,
+    };
+  }
+
+  return null;
+}
+
+async function updateCfStreak(
+  redis: Redis,
+  winnerId: string,
+  loserId: string,
+): Promise<{ streak: number; serialKiller: boolean }> {
+  await redis.set(cfStreakKey(loserId), '0');
+  const newStreak = await redis.incr(cfStreakKey(winnerId));
+  return {
+    streak: newStreak,
+    serialKiller: newStreak >= PVP_CF_SERIAL_KILLER_STREAK,
+  };
+}
+
+/**
+ * Rebate'i DB'ye uygular (coin ekler).
+ */
+async function applyRebate(
+  prisma: PrismaClient,
+  redis: Redis,
+  rebate: PvpRebateResult,
+): Promise<void> {
+  if (rebate.amount <= 0) return;
+  await applyCoinDeltaInRedis(redis, rebate.playerId, rebate.amount, prisma);
+  await prisma.player.update({
+    where: { id: rebate.playerId },
+    data: { coins: { increment: rebate.amount } },
+  });
+}
+
+/** Kazanan/kaybeden coin deltalarini Redis hot state'e uygula. */
+async function syncGambleCoinDeltas(
+  redis: Redis,
+  prisma: PrismaClient,
+  winnerId: string | null,
+  loserId: string | null,
+  winnerGain: number,
+  loserLoss: number,
+): Promise<void> {
+  const ops: Promise<unknown>[] = [];
+  if (winnerId && winnerGain !== 0) {
+    ops.push(applyCoinDeltaInRedis(redis, winnerId, winnerGain, prisma));
+  }
+  if (loserId && loserLoss !== 0) {
+    ops.push(applyCoinDeltaInRedis(redis, loserId, -loserLoss, prisma));
+  }
+  if (ops.length) await Promise.all(ops);
+}
+
+// ─── Oyun Motoru: Coin Flip ───────────────────────────────────────────────────
+
+export async function settleCoinFlip(
+  prisma: PrismaClient,
+  redis: Redis,
+  session: PvpGamblingSession,
+): Promise<PvpGamblingResult> {
+  const { challengerId, defenderId, bet, sessionId } = session;
+
+  const houseCutRate = await calcHouseCutRate(redis, challengerId, defenderId);
+  const houseCut = Math.floor(bet * houseCutRate);
+  const netPot = bet * 2 - houseCut;
+
+  const challengerWins = Math.random() < PVP_CF_WIN_CHANCE / 100;
+  const winnerId = challengerWins ? challengerId : defenderId;
+  const loserId = challengerWins ? defenderId : challengerId;
+  const winnerGain = netPot - bet;
+  const loserLoss = bet;
+  const resultFace: 'heads' | 'tails' = Math.random() < 0.5 ? 'heads' : 'tails';
+
+  const sortedIds = [challengerId, defenderId].sort();
+  const firstId = sortedIds[0]!;
+  const secondId = sortedIds[1]!;
+  await withLock(firstId, 'pvp_gamble', async () => {
+    await withLock(secondId, 'pvp_gamble', async () => {
+      await prisma.$transaction(async (tx) => {
+        const loser = await tx.player.findUnique({ where: { id: loserId }, select: { coins: true } });
+        if (!loser || loser.coins < bet) {
+          throw new Error('Yetersiz bakiye (race condition). Oyun iptal edildi.');
+        }
+        await tx.player.update({
+          where: { id: winnerId },
+          data: {
+            coins: { increment: bet - houseCut },
+            totalPvpWins: { increment: 1 },
+          },
+        });
+        await tx.player.update({
+          where: { id: loserId },
+          data: { coins: { decrement: bet } },
+        });
+        await tx.pvpSession.create({
+          data: {
+            challengerId,
+            defenderId,
+            status: 'finished',
+            winnerId,
+            totalTurns: 1,
+            finishedAt: new Date(),
+          },
+        });
+      });
+    });
+  });
+
+  const [cfResult, rebate] = await Promise.all([
+    updateCfStreak(redis, winnerId, loserId),
+    updateLossStreak(redis, winnerId, loserId, loserLoss),
+  ]);
+
+  if (rebate) await applyRebate(prisma, redis, rebate);
+
+  await syncGambleCoinDeltas(redis, prisma, winnerId, loserId, winnerGain, loserLoss);
+  await incrementPairCount(redis, challengerId, defenderId);
+  await deleteSession(redis, sessionId);
+
+  return {
+    sessionId,
+    mode: 'coinflip',
+    winnerId,
+    loserId,
+    bet,
+    houseCut,
+    houseCutRate,
+    winnerGain,
+    loserLoss,
+    serialKiller: cfResult.serialKiller,
+    cfStreak: cfResult.streak,
+    rebate,
+    coinflip: {
+      winner: challengerWins ? 'challenger' : 'defender',
+      face: resultFace,
+    },
+  };
+}
+
+// ─── Oyun Motoru: Slot Race ───────────────────────────────────────────────────
+
+/**
+ * Slot Race sonucunu hesaplar.
+ * Her iki oyuncu için bağımsız slot spin, kazanan belirlenir.
+ * Combo bonusu: her ikisi de aynı sembolü yakalarsa XP bonusu.
+ */
+export async function settleSlotRace(
+  prisma: PrismaClient,
+  redis: Redis,
+  session: PvpGamblingSession,
+): Promise<PvpGamblingResult> {
+  const { challengerId, defenderId, bet, sessionId } = session;
+
+  // House cut
+  const houseCutRate = await calcHouseCutRate(redis, challengerId, defenderId);
+  const houseCut = Math.floor(bet * houseCutRate);
+  const netPot = bet * 2 - houseCut;
+
+  // Her iki oyuncu için üçlü spin (aynı sembol x3)
+  const challengerRoll = rollSlotOutcome();
+  const defenderRoll = rollSlotOutcome();
+  const challengerSymbols = buildSlotReels(challengerRoll.symbolKey);
+  const defenderSymbols = buildSlotReels(defenderRoll.symbolKey);
+
+  const challengerScore = challengerRoll.payout;
+  const defenderScore = defenderRoll.payout;
+  const isPush = challengerScore === defenderScore;
+
+  const winnerId   = isPush ? null : challengerScore > defenderScore ? challengerId : defenderId;
+  const loserId    = isPush ? null : challengerScore > defenderScore ? defenderId   : challengerId;
+  const winnerGain = winnerId ? netPot - bet : 0;
+  const loserLoss  = loserId  ? bet          : 0;
+
+  // Combo bonusu kontrolü (her ikisi de aynı sembolü yakaladı mı)
+  const comboBonus =
+    challengerRoll.symbolKey === defenderRoll.symbolKey && challengerRoll.payout > 0;
+
+  // Atomik coin güncellemesi — deterministik kilit sıralaması (deadlock önleme)
+  const sortedIdsSlot = [challengerId, defenderId].sort();
+  const firstIdSlot = sortedIdsSlot[0]!;
+  const secondIdSlot = sortedIdsSlot[1]!;
+  await withLock(firstIdSlot, 'pvp_gamble', async () => {
+    await withLock(secondIdSlot, 'pvp_gamble', async () => {
+      await prisma.$transaction(async (tx) => {
+        if (!isPush) {
+          // Bakiye kontrolü — race condition önleme
+          const loserData = await tx.player.findUnique({ where: { id: loserId! }, select: { coins: true } });
+          if (!loserData || loserData.coins < bet) {
+            throw new Error('Yetersiz bakiye (race condition). Oyun iptal edildi.');
+          }
+          await tx.player.update({
+            where: { id: winnerId! },
+            data: { coins: { increment: bet - houseCut }, totalPvpWins: { increment: 1 } },
+          });
+          await tx.player.update({
+            where: { id: loserId! },
+            data: { coins: { decrement: bet } },
+          });
+        }
+        // Push: bahisler zaten cepte, işlem yok
+        await tx.pvpSession.create({
+          data: {
+            challengerId,
+            defenderId,
+            status: 'finished',
+            winnerId: winnerId ?? undefined,
+            totalTurns: 1,
+            finishedAt: new Date(),
+          },
+        });
+      });
+    });
+  });
+
+  // Combo bonusu varsa her iki oyuncuya XP ver
+  if (comboBonus) {
+    await Promise.all([
+      addXP(prisma, challengerId, PVP_SLOT_COMBO_XP_BONUS, 'pvp_slot_combo', undefined, undefined, redis),
+      addXP(prisma, defenderId, PVP_SLOT_COMBO_XP_BONUS, 'pvp_slot_combo', undefined, undefined, redis),
+    ]);
+  }
+
+  // Streak & rebate (sadece kazanan/kaybeden varsa)
+  let rebate = null;
+  if (winnerId && loserId) {
+    rebate = await updateLossStreak(redis, winnerId, loserId, loserLoss);
+    if (rebate) await applyRebate(prisma, redis, rebate);
+  }
+
+  await syncGambleCoinDeltas(redis, prisma, winnerId, loserId, winnerGain, loserLoss);
+
+  // Pair count
+  await incrementPairCount(redis, challengerId, defenderId);
+  if (winnerId && redis) {
+  }
+
+  await deleteSession(redis, sessionId);
+
+  return {
+    sessionId,
+    mode: 'slot',
+    winnerId,
+    loserId,
+    bet,
+    houseCut,
+    houseCutRate,
+    winnerGain,
+    loserLoss,
+    rebate,
+    slot: {
+      challengerSymbols,
+      defenderSymbols,
+      comboBonus,
+      comboXP: comboBonus ? PVP_SLOT_COMBO_XP_BONUS : 0,
+    },
+  };
+}
+
+// ─── Oyun Motoru: Blackjack Pro — Kart Motoru ─────────────────────────────────
+
+const SUITS: BJCard['suit'][] = ['♠', '♥', '♦', '♣'];
+const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+
+/** Standart 52 kartlık deste oluşturur */
+export function buildDeck(): BJCard[] {
+  const deck: BJCard[] = [];
+  for (const suit of SUITS) {
+    for (const rank of RANKS) {
+      const value = rank === 'A' ? 11 : ['J', 'Q', 'K'].includes(rank) ? 10 : parseInt(rank, 10);
+      deck.push({ suit, rank, value });
+    }
+  }
+  // Fisher-Yates karıştırma
+  for (let i = deck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [deck[i], deck[j]] = [deck[j]!, deck[i]!];
+  }
+  return deck;
+}
+
+/** El değerini hesaplar (Ace soft/hard yönetimi dahil) */
+export function calcHandValue(cards: BJCard[]): BJHand {
+  let total = 0;
+  let aces = 0;
+  let isSoft = false;
+
+  for (const card of cards) {
+    total += card.value;
+    if (card.rank === 'A') aces++;
+  }
+
+  // Bust durumunda Ace'leri 1'e düşür
+  while (total > 21 && aces > 0) {
+    total -= 10;
+    aces--;
+  }
+
+  isSoft = aces > 0 && total <= 21;
+
+  return {
+    cards,
+    total,
+    isBust: total > 21,
+    isBlackjack: cards.length === 2 && total === 21,
+    isSoft,
+  };
+}
+
+/**
+ * Blackjack başlangıç dağıtımı yapar.
+ * Her oyuncuya 2 kart verir, kalan deste oturumda saklanır.
+ */
+export function dealInitialHands(deck: BJCard[]): {
+  challengerCards: BJCard[];
+  defenderCards: BJCard[];
+  remainingDeck: BJCard[];
+} {
+  const d = [...deck];
+  const challengerCards = [d.pop()!, d.pop()!];
+  const defenderCards = [d.pop()!, d.pop()!];
+  return { challengerCards, defenderCards, remainingDeck: d };
+}
+
+/**
+ * Hit işlemi: desteden bir kart çeker.
+ */
+export function hitCard(deck: BJCard[]): { card: BJCard; remainingDeck: BJCard[] } {
+  const d = [...deck];
+  const card = d.pop()!;
+  return { card, remainingDeck: d };
+}
+
+/**
+ * Blackjack Pro sonucunu hesaplar ve DB'ye yansıtır.
+ * Her iki oyuncu da stand yaptıktan veya bust olduktan sonra çağrılır.
+ */
+export async function settleBlackjackPro(
+  prisma: PrismaClient,
+  redis: Redis,
+  session: PvpGamblingSession,
+): Promise<PvpGamblingResult> {
+  const { challengerId, defenderId, bet, sessionId, bj } = session;
+  if (!bj) throw new Error('Blackjack oturum verisi eksik.');
+
+  const challengerHand = calcHandValue(bj.challengerHand);
+  const defenderHand = calcHandValue(bj.defenderHand);
+
+  // Kazanan belirleme
+  let outcome: 'challenger_wins' | 'defender_wins' | 'push';
+  if (challengerHand.isBust && defenderHand.isBust) {
+    outcome = 'push';
+  } else if (challengerHand.isBust) {
+    outcome = 'defender_wins';
+  } else if (defenderHand.isBust) {
+    outcome = 'challenger_wins';
+  } else if (challengerHand.total === defenderHand.total) {
+    // Eşit toplam → her zaman berabere (blackjack avantajı yok)
+    outcome = 'push';
+  } else if (challengerHand.total > defenderHand.total) {
+    outcome = 'challenger_wins';
+  } else {
+    outcome = 'defender_wins';
+  }
+
+  const houseCutRate = await calcHouseCutRate(redis, challengerId, defenderId);
+  const houseCut = outcome === 'push' ? 0 : Math.floor(bet * houseCutRate);
+
+  // Payout çarpanı
+  const isWinnerBJ =
+    (outcome === 'challenger_wins' && challengerHand.isBlackjack) ||
+    (outcome === 'defender_wins' && defenderHand.isBlackjack);
+  const payoutMult = isWinnerBJ ? PVP_BJ_BLACKJACK_PAYOUT : PVP_BJ_WIN_PAYOUT;
+
+  const winnerId = outcome === 'push' ? null : outcome === 'challenger_wins' ? challengerId : defenderId;
+  const loserId = outcome === 'push' ? null : outcome === 'challenger_wins' ? defenderId : challengerId;
+  const winnerGain = winnerId ? Math.floor(bet * (payoutMult - 1)) - houseCut : 0;
+  const loserLoss = loserId ? bet : 0;
+
+  // Atomik coin güncellemesi — deterministik kilit sıralaması (deadlock önleme)
+  const sortedIdsBj = [challengerId, defenderId].sort();
+  const firstIdBj = sortedIdsBj[0]!;
+  const secondIdBj = sortedIdsBj[1]!;
+  await withLock(firstIdBj, 'pvp_gamble', async () => {
+    await withLock(secondIdBj, 'pvp_gamble', async () => {
+      await prisma.$transaction(async (tx) => {
+        if (outcome === 'push') {
+          // Beraberlik: bahisler iade edilir (zaten cepte, işlem yok)
+        } else {
+          // Bakiye kontrolü — race condition önleme
+          const loserData = await tx.player.findUnique({ where: { id: loserId! }, select: { coins: true } });
+          if (!loserData || loserData.coins < bet) {
+            throw new Error('Yetersiz bakiye (race condition). Oyun iptal edildi.');
+          }
+          await tx.player.update({
+            where: { id: winnerId! },
+            data: {
+              coins: { increment: Math.floor(bet * (payoutMult - 1)) - houseCut },
+              totalPvpWins: { increment: 1 },
+            },
+          });
+          await tx.player.update({
+            where: { id: loserId! },
+            data: { coins: { decrement: bet } },
+          });
+        }
+        await tx.pvpSession.create({
+          data: {
+            challengerId,
+            defenderId,
+            status: 'finished',
+            winnerId: winnerId ?? undefined,
+            totalTurns: bj.challengerHand.length + bj.defenderHand.length,
+            finishedAt: new Date(),
+          },
+        });
+      });
+    });
+  });
+
+  // Streak & rebate (sadece kazanan/kaybeden varsa)
+  let rebate: PvpRebateResult | null = null;
+  if (winnerId && loserId) {
+    rebate = await updateLossStreak(redis, winnerId, loserId, loserLoss);
+    if (rebate) await applyRebate(prisma, redis, rebate);
+  }
+
+  await syncGambleCoinDeltas(redis, prisma, winnerId, loserId, winnerGain, loserLoss);
+
+  await Promise.all([
+    incrementPairCount(redis, challengerId, defenderId),
+  ]);
+
+  await deleteSession(redis, sessionId);
+
+  return {
+    sessionId,
+    mode: 'blackjack',
+    winnerId,
+    loserId,
+    bet,
+    houseCut,
+    houseCutRate,
+    winnerGain,
+    loserLoss,
+    rebate,
+    blackjack: { challengerHand, defenderHand, outcome },
+  };
+}

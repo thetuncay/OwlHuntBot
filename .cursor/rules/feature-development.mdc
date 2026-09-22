@@ -1,0 +1,110 @@
+---
+description: Yeni özellik / sistem eklenirken (P0–P3) implementasyon öncesi oku. Feature plan + acceptance criteria + self-critique zorunlu.
+alwaysApply: false
+---
+
+# OwlHunt Feature Development (kural)
+
+Detay şablon: [`docs/ai/templates/FEATURE_PLAN_TEMPLATE.md`](../../docs/ai/templates/FEATURE_PLAN_TEMPLATE.md).
+Roadmap: [`docs/ai/analysis/IMPLEMENTATION_ROADMAP.md`](../../docs/ai/analysis/IMPLEMENTATION_ROADMAP.md).
+
+## Zincir (implementasyon öncesi)
+
+```
+INDEX -> ilgili memory-bank + FEATURE_MATRIX -> gerekli DDR var mı? -> FEATURE_PLAN doldur -> kod
+```
+
+Her aşamada durabilirsin; ancak **atlanamaz** — özellikle DDR gerektirici bir değişiklikte.
+
+## DDR ne zaman zorunlu?
+
+Yeni bir Design Decision Record ([`docs/ai/decisions/`](../../docs/ai/decisions/)) gerekli:
+
+- Core loop parametresi değişecekse (7 sn cooldown, pity threshold, streak rate vb.)
+- Ekonomi sabiti değişecekse (tax, RTP, cap)
+- Gizli mekanik önerisi geldiyse ([`no-hidden-mechanics.mdc`](no-hidden-mechanics.mdc))
+- 800+ satır dosyanın büyümesi gerekiyorsa
+- Prisma schema değişecekse
+- MCP eklenmek isteniyorsa
+- Cursor rule eklenmek/değiştirilmek isteniyorsa
+
+**DDR olmadan** bu değişiklikler uygulanamaz.
+
+## Feature plan içeriği (kısa)
+
+Şablon: [`FEATURE_PLAN_TEMPLATE.md`](../../docs/ai/templates/FEATURE_PLAN_TEMPLATE.md). Zorunlu bölümler:
+
+1. Problem — bir cümle.
+2. Goal — ölçülebilir kabul kriteri.
+3. UX — oyuncu deneyimi (Discord mesaj örneği).
+4. Existing systems — hangi mevcut kod referans alınıyor.
+5. Affected modules — dosya listesi.
+6. Database impact — schema değişikliği var mı?
+7. Economy impact — [`economy-safety.mdc`](economy-safety.mdc) checklist doldurulmalı.
+8. Gameplay impact — [`game-design.mdc`](game-design.mdc) SDT 3 soru.
+9. Edge cases — race, boş state, empty result.
+10. Tests — Vitest suite adı + coverage kalemleri.
+11. Rollback — geri alınabilir mi?
+12. Metrics — nasıl ölçülecek?
+
+## Acceptance kriterleri
+
+Bir özellik **ancak** aşağıdakiler sağlandığında tamamlanmış sayılır (referans: kullanıcı direktifi §29):
+
+- [ ] Design requirement karşılanıyor (goal)
+- [ ] Existing architecture ile uyumlu ([`PROJECT_ARCHITECTURE.md`](../../docs/ai/analysis/PROJECT_ARCHITECTURE.md))
+- [ ] TypeScript clean (`pnpm build` başarılı)
+- [ ] Lint clean (`pnpm lint`)
+- [ ] Tests pass (`pnpm test`)
+- [ ] Database integrity korunuyor (hot path'te Prisma direct write yok)
+- [ ] Economy etkisi kontrol edildi (economy checklist)
+- [ ] Gameplay loop etkisi kontrol edildi (core loop güçlenir/nötr)
+- [ ] Edge cases ele alındı
+- [ ] Public API JSDoc ≥ 8/10
+- [ ] İlgili DDR kaydedildi
+- [ ] Documentation güncellendi (memory-bank active-context)
+
+## Self-critique zinciri (feature bittiğinde)
+
+Kullanıcı direktifi §28 gereği. Kod merge/apply'dan **önce** kendine sor:
+
+1. Bu gerçekten gerekli miydi?
+2. Mevcut sistemlerden biri zaten bunu yapıyor muydu?
+3. Core loop'u güçlendirdi mi?
+4. Oyuncu bunu neden kullanmak istesin?
+5. 100 saat sonra hâlâ anlamlı mı?
+6. Başka bir sistemi anlamsızlaştırıyor mu?
+7. Ekonomi üzerinde beklenmeyen etki var mı?
+8. Sadece complexity mi ekledi?
+9. Daha basit bir çözüm var mı?
+
+**"Cevap kötü"yse kod düzelt.** Sırf yazıldığı için commit etme.
+
+## Kapsam disiplini
+
+- Sadece istenen dosya / davranış — [`AI_GUIDELINES.md §1`](../../docs/ai/AI_GUIDELINES.md).
+- "Yanında düzelteyim" yok — raporla, uygulama.
+- Alakasız refactor uygulaman istenmedikçe **rapor** ile kal.
+
+## Anticheat entegrasyonu (ödül veren feature)
+
+Yeni ödül kanalı ekliyorsan:
+
+- [`applyRewardMultiplier`](../../src/anticheat/reward-throttle.ts) API'sinden geç.
+- [`recordWealthDelta`](../../src/systems/leaderboard.ts) çağır.
+- `withLock(playerId, 'financial')` kilit altında.
+
+## Test disiplini
+
+- Davranış değişince Vitest zorunlu — [`AI_GUIDELINES.md §7`](../../docs/ai/AI_GUIDELINES.md).
+- Integration test (`src/__tests__/integration-*.test.ts`) örneği — mock Redis + concurrent lock.
+- Property test uygun (fast-check) — ekonomi cap, RTP, race durumları.
+- "Editor testi" kod testinin yerine geçmez.
+
+## Bağı
+
+- [`AI_GUIDELINES.md`](../../docs/ai/AI_GUIDELINES.md) — kanun
+- [`game-design.mdc`](game-design.mdc) — SDT + core loop
+- [`economy-safety.mdc`](economy-safety.mdc) — ekonomi
+- [`no-hidden-mechanics.mdc`](no-hidden-mechanics.mdc) — şeffaflık
+- [`research-driven.mdc`](research-driven.mdc) — bilimsel dayanak zinciri

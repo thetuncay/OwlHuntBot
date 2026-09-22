@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="OwlHunt profilin — seviye, coin, av sayısı, ana baykuş ve streak. Discord'da oyna, burada takip et." />
+  <title>Profilim — OwlHunt</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/assets/styles.css" />
+  <link rel="icon" href="/assets/owlhuntweb/01_normal.png" type="image/png" />
+</head>
+<body>
+  <div class="bg-glow" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <a class="brand" href="/">
+      <img src="/assets/owlhuntweb/01_normal.png" width="42" height="42" alt="" class="brand-owl" />
+      <span>OwlHunt</span>
+    </a>
+    <nav class="nav">
+      <a href="/">Ana Sayfa</a>
+      <a href="/leaderboard">Sıralama</a>
+      <a href="/dashboard" class="active">Profilim</a>
+    </nav>
+    <div class="nav-user" id="navUser">
+      <img id="navAvatar" alt="" width="32" height="32" class="nav-avatar hidden" />
+      <span id="navName">—</span>
+      <a class="btn btn-ghost btn-sm" href="/api/auth/logout">Çıkış</a>
+    </div>
+  </header>
+
+  <main class="dash-main">
+    <section class="dash-hero">
+      <img id="userAvatar" alt="" width="96" height="96" class="dash-avatar" />
+      <div>
+        <p class="dash-badge" id="linkBadge">Discord hesabın bağlı</p>
+        <h1 id="userName">Yükleniyor…</h1>
+        <p class="dash-sub" id="userId">—</p>
+      </div>
+      <img src="/assets/owlhuntweb/12_loading.png" alt="" class="dash-mascot" id="dashMascot" width="100" height="100" />
+    </section>
+
+    <div id="dashLoading" class="dash-loading">
+      <img src="/assets/owlhuntweb/12_loading.png" alt="" width="48" height="48" />
+      <span>Profil yükleniyor…</span>
+    </div>
+
+    <p id="dashError" class="auth-error hidden"></p>
+    <div id="dashEmpty" class="dash-empty hidden">
+      <img src="/assets/owlhuntweb/04_sleeping.png" alt="" width="96" height="96" />
+      <p><strong>Henüz av atmamışsın.</strong></p>
+      <p>1. Botu sunucuna ekle<br />2. Herhangi bir kanalda botu çağır, <strong>kullanım şartlarını onayla</strong><br />3. <code>owl hunt</code> yaz — profil, coin ve sıralama burada görünür</p>
+      <a class="btn btn-primary btn-lg" href="/invite" style="margin-top:1rem">Sunucuya Ekle</a>
+    </div>
+
+    <section class="dash-name-panel hidden" id="dashNamePanel">
+      <h2>Sıralama adı</h2>
+      <p class="dash-name-hint">Liderboard ve profilinde görünen ad. 2–32 karakter.</p>
+      <form id="dashNameForm" class="dash-name-form">
+        <input type="text" id="dashNameInput" maxlength="32" placeholder="Görünen adın" autocomplete="nickname" />
+        <button type="submit" class="btn btn-primary btn-sm">Kaydet</button>
+      </form>
+      <p id="dashNameMsg" class="dash-name-msg hidden"></p>
+    </section>
+
+    <section class="dash-grid hidden" id="dashStats">
+      <div class="dash-stat"><span class="label">Seviye</span><span class="value" id="statLevel">—</span></div>
+      <div class="dash-stat"><span class="label">Coin</span><span class="value" id="statCoins">—</span></div>
+      <div class="dash-stat"><span class="label">XP</span><span class="value" id="statXp">—</span></div>
+      <div class="dash-stat"><span class="label">Güç skoru</span><span class="value" id="statPower">—</span></div>
+      <div class="dash-stat"><span class="label">Toplam av</span><span class="value" id="statHunts">—</span></div>
+      <div class="dash-stat"><span class="label">Nadir bulgu</span><span class="value" id="statRare">—</span></div>
+      <div class="dash-stat"><span class="label">PvP galibiyet</span><span class="value" id="statPvp">—</span></div>
+      <div class="dash-stat"><span class="label">Av serisi</span><span class="value" id="statStreak">—</span></div>
+    </section>
+
+    <section class="dash-owl hidden" id="dashOwl">
+      <h2>Ana baykuş</h2>
+      <p id="owlLine">—</p>
+    </section>
+  </main>
+
+  <script src="/dashboard/dashboard.js"></script>
+</body>
+</html>

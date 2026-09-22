@@ -1,0 +1,91 @@
+---
+description: Coin / market / trade / lootbox / gambling / drop / upgrade dokunulduğunda oku. Ekonomik denge, farming resistance, alt-account riski.
+alwaysApply: false
+---
+
+# OwlHunt Economy Safety (kural)
+
+Detay analiz: [`docs/ai/analysis/ECONOMY_IMPACT.md`](../../docs/ai/analysis/ECONOMY_IMPACT.md).
+
+## Sink / source dengesi
+
+Yeni özellik eklemek istiyorsan **hangi kanaldan girecek, hangi kanaldan çıkacak** açıkça belirle:
+
+- **Yeni source ekleme:** enflasyon riskini not et. Cömertlik gerekiyorsa günlük cap zorunlu.
+- **Yeni sink ekleme:** oyuncu deneyimini ceza gibi hissettirmemeli — bkz. [`game-design.mdc`](game-design.mdc).
+- **Nötr:** trade (P2P), copy override.
+
+## Yasak ekonomi mekanikleri
+
+Rapor E4 sınırı + kullanıcı direktifi. **Öneri gelirse geri çevir:**
+
+- X1 Gerçek para RNG loot box (kumar risk literatürü)
+- X5 Alt-account teşvikli login farming
+- X6 "Bilerek kazandır" kumar hook
+- X10 Kozmetiği yalnızca ödemeli yapma — oyun-içi kazanılabilir olmalı
+
+## M4 · Kumar / gerçek para sınırı (kalıcı koruma)
+
+Bu sınır **çizili kalır**; kaldırmak için ayrı ve açık kullanıcı kararı gerekir.
+
+- Kumar mini-oyunları (`cf`, `bj`, `slot`, `duelbet`) **yalnızca oyun-içi coin** ile oynanır.
+- Gerçek para veya gerçek parayla alınan premium currency ile gamble **eklenmez**. Negatif RTP + gerçek para = dark pattern.
+- Bahis girişi yalnızca `Player.coins` kaynaklıdır. Yeni bir bahis para birimi eklenmesi bu kuralın ihlalidir.
+- Monetization baskısı gelirse tercih sırası: kozmetik → **güç ödülü olmayan** battle-pass → destekleyici bağış. Kumar yüzeyi genişletilmez.
+
+**Mevcut durum (doğrulandı):** kodda ödeme sağlayıcısı, IAP veya premium currency yok. `ops/guild-directory.ts` içindeki `premiumTier` Discord'un guild boost alanıdır, monetization değil.
+
+## Anti-abuse gate'ler (yeni özellik yazıldığında kontrol)
+
+| Konu | Nerede |
+|------|--------|
+| Reward throttle (anticheat) | [`src/anticheat/reward-throttle.ts`](../../src/anticheat/reward-throttle.ts) — `applyRewardMultiplier` zorunlu |
+| Rate limiter | [`src/anticheat/rate-limiter.ts`](../../src/anticheat/rate-limiter.ts) |
+| Multi-account heuristics | [`src/anticheat/multi-account-heuristics.ts`](../../src/anticheat/multi-account-heuristics.ts) |
+| Market anomaly | [`src/anticheat/market-anomaly.ts`](../../src/anticheat/market-anomaly.ts) |
+| Trust score / Punishment | [`src/anticheat/trust-score.ts`](../../src/anticheat/trust-score.ts), [`punishment-engine.ts`](../../src/anticheat/punishment-engine.ts) |
+| Ordered locks / financial | [`src/utils/lock.ts:withLock`](../../src/utils/lock.ts) — coin mutasyonu bu kilit altında |
+| DB queue | [`src/utils/db-queue.ts`](../../src/utils/db-queue.ts) — hot path'te async persist |
+
+**Yeni ödül kanalı** eklerken `applyRewardMultiplier` API'sinden geçmeli — anticheat gate atlanmaz.
+
+## Ekonomi sabit yerleri
+
+Sayılar **yalnızca** [`src/config.ts`](../../src/config.ts) veya [`src/config/*.ts`](../../src/config/). Command/system dosyasına magic number yok. Bu kural [`AI_GUIDELINES.md §4`](../../docs/ai/AI_GUIDELINES.md) ile örtüşük.
+
+## Sabit tablo (referans)
+
+| Kalem | Sabit adı | Mevcut değer |
+|-------|-----------|-------------|
+| Market tax | `MARKET_TAX_RATE` | 0.05 |
+| Market listing fee | `MARKET_LISTING_FEE_RATE` | 0.01 |
+| Coinflip payout | `GAMBLE_COINFLIP_PAYOUT` | 1.95 |
+| Coinflip win chance | `GAMBLE_COINFLIP_WIN_CHANCE` | 49 (yüzde ölçeği, RTP ≈ %95.6) |
+| Auto-sink | `AUTO_SINK_COIN_PER_ITEM` | 3 |
+| Daily login base | `DAILY_LOGIN_BASE_COIN` | 200 |
+| Daily login cap | `DAILY_LOGIN_COIN_CAP` | 800 |
+| Daily lootbox cap | `LOOTBOX_DAILY_DROP_CAP` ([`drop-transparency.ts`](../../src/config/drop-transparency.ts)) | 10 |
+| Lootbox seviye softcap | `LOOTBOX_LEVEL_SOFTCAP_MAX` | 0.30 (Lv.20+ kademeli) |
+| PvP sim win coins | `SIM_PVP_WIN_COINS` | 130 |
+| Duel daily coin cap | `DUEL_DAILY_COIN_CAP` | 2200 |
+| Maintenance item | `MAINTENANCE_DAILY_ITEM` | 'Cig Et' |
+| Maintenance ceza | `MAINTENANCE_MISS_EFFECTIVENESS_LOSS` | 5 (DDR-001 rework önerisi) |
+
+## Yeni özellik ekonomi checklist'i
+
+Aşağıdaki soruların **hepsine** cevap verilmedikçe implementasyona başlanmaz:
+
+- [ ] Hangi kanaldan coin/kaynak giriyor? (source)
+- [ ] Hangi kanaldan coin/kaynak çıkıyor? (sink)
+- [ ] Günlük tavan (cap) var mı? Yoksa gerekçe.
+- [ ] Farming yüzeyi ne? (alt account, script, botlanabilir mi?)
+- [ ] Anticheat gate ekleniyor mu? (reward-throttle, rate-limit)
+- [ ] Sabitler `config.ts`'te mi?
+- [ ] Testte ekonomik property (max coin/day, cap enforcement) doğrulanıyor mu?
+
+## Bağı
+
+- [`docs/ai/analysis/ECONOMY_IMPACT.md`](../../docs/ai/analysis/ECONOMY_IMPACT.md) — detay
+- [`database-protection.mdc`](database-protection.mdc) — DB yıkıcı işlem
+- [`no-hidden-mechanics.mdc`](no-hidden-mechanics.mdc) — gizli modifier yasağı
+- [`feature-development.mdc`](feature-development.mdc) — genel feature süreci

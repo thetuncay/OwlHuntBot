@@ -1,0 +1,64 @@
+---
+description: Yeni oyun mekaniği, feature veya balance kararı verirken oku. Core loop'u güçlendirmeyen özellik uygulanmaz.
+alwaysApply: false
+---
+
+# OwlHunt Game Design (kısa kural)
+
+Detay analiz: [`docs/ai/analysis/CORE_LOOP.md`](../../docs/ai/analysis/CORE_LOOP.md), [`docs/ai/analysis/FEATURE_MATRIX.md`](../../docs/ai/analysis/FEATURE_MATRIX.md), [`docs/research/owlhunt-core-design-audit.md`](../../docs/research/owlhunt-core-design-audit.md).
+
+## Core loop (dokunulmaz çekirdek)
+
+- Hunt cooldown **7 sn** — GameFlow kritik değer.
+- Hunt pity threshold **8**, streak rate **+%5 / hunt**, streak cap **+%20** — bad-luck koruması.
+- Milestone silent-reset (24h TTL) — grace-friendly duruşun taşıyıcı sütunu.
+- Trade escrow + ready lock — sosyal güvenlik.
+- Coin-only gamble sınırı — dark-pattern iç yüzü.
+
+Bu beş parametre kod PR'larında **değişecekse** özel gerekçe + DDR şart.
+
+## SDT üç ihtiyaç çerçevesi
+
+Yeni özellik önerildiğinde şu üç soru:
+
+1. **Competence** — oyuncunun "yapabildim" hissini net besliyor mu? (görünür ilerleme, informational feedback)
+2. **Autonomy** — anlamlı seçim var mı? İllüzyon-seçim (görünen 3 opsiyon, hepsi aynı sonuç) yasak.
+3. **Relatedness** — sosyal katmana katkı? (guild, trade, kanal, kudos)
+
+En az iki soruya net "evet" yoksa **DEFER** veya **REJECT**.
+
+## Engagement-first (yapılmayacaklar listesi — kural olarak)
+
+Bunlar rapor + best-practice literatürünün açıkça "dark pattern" dediği; **öneri gelirse geri çevrilir.**
+
+- Streak kırılınca büyük görsel utandırma (introjected regulation)
+- "Sadece bugün" fake urgency timer
+- Rakip zayıflatan gizli DDA (rubber-band) — [`no-hidden-mechanics.mdc`](no-hidden-mechanics.mdc) ile kesin
+- "Bilerek kazandır" kumar hook
+- Zorunlu grup içerik (yalnız oyuncu dışlanır)
+- 10+ eş zamanlı quest (fatigue)
+- Uzun cutscene / kesintili UX (flow kırılır)
+
+## Flow disiplini
+
+- Hunt hot path p95 hedefi ≤ 500 ms — L1 kuralı.
+- Kesintili UX (modal, uzun onay, tekrar tıklama) core loop'u kırar.
+- Cooldown mesajı **bilgilendirici** olabilir, "motive edici sos" değil (Deci 1999 undermining).
+
+## Karar prensibi
+
+Bir öneri geldiğinde şu zinciri sor:
+
+```
+CORE LOOP ETKISI (+/0/-) → SDT (2+ evet?) → EKONOMI (sink/source dengeli?) → SEFFAFLIK (gizli mekanik yok?) → COMPLEXITY (S/M/L) → LT VALUE
+```
+
+Zincirde bir tane bile "-" varsa **DDR** (`docs/ai/decisions/`) zorunlu; onaysız uygulanmaz.
+
+## Bağı
+
+- [`docs/ai/AI_GUIDELINES.md`](../../docs/ai/AI_GUIDELINES.md) — kanun
+- [`docs/ai/analysis/CORE_LOOP.md`](../../docs/ai/analysis/CORE_LOOP.md) — loop haritası
+- [`docs/ai/templates/FEATURE_PLAN_TEMPLATE.md`](../../docs/ai/templates/FEATURE_PLAN_TEMPLATE.md) — plan şablonu
+- [`economy-safety.mdc`](economy-safety.mdc) — ekonomik boyut
+- [`no-hidden-mechanics.mdc`](no-hidden-mechanics.mdc) — şeffaflık

@@ -1,0 +1,65 @@
+---
+description: Yeni gizli modifier / bonus / dampener / DDA / rubber-band eklerken oku. Şeffaflık zorunlu — SDT autonomy koruması.
+alwaysApply: false
+---
+
+# No Hidden Mechanics (kural)
+
+## Prensip
+
+Oyuncunun sonucu üzerinde etkili her mekanizma **ya görünür olmalı ya kaldırılmış olmalı.** Gizli modifier'lar SDT autonomy'yi doğrudan yıkar (Ryan & Deci 2020) ve algılanan adalet çöktüğü anda oyuncu güveni geri gelmez.
+
+## Uygulanan istisnalar (sadece bunlar)
+
+Bu kural altı tip mekanik için **görünürlük** veya **kaldırma** gerektirir:
+
+1. **Pity / bad-luck koruması** — hunt `noRareStreak`, gacha pity, tame streak
+2. **Level softcap / dampener** — drop rate azalması, XP scale
+3. **Streak modifier** — kazanma/kayıp serisine bağlı chance ayarı (rubber-band)
+4. **Retention nudge** — churn tier'a bağlı gizli bonus
+5. **Newbie boost** — 7 gün gizli çarpan (mevcut ama satır ekle: "Yeni oyuncu bonusu")
+6. **DDA (Dynamic Difficulty Adjustment)** — competitive rebalancing
+
+Diğer sistemler (RNG, base spawn, cooldown) zaten şeffaf; bu kural onları kapsamaz.
+
+## Mevcut ihlaller (DDR ile çözüm bekliyor)
+
+| Mekanizma | Kod | DDR |
+|-----------|-----|-----|
+| Hunt pity (görünmez) | [`hunt.ts:278-283`](../../src/systems/hunt.ts) | [`DECISION-003`](../../docs/ai/decisions/DECISION-003-pity-and-softcap-transparency.md) |
+| Level drop softcap | [`drops.ts:37-49`](../../src/systems/drops.ts) | DECISION-003 (aynı) |
+| Gambling streak modifier | [`gambling.ts:streakModifier`](../../src/systems/gambling.ts) | [`DECISION-002`](../../docs/ai/decisions/DECISION-002-gambling-streak-modifier.md) |
+| Gambling retention nudge | [`retention-modifiers.ts`](../../src/systems/retention/retention-modifiers.ts) | DECISION-002 (gambling path'inden çekilecek) |
+| Hunt streak/level catch bonus | [`hunt.ts:274-283`](../../src/systems/hunt.ts) | DECISION-003 kapsamında görünürlük |
+
+## Yeni gizli mekanik önerisi geldiğinde
+
+**REJECT** ve şu üç seçenek sun:
+
+1. **Görünür yap** — hunt sonucu satırı veya help sayfası.
+2. **Kaldır** — matematiksel dengeyi başka yerden koru.
+3. **DDR aç** — istisnai bir gerekçe varsa (nadir; şu ana kadar hiç görülmedi).
+
+## Görünürlük format kuralları
+
+Görünür yapılırken:
+
+- **Kısa** — tek satır tercih (audit A2/D2 disiplini).
+- **Bilgilendirici** — "motive edici sos" değil (Deci 1999 undermining).
+- **Yakınlaştırma** — "eşiğe yaklaşırken göster" tercih; her hunt'ta değil.
+- **Format önerisi:** `🎯 Pity yakında (6/8)` veya `🎯 Pity aktif — %{X}`.
+
+## Yasak yakın patterns
+
+Bu kural **X-list** ile birlikte çalışır:
+
+- X3 fake urgency timer ("sadece bugün")
+- X4 gizli DDA rakip zayıflatma
+- X6 "bilerek kazandır" kumar
+
+## Bağı
+
+- [`game-design.mdc`](game-design.mdc) — engagement-first ilkeler
+- [`economy-safety.mdc`](economy-safety.mdc) — ekonomik gizli mekanikler
+- [`docs/ai/decisions/DECISION-002-gambling-streak-modifier.md`](../../docs/ai/decisions/DECISION-002-gambling-streak-modifier.md) — canlı örnek
+- [`docs/ai/decisions/DECISION-003-pity-and-softcap-transparency.md`](../../docs/ai/decisions/DECISION-003-pity-and-softcap-transparency.md) — canlı örnek
