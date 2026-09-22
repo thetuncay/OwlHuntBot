@@ -534,12 +534,13 @@ function buildRoleStealWonDm(event: RoleStealEvent): EmbedBuilder {
   const color = def?.color ?? 0xf1c40f;
   const flavor = STEAL_ANNOUNCEMENT_FLAVOR[event.category];
 
+  // DM'de <@&role> çözülmez → bilinmeyen rol; isim metin olarak yazılır.
   return new EmbedBuilder()
     .setColor(color)
     .setTitle('🎉 Zirveye girdin!')
     .setDescription(
-      `<@&${event.roleId}> artık sende!\n\n` +
-      `**${event.roleName}** · ${formatStealScore(event.newScore, event.scoreLabel)}\n` +
+      `**${event.roleName}** artık sende!\n\n` +
+      `${formatStealScore(event.newScore, event.scoreLabel)}\n` +
       `*${event.newDetail}*\n\n` +
       `<@${event.oldHolderId}> (**${formatStealScore(event.oldScore, event.scoreLabel)}**) geride kaldı.\n\n` +
       `> *${flavor.tagline}*`,
@@ -550,11 +551,12 @@ function buildRoleStealWonDm(event: RoleStealEvent): EmbedBuilder {
 function buildRoleStealLostDm(event: RoleStealEvent): EmbedBuilder {
   const flavor = STEAL_ANNOUNCEMENT_FLAVOR[event.category];
 
+  // DM'de <@&role> çözülmez → bilinmeyen rol; isim metin olarak yazılır.
   return new EmbedBuilder()
     .setColor(0xe74c3c)
     .setTitle('💔 Tacı kaybettin')
     .setDescription(
-      `<@&${event.roleId}> artık sende değil.\n\n` +
+      `**${event.roleName}** artık sende değil.\n\n` +
       `<@${event.newHolderId}> (**${event.newHolderName}**) seni geçti:\n` +
       `${formatStealScore(event.newScore, event.scoreLabel)} · *${event.newDetail}*\n\n` +
       `Senin skorun: ${formatStealScore(event.oldScore, event.scoreLabel)} · *${event.oldDetail}*\n\n` +
@@ -596,13 +598,13 @@ export async function announceRoleSteals(
     if (sendDm && newUser) {
       await newUser.send({
         embeds: [buildRoleStealWonDm(event)],
-        allowedMentions: { users: [event.oldHolderId], roles: [event.roleId] },
+        allowedMentions: { users: [event.oldHolderId] },
       }).catch(() => null);
     }
     if (sendDm && oldUser) {
       await oldUser.send({
         embeds: [buildRoleStealLostDm(event)],
-        allowedMentions: { users: [event.newHolderId], roles: [event.roleId] },
+        allowedMentions: { users: [event.newHolderId] },
       }).catch(() => null);
     }
   }
