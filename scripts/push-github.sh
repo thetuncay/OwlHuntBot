@@ -15,9 +15,15 @@ if [ -z "${GITHUB_TOKEN:-}" ]; then
   exit 1
 fi
 
-BRANCH="$(git rev-parse --abbrev-ref HEAD)"
-REMOTE="$(git remote get-url origin)"
-REPO="$(echo "$REMOTE" | sed -E 's#.*github.com[:/](.+)\.git/?$#\1#')"
+# Remote URL asla token icermemeli
+ORIGIN="$(git remote get-url origin 2>/dev/null || true)"
+if [ -z "$ORIGIN" ]; then
+  git remote add origin https://github.com/thetuncay/OwlHuntBot.git
+elif echo "$ORIGIN" | grep -Eq 'ghp_|github_pat_'; then
+  git remote set-url origin https://github.com/thetuncay/OwlHuntBot.git
+fi
 
-git push "https://${GITHUB_TOKEN}@github.com/${REPO}.git" "$BRANCH"
+BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+AUTH="$(printf 'x-access-token:%s' "$GITHUB_TOKEN" | base64 | tr -d '\n')"
+git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${AUTH}" push -u origin "$BRANCH"
 echo "OK: pushed to origin/$BRANCH"
