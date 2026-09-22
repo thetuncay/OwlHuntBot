@@ -1,34 +1,33 @@
 ---
-description: GitHub yedek — VDS ana ortam, push istege bagli
+description: Her degisiklikten sonra GitHub push zorunlu
 alwaysApply: true
 ---
 
-# GitHub Yedek (opsiyonel)
+# GitHub Yedek — otomatik push
 
 ## Ortam
 
-- **Ana calisma**: VDS uzerinde SSH (agent dogrudan burada kod degistirir).
-- **GitHub**: Zorunlu deploy degil; **guvenli uzak yedek** olarak tutulur.
+- **Ana calisma**: bu makine (Windows yerel / VDS).
+- **GitHub**: `thetuncay/OwlHuntBot` — her anlamli degisiklikten sonra guncel tutulur.
 
-Her degisiklikten sonra push **gerekmez**. VDS'teki repo canli kaynaktir.
+## Ne zaman push (ZORUNLU)
 
-## Ne zaman push
+Kod degisikligi bitince, kullanici ayri istemese bile:
 
-Anlamli bir is paketi bittiginde veya kullanici istediginde yedekle:
-
-1. `git add` (`.env`, token, secret dosyalari HARIC)
+1. `git add` (`.env`, token, secret dosyalari **HARIC**)
 2. Aciklayici commit
-3. Istege bagli push:
-   - Linux/VDS: `bash scripts/push-github.sh`
+3. Hemen push:
    - Windows: `powershell -File scripts/push-github.ps1`
+   - Linux/VDS: `bash scripts/push-github.sh`
 
-Push basarisizsa isi bloklama; kisa bildir (`GITHUB_TOKEN` / ag). Kullanici isterse sonra tekrar dener.
+Push basarisizsa isi bloklama; kisa bildir (`GITHUB_TOKEN` / ag). Sonra tekrar dene.
 
 ## Token
 
 - `GITHUB_TOKEN` sadece yerel `.env` icinde (gitignore)
-- Asla commit etme, sohbette token yazdirma
+- Asla commit etme, sohbette token yazdirma / tekrarlama
 
-## Not
+## Hook
 
-Eski akis `git pull` + `update.sh` baska makine icindi. Simdi dogrudan VDS'te calisiliyorsa pull gerekmez; GitHub sadece yedek mirror.
+`git commit` sonrasi `scripts/push-github.ps1` / `.sh` de calisir (post-commit).
+Agent yine de commit sonrasi scripti calistirarak dogrular.
