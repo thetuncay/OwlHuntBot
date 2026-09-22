@@ -2,6 +2,7 @@ import { SLOT_REEL_STOP_MS, SLOT_TABLE } from '../config';
 import { renderOwlMoonEmoji } from '../config/custom-emojis';
 import { renderGambleEmoji, renderSlotsRollingEmoji } from '../config/gamble-emojis';
 import { COIN_EMOJI, formatCoinLabel } from '../config/ui-emojis';
+import { resultPipe } from './result-ux';
 
 /** Custom Discord emojileri — Ganimet Makinesi (hydrate sonrası canlı ID). */
 export const SLOT_EMOJI = {
@@ -14,14 +15,7 @@ export const SLOT_EMOJI = {
 
 export type SlotReelCell = 'rolling' | 'empty' | string;
 
-const PAYOUT_TAG: Record<string, string> = {
-  owl: 'x9',
-  diamond: 'x4',
-  coin: 'x2',
-  poop: 'x0',
-};
-
-const SLOT_MACHINE_TITLE = '🎰SLOT MAKİNESİ';
+const SLOT_MACHINE_TITLE = '🎰 SLOT MAKİNESİ';
 const PVP_SLOT_TITLE = '🎰 PVP SLOT';
 
 export function renderSlotSymbol(key: string): string {
@@ -37,22 +31,28 @@ function renderReelCell(cell: SlotReelCell): string {
   return renderSlotSymbol(cell);
 }
 
+/** Üç makara — aralıklı, okunaklı */
 export function buildSlotLine(cells: SlotReelCell[]): string {
   const [a = 'empty', b = 'empty', c = 'empty'] = cells;
-  return `${renderReelCell(a)} ${renderReelCell(b)} ${renderReelCell(c)}`;
+  return `${renderReelCell(a)}  ${renderReelCell(b)}  ${renderReelCell(c)}`;
 }
 
 export function buildSlotHeader(): string {
   return SLOT_MACHINE_TITLE;
 }
 
+function payoutMultLabel(payout: number): string {
+  if (payout <= 0) return 'x0';
+  const n = Number.isInteger(payout) ? String(payout) : String(payout);
+  return `x${n}`;
+}
+
+/** Çarpan tablosu — her satır bir üçlü */
 export function buildSlotPayoutHint(): string {
-  return (
-    `${SLOT_EMOJI.owl}${SLOT_EMOJI.owl}${SLOT_EMOJI.owl} **x9** · ` +
-    `${SLOT_EMOJI.diamond}${SLOT_EMOJI.diamond}${SLOT_EMOJI.diamond} **x4** · ` +
-    `${SLOT_EMOJI.coin}${SLOT_EMOJI.coin}${SLOT_EMOJI.coin} **x2** · ` +
-    `${SLOT_EMOJI.poop}${SLOT_EMOJI.poop}${SLOT_EMOJI.poop} **x0**`
-  );
+  return SLOT_TABLE.map((row) => {
+    const e = renderSlotSymbol(row.symbolKey);
+    return resultPipe(`${e} ${e} ${e}  **${payoutMultLabel(row.payout)}**`);
+  }).join('\n');
 }
 
 /** `w slot` — bahis yokken çarpan tablosu */
@@ -61,12 +61,13 @@ export function buildSlotHelpMessage(): string {
 }
 
 export function slotPayoutTag(symbolKey: string): string {
-  return PAYOUT_TAG[symbolKey] ?? '';
+  const row = SLOT_TABLE.find((r) => r.symbolKey === symbolKey);
+  return row ? payoutMultLabel(row.payout) : '';
 }
 
 function formatSlotPlayerBet(playerName: string, bet: number): string {
   const coinPart = formatCoinLabel(bet).replace(`${COIN_EMOJI} `, '');
-  return `${playerName}, ${coinPart}`;
+  return `${playerName} · ${coinPart}`;
 }
 
 function buildSoloSlotSpinScreen(params: {
@@ -76,8 +77,8 @@ function buildSoloSlotSpinScreen(params: {
 }): string {
   return [
     SLOT_MACHINE_TITLE,
-    buildSlotLine(params.reels),
-    formatSlotPlayerBet(params.playerName, params.bet),
+    resultPipe(buildSlotLine(params.reels)),
+    resultPipe(formatSlotPlayerBet(params.playerName, params.bet)),
   ].join('\n');
 }
 
@@ -100,13 +101,13 @@ export function buildSlotResultScreen(params: {
 }): string {
   const lines = [
     SLOT_MACHINE_TITLE,
-    buildSlotLine(params.finalSymbols),
-    formatSlotPlayerBet(params.playerName, params.bet),
+    resultPipe(buildSlotLine(params.finalSymbols)),
+    resultPipe(formatSlotPlayerBet(params.playerName, params.bet)),
   ];
   if (params.win) {
-    lines.push(`Ve ${Math.abs(params.deltaCoins).toLocaleString('tr-TR')} kazandın!`);
+    lines.push(resultPipe(`+${Math.abs(params.deltaCoins).toLocaleString('tr-TR')}`));
   } else {
-    lines.push('Hiç bir şey kazanamadın.. :<');
+    lines.push(resultPipe('Kayıp'));
   }
   return lines.join('\n');
 }
@@ -119,8 +120,8 @@ function buildPvpSlotSpinScreen(params: {
 }): string {
   return [
     PVP_SLOT_TITLE,
-    `┃ ${buildSlotLine(params.challengerReels)} ${params.challengerName}`,
-    `┃ ${buildSlotLine(params.defenderReels)} ${params.defenderName}`,
+    resultPipe(`${buildSlotLine(params.challengerReels)}  ${params.challengerName}`),
+    resultPipe(`${buildSlotLine(params.defenderReels)}  ${params.defenderName}`),
   ].join('\n');
 }
 

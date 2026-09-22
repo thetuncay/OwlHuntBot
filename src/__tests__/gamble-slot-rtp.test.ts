@@ -45,4 +45,13 @@ describe('slot-ux', () => {
     expect(buildSlotLine(['rolling', 'owl', 'empty'])).toContain(SLOT_EMOJI.rolling);
     expect(buildSlotLine(['owl', 'owl', 'owl'])).toContain(SLOT_EMOJI.owl);
   });
+
+  it('help message stacks payouts as pipe rows', async () => {
+    const { buildSlotHelpMessage, buildSlotPayoutHint } = await import('../utils/slot-ux');
+    const help = buildSlotHelpMessage();
+    expect(help).toContain('SLOT MAKİNESİ');
+    expect(help.split('\n').filter((l) => l.startsWith('┃')).length).toBe(4);
+    expect(buildSlotPayoutHint()).toContain('**x9**');
+    expect(buildSlotPayoutHint()).toContain('**x2.5**');
+  });
 });
