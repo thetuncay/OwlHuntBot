@@ -42,6 +42,7 @@ import { warmBanCacheFromKeys } from './utils/ban-cache';
 import { initDbQueueProducer, setDbQueuePrisma } from './utils/db-queue';
 import { consumeRoleSyncFlag } from './jobs/background-jobs';
 import { processFeedbackAnnounceQueue } from './systems/feedback-announce';
+import { announceBotOnline } from './systems/bot-online-announce';
 import { processCompensationReminderQueue } from './systems/rebalance-compensation-reminder';
 import { registerGracefulShutdown, trackInterval } from './utils/shutdown';
 import {
@@ -273,6 +274,7 @@ async function bootstrap(): Promise<void> {
     };
 
     if (isShard0()) {
+      void announceBotOnline(readyClient);
       void publishGuilds();
       trackInterval(() => void publishGuilds(), 5 * 60 * 1000);
       void pruneExcessGuildsOnReady(client).catch((err) => {
