@@ -8,6 +8,7 @@ import { parseWorkerEnv, resolveDatabaseUrl, describeDatabaseUrl } from './env';
 import { redis, assertRedisConnection } from './utils/redis';
 import { initDbQueueConsumer, closeDbQueue } from './utils/db-queue';
 import { startBackgroundJobs } from './jobs/background-jobs';
+import { refreshMainOwnerPool } from './systems/pvp-opponent-pool';
 import { registerGracefulShutdown, trackInterval } from './utils/shutdown';
 import { validateLaunchConfig, WORKER_HEARTBEAT_KEY, WORKER_HEARTBEAT_TTL_SEC } from './utils/launch-config';
 
@@ -31,6 +32,11 @@ async function bootstrap(): Promise<void> {
 
   initDbQueueConsumer(prisma);
   startBackgroundJobs(prisma, redis);
+  void refreshMainOwnerPool(prisma, redis)
+    .then((n) => console.info(`[DuelPool] ${n} main sahibi yuklendi`))
+    .catch((err) => {
+      console.error('[DuelPool] Yuklenemedi:', err instanceof Error ? err.message : err);
+    });
 
   await writeWorkerHeartbeat();
   trackInterval(() => {

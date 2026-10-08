@@ -29,16 +29,17 @@ import type { CommandDefinition } from '../types';
 import { buildCooldownMessage } from '../utils/command-error';
 import { interactionReplyWithSuppression, replyWithSuppression, SuppressionKeys } from '../utils/guarded-discord';
 import { resolveDiscordDisplayName } from '../utils/player-display-name';
-import { refreshMainOwlVitalsIfNeeded } from '../utils/owl-stats';
 import { getOwlPrimaryName } from '../utils/owl-display';
 import { safeReply } from '../utils/safe-reply';
 
 const MAIN_OWL_NAME_SELECT = { species: true, nickname: true, hp: true, hpMax: true } as const;
 const MAIN_OWL_DUEL_SELECT = {
+  id: true,
   species: true,
   nickname: true,
   hp: true,
   hpMax: true,
+  effectiveness: true,
   staminaCur: true,
   tier: true,
   statGaga: true,
@@ -47,6 +48,27 @@ const MAIN_OWL_DUEL_SELECT = {
   statKulak: true,
   statKanat: true,
 } as const;
+
+/** Tek okuma. Eski refreshMainOwlVitalsIfNeeded ile aynı tamir: HP dolu, effectiveness 100. */
+async function loadMainOwlForDuel(
+  prisma: Parameters<CommandDefinition['execute']>[1]['prisma'],
+  userId: string,
+) {
+  const owl = await prisma.owl.findFirst({
+    where: { ownerId: userId, isMain: true },
+    select: MAIN_OWL_DUEL_SELECT,
+  });
+  if (!owl) return null;
+  if (owl.hp >= owl.hpMax && owl.effectiveness >= 100) return owl;
+  await prisma.owl.update({
+    where: { id: owl.id },
+    data: {
+      hp: owl.hpMax,
+      ...(owl.effectiveness < 100 ? { effectiveness: 100 } : {}),
+    },
+  });
+  return { ...owl, hp: owl.hpMax, effectiveness: owl.effectiveness < 100 ? 100 : owl.effectiveness };
+}
 
 async function getMainOwlBattleName(
   prisma: Parameters<CommandDefinition['execute']>[1]['prisma'],
@@ -236,17 +258,15 @@ export async function runDuel(
 ): Promise<void> {
   const userId = interaction.user.id;
   const cooldownKey = `cooldown:duel:${userId}`;
-  await refreshMainOwlVitalsIfNeeded(ctx.prisma, userId);
-  const mainOwl = await ctx.prisma.owl.findFirst({
-    where: { ownerId: userId, isMain: true },
-    select: MAIN_OWL_DUEL_SELECT,
-  });
+  const [mainOwl, cooldown] = await Promise.all([
+    loadMainOwlForDuel(ctx.prisma, userId),
+    peekCooldown(ctx.redis, cooldownKey),
+  ]);
   if (!mainOwl) {
     await interaction.reply({ embeds: [failEmbed('Hata', 'Main baykuş bulunamadı.')], flags: 64 });
     return;
   }
 
-  const cooldown = await peekCooldown(ctx.redis, cooldownKey);
   if (cooldown.active) {
     const displayName = interaction.member && 'displayName' in interaction.member
       ? (interaction.member as { displayName: string }).displayName
@@ -266,7 +286,7 @@ export async function runDuel(
   const result = await runSimulatedPvP(ctx.prisma, userId, ctx.redis, mainOwl);
   await armCooldown(ctx.redis, cooldownKey, SIM_PVP_COOLDOWN_MS);
 
-  await animateSimPvPInteraction(
+  void animateSimPvPInteraction(
     interaction,
     userId,
     mainOwl,
@@ -278,7 +298,9 @@ export async function runDuel(
         : null,
       interaction.user,
     ),
-  );
+  ).catch((err) => {
+    console.error('[Duel] Animasyon hatasi:', err instanceof Error ? err.message : err);
+  });
 }
 
 // ─── Prefix: owl vs ───────────────────────────────────────────────────────────
@@ -465,17 +487,15 @@ export async function runDuelMessage(
 ): Promise<void> {
   const userId = message.author.id;
   const cooldownKey = `cooldown:duel:${userId}`;
-  await refreshMainOwlVitalsIfNeeded(ctx.prisma, userId);
-  const mainOwl = await ctx.prisma.owl.findFirst({
-    where: { ownerId: userId, isMain: true },
-    select: MAIN_OWL_DUEL_SELECT,
-  });
+  const [mainOwl, cooldown] = await Promise.all([
+    loadMainOwlForDuel(ctx.prisma, userId),
+    peekCooldown(ctx.redis, cooldownKey),
+  ]);
   if (!mainOwl) {
     await message.reply(`❌ **Hata** | Main baykuş bulunamadı.`);
     return;
   }
 
-  const cooldown = await peekCooldown(ctx.redis, cooldownKey);
   if (cooldown.active) {
     const displayName = message.member?.displayName ?? message.author.displayName ?? message.author.username;
     const base = buildCooldownMessage(cooldown.remainingMs, 'duel', displayName);
@@ -489,12 +509,14 @@ export async function runDuelMessage(
   const result = await runSimulatedPvP(ctx.prisma, userId, ctx.redis, mainOwl);
   await armCooldown(ctx.redis, cooldownKey, SIM_PVP_COOLDOWN_MS);
 
-  await animateSimPvPMessage(
+  void animateSimPvPMessage(
     sent,
     userId,
     mainOwl,
     mainOwl.hpMax,
     result,
     resolveDiscordDisplayName(message.member, message.author),
-  );
+  ).catch((err) => {
+    console.error('[Duel] Animasyon hatasi:', err instanceof Error ? err.message : err);
+  });
 }

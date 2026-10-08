@@ -89,6 +89,8 @@ export async function runSellMessage(
   let soldLines: Array<{ itemName: string; quantity: number; rarity: string }> = [];
 
   await withLock(playerId, 'financial', async () => {
+    const { flushRedisInventoryToPg } = await import('../state/player-state');
+    await flushRedisInventoryToPg(ctx.redis, ctx.prisma, playerId);
     const result = await ctx.prisma.$transaction(async (tx) => {
       const items = await tx.inventoryItem.findMany({
         where: { ownerId: playerId, itemType: 'Av' },

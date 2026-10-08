@@ -46,6 +46,7 @@ import { weightedRandom } from '../utils/rng';
 import { applyCoinDeltaInRedis } from '../state/player-state';
 import { withLock, grantDuelDailyCoins } from '../utils/lock';
 import { pickBattleWinner, runPvpBattleExchanges } from './pvp';
+import { pickPooledMainOwl } from './pvp-opponent-pool';
 import { runDetached } from '../utils/async';
 
 // ── Tipler ───────────────────────────────────────────────────────────────────
@@ -296,8 +297,17 @@ async function queryRandomMainOwl(
   prisma: PrismaClient,
   playerId: string,
   excludeIds: string[],
+  redis?: Redis,
 ): Promise<OwlPickRow | null> {
   const cleaned = excludeIds.filter((id) => id && id !== playerId);
+  if (redis) {
+    const pooled = await pickPooledMainOwl(
+      prisma,
+      redis,
+      new Set([playerId, ...cleaned]),
+    );
+    if (pooled) return pooled;
+  }
   const rows = cleaned.length > 0
     ? await prisma.$queryRaw<OwlPickRow[]>`
         SELECT id, "ownerId", species, nickname, hp, "hpMax", "staminaCur",
@@ -332,10 +342,11 @@ export async function pickRandomPlayerOwlOpponent(
   prisma: PrismaClient,
   playerId: string,
   excludeIds: string[] = [],
+  redis?: Redis,
 ): Promise<FakeOpponent | null> {
-  let row = await queryRandomMainOwl(prisma, playerId, excludeIds);
+  let row = await queryRandomMainOwl(prisma, playerId, excludeIds, redis);
   if (!row && excludeIds.length > 0) {
-    row = await queryRandomMainOwl(prisma, playerId, []);
+    row = await queryRandomMainOwl(prisma, playerId, [], redis);
   }
   if (!row) return null;
 
@@ -431,7 +442,7 @@ export async function runSimulatedPvP(
     ? await loadRecentDuelOpponentIds(redis, playerId)
     : [];
   const opponent = rollPlayerOwl
-    ? (await pickRandomPlayerOwlOpponent(prisma, playerId, recentIds))
+    ? (await pickRandomPlayerOwlOpponent(prisma, playerId, recentIds, redis))
       ?? generateFakeOpponent(playerPower, mainOwl.hpMax)
     : generateFakeOpponent(playerPower, mainOwl.hpMax);
 

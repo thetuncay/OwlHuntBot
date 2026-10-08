@@ -57,15 +57,18 @@ export async function getRetentionBonusSafe(
   redis: Redis,
   playerId: string,
   prisma?: PrismaClient,
+  createdAt?: Date | null,
 ): Promise<number> {
   try {
-    if (prisma) {
+    let known = createdAt ?? null;
+    if (!known && prisma) {
       const row = await prisma.player.findUnique({
         where: { id: playerId },
         select: { createdAt: true },
       });
-      if (row && isNewbieActive(row.createdAt)) return 0;
+      known = row?.createdAt ?? null;
     }
+    if (known && isNewbieActive(known)) return 0;
     return await resolveBonus(kind, redis, playerId);
   } catch {
     return 0;

@@ -33,7 +33,6 @@ export async function handleTopTextCommand(
     viewerId: message.author.id,
     scope: 'global' as const,
     guildId: message.guildId,
-    fresh: true as const,
   };
 
   const result = await getLeaderboard(ctx.prisma, ctx.redis, current, textLbOpts);

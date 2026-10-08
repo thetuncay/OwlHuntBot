@@ -5,6 +5,8 @@ alwaysApply: true
 
 # GitHub Yedek — otomatik push
 
+> **ASKIDA — `perf/optimization` süresince.** Otomatik commit/push yapılmaz. Commit yalnızca kullanıcı faz onayından sonra, `perf/optimization` branch'ine atılır; push kullanıcı isterse. Post-commit hook `.git/hooks/post-commit.disabled-perf` olarak devre dışı. Geri almak: dosyayı `post-commit` olarak yeniden adlandır ve bu notu sil. Karar: `OPTIMIZATION_LOG.md` → Karar Günlüğü.
+
 ## Ortam
 
 - **Ana calisma**: bu makine (Windows yerel / VDS).

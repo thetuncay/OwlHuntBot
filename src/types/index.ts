@@ -105,6 +105,9 @@ export interface HuntRunResult {
   microEventXp?: number;
   /** Yalnızca garanti av düştüyse. */
   guaranteedCatch?: boolean;
+  /** Kilit içinde uygulanan canlı etkinlik XP’si. */
+  liveOpsXp?: number;
+  liveOpsLabel?: string;
 }
 
 export interface PvpSimResult {

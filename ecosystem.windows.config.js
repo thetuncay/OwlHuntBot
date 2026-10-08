@@ -15,6 +15,8 @@ if (!existsSync(logsDir)) {
 const sharedEnv = {
   NODE_ENV: 'development',
   NODE_OPTIONS: '--max-old-space-size=1536',
+  BOT_DB_POOL_LIMIT: '16',
+  WORKER_DB_POOL_LIMIT: '20',
 };
 
 const common = {

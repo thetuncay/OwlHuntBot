@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { acquireResourceLock, releaseResourceLock, withOrderedResourceLocks } from '../utils/lock';
+import {
+  acquireResourceLock,
+  releaseResourceLock,
+  withLock,
+  withOrderedResourceLocks,
+} from '../utils/lock';
 
 vi.mock('../utils/redis', () => {
   const store = new Map<string, string>();
@@ -58,4 +63,30 @@ describe('ordered resource locks', () => {
     expect(availableToken).toBeTruthy();
     if (availableToken) await releaseResourceLock('user:123', availableToken);
   });
+
+  it('withLock awaits release so the next acquire on the same key succeeds', async () => {
+    await expect(withLock('p1', 'financial', async () => 'a')).resolves.toBe('a');
+    await expect(withLock('p1', 'financial', async () => 'b')).resolves.toBe('b');
+  });
+
+  it('reenters the same lock inside one call and still blocks a parallel inner call', async () => {
+    const { redis } = await import('../utils/redis');
+    const set = redis.set as unknown as { mock: { calls: unknown[][] } };
+    const before = set.mock.calls.length;
+    const inner = await withLock('p1', 'financial', async () =>
+      withLock('p1', 'financial', async () => 'inner'),
+    );
+    expect(inner).toBe('inner');
+    expect(set.mock.calls.length - before).toBe(1);
+
+    const outcome = await withLock('p2', 'financial', async () => {
+      const [a, b] = await Promise.all([
+        withLock('p2', 'financial', async () => 'a'),
+        withLock('p2', 'financial', async () => 'b'),
+      ]);
+      return [a, b];
+    }).catch((err: Error) => err);
+    expect(outcome).toBeInstanceOf(Error);
+  });
+
 });

@@ -24,6 +24,8 @@ import {
   BOND_GAIN_PER_HUNT,
   BUFF_ITEM_MAP,
   DEFAULT_HUNT_BIOME_ID,
+  HUNT_COOLDOWN_MAX_REMAINING_MS,
+  HUNT_COOLDOWN_MS,
   HUNT_WEEKEND_XP_MULT,
   isWeekendHuntBonus,
 } from '../config';
@@ -31,6 +33,9 @@ import type { HuntCatchResult, HuntRunResult, LootboxDrop } from '../types';
 import { catchChance, clamp, huntRolls, spawnScore } from '../utils/math';
 import { rollPercent } from '../utils/rng';
 import { withLock } from '../utils/lock';
+import { armCooldown, peekCooldownBounded } from '../middleware/cooldown-manager';
+import { currentLiveOpsModifier } from './liveops-cadence';
+import { addXP } from './xp';
 import { enqueueDbWrite, type UpsertInventoryJob } from '../utils/db-queue';
 import {
   hydratePlayerState,
@@ -200,6 +205,33 @@ function pickWeightedPrey(
  *   - Yazma sonrası player cache invalidate edilir
  *   - Bond cap kontrolü tek update'e indirildi
  */
+export class HuntCooldownActiveError extends Error {
+  constructor(readonly remainingMs: number) {
+    super('Hunt cooldown aktif.');
+    this.name = 'HuntCooldownActiveError';
+  }
+}
+
+function huntCooldownKey(playerId: string): string {
+  return `cooldown:hunt:${playerId}`;
+}
+
+async function resolvePlayerCreatedAt(
+  prisma: PrismaClient,
+  playerId: string,
+  cached: string | null | undefined,
+): Promise<Date> {
+  if (cached) {
+    const parsed = new Date(cached);
+    if (!Number.isNaN(parsed.getTime())) return parsed;
+  }
+  const row = await prisma.player.findUnique({
+    where: { id: playerId },
+    select: { createdAt: true },
+  });
+  return row?.createdAt ?? new Date(0);
+}
+
 export async function rollHunt(
   prisma: PrismaClient,
   redis: Redis,
@@ -212,10 +244,17 @@ export async function rollHunt(
   return withLock(playerId, 'financial', async () => {
     const metrics = beginHuntHotPathMetrics();
     try {
-    let [bundle, buffEffects, createdAtRow] = await Promise.all([
+    const cooldown = await peekCooldownBounded(
+      redis,
+      huntCooldownKey(playerId),
+      HUNT_COOLDOWN_MAX_REMAINING_MS,
+    );
+    if (cooldown.active && cooldown.remainingMs <= HUNT_COOLDOWN_MAX_REMAINING_MS) {
+      throw new HuntCooldownActiveError(cooldown.remainingMs);
+    }
+    let [bundle, buffEffects] = await Promise.all([
       hydratePlayerState(redis, prisma, playerId, { includeInventory: false, metrics }),
       getBuffEffects(prisma, playerId, 'hunt', metrics),
-      prisma.player.findUnique({ where: { id: playerId }, select: { createdAt: true } }),
     ]);
     if (!bundle) {
       metrics?.addPgWrite();
@@ -229,7 +268,7 @@ export async function rollHunt(
     if (!bundle) throw new Error('Oyuncu olusturulamadi.');
     await refreshMainOwlVitalsIfNeeded(prisma, playerId);
     const player = bundle.player;
-    const playerCreatedAt = createdAtRow?.createdAt ?? new Date(0);
+    const playerCreatedAt = await resolvePlayerCreatedAt(prisma, playerId, player.createdAt);
     const targetOwlId = owlId ?? bundle.mainOwl?.id;
     if (!targetOwlId) throw new Error('Main baykuş bulunamadı.');
     let owl = bundle.mainOwl;
@@ -280,11 +319,13 @@ export async function rollHunt(
     // 2. Streak bonus (ardışık başarılı hunt)
     const streakBonus = clamp(0, HUNT_STREAK_MAX_BONUS, player.huntComboStreak * HUNT_STREAK_BONUS_RATE);
 
-    const retentionBonus = await getRetentionBonusSafe('hunt', redis, playerId, prisma);
     const newbieLuckBonus = getNewbieLuckBonus(playerCreatedAt);
     const timeBonus = resolveHuntTimeBonus();
-    const series = await tickHuntMilestone(redis, prisma, playerId);
-    const microEvent = await tickHuntMicroEvent(redis, playerId);
+    const [retentionBonus, series, microEvent] = await Promise.all([
+      getRetentionBonusSafe('hunt', redis, playerId, prisma, playerCreatedAt),
+      tickHuntMilestone(redis, prisma, playerId),
+      tickHuntMicroEvent(redis, playerId),
+    ]);
 
     const totalRoll = huntRolls(player.level, owl.statKanat) + (isWeekendHuntBonus() ? 1 : 0);
     const catches: HuntCatchResult[] = [];
@@ -487,6 +528,14 @@ export async function rollHunt(
 
     const levelAfter = xpResult.levelUp ? xpResult.levelUp.newLevel : player.level;
     const xpAfter = xpResult.levelUp ? xpResult.levelUp.remainingXP : xpResult.currentXP;
+    const liveOps = currentLiveOpsModifier();
+    const liveOpsXp = liveOps.huntBonusRate > 0
+      ? Math.round(totalXP * liveOps.huntBonusRate)
+      : 0;
+    if (liveOpsXp > 0) {
+      await addXP(prisma, playerId, liveOpsXp, 'liveOpsHunt', undefined, undefined, redis);
+    }
+    await armCooldown(redis, huntCooldownKey(playerId), HUNT_COOLDOWN_MS);
 
     return {
       catches,
@@ -530,6 +579,8 @@ export async function rollHunt(
       microEventLine: microEvent.line ?? undefined,
       microEventXp: microEvent.bonusXp,
       guaranteedCatch: catches.some((c) => c.guaranteed === true),
+      liveOpsXp,
+      liveOpsLabel: liveOpsXp > 0 ? liveOps.label : undefined,
     };
     } finally {
       metrics?.finish();

@@ -1,0 +1,37 @@
+# OwlHunt izole benchmark — production compose ile karışmaz
+# Portlar: Postgres 5434, Redis 6390
+# Kullanım: docker compose -f docker-compose.bench.yml up -d
+name: owlhunt-bench
+
+services:
+  postgres-bench:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: owlhunt_bench
+      POSTGRES_PASSWORD: owlhunt_bench
+      POSTGRES_DB: owlhunt_bench
+    ports:
+      - '127.0.0.1:5434:5432'
+    volumes:
+      - owlhunt_bench_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U owlhunt_bench -d owlhunt_bench']
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  redis-bench:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly no --maxmemory 512mb --maxmemory-policy noeviction
+    ports:
+      - '127.0.0.1:6390:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+volumes:
+  owlhunt_bench_pg:

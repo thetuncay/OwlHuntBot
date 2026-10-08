@@ -24,6 +24,8 @@ export interface CachedPlayerData {
   mainOwlId: string | null;
   dailyLootboxDrops: number;
   lastLootboxDropDate: string | null;
+  /** ISO; eski Redis kayıtlarında yok — hunt PG'ye düşer. */
+  createdAt?: string | null;
   prestigeLevel?: number;
   gambleStreakWins?: number;
   gambleStreakLosses?: number;

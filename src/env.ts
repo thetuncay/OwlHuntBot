@@ -71,11 +71,16 @@ export function appendPoolParams(url: string, mode: 'bot' | 'worker' = 'bot'): s
     params.set('pgbouncer', 'true');
   }
 
-  if (!params.has('connection_limit')) {
-    const limit = mode === 'worker'
-      ? Number.parseInt(process.env.WORKER_DB_POOL_LIMIT ?? '25', 10)
-      : Number.parseInt(process.env.BOT_DB_POOL_LIMIT ?? '8', 10);
-    params.set('connection_limit', String(limit));
+  // BOT_DB_POOL_LIMIT / WORKER_DB_POOL_LIMIT adresteki connection_limit'i ezer.
+  // Adres kucuk bir limit tasiyorsa (or. 4) yuzlerce eszamanli oyuncuda kuyruk buyur.
+  const envLimitRaw = mode === 'worker'
+    ? process.env.WORKER_DB_POOL_LIMIT
+    : process.env.BOT_DB_POOL_LIMIT;
+  const envLimit = Number.parseInt(envLimitRaw ?? '', 10);
+  if (Number.isFinite(envLimit) && envLimit > 0) {
+    params.set('connection_limit', String(envLimit));
+  } else if (!params.has('connection_limit')) {
+    params.set('connection_limit', mode === 'worker' ? '20' : '16');
   }
 
   if (!params.has('pool_timeout')) {

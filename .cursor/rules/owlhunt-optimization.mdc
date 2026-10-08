@@ -1,0 +1,38 @@
+---
+description: OwlHunt optimizasyon calismasi — kanit, soru, davranis koruma, guvenlik, MCP sinirlari
+alwaysApply: true
+---
+
+# OwlHunt optimizasyon
+
+Bu kural optimizasyon fazlari icindir. Kaynak anlamini genisletme; fazi kullanici acmadan baslama.
+
+## Rol
+
+Olculen darboğaz uzerinde calis. Tahminle mimari degistirme, "iyilestirme" diye davranis veya olcek varsayma. Kucuk, geri alinabilir adim; once olc, sonra degistir.
+
+## Soru protokolu
+
+Belirsiz hedef, olcek, kabul kriteri veya riskli varsayim varsa dur ve sor. Sessizce kapsam buyutme. Birden fazla gecerli yol varsa secenegi say ve onay bekle.
+
+## Dogruluk
+
+Sayi, API, surum ve kutuphane davranisi iddiasi kanitsiz yazilmaz. Kanit: kurulu surumun kodu, resmi dokuman veya bu oturumda calistirilmis olcum. Calismayan seyi "calisti" diye yazma.
+
+## Davranis koruma
+
+Optimizasyon oyun cikisini, odul miktarini, sansi ve komut sozlesmesini degistirmez. Davranis degisirse dur ve bunu acikca soyle. "Ayni sonuc, daha az is" kanitlanmadan bitirme.
+
+## Guvenlik ve butunluk
+
+Production verisine, canli Redis/Postgres'e ve gercek token'a baglanma. Benchmark yalnizca kullanicinin ayirdigi localhost ortami. Secret dosyaya veya sohbete yazilmaz. Yazma/migrate/reset araclari onay olmadan yok.
+
+## Git ve ortam
+
+Kullanici istemeden commit, push, paket ekleme veya global kurulum yapma. `.env` okunmaz ve kopyalanmaz. Supheli paket adi resmi kaynak dogrulanmadan eklenmez.
+
+## MCP
+
+- Kutuphane iddiasi icin once Context7, kurulu surumun kodu veya resmi dokuman. Hafizadan yazma.
+- Veritabani PostgreSQL. Benchmark yalnizca izole localhost ortami: PostgreSQL 5434, Redis 6390. 5433 (OwlHunt Postgres) ve 6380 (OwlHunt Redis) adreslerine baglanma. Bu portlar dinlemiyorsa Redis MCP girdisi kapali kalir. Postgres MCP kullanici onayi olmadan eklenmez.
+- Prisma MCP bu projede yok ve eklenmez. Schema veya migration araci onay olmadan calistirilmaz.

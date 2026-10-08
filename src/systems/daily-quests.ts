@@ -149,29 +149,20 @@ export async function ensureDailyQuests(
   }
 
   const rolled = rollDailyQuestSet(playerId, nextReset);
-  await Promise.all(
-    rolled.map((quest) =>
-      prisma.dailyQuest.upsert({
-        where: {
-          playerId_type_resetAt: {
-            playerId,
-            type: quest.type,
-            resetAt: nextReset,
-          },
-        },
-        create: {
-          playerId,
-          type: quest.type,
-          target: quest.target,
-          meta: quest.meta,
-          rewardCoins: quest.rewardCoins,
-          rewardXp: quest.rewardXp,
-          resetAt: nextReset,
-        },
-        update: {},
-      }),
-    ),
-  );
+  // Paralel hunt-quests aynı unique anahtara upsert atınca P2002 düşüyordu.
+  // Görev seti oyuncu+gün ile sabit; var olan satırın ilerlemesi korunur.
+  await prisma.dailyQuest.createMany({
+    data: rolled.map((quest) => ({
+      playerId,
+      type: quest.type,
+      target: quest.target,
+      meta: quest.meta,
+      rewardCoins: quest.rewardCoins,
+      rewardXp: quest.rewardXp,
+      resetAt: nextReset,
+    })),
+    skipDuplicates: true,
+  });
 
   if (redis) {
     const ttl = Math.max(60, Math.ceil((nextReset.getTime() - Date.now()) / 1000));

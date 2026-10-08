@@ -105,6 +105,32 @@ function mockPrisma() {
           (q) => q.playerId === where.playerId && q.resetAt > now,
         ).length;
       }),
+      createMany: vi.fn(async ({ data }: {
+        data: Array<{
+          playerId: string;
+          type: string;
+          target: number;
+          rewardCoins: number;
+          rewardXp: number;
+          meta?: string | null;
+          resetAt: Date;
+        }>;
+      }) => {
+        let count = 0;
+        for (const create of data) {
+          const k = key(create.playerId, create.type, create.resetAt);
+          if (quests.has(k)) continue;
+          quests.set(k, {
+            id: `q-${++idSeq}`,
+            ...create,
+            meta: create.meta ?? null,
+            current: 0,
+            isClaimed: false,
+          });
+          count += 1;
+        }
+        return { count };
+      }),
     },
     _quests: quests,
   };
@@ -172,6 +198,19 @@ describe('daily-quests', () => {
     await ensureDailyQuests(prisma, playerId);
     await ensureDailyQuests(prisma, playerId);
 
+    const rows = await prisma.dailyQuest.findMany({
+      where: { playerId, resetAt: { gt: new Date() } },
+    } as never);
+    expect(rows).toHaveLength(DAILY_QUESTS_PER_DAY);
+  });
+
+  it('parallel ensureDailyQuests keeps a single set', async () => {
+    const prisma = mockPrisma() as unknown as import('@prisma/client').PrismaClient;
+    const playerId = 'player-race';
+    await Promise.all([
+      ensureDailyQuests(prisma, playerId),
+      ensureDailyQuests(prisma, playerId),
+    ]);
     const rows = await prisma.dailyQuest.findMany({
       where: { playerId, resetAt: { gt: new Date() } },
     } as never);

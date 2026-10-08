@@ -11,6 +11,7 @@ import { getLevelUpReward } from '../config';
 import type { XpApplyResult, LevelUpResult } from '../types';
 import type { CachedOwlData, CachedPlayerData } from '../utils/player-cache';
 import { enqueueDbWrite, enqueuePersistPlayer } from '../utils/db-queue';
+import { withLock } from '../utils/lock';
 import type { HuntHotPathMetricsCollector } from '../utils/hunt-hotpath-metrics';
 
 /** Atomik coin mutasyonu — KEYS[1]=player, KEYS[2]=dirty ts, KEYS[3]=dirty set; ARGV[1]=miktar, ARGV[2]=deduct|delta, ARGV[3]=ts, ARGV[4]=playerId */
@@ -235,6 +236,18 @@ export async function hydratePlayerState(
   if (rawPlayer) {
     metrics?.addCacheHit();
     const player = JSON.parse(rawPlayer) as CachedPlayerData;
+    if (!player.createdAt) {
+      metrics?.addPgRead();
+      const createdAtRow = await prisma.player.findUnique({
+        where: { id: playerId },
+        select: { createdAt: true },
+      });
+      if (createdAtRow?.createdAt) {
+        player.createdAt = createdAtRow.createdAt.toISOString();
+        metrics?.addRedisWrite();
+        await redis.set(playerKey(playerId), JSON.stringify(player), 'EX', STATE_TTL_SECONDS);
+      }
+    }
     const mainOwl = await ensureMainOwlInBundle(redis, prisma, playerId, player, metrics);
     metrics?.addRedisRead();
     if (await redis.get(hydratedKey(playerId)) !== '1') {
@@ -253,6 +266,7 @@ export async function hydratePlayerState(
         id: true, level: true, xp: true, coins: true,
         huntComboStreak: true, noRareStreak: true, mainOwlId: true,
         dailyLootboxDrops: true, lastLootboxDropDate: true,
+        createdAt: true,
         prestigeLevel: true,
         gambleStreakWins: true, gambleStreakLosses: true,
       },
@@ -269,6 +283,7 @@ export async function hydratePlayerState(
   const player: CachedPlayerData = {
     ...dbPlayer,
     lastLootboxDropDate: dbPlayer.lastLootboxDropDate?.toISOString() ?? null,
+    createdAt: dbPlayer.createdAt.toISOString(),
   };
 
   const mainOwl = mainOwlRow as CachedOwlData | null;
@@ -974,8 +989,45 @@ export async function invalidatePlayerState(redis: Redis, playerId: string): Pro
   );
 }
 
+/** Satıştan önce Redis envanterini PG'ye yazar. Hash yoksa PG'ye dokunmaz. */
+export async function flushRedisInventoryToPg(
+  redis: Redis,
+  prisma: PrismaClient,
+  playerId: string,
+): Promise<void> {
+  const key = invKey(playerId);
+  if ((await redis.exists(key)) !== 1) return;
+  const invHash = await redis.hgetall(key);
+  const entries = Object.entries(invHash);
+  if (entries.length === 0) return;
+  await prisma.$transaction(
+    entries.map(([itemName, metaRaw]) => {
+      const meta = JSON.parse(metaRaw) as { itemType: string; rarity: string; quantity: number };
+      return prisma.inventoryItem.upsert({
+        where: { ownerId_itemName: { ownerId: playerId, itemName } },
+        create: {
+          ownerId: playerId,
+          itemName,
+          itemType: meta.itemType,
+          rarity: meta.rarity,
+          quantity: meta.quantity,
+        },
+        update: { quantity: meta.quantity, itemType: meta.itemType, rarity: meta.rarity },
+      });
+    }),
+  );
+}
+
 /** Worker: dirty oyunculari PG'ye persist et. */
 export async function persistPlayerSnapshot(
+  prisma: PrismaClient,
+  redis: Redis,
+  playerId: string,
+): Promise<void> {
+  await withLock(playerId, 'financial', () => persistPlayerSnapshotBody(prisma, redis, playerId));
+}
+
+async function persistPlayerSnapshotBody(
   prisma: PrismaClient,
   redis: Redis,
   playerId: string,

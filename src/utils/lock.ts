@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { redis } from './redis';
 import {
   DAILY_SOFT_CAP_CEILING_MULT,
@@ -5,6 +6,47 @@ import {
   LOCK_TTL_SECONDS,
 } from '../config';
 import { randomUUID } from 'node:crypto';
+
+type LockFrame = { keys: Set<string>; busy: Set<string> };
+
+/** Aynı çağrı yığınında tutulan kilitler. Başka bir isteğin yığını bunu görmez. */
+const heldInStack = new AsyncLocalStorage<LockFrame>();
+
+function runWhileHolding<T>(key: string, fn: () => Promise<T>): Promise<T> {
+  const parent = heldInStack.getStore();
+  const frame: LockFrame = {
+    keys: new Set(parent?.keys),
+    busy: new Set(),
+  };
+  frame.keys.add(key);
+  return heldInStack.run(frame, fn);
+}
+
+/**
+ * Dışarıdaki withLock bu anahtarı tutuyorsa Redis'e tekrar NX atılmaz.
+ * İki iç çağrı aynı anda girerse ikincisi meşgul sayılır (tek iş parçacığında
+ * birincisi busy'yi senkron işaretler).
+ */
+function enterReentrant<T>(
+  key: string,
+  fn: () => Promise<T>,
+  busyMessage: string,
+  action: string,
+): Promise<T> | null {
+  const frame = heldInStack.getStore();
+  if (!frame?.keys.has(key)) return null;
+  if (frame.busy.has(key)) {
+    throw new LockContentionError(busyMessage, action);
+  }
+  frame.busy.add(key);
+  return (async () => {
+    try {
+      return await fn();
+    } finally {
+      frame.busy.delete(key);
+    }
+  })();
+}
 
 export const LOCK_BUSY_MESSAGES: Record<string, string> = {
   financial: '⏳ İşlemin devam ediyor, bitene kadar bekle.',
@@ -81,14 +123,22 @@ export async function withLock<T>(
   fn: () => Promise<T>,
   busyMessage?: string,
 ): Promise<T> {
+  const stackKey = `player:${playerId}:${action}`;
+  const reentered = enterReentrant(
+    stackKey,
+    fn,
+    busyMessage ?? lockBusyMessage(action),
+    action,
+  );
+  if (reentered) return reentered;
   const token = await acquireLock(playerId, action);
   if (!token) {
     throw new LockContentionError(busyMessage ?? lockBusyMessage(action), action);
   }
   try {
-    return await fn();
+    return await runWhileHolding(stackKey, fn);
   } finally {
-    releaseLock(playerId, action, token).catch(() => null);
+    await releaseLock(playerId, action, token).catch(() => null);
   }
 }
 
@@ -97,14 +147,22 @@ export async function withResourceLock<T>(
   fn: () => Promise<T>,
   busyMessage?: string,
 ): Promise<T> {
+  const stackKey = `resource:${key}`;
+  const reentered = enterReentrant(
+    stackKey,
+    fn,
+    busyMessage ?? lockBusyMessage('financial'),
+    'resource',
+  );
+  if (reentered) return reentered;
   const token = await acquireResourceLock(key);
   if (!token) {
     throw new LockContentionError(busyMessage ?? lockBusyMessage('financial'), 'resource');
   }
   try {
-    return await fn();
+    return await runWhileHolding(stackKey, fn);
   } finally {
-    releaseResourceLock(key, token).catch(() => null);
+    await releaseResourceLock(key, token).catch(() => null);
   }
 }
 

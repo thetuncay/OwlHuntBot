@@ -73,15 +73,15 @@ export async function recordOwlMoonDexUnlocks(
   speciesTier: number,
   upToMoonTier: number,
 ): Promise<void> {
-  for (let moonTier = 1; moonTier <= upToMoonTier; moonTier++) {
-    await prisma.playerOwlPrestigeDex.upsert({
-      where: {
-        playerId_speciesTier_moonTier: { playerId, speciesTier, moonTier },
-      },
-      create: { playerId, speciesTier, moonTier },
-      update: {},
-    });
-  }
+  if (upToMoonTier < 1) return;
+  const data = Array.from({ length: upToMoonTier }, (_, i) => ({
+    playerId,
+    speciesTier,
+    moonTier: i + 1,
+  }));
+  // Aynı türden iki baykuş `w owls` içinde paralel reconcile olunca upsert P2002 atıyordu.
+  // skipDuplicates: satır varsa firstUnlockedAt durur (eski update: {}).
+  await prisma.playerOwlPrestigeDex.createMany({ data, skipDuplicates: true });
 }
 
 export async function syncOwlMoonTier(

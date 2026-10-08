@@ -12,9 +12,9 @@ import {
   type MessageCreateOptions,
   type SendableChannels,
 } from 'discord.js';
-import { HUNT_COOLDOWN_MS, HUNT_COOLDOWN_MAX_REMAINING_MS, DEFAULT_HUNT_BIOME_ID } from '../config';
-import { armCooldown, clearCooldown, peekCooldownBounded } from '../middleware/cooldown-manager';
-import { rollHunt, runHuntSideEffects } from '../systems/hunt';
+import { HUNT_COOLDOWN_MAX_REMAINING_MS, DEFAULT_HUNT_BIOME_ID } from '../config';
+import { clearCooldown, peekCooldownBounded } from '../middleware/cooldown-manager';
+import { HuntCooldownActiveError, rollHunt, runHuntSideEffects } from '../systems/hunt';
 import { commitTameResult } from '../systems/tame';
 import {
   createTameSession,
@@ -72,8 +72,6 @@ import type { CommandDefinition } from '../types';
 import type { CachedOwlData } from '../utils/player-cache';
 import { retentionTuningForUser } from '../systems/retention/abtest';
 import { applySocialHuntBonuses } from '../systems/social-retention';
-import { currentLiveOpsModifier } from '../systems/liveops-cadence';
-import { addXP } from '../systems/xp';
 import { collectHuntExtraLines } from '../utils/hunt-extras';
 import { recordHuntBudgetSample, recordFrustrationCooldown, touchEngagementSession } from '../systems/engagement-metrics';
 import { performance } from 'node:perf_hooks';
@@ -218,7 +216,6 @@ export async function runHuntMessage(
         compressed.huntMilestoneRewardLine = formatHuntMilestoneRewardLine(milestone.reward);
       }
     }
-    await armCooldown(ctx.redis, huntCooldownKey(userId), HUNT_COOLDOWN_MS);
     const prefix = cooldownPrefix;
     const finalText = await maybeAppendLevel5DiscordHint(
       ctx.redis,
@@ -260,11 +257,8 @@ export async function runHuntMessage(
       : finalText;
     huntText = await appendUpgradeHintIfNewbie(ctx.prisma, userId, huntText, prefix, { isFirstHunt });
     const tuning = retentionTuningForUser(userId);
-    const liveOps = currentLiveOpsModifier();
-    const liveOpsXp = liveOps.huntBonusRate > 0 ? Math.round(result.totalXP * liveOps.huntBonusRate) : 0;
-    if (liveOpsXp > 0) {
-      await addXP(ctx.prisma, userId, liveOpsXp, 'liveOpsHunt', undefined, undefined, ctx.redis);
-      huntText += `\n🎉 ${liveOps.label}: +${liveOpsXp} XP`;
+    if ((result.liveOpsXp ?? 0) > 0 && result.liveOpsLabel) {
+      huntText += `\n🎉 ${result.liveOpsLabel}: +${result.liveOpsXp} XP`;
     }
     const social = await applySocialHuntBonuses(
       ctx.prisma,
@@ -321,6 +315,18 @@ export async function runHuntMessage(
       );
     }
   } catch (err: unknown) {
+    if (err instanceof HuntCooldownActiveError) {
+      const base = buildCooldownMessage(err.remainingMs, 'hunt', huntDisplayName);
+      const hint = await getCooldownHint(ctx.redis, userId, cooldownPrefix);
+      const withHint = hint ? `${base}\n${hint}` : base;
+      const msg = await resolveFlowRejectMessage(ctx.redis, userId, 'hunt', 'cooldown', withHint);
+      if (loadingMsg) {
+        await loadingMsg.edit(msg).catch(() => safeReply(message, msg));
+      } else {
+        await replyWithSuppression(message, msg, SuppressionKeys.cooldown(huntCooldownKey(userId)));
+      }
+      return;
+    }
     if (shouldNotifyUserOnDiscord(err)) {
       const text = userErrorMessage(err);
       if (loadingMsg) {

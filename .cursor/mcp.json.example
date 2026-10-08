@@ -1,0 +1,23 @@
+{
+  "mcpServers": {
+    "context7": {
+      "url": "https://mcp.context7.com/mcp"
+    },
+    "redis-bench": {
+      "disabled": true,
+      "command": "docker",
+      "args": [
+        "run",
+        "--rm",
+        "-i",
+        "--name",
+        "owlhunt-redis-mcp-bench",
+        "-e",
+        "REDIS_HOST=host.docker.internal",
+        "-e",
+        "REDIS_PORT=6390",
+        "mcp/redis"
+      ]
+    }
+  }
+}

@@ -28,7 +28,7 @@ export async function acquireRedisInFlight(
     return result === 'OK';
   } catch (err) {
     warnRedisDegradation('acquireRedisInFlight', err);
-    return true;
+    return false;
   }
 }
 

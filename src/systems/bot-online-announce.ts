@@ -8,7 +8,17 @@ function envId(key: string, fallback = ''): string {
   return v && /^\d+$/.test(v) ? v : fallback;
 }
 
+/** Şimdilik kapalı: her restart rol etiketli duyuru atıyordu. Geri açmak için false yap. */
+function onlineAnnouncePaused(): boolean {
+  return true;
+}
+
 export async function announceBotOnline(client: Client): Promise<void> {
+  if (onlineAnnouncePaused()) {
+    console.info('[BotOnline] Duyuru simdilik kapali');
+    return;
+  }
+
   const enabled = (process.env.BOT_ONLINE_ANNOUNCE ?? '1').trim() !== '0';
   if (!enabled) return;
 

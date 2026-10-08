@@ -29,7 +29,7 @@ return redis.call('PTTL', KEYS[1])
  * Lua script ile atomik — 3 Redis call yerine 1 round-trip.
  * Cooldown aktifse kalan sureyi milisaniye cinsinden dondurur.
  * Aktif değilse cooldownMs süresiyle set eder.
- * Redis erişilemezse fail-open: 0 döner (cooldown uygulanmaz).
+ * Redis erişilemezse komut durur (fail-closed).
  */
 export async function getCooldownRemainingMs(
   redis: Redis,
@@ -43,7 +43,7 @@ export async function getCooldownRemainingMs(
     return Math.max(0, result);
   } catch (err) {
     warnRedisDegradation('getCooldownRemainingMs', err);
-    return 0;
+    throw new Error('Redis kullanılamıyor. Komut durduruldu.');
   }
 }
 
@@ -57,8 +57,9 @@ export async function checkCooldownRemainingMs(
   try {
     const ttl = await redis.pttl(key);
     return ttl > 0 ? ttl : 0;
-  } catch {
-    return 0;
+  } catch (err) {
+    warnRedisDegradation('checkCooldownRemainingMs', err);
+    throw new Error('Redis kullanılamıyor. Komut durduruldu.');
   }
 }
 
@@ -76,8 +77,9 @@ export async function setCooldown(
     // Eski EX/PX key formatlarini temizle — her zaman taze PX yaz
     await redis.del(key);
     await redis.set(key, '1', 'PX', safeMs);
-  } catch {
-    // Redis down → sessizce geç
+  } catch (err) {
+    warnRedisDegradation('setCooldown', err);
+    throw new Error('Redis kullanılamıyor. Komut durduruldu.');
   }
 }
 

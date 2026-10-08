@@ -176,14 +176,29 @@ const FONT_CANDIDATES_MONO = [
   '/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf',
 ];
 
+const fontPathMemo = new Map<string, string>();
+const existingPathMemo = new Map<string, string | null>();
+const portraitPngMemo = new Map<string, Promise<Buffer | null>>();
+let mobPngFiles: string[] | null | undefined;
+let fontFaceCssMemo: string | undefined;
+
 function firstFont(paths: string[]): string {
-  return paths.find((p) => existsSync(p)) ?? '';
+  const key = paths.join('|');
+  const hit = fontPathMemo.get(key);
+  if (hit !== undefined) return hit;
+  const found = paths.find((p) => existsSync(p)) ?? '';
+  fontPathMemo.set(key, found);
+  return found;
 }
 
 function fontFaceCss(): string {
+  if (fontFaceCssMemo !== undefined) return fontFaceCssMemo;
   const mono = firstFont(FONT_CANDIDATES_MONO);
   const href = mono ? pathToFileURL(mono).href : '';
-  return href ? `@font-face { font-family: CardMono; src: url('${href}'); font-weight: 700; }` : '';
+  fontFaceCssMemo = href
+    ? `@font-face { font-family: CardMono; src: url('${href}'); font-weight: 700; }`
+    : '';
+  return fontFaceCssMemo;
 }
 
 const FONT_STACK = 'CardMono, DejaVu Sans Mono, Courier New, monospace';
@@ -359,10 +374,17 @@ function panelChrome(f: BattleCardFighter, align: 'left' | 'right'): string {
  * ================================================================ */
 
 function firstExisting(paths: string[]): string | null {
+  const key = paths.join('|');
+  if (existingPathMemo.has(key)) return existingPathMemo.get(key) ?? null;
+  let found: string | null = null;
   for (const p of paths) {
-    if (existsSync(p)) return p;
+    if (existsSync(p)) {
+      found = p;
+      break;
+    }
   }
-  return null;
+  existingPathMemo.set(key, found);
+  return found;
 }
 
 function owlSpriteCandidates(tier: number, moon: number): string[] {
@@ -391,10 +413,20 @@ function owlSpriteCandidates(tier: number, moon: number): string[] {
 
 const MOB_DIR = join(process.cwd(), 'owlMOBS/hazır');
 
-function pickMobPath(seed: string): string | null {
-  if (!existsSync(MOB_DIR)) return null;
+function listMobPngs(): string[] | null {
+  if (mobPngFiles !== undefined) return mobPngFiles;
+  if (!existsSync(MOB_DIR)) {
+    mobPngFiles = null;
+    return null;
+  }
   const files = readdirSync(MOB_DIR).filter((f) => f.endsWith('.png'));
-  if (files.length === 0) return null;
+  mobPngFiles = files.length > 0 ? files : null;
+  return mobPngFiles;
+}
+
+function pickMobPath(seed: string): string | null {
+  const files = listMobPngs();
+  if (!files || files.length === 0) return null;
   let h = 0;
   for (const ch of seed) h = (h + ch.charCodeAt(0) * 17) % 997;
   return join(MOB_DIR, files[h % files.length]!);
@@ -407,17 +439,24 @@ async function loadPortraitPng(
   dim = false,
 ): Promise<Buffer | null> {
   if (!path) return null;
-  try {
-    let img = sharp(path, { animated: false, pages: 1 }).resize(w, h, {
-      fit: 'cover',
-      position: 'centre',
-      kernel: 'nearest',
-    });
-    if (dim) img = img.modulate({ brightness: 0.38, saturation: 0.25 });
-    return await img.png().toBuffer();
-  } catch {
-    return null;
-  }
+  const key = `${path}|${w}|${h}|${dim ? 1 : 0}`;
+  const hit = portraitPngMemo.get(key);
+  if (hit) return hit;
+  const pending = (async () => {
+    try {
+      let img = sharp(path, { animated: false, pages: 1 }).resize(w, h, {
+        fit: 'cover',
+        position: 'centre',
+        kernel: 'nearest',
+      });
+      if (dim) img = img.modulate({ brightness: 0.38, saturation: 0.25 });
+      return await img.png().toBuffer();
+    } catch {
+      return null;
+    }
+  })();
+  portraitPngMemo.set(key, pending);
+  return pending;
 }
 
 export function combatFromParts(parts: {
@@ -495,7 +534,28 @@ export const BATTLE_CARD_DIMENSIONS = {
   scale: RENDER_SCALE,
 } as const;
 
-export async function renderBattleCardPng(input: BattleCardInput): Promise<Buffer> {
+const SHARP_SLOTS = 8;
+let sharpActive = 0;
+const sharpWaiters: Array<() => void> = [];
+
+function withSharpSlot<T>(fn: () => Promise<T>): Promise<T> {
+  if (sharpActive >= SHARP_SLOTS) {
+    return new Promise<void>((resolve) => {
+      sharpWaiters.push(resolve);
+    }).then(() => withSharpSlot(fn));
+  }
+  sharpActive += 1;
+  return fn().finally(() => {
+    sharpActive -= 1;
+    sharpWaiters.shift()?.();
+  });
+}
+
+export function renderBattleCardPng(input: BattleCardInput): Promise<Buffer> {
+  return withSharpSlot(() => renderBattleCardPngNow(input));
+}
+
+async function renderBattleCardPngNow(input: BattleCardInput): Promise<Buffer> {
   const svg = Buffer.from(`
     <svg xmlns="http://www.w3.org/2000/svg" width="${CARD_W}" height="${CARD_H}"
       viewBox="0 0 ${DESIGN_W} ${DESIGN_H}">
